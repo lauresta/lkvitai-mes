@@ -7,7 +7,6 @@
 
 <PageTitle>@L["Rmas.RMAsCikadaMES"]</PageTitle>
 
-<VolatileDataBanner />
 
 <h3>@L["Rmas.ReturnsRMA"]</h3>
 
@@ -30,6 +29,10 @@
             <div class="col-md-3">
                 <label class="form-label">@L["Common.ItemID"]</label>
                 <input class="form-control" type="number" @bind="_itemId" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">@L["Rmas.OrderLineId"]</label>
+                <input class="form-control mono" @bind="_orderLineIdInput" />
             </div>
             <div class="col-md-2">
                 <label class="form-label">@L["Common.Qty"]</label>
@@ -115,9 +118,10 @@
     private readonly List<RmaDto> _rows = [];
     private PriceMap _priceMap = PriceMap.Empty;
     private string _salesOrderIdInput = string.Empty;
+    private string _orderLineIdInput = string.Empty;
     private int _itemId = 1;
     private decimal _qty = 1;
-    private string _reason = "Damaged";
+    private string _reason = string.Empty;
     private ApiException? _error;
     private bool _isBusy;
 
@@ -156,7 +160,7 @@
             var payload = new RmaCreateDto(
                 salesOrderId,
                 _reason,
-                [new RmaLineCreateDto(_itemId, _qty, _reason.ToUpperInvariant())]);
+                [new RmaLineCreateDto(_itemId, _qty, _reason, Guid.TryParse(_orderLineIdInput, out var lineId) ? lineId : null)]);
 
             await AdvancedClient.CreateRmaAsync(payload);
             ToastService.ShowSuccess(L["Rmas.Toast.RMACreated"].Value);

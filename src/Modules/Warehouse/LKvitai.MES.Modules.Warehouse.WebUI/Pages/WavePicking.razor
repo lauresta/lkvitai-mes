@@ -5,7 +5,6 @@
 
 <PageTitle>@L["WavePicking.WavePickingCikadaMES"]</PageTitle>
 
-<VolatileDataBanner />
 
 <h3>@L["WavePicking.WavePicking"]</h3>
 
@@ -22,7 +21,7 @@
         <h5>@L["WavePicking.CreateWave"]</h5>
         <div class="row g-2 align-items-end">
             <div class="col-md-6">
-                <label class="form-label">@L["WavePicking.OrderIDsCommaSeparatedGUIDs"]</label>
+                <label class="form-label">@L["WavePicking.ReleasedOrderIds"]</label>
                 <input class="form-control" @bind="_orderIdsInput" placeholder="11111111-1111-1111-1111-111111111111,..." />
             </div>
             <div class="col-md-3">
@@ -78,7 +77,7 @@
                         {
                             <tr>
                                 <td>@wave.WaveNumber</td>
-                                <td><span class="badge @GetStatusClass(wave.Status)">@WarehouseStatusText.Get(L, wave.Status)</span></td>
+                                <td><span class="chip @GetStatusClass(wave.Status)">@WarehouseStatusText.Get(L, wave.Status)</span></td>
                                 <td>@(wave.AssignedOperator ?? "-")</td>
                                 <td>@wave.OrderIds.Count</td>
                                 <td>@wave.CompletedLines/@wave.TotalLines</td>
@@ -91,12 +90,17 @@
                                     {
                                         <button class="btn btn-sm btn-outline-success" @onclick="() => StartAsync(wave.Id)">@L["Common.Start"]</button>
                                     }
-                                    @if (wave.Status is "ASSIGNED" or "PICKING")
-                                    {
-                                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => CompleteLineAsync(wave.Id)">@L["WavePicking.1Line"]</button>
-                                    }
+                                    <a class="btn btn-sm btn-outline-secondary" href="picking/tasks">@L["WavePicking.OpenTasks"]</a>
                                 </td>
                             </tr>
+                            <tr><td colspan="6">
+                                <table class="table table-sm" data-testid="wave-pick-list">
+                                    <thead><tr><th>@L["Common.Location"]</th><th>@L["Common.Item"]</th><th>@L["Common.Qty"]</th><th>@L["Common.Status"]</th></tr></thead>
+                                    <tbody>@foreach (var task in wave.PickList) {
+                                        <tr><td class="mono">@task.Location</td><td>@task.ItemId</td><td class="mono">@task.Qty</td><td>@WarehouseStatusText.Get(L, task.Status)</td></tr>
+                                    }</tbody>
+                                </table>
+                            </td></tr>
                         }
                     </tbody>
                 </table>
@@ -173,15 +177,6 @@
         });
     }
 
-    private async Task CompleteLineAsync(Guid id)
-    {
-        await ExecuteAsync(async () =>
-        {
-            await AdvancedClient.CompleteWaveLinesAsync(id, 1);
-            await LoadAsync();
-        });
-    }
-
     private async Task ExecuteAsync(Func<Task> action)
     {
         _isBusy = true;
@@ -209,9 +204,9 @@
 
     private static string GetStatusClass(string status) => status switch
     {
-        "COMPLETED" => "bg-success",
-        "PICKING" => "bg-primary",
-        "ASSIGNED" => "bg-info text-dark",
-        _ => "bg-secondary"
+        "COMPLETED" => "chip--done",
+        "PICKING" => "chip--info",
+        "ASSIGNED" => "chip--info",
+        _ => "chip--slate"
     };
 }

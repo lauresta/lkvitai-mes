@@ -1820,4 +1820,12 @@
   <data name="Completion.ReturnToStock" xml:space="preserve"><value>Return to stock</value></data>
   <data name="Completion.ReturnSupplier" xml:space="preserve"><value>Return to supplier</value></data>
   <data name="Completion.Scrap" xml:space="preserve"><value>Scrap</value></data>
+  <data name="WavePicking.ReleasedOrderIds" xml:space="preserve"><value>Released outbound order IDs (comma separated)</value></data>
+  <data name="WavePicking.OpenTasks" xml:space="preserve"><value>Open pick tasks</value></data>
+  <data name="CrossDock.InboundShipmentLineId" xml:space="preserve"><value>Inbound shipment line ID</value></data>
+  <data name="CrossDock.Toast.InvalidLinkIds" xml:space="preserve"><value>Enter a positive inbound line ID and a valid outbound order ID.</value></data>
+  <data name="CrossDock.LinkOnly" xml:space="preserve"><value>Link an inbound line to an order. This link does not move stock.</value></data>
+  <data name="AnalyticsQuality.LateShipments" xml:space="preserve"><value>Late shipments</value></data>
+  <data name="AnalyticsQuality.CurrentStatus" xml:space="preserve"><value>Current order status</value></data>
+  <data name="Rmas.OrderLineId" xml:space="preserve"><value>Order line ID (optional for a unique item)</value></data>
 </root>

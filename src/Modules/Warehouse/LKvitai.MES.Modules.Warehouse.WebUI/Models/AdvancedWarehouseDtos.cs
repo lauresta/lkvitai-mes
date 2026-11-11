@@ -2,9 +2,8 @@ namespace LKvitai.MES.Modules.Warehouse.WebUI.Models;
 
 public sealed record WaveCreateRequestDto(IReadOnlyList<Guid> OrderIds, string? AssignedOperator);
 public sealed record AssignWaveRequestDto(string AssignedOperator);
-public sealed record CompleteWaveLinesRequestDto(int Lines);
 
-public sealed record WavePickLineDto(int ItemId, decimal Qty, string Location, Guid OrderId);
+public sealed record WavePickLineDto(int ItemId, decimal Qty, string Location, Guid OrderId, Guid TaskId, string Status);
 
 public sealed record WaveDto(
     Guid Id,
@@ -19,13 +18,13 @@ public sealed record WaveDto(
     int CompletedLines,
     IReadOnlyCollection<WavePickLineDto> PickList);
 
-public sealed record CrossDockCreateRequestDto(Guid InboundShipmentId, Guid OutboundOrderId, int ItemId, decimal Qty);
+public sealed record CrossDockCreateRequestDto(int InboundShipmentLineId, Guid OutboundOrderId, int ItemId, decimal Qty);
 public sealed record CrossDockStatusUpdateRequestDto(string Status);
 
 public sealed record CrossDockDto(
     Guid Id,
     string CrossDockNumber,
-    Guid InboundShipmentId,
+    int InboundShipmentLineId,
     Guid OutboundOrderId,
     int ItemId,
     decimal Qty,
@@ -73,10 +72,10 @@ public sealed record QcDefectDto(
     string CreatedBy,
     IReadOnlyList<QcAttachmentDto> Attachments);
 
-public sealed record RmaLineCreateDto(int ItemId, decimal Qty, string? ReasonCode);
+public sealed record RmaLineCreateDto(int ItemId, decimal Qty, string? ReasonCode, Guid? SalesOrderLineId = null);
 public sealed record RmaCreateDto(Guid SalesOrderId, string Reason, IReadOnlyList<RmaLineCreateDto> Lines);
 public sealed record InspectRmaRequestDto(string Disposition, decimal? CreditAmount);
-public sealed record RmaLineDto(Guid Id, int ItemId, decimal Qty, string? ReasonCode);
+public sealed record RmaLineDto(Guid Id, int ItemId, decimal Qty, string? ReasonCode, Guid? SalesOrderLineId = null);
 
 public sealed record RmaDto(
     Guid Id,
@@ -117,7 +116,7 @@ public sealed record FulfillmentKpiDto(int TotalOrders, int ShippedOrders, decim
 
 public sealed record DefectTypeMetricDto(string DefectType, int Count);
 public sealed record SupplierDefectMetricDto(int SupplierId, int Count);
-public sealed record LateShipmentDto(Guid Id, string OrderNumber, DateTimeOffset? RequestedShipDate, DateTimeOffset? ShippedAt, string RootCause);
+public sealed record LateShipmentDto(Guid Id, string OrderNumber, DateTimeOffset? RequestedShipDate, DateTimeOffset? ShippedAt, string CurrentStatus);
 public sealed record QcLateShipmentAnalyticsDto(
     int DefectCount,
     IReadOnlyList<DefectTypeMetricDto> DefectsByType,

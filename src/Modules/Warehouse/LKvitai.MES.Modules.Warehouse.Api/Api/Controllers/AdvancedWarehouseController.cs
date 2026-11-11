@@ -1,3 +1,4 @@
+using LKvitai.MES.BuildingBlocks.ObjectStorage;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
@@ -8,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 
 [ApiController]
+[WarehouseOperationValidation]
 [Route("api/warehouse/v1/waves")]
 public sealed class WavesController : ControllerBase
 {
@@ -69,14 +71,6 @@ public sealed class WavesController : ControllerBase
         return wave is null ? NotFound() : Ok(ToWaveResponse(wave));
     }
 
-    [HttpPost("{id:guid}/complete-lines")]
-    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
-    public IActionResult CompleteLines(Guid id, [FromBody] CompleteWaveLinesRequest request)
-    {
-        var wave = _store.CompleteWaveLines(id, request.Lines);
-        return wave is null ? NotFound() : Ok(ToWaveResponse(wave));
-    }
-
     private static WaveResponse ToWaveResponse(WaveRecord wave)
     {
         return new WaveResponse(
@@ -90,7 +84,7 @@ public sealed class WavesController : ControllerBase
             wave.OrderIds,
             wave.TotalLines,
             wave.CompletedLines,
-            wave.PickList.Select(x => new WavePickLineResponse(x.ItemId, x.Qty, x.Location, x.OrderId))
+            wave.PickList.Select(x => new WavePickLineResponse(x.ItemId, x.Qty, x.Location, x.OrderId, x.TaskId, x.Status))
                 .OrderBy(x => x.Location, StringComparer.Ordinal)
                 .ThenBy(x => x.ItemId)
                 .ToArray());
@@ -98,8 +92,7 @@ public sealed class WavesController : ControllerBase
 
     public sealed record CreateWaveRequest(IReadOnlyList<Guid> OrderIds, string? AssignedOperator);
     public sealed record AssignWaveRequest(string AssignedOperator);
-    public sealed record CompleteWaveLinesRequest(int Lines);
-    public sealed record WavePickLineResponse(int ItemId, decimal Qty, string Location, Guid OrderId);
+    public sealed record WavePickLineResponse(int ItemId, decimal Qty, string Location, Guid OrderId, Guid TaskId, string Status);
     public sealed record WaveResponse(
         Guid Id,
         string WaveNumber,
@@ -115,6 +108,7 @@ public sealed class WavesController : ControllerBase
 }
 
 [ApiController]
+[WarehouseOperationValidation]
 [Route("api/warehouse/v1/cross-dock")]
 public sealed class CrossDockController : ControllerBase
 {
@@ -131,7 +125,7 @@ public sealed class CrossDockController : ControllerBase
     {
         var user = User.Identity?.Name ?? "system";
         var record = _store.CreateCrossDock(new CrossDockCreateRequest(
-            request.InboundShipmentId,
+            request.InboundShipmentLineId,
             request.OutboundOrderId,
             request.ItemId,
             request.Qty,
@@ -154,21 +148,22 @@ public sealed class CrossDockController : ControllerBase
         return record is null ? NotFound() : Ok(record);
     }
 
-    public sealed record CreateCrossDockRequest(Guid InboundShipmentId, Guid OutboundOrderId, int ItemId, decimal Qty);
+    public sealed record CreateCrossDockRequest(int InboundShipmentLineId, Guid OutboundOrderId, int ItemId, decimal Qty);
     public sealed record UpdateCrossDockStatusRequest(string Status);
 }
 
 [ApiController]
+[WarehouseOperationValidation]
 [Route("api/warehouse/v1/advanced/qc")]
 public sealed class QcAdvancedController : ControllerBase
 {
     private readonly IAdvancedWarehouseStore _store;
-    private readonly IWebHostEnvironment _environment;
+    private readonly IObjectStorageService _objects;
 
-    public QcAdvancedController(IAdvancedWarehouseStore store, IWebHostEnvironment environment)
+    public QcAdvancedController(IAdvancedWarehouseStore store, IObjectStorageService objects)
     {
         _store = store;
-        _environment = environment;
+        _objects = objects;
     }
 
     [HttpPost("checklist-templates")]
@@ -225,28 +220,33 @@ public sealed class QcAdvancedController : ControllerBase
             return BadRequest(new { message = "Attachment file is required." });
         }
 
-        var uploadsRoot = Path.Combine(_environment.ContentRootPath, "uploads", "qc");
-        Directory.CreateDirectory(uploadsRoot);
-
-        var extension = Path.GetExtension(file.FileName);
-        var storedName = $"{Guid.NewGuid():N}{extension}";
-        var fullPath = Path.Combine(uploadsRoot, storedName);
-
-        await using (var stream = System.IO.File.Create(fullPath))
+        if (!_store.GetQcDefects().Any(x => x.Id == defectId)) return NotFound();
+        var attachmentId = Guid.NewGuid();
+        var key = $"qc/{defectId:N}/{attachmentId:N}";
+        await using (var stream = file.OpenReadStream())
+            await _objects.PutObjectAsync(key, stream, file.Length, file.ContentType, cancellationToken);
+        try
         {
-            await file.CopyToAsync(stream, cancellationToken);
+            var attachment = new QcAttachmentRecord(attachmentId, Path.GetFileName(file.FileName), file.ContentType,
+                $"/api/warehouse/v1/advanced/qc/defects/{defectId}/attachments/{attachmentId}", DateTimeOffset.UtcNow, User.Identity?.Name ?? "system");
+            var defect = _store.AddQcAttachment(defectId, attachment);
+            return defect is null ? NotFound() : Ok(defect);
         }
+        catch
+        {
+            await _objects.DeleteObjectAsync(key, cancellationToken);
+            throw;
+        }
+    }
 
-        var attachment = new QcAttachmentRecord(
-            Guid.NewGuid(),
-            file.FileName,
-            file.ContentType,
-            fullPath,
-            DateTimeOffset.UtcNow,
-            User.Identity?.Name ?? "system");
-
-        var defect = _store.AddQcAttachment(defectId, attachment);
-        return defect is null ? NotFound() : Ok(defect);
+    [HttpGet("defects/{defectId:guid}/attachments/{attachmentId:guid}")]
+    [Authorize(Policy = WarehousePolicies.QcOrManager)]
+    public async Task<IActionResult> DownloadAttachment(Guid defectId, Guid attachmentId, CancellationToken ct)
+    {
+        var attachment = _store.GetQcDefects().SingleOrDefault(x => x.Id == defectId)?.Attachments.SingleOrDefault(x => x.Id == attachmentId);
+        if (attachment is null) return NotFound();
+        var stream = await _objects.GetObjectAsync($"qc/{defectId:N}/{attachmentId:N}", ct);
+        return File(stream, attachment.ContentType, attachment.FileName);
     }
 
     public sealed record CreateChecklistTemplateRequest(
@@ -265,6 +265,7 @@ public sealed class QcAdvancedController : ControllerBase
 }
 
 [ApiController]
+[WarehouseOperationValidation]
 [Route("api/warehouse/v1/rmas")]
 public sealed class RmaController : ControllerBase
 {
@@ -302,17 +303,17 @@ public sealed class RmaController : ControllerBase
 
     [HttpPost("{id:guid}/receive")]
     [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
-    public IActionResult Receive(Guid id)
+    public async Task<IActionResult> Receive(Guid id, CancellationToken ct)
     {
-        var rma = _store.ReceiveRma(id, User.Identity?.Name ?? "system");
+        var rma = await _store.ReceiveRmaAsync(id, User.Identity?.Name ?? "system", ct);
         return rma is null ? NotFound() : Ok(ToResponse(rma));
     }
 
     [HttpPost("{id:guid}/inspect")]
     [Authorize(Policy = WarehousePolicies.QcOrManager)]
-    public IActionResult Inspect(Guid id, [FromBody] InspectRmaRequest request)
+    public async Task<IActionResult> Inspect(Guid id, [FromBody] InspectRmaRequest request, CancellationToken ct)
     {
-        var rma = _store.InspectRma(id, request.Disposition, request.CreditAmount, User.Identity?.Name ?? "system");
+        var rma = await _store.InspectRmaAsync(id, request.Disposition, request.CreditAmount, User.Identity?.Name ?? "system", ct);
         return rma is null ? NotFound() : Ok(ToResponse(rma));
     }
 
@@ -331,12 +332,12 @@ public sealed class RmaController : ControllerBase
             source.CreditAmount,
             source.CreatedBy,
             source.UpdatedBy,
-            source.Lines.Select(x => new RmaLineResponse(x.Id, x.ItemId, x.Qty, x.ReasonCode)).ToArray());
+            source.Lines.Select(x => new RmaLineResponse(x.Id, x.ItemId, x.Qty, x.ReasonCode, x.SalesOrderLineId)).ToArray());
     }
 
     public sealed record CreateRmaRequest(Guid SalesOrderId, string Reason, IReadOnlyList<RmaLineCreateRequest> Lines);
     public sealed record InspectRmaRequest(string Disposition, decimal? CreditAmount);
-    public sealed record RmaLineResponse(Guid Id, int ItemId, decimal Qty, string? ReasonCode);
+    public sealed record RmaLineResponse(Guid Id, int ItemId, decimal Qty, string? ReasonCode, Guid? SalesOrderLineId);
     public sealed record RmaResponse(
         Guid Id,
         string RmaNumber,
@@ -354,44 +355,7 @@ public sealed class RmaController : ControllerBase
 }
 
 [ApiController]
-[Route("api/warehouse/v1/handling-units")]
-public sealed class HandlingUnitsController : ControllerBase
-{
-    private readonly IAdvancedWarehouseStore _store;
-
-    public HandlingUnitsController(IAdvancedWarehouseStore store)
-    {
-        _store = store;
-    }
-
-    [HttpPost("{parentHuId:guid}/split")]
-    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
-    public IActionResult Split(Guid parentHuId, [FromBody] SplitHuRequest request)
-    {
-        var created = _store.SplitHu(parentHuId, request.ChildCount);
-        return Ok(created);
-    }
-
-    [HttpPost("{parentHuId:guid}/merge")]
-    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
-    public IActionResult Merge(Guid parentHuId, [FromBody] MergeHuRequest request)
-    {
-        var hu = _store.MergeHu(parentHuId, request.ChildHuIds);
-        return hu is null ? NotFound() : Ok(hu);
-    }
-
-    [HttpGet("{huId:guid}/hierarchy")]
-    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
-    public IActionResult Hierarchy(Guid huId)
-    {
-        return Ok(_store.GetHuHierarchy(huId));
-    }
-
-    public sealed record SplitHuRequest(int ChildCount);
-    public sealed record MergeHuRequest(IReadOnlyCollection<Guid> ChildHuIds);
-}
-
-[ApiController]
+[WarehouseOperationValidation]
 [Route("api/warehouse/v1/serials")]
 public sealed class SerialsController : ControllerBase
 {
@@ -406,21 +370,9 @@ public sealed class SerialsController : ControllerBase
     [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
     public IActionResult Register([FromBody] RegisterSerialRequest request)
     {
-        try
-        {
-            var serial = _store.RegisterSerial(new SerialRegisterRequest(
-                request.ItemId,
-                request.Value,
-                request.Location,
-                request.WarrantyExpiryDate,
-                User.Identity?.Name ?? "system"));
-
-            return Ok(serial);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
+        var serial = _store.RegisterSerial(new SerialRegisterRequest(request.ItemId, request.Value,
+            request.Location, request.WarrantyExpiryDate, User.Identity?.Name ?? "system"));
+        return Ok(ToResponse(serial));
     }
 
     [HttpPost("{id:guid}/status")]
@@ -432,21 +384,29 @@ public sealed class SerialsController : ControllerBase
             request.Location,
             User.Identity?.Name ?? "system"));
 
-        return serial is null ? NotFound() : Ok(serial);
+        return serial is null ? NotFound() : Ok(ToResponse(serial));
     }
 
     [HttpGet]
     [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
     public IActionResult Search([FromQuery] string? serial, [FromQuery] int? itemId, [FromQuery] string? status)
     {
-        return Ok(_store.SearchSerials(serial, itemId, status));
+        return Ok(_store.SearchSerials(serial, itemId, status).Select(ToResponse));
     }
+
+    private static object ToResponse(SerialRecord serial) => new
+    {
+        serial.Id, serial.ItemId, serial.Value, Status = serial.Status.ToString(), serial.Location, serial.WarrantyExpiryDate,
+        History = serial.History.Select(x => new { x.ChangedAt, PreviousStatus = x.PreviousStatus?.ToString(),
+            NewStatus = x.NewStatus.ToString(), x.Location, x.UpdatedBy })
+    };
 
     public sealed record RegisterSerialRequest(int ItemId, string Value, string? Location, DateOnly? WarrantyExpiryDate);
     public sealed record TransitionSerialRequest(string Status, string? Location);
 }
 
 [ApiController]
+[WarehouseOperationValidation]
 [Route("api/warehouse/v1/analytics")]
 public sealed class AdvancedAnalyticsController : ControllerBase
 {
@@ -533,9 +493,7 @@ public sealed class AdvancedAnalyticsController : ControllerBase
                 x.OrderNumber,
                 x.RequestedShipDate,
                 x.ShippedAt,
-                rootCause = x.Status == LKvitai.MES.Modules.Warehouse.Domain.Entities.OutboundOrderStatus.Picking ? "Pick delay" :
-                    x.Status == LKvitai.MES.Modules.Warehouse.Domain.Entities.OutboundOrderStatus.Allocated ? "Stock shortage" :
-                    "Carrier delay"
+                currentStatus = x.Status.ToString()
             })
             .OrderByDescending(x => x.ShippedAt)
             .Take(100)
