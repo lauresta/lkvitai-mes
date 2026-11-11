@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using System.Text.Json;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
@@ -15,7 +16,7 @@ namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 public sealed class WarehouseOperationValidationException(string message) : Exception(message);
 
 public sealed partial class DatabaseWarehouseStore(WarehouseDbContext db, IDocumentStore events,
-    IBalanceGuardLockFactory locks) : IAdvancedWarehouseStore
+    IBalanceGuardLockFactory locks, IWarehouseCodeProvider warehouse) : IAdvancedWarehouseStore
 {
     private static void Require(bool valid, string message)
     {

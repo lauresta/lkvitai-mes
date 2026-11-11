@@ -5,6 +5,7 @@
 @inject AgnumClient AgnumClient
 @inject MasterDataAdminClient MasterDataAdminClient
 @inject ItemPricesClient ItemPricesClient
+@inject StockClient StockClient
 
 <PageTitle>@L["Agnum.Balances.AgnumBalances"]</PageTitle>
 
@@ -162,13 +163,7 @@
                 <div class="row g-3 align-items-end mt-1">
                     <div class="col-12 col-md-4">
                         <label class="form-label">@L["Common.Warehouse"]</label>
-                        <select class="form-select" @bind="_distributionWarehouseGuid" @bind:after="LoadDistributionLocationsAsync">
-                            <option value="">@L["Agnum.Balances.SelectWarehouse"]</option>
-                            @foreach (var warehouse in _physicalWarehouses)
-                            {
-                                <option value="@warehouse.Id">@warehouse.Code - @warehouse.Name</option>
-                            }
-                        </select>
+                        <input class="form-control" value="@_distributionWarehouse?.Code" readonly />
                     </div>
                     <div class="col-12 col-md-4">
                         <label class="form-label">@L["Common.Location"]</label>
@@ -223,10 +218,9 @@
     private bool _isLoadingLocations;
     private int _selectedSndId;
     private string? _search;
-    private readonly List<AdminWarehouseDto> _physicalWarehouses = [];
+    private AdminWarehouseDto? _distributionWarehouse;
     private readonly List<AdminLocationDto> _distributionLocations = [];
     private AgnumBalanceRowDto? _distributionRow;
-    private string _distributionWarehouseGuid = string.Empty;
     private string _distributionLocationCode = string.Empty;
     private decimal _distributionQuantity;
     private string? _distributionMessage;
@@ -234,7 +228,7 @@
     private bool CanSubmitDistribution =>
         !_isSubmittingDistribution
         && _distributionRow is not null
-        && Guid.TryParse(_distributionWarehouseGuid, out _)
+        && _distributionWarehouse is not null
         && !string.IsNullOrWhiteSpace(_distributionLocationCode)
         && _distributionQuantity > 0m
         && _distributionQuantity <= _distributionRow.RemainingQty;
@@ -291,9 +285,11 @@
         {
             _warehouses.Clear();
             _warehouses.AddRange(await AgnumClient.GetVirtualWarehousesAsync());
-            _physicalWarehouses.Clear();
+            // The warehouse is not a choice: stock is distributed to the one configured warehouse.
+            var current = await StockClient.GetCurrentWarehouseAsync();
             var warehouses = await MasterDataAdminClient.GetWarehousesAsync(null, "Active", false, 1, 200);
-            _physicalWarehouses.AddRange(warehouses.Items);
+            _distributionWarehouse = warehouses.Items.FirstOrDefault(x =>
+                string.Equals(x.Code, current.Code, StringComparison.OrdinalIgnoreCase));
             if (_selectedSndId <= 0)
             {
                 _selectedSndId = _warehouses.FirstOrDefault(x => x.IsImportEnabled)?.SndId
@@ -354,11 +350,6 @@
         _distributionQuantity = row.RemainingQty > 0m ? row.RemainingQty : 0m;
         _distributionLocationCode = string.Empty;
 
-        if (string.IsNullOrWhiteSpace(_distributionWarehouseGuid) && _physicalWarehouses.Count > 0)
-        {
-            _distributionWarehouseGuid = _physicalWarehouses[0].Id.ToString();
-        }
-
         await LoadDistributionLocationsAsync();
     }
 
@@ -367,10 +358,12 @@
         _distributionLocations.Clear();
         _distributionLocationCode = string.Empty;
 
-        if (!Guid.TryParse(_distributionWarehouseGuid, out var warehouseId))
+        if (_distributionWarehouse is null)
         {
             return;
         }
+
+        var warehouseId = _distributionWarehouse.Id;
 
         _isLoadingLocations = true;
         _apiError = null;
@@ -401,15 +394,10 @@
 
     private async Task SubmitDistributionAsync()
     {
-        if (_distributionRow is null || !Guid.TryParse(_distributionWarehouseGuid, out var warehouseGuid))
+        var warehouse = _distributionWarehouse;
+        if (_distributionRow is null || warehouse is null)
         {
-            return;
-        }
-
-        var warehouse = _physicalWarehouses.FirstOrDefault(x => x.Id == warehouseGuid);
-        if (warehouse is null)
-        {
-            _distributionMessage = L["Agnum.Balances.SelectWarehouse"].Value;
+            _distributionMessage = L["Agnum.Balances.WarehouseNotConfigured"].Value;
             return;
         }
 

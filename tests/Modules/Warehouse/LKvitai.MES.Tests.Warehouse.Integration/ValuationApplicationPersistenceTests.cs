@@ -88,7 +88,7 @@ public partial class ReceivingWorkflowIntegrationTests
             var shipment = await CreateShipmentAsync(db, $"QA-C8-priced-{price}", 1, 1, qty);
             shipment.Lines.Single().UnitPrice = price;
             await db.SaveChangesAsync();
-            var controller = new ReceivingController(db, _store!, new StaticCurrentUserService("QA-C8"),
+            var controller = new ReceivingController(WarehouseCodeProvider.For("WH1"), db, _store!, new StaticCurrentUserService("QA-C8"),
                 scope.ServiceProvider.GetRequiredService<IMediator>(), NullLogger<ReceivingController>.Instance,
                 new ItemPriceSnapshotService(db), BalanceLocks())
             { ControllerContext = new() { HttpContext = new DefaultHttpContext() } };

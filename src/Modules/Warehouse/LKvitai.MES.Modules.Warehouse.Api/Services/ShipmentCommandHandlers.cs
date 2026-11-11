@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
@@ -17,6 +18,7 @@ public sealed class DispatchShipmentCommandHandler : IRequestHandler<DispatchShi
 {
     private readonly WarehouseDbContext _dbContext;
     private readonly IDocumentStore _store;
+    private readonly IWarehouseCodeProvider _warehouseCode;
     private readonly ICarrierApiService _carrierApiService;
     private readonly IEventBus _eventBus;
     private readonly ICurrentUserService _currentUserService;
@@ -30,10 +32,12 @@ public sealed class DispatchShipmentCommandHandler : IRequestHandler<DispatchShi
         ICurrentUserService currentUserService,
         IBusinessTelemetryService businessTelemetryService,
         ILogger<DispatchShipmentCommandHandler> logger,
-        IDocumentStore store)
+        IDocumentStore store,
+        IWarehouseCodeProvider warehouseCode)
     {
         _dbContext = dbContext;
         _store = store;
+        _warehouseCode = warehouseCode;
         _carrierApiService = carrierApiService;
         _eventBus = eventBus;
         _currentUserService = currentUserService;
@@ -135,7 +139,7 @@ public sealed class DispatchShipmentCommandHandler : IRequestHandler<DispatchShi
             HandlingUnitId = line.HandlingUnitId, Reason = $"Dispatch {shipment.ShipmentNumber} / {trackingNumber}"
         }).ToList();
         await WarehouseOperationPersistence.CommitAsync(_dbContext, _store,
-            $"shipment-dispatch:{shipment.Id:N}", dispatched, movements, cancellationToken);
+            $"shipment-dispatch:{shipment.Id:N}", dispatched, movements, _warehouseCode.Code, cancellationToken);
         foreach (var movement in movements) await _eventBus.PublishAsync(movement, cancellationToken);
         await _eventBus.PublishAsync(dispatched, cancellationToken);
         _businessTelemetryService.TrackShipmentDispatched(

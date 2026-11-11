@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
@@ -20,17 +21,20 @@ namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 [Route("api/warehouse/v1/picking")]
 public sealed class PickingController : ControllerBase
 {
-    private const string DefaultWarehouseId = "WH1";
+    private readonly IWarehouseCodeProvider _warehouseCode;
+    private string DefaultWarehouseId => _warehouseCode.Code;
 
     private readonly WarehouseDbContext _dbContext;
     private readonly IDocumentStore _documentStore;
     private readonly ICurrentUserService _currentUserService;
 
     public PickingController(
+        IWarehouseCodeProvider warehouseCode,
         WarehouseDbContext dbContext,
         IDocumentStore documentStore,
         ICurrentUserService currentUserService)
     {
+        _warehouseCode = warehouseCode;
         _dbContext = dbContext;
         _documentStore = documentStore;
         _currentUserService = currentUserService;
@@ -400,7 +404,7 @@ public sealed class PickingController : ControllerBase
         }
 
         await LKvitai.MES.Modules.Warehouse.Api.Services.WarehouseOperationPersistence.CommitAsync(
-            _dbContext, _documentStore, $"pick-task:{task.TaskId:N}", evt, [], cancellationToken, appendRelated: session =>
+            _dbContext, _documentStore, $"pick-task:{task.TaskId:N}", evt, [], null, cancellationToken, appendRelated: session =>
             {
                 if (consumed is not null) session.Events.Append(reservationStream!, reservationVersion + 1, consumed);
                 return Task.CompletedTask;

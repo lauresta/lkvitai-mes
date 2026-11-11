@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using System.Security.Claims;
 using FluentAssertions;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
@@ -22,7 +23,7 @@ public class TransferCommandHandlersTests
 {
     [Fact]
     [Trait("Category", "Transfers")]
-    public async Task CreateTransfer_WhenScrapTarget_ShouldSetDraft()
+    public async Task CreateTransfer_WhenOtherWarehouseIsNamed_ShouldFailValidation()
     {
         await using var db = CreateDbContext();
         await SeedItemsAndLocationsAsync(db);
@@ -32,7 +33,7 @@ public class TransferCommandHandlersTests
             db,
             bus,
             MockCurrentUser("operator-1"),
-            Mock.Of<ILogger<CreateTransferCommandHandler>>());
+            Mock.Of<ILogger<CreateTransferCommandHandler>>(), WarehouseCodeProvider.For("WH1"));
 
         var result = await handler.Handle(new CreateTransferCommand
         {
@@ -40,24 +41,13 @@ public class TransferCommandHandlersTests
             FromWarehouse = "NLQ",
             ToWarehouse = "SCRAP",
             RequestedBy = "operator-1",
-            Lines =
-            [
-                new TransferLineCommand
-                {
-                    ItemId = 1,
-                    Qty = 10m,
-                    FromLocationId = 11,
-                    ToLocationId = 12
-                }
-            ]
+            Lines = [new TransferLineCommand { ItemId = 1, Qty = 10m, FromLocationId = 11, ToLocationId = 12 }]
         }, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        var transfer = await db.Transfers.Include(x => x.Lines).SingleAsync();
-        transfer.Status.Should().Be(TransferStatus.Draft);
-        transfer.TransferNumber.Should().MatchRegex(@"^TRF-\d{8}-\d{3}$");
-        transfer.Lines.Should().ContainSingle();
-        bus.Published.OfType<TransferCreatedEvent>().Should().ContainSingle();
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorCode.Should().Be(DomainErrorCodes.ValidationError);
+        (await db.Transfers.CountAsync()).Should().Be(0);
+        bus.Published.Should().BeEmpty();
     }
 
     [Fact]
@@ -72,13 +62,13 @@ public class TransferCommandHandlersTests
             db,
             bus,
             MockCurrentUser("operator-1"),
-            Mock.Of<ILogger<CreateTransferCommandHandler>>());
+            Mock.Of<ILogger<CreateTransferCommandHandler>>(), WarehouseCodeProvider.For("WH1"));
 
         var result = await handler.Handle(new CreateTransferCommand
         {
             CommandId = Guid.NewGuid(),
-            FromWarehouse = "RES",
-            ToWarehouse = "PROD",
+            FromWarehouse = "WH1",
+            ToWarehouse = "WH1",
             RequestedBy = "operator-1",
             Lines =
             [
@@ -95,6 +85,8 @@ public class TransferCommandHandlersTests
         result.IsSuccess.Should().BeTrue();
         var transfer = await db.Transfers.SingleAsync();
         transfer.Status.Should().Be(TransferStatus.Draft);
+        transfer.FromWarehouse.Should().Be("WH1");
+        transfer.ToWarehouse.Should().Be("WH1");
     }
 
     [Fact]
@@ -302,7 +294,7 @@ public class TransferCommandHandlersTests
 
         var availability = new Mock<ITransferStockAvailabilityService>(MockBehavior.Strict);
         availability
-            .Setup(x => x.GetAvailableQtyAsync("NLQ", "LOC-RES-001", "ITEM-001", It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetAvailableQtyAsync("WH1", "LOC-RES-001", "ITEM-001", It.IsAny<CancellationToken>()))
             .ReturnsAsync(5m);
 
         var bus = new RecordingEventBus();
@@ -313,7 +305,7 @@ public class TransferCommandHandlersTests
             availability.Object,
             stockLedger.Object,
             MockCurrentUser("operator-1"),
-            Mock.Of<ILogger<ExecuteTransferCommandHandler>>());
+            Mock.Of<ILogger<ExecuteTransferCommandHandler>>(), WarehouseCodeProvider.For("WH1"));
 
         var result = await handler.Handle(new ExecuteTransferCommand
         {

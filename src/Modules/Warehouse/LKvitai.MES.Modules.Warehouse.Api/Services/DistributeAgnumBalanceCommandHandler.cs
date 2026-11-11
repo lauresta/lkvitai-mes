@@ -1,4 +1,5 @@
 using LKvitai.MES.BuildingBlocks.SharedKernel;
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.Modules.Warehouse.Domain;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
@@ -15,12 +16,15 @@ public sealed class DistributeAgnumBalanceCommandHandler
     private readonly WarehouseDbContext _dbContext;
     private readonly IMediator _mediator;
     private readonly ILogger<DistributeAgnumBalanceCommandHandler> _logger;
+    private readonly IWarehouseCodeProvider _warehouseCode;
 
     public DistributeAgnumBalanceCommandHandler(
         WarehouseDbContext dbContext,
         IMediator mediator,
-        ILogger<DistributeAgnumBalanceCommandHandler> logger)
+        ILogger<DistributeAgnumBalanceCommandHandler> logger,
+        IWarehouseCodeProvider warehouseCode)
     {
+        _warehouseCode = warehouseCode;
         _dbContext = dbContext;
         _mediator = mediator;
         _logger = logger;
@@ -46,9 +50,14 @@ public sealed class DistributeAgnumBalanceCommandHandler
             return Result.Fail(DomainErrorCodes.ValidationError, "Location code is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(command.WarehouseId))
+        // The warehouse is not a choice: stock is always distributed to the single configured warehouse.
+        var warehouseCode = _warehouseCode.Code;
+        if (!string.IsNullOrWhiteSpace(command.WarehouseId) &&
+            !string.Equals(command.WarehouseId.Trim(), warehouseCode, StringComparison.OrdinalIgnoreCase))
         {
-            return Result.Fail(DomainErrorCodes.ValidationError, "Warehouse id is required.");
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Agnum balances are distributed only to warehouse '{warehouseCode}'.");
         }
 
         var alreadyDistributed = await _dbContext.AgnumBalanceDistributions
@@ -69,7 +78,7 @@ public sealed class DistributeAgnumBalanceCommandHandler
             CommandId = huCommandId,
             CorrelationId = command.CommandId,
             CausationId = command.CommandId,
-            WarehouseId = command.WarehouseId.Trim(),
+            WarehouseId = warehouseCode,
             Location = command.LocationCode.Trim(),
             FromLocation = "AGNUM",
             HuType = "PALLET",
@@ -97,7 +106,7 @@ public sealed class DistributeAgnumBalanceCommandHandler
             AgnumProductId = virtualBalance.AgnumProductId,
             Sku = virtualBalance.Sku.Trim(),
             LocationCode = command.LocationCode.Trim(),
-            WarehouseId = command.WarehouseId.Trim(),
+            WarehouseId = warehouseCode,
             Quantity = command.Quantity,
             StockMovementCommandId = huCommandId,
             DistributedAt = DateTime.UtcNow,
@@ -111,7 +120,7 @@ public sealed class DistributeAgnumBalanceCommandHandler
             virtualBalance.Id,
             command.Quantity,
             virtualBalance.Sku,
-            command.WarehouseId,
+            warehouseCode,
             command.LocationCode);
 
         return Result.Ok();

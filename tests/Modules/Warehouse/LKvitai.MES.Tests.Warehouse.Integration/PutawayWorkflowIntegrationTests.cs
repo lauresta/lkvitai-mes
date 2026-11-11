@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using Microsoft.Extensions.Configuration;
 using FluentAssertions;
 using LKvitai.MES.Modules.Warehouse.Api.Controllers;
@@ -172,7 +173,7 @@ public partial class PutawayWorkflowIntegrationTests : IAsyncLifetime
         => new(_dbOptions!, new StaticCurrentUserService("tester"));
 
     private PutawayController CreatePutawayController(WarehouseDbContext db)
-        => new(db, _store!, new StaticCurrentUserService("operator"), BalanceLocks())
+        => new(WarehouseCodeProvider.For("WH1"), db, _store!, new StaticCurrentUserService("operator"), BalanceLocks())
         {
             ControllerContext = new ControllerContext
             {

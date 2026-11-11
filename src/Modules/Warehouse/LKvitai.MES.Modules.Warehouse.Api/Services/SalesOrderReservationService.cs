@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using LKvitai.MES.BuildingBlocks.SharedKernel;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Modules.Warehouse.Application.Commands;
@@ -13,7 +14,8 @@ using Reservation = LKvitai.MES.Modules.Warehouse.Domain.Aggregates.Reservation;
 
 namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
-public sealed class SalesOrderReservationService(WarehouseDbContext db, IDocumentStore store, IMediator mediator, IEventBus bus)
+public sealed class SalesOrderReservationService(WarehouseDbContext db, IDocumentStore store, IMediator mediator, IEventBus bus,
+    IWarehouseCodeProvider warehouse)
 {
     public async Task<Result> AllocateAsync(SalesOrder order, Func<Result> transition, CancellationToken ct)
     {
@@ -35,7 +37,7 @@ public sealed class SalesOrderReservationService(WarehouseDbContext db, IDocumen
             });
             await session.SaveChangesAsync(ct);
             var allocation = await mediator.Send(new AllocateReservationCommand
-                { ReservationId = order.Id, WarehouseId = "WH1" }, ct);
+                { ReservationId = order.Id, WarehouseId = warehouse.Code }, ct);
             if (!allocation.IsSuccess) return allocation;
             var status = transition();
             if (!status.IsSuccess) return status;

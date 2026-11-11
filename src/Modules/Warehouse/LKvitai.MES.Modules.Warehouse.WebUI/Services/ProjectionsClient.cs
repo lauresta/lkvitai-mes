@@ -38,6 +38,12 @@ public class ProjectionsClient
         throw new ApiException(problem, (int)response.StatusCode);
     }
 
+    public Task<ConsolidationPreviewDto> PreviewWarehouseConsolidationAsync()
+        => PostAsync<ConsolidationPreviewDto>("/api/warehouse/v1/admin/warehouse-consolidation/preview", new { });
+
+    public Task<ConsolidationResultDto> ApplyWarehouseConsolidationAsync(string reason)
+        => PostAsync<ConsolidationResultDto>("/api/warehouse/v1/admin/warehouse-consolidation/apply", new { reason });
+
     public Task<RebuildResultDto> RebuildAsync(string projectionName)
     {
         return PostAsync<RebuildResultDto>("/api/warehouse/v1/admin/projections/rebuild", new { projectionName });

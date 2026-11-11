@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using System.Diagnostics;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Domain;
@@ -23,7 +24,8 @@ namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 [Route("api/warehouse/v1/qc")]
 public sealed class QCController : ControllerBase
 {
-    private const string DefaultWarehouseId = "WH1";
+    private readonly IWarehouseCodeProvider _warehouseCode;
+    private string DefaultWarehouseId => _warehouseCode.Code;
 
     private readonly IBalanceGuardLockFactory _balanceLocks;
     private readonly WarehouseDbContext _dbContext;
@@ -32,11 +34,13 @@ public sealed class QCController : ControllerBase
     private readonly IElectronicSignatureService _signatureService;
 
     public QCController(
+        IWarehouseCodeProvider warehouseCode,
         WarehouseDbContext dbContext,
         IDocumentStore documentStore,
         ICurrentUserService currentUserService,
         IElectronicSignatureService signatureService, IBalanceGuardLockFactory balanceLocks)
     {
+        _warehouseCode = warehouseCode;
         _balanceLocks = balanceLocks;
         _dbContext = dbContext;
         _documentStore = documentStore;
@@ -131,7 +135,7 @@ public sealed class QCController : ControllerBase
             return ValidationFailure("Destination does not exist.");
         await using var balanceLock = await _balanceLocks.CreateAsync(cancellationToken);
         await balanceLock.AcquireAsync([StockLockKey.ForLocation(DefaultWarehouseId, "QUARANTINE", item.InternalSKU)], cancellationToken);
-        var available = await CommittedLocationStock.ReadAsync(_documentStore, item.InternalSKU, "QUARANTINE", cancellationToken);
+        var available = await CommittedLocationStock.ReadAsync(_documentStore, DefaultWarehouseId, item.InternalSKU, "QUARANTINE", cancellationToken);
         if (available < request.Qty) return UnprocessableFailure("Insufficient quarantine stock.");
         var evt = new StockMovedEvent { MovementId = Guid.NewGuid(), SKU = item.InternalSKU,
             Quantity = request.Qty, FromLocation = "QUARANTINE", ToLocation = request.Destination,

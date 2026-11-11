@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using System.Security.Claims;
 using FluentAssertions;
 using LKvitai.MES.Modules.Warehouse.Api.Controllers;
@@ -108,7 +109,7 @@ public class CycleCountDiscrepancyControllerTests
         var httpContext = BuildHttpContextWithRoles(roles ?? []);
         var accessor = new HttpContextAccessor { HttpContext = httpContext };
 
-        return new CycleCountsController(
+        return new CycleCountsController(WarehouseCodeProvider.For("WH1"), 
             Mock.Of<IMediator>(),
             db,
             bus ?? new RecordingEventBus(),

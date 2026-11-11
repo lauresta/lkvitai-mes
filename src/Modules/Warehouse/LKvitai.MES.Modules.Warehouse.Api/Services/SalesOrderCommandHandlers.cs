@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
@@ -358,6 +359,7 @@ public sealed class CancelSalesOrderCommandHandler : IRequestHandler<CancelSales
 {
     private readonly WarehouseDbContext _dbContext;
     private readonly IDocumentStore _store;
+    private readonly IWarehouseCodeProvider _warehouseCode;
     private readonly IEventBus _eventBus;
     private readonly ICurrentUserService _currentUserService;
 
@@ -365,10 +367,12 @@ public sealed class CancelSalesOrderCommandHandler : IRequestHandler<CancelSales
         WarehouseDbContext dbContext,
         IEventBus eventBus,
         ICurrentUserService currentUserService,
-        IDocumentStore store)
+        IDocumentStore store,
+        IWarehouseCodeProvider warehouseCode)
     {
         _dbContext = dbContext;
         _store = store;
+        _warehouseCode = warehouseCode;
         _eventBus = eventBus;
         _currentUserService = currentUserService;
     }
@@ -444,7 +448,7 @@ public sealed class CancelSalesOrderCommandHandler : IRequestHandler<CancelSales
             }
         }
         await WarehouseOperationPersistence.CommitAsync(_dbContext, _store,
-            $"order-cancel:{order.Id:N}", cancelled, movements, cancellationToken, appendRelated: session =>
+            $"order-cancel:{order.Id:N}", cancelled, movements, _warehouseCode.Code, cancellationToken, appendRelated: session =>
             {
                 if (release is not null) session.Events.Append(reservationStream!, reservationVersion + 1, release);
                 return Task.CompletedTask;

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
@@ -70,13 +71,16 @@ public sealed class CreateTransferCommandHandler : IRequestHandler<CreateTransfe
     private readonly IEventBus _eventBus;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<CreateTransferCommandHandler> _logger;
+    private readonly IWarehouseCodeProvider _warehouseCode;
 
     public CreateTransferCommandHandler(
         WarehouseDbContext dbContext,
         IEventBus eventBus,
         ICurrentUserService currentUserService,
-        ILogger<CreateTransferCommandHandler> logger)
+        ILogger<CreateTransferCommandHandler> logger,
+        IWarehouseCodeProvider warehouseCode)
     {
+        _warehouseCode = warehouseCode;
         _dbContext = dbContext;
         _eventBus = eventBus;
         _currentUserService = currentUserService;
@@ -85,19 +89,17 @@ public sealed class CreateTransferCommandHandler : IRequestHandler<CreateTransfe
 
     public async Task<Result> Handle(CreateTransferCommand request, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.FromWarehouse))
+        // There is one warehouse: both ends are always the configured code. A caller that still
+        // names a warehouse may only name that one; locations are what must differ (checked per line).
+        var warehouse = _warehouseCode.Code;
+        foreach (var named in new[] { request.FromWarehouse, request.ToWarehouse })
         {
-            return Result.Fail(DomainErrorCodes.ValidationError, "FromWarehouse is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(request.ToWarehouse))
-        {
-            return Result.Fail(DomainErrorCodes.ValidationError, "ToWarehouse is required.");
-        }
-
-        if (string.Equals(request.FromWarehouse, request.ToWarehouse, StringComparison.OrdinalIgnoreCase))
-        {
-            return Result.Fail(DomainErrorCodes.ValidationError, "FromWarehouse and ToWarehouse must be different.");
+            if (!string.IsNullOrWhiteSpace(named) &&
+                !string.Equals(named.Trim(), warehouse, StringComparison.OrdinalIgnoreCase))
+            {
+                return Result.Fail(DomainErrorCodes.ValidationError,
+                    $"Transfers are only possible within warehouse '{warehouse}'.");
+            }
         }
 
         if (request.Lines.Count == 0)
@@ -156,8 +158,8 @@ public sealed class CreateTransferCommandHandler : IRequestHandler<CreateTransfe
         var transfer = new Transfer
         {
             TransferNumber = await GenerateTransferNumberAsync(cancellationToken),
-            FromWarehouse = request.FromWarehouse.Trim().ToUpperInvariant(),
-            ToWarehouse = request.ToWarehouse.Trim().ToUpperInvariant(),
+            FromWarehouse = warehouse,
+            ToWarehouse = warehouse,
             RequestedBy = string.IsNullOrWhiteSpace(request.RequestedBy)
                 ? _currentUserService.GetCurrentUserId()
                 : request.RequestedBy.Trim(),
@@ -341,6 +343,7 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
     private readonly IDocumentStore _documentStore;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<ExecuteTransferCommandHandler> _logger;
+    private readonly IWarehouseCodeProvider _warehouseCode;
 
     public ExecuteTransferCommandHandler(
         WarehouseDbContext dbContext,
@@ -348,8 +351,10 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
         ITransferStockAvailabilityService stockAvailabilityService,
         IDocumentStore documentStore,
         ICurrentUserService currentUserService,
-        ILogger<ExecuteTransferCommandHandler> logger)
+        ILogger<ExecuteTransferCommandHandler> logger,
+        IWarehouseCodeProvider warehouseCode)
     {
+        _warehouseCode = warehouseCode;
         _dbContext = dbContext;
         _eventBus = eventBus;
         _stockAvailabilityService = stockAvailabilityService;
@@ -400,7 +405,7 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
                 }
 
                 var available = await _stockAvailabilityService.GetAvailableQtyAsync(
-                    transfer.FromWarehouse,
+                    _warehouseCode.Code,
                     line.FromLocation.Code,
                     line.Item.InternalSKU,
                     cancellationToken);
@@ -440,7 +445,7 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
                 InTransitLocationCode = inTransitLocation.Code, LineCount = transfer.Lines.Count,
                 ExecutedAt = transfer.ExecutedAt.GetValueOrDefault().UtcDateTime
             };
-            var movements = BuildMovements(transfer, inTransitLocation.Code,
+            var movements = BuildMovements(transfer, inTransitLocation.Code, _warehouseCode.Code,
                 ResolveOperatorId(_currentUserService.GetCurrentUserId()));
             var completeResult = transfer.Complete(DateTimeOffset.UtcNow);
             if (!completeResult.IsSuccess) return completeResult;
@@ -452,7 +457,7 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
             // One operation stream also rejects simultaneous executions of the same transfer.
             session.Events.StartStream($"transfer-execution:{transfer.Id:N}", executed, completed);
             foreach (var group in movements.GroupBy(x => StockLedgerStreamId.For(
-                         x.Warehouse.Trim().ToUpperInvariant(), x.Event.FromLocation, x.Event.SKU)))
+                         x.Warehouse, x.Event.FromLocation, x.Event.SKU)))
             {
                 var state = await session.Events.FetchStreamStateAsync(group.Key, cancellationToken);
                 var events = group.Select(x => (object)x.Event).ToArray();
@@ -480,17 +485,18 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
         });
     }
 
-    private static (string Warehouse, StockMovedEvent Event)[] BuildMovements(Transfer transfer, string transit, Guid operatorId)
+    // Both legs are written under the one warehouse code, so the in-transit location nets to zero.
+    private static (string Warehouse, StockMovedEvent Event)[] BuildMovements(Transfer transfer, string transit, string warehouse, Guid operatorId)
         => transfer.Lines.SelectMany(line => new[]
         {
-            (transfer.FromWarehouse, new StockMovedEvent
+            (warehouse, new StockMovedEvent
             {
                 MovementId = Guid.NewGuid(), SKU = line.Item!.InternalSKU, Quantity = line.Qty,
                 FromLocation = line.FromLocation!.Code, ToLocation = transit,
                 MovementType = MovementType.Transfer, OperatorId = operatorId,
                 Reason = $"Transfer {transfer.TransferNumber}"
             }),
-            (transfer.ToWarehouse, new StockMovedEvent
+            (warehouse, new StockMovedEvent
             {
                 MovementId = Guid.NewGuid(), SKU = line.Item!.InternalSKU, Quantity = line.Qty,
                 FromLocation = transit, ToLocation = line.ToLocation!.Code,

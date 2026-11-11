@@ -26,22 +26,8 @@
     <div class="card-body">
         <div class="row g-3">
             <div class="col-md-3">
-                <label class="form-label">@L["Transfers.Create.FromWarehouse"]</label>
-                <select class="form-select" @bind="_fromWarehouse">
-                    @foreach (var warehouse in _warehouses)
-                    {
-                        <option value="@warehouse.Code">@warehouse.Code - @warehouse.Name</option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">@L["Transfers.Create.ToWarehouse"]</label>
-                <select class="form-select" @bind="_toWarehouse">
-                    @foreach (var warehouse in _warehouses)
-                    {
-                        <option value="@warehouse.Code">@warehouse.Code - @warehouse.Name</option>
-                    }
-                </select>
+                <label class="form-label">@L["Common.Warehouse"]</label>
+                <input class="form-control" value="@_warehouseCode" readonly />
             </div>
             <div class="col-md-3 d-flex align-items-end">
                 <button class="btn btn-outline-secondary" @onclick="BackToList">@L["Common.Back"]</button>
@@ -142,14 +128,12 @@
     private readonly List<AdminLocationDto> _locations = [];
     private readonly List<TransferLineModel> _lines = [];
     private PriceMap _priceMap = PriceMap.Empty;
-    private IReadOnlyList<WarehouseDto> _warehouses = Array.Empty<WarehouseDto>();
 
     private bool _isLoading;
     private bool _isSubmitting;
     private ApiException? _apiError;
 
-    private string _fromWarehouse = string.Empty;
-    private string _toWarehouse = string.Empty;
+    private string _warehouseCode = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -164,12 +148,7 @@
 
         try
         {
-            _warehouses = await StockApiClient.GetWarehousesAsync();
-            if (_warehouses.Count > 0)
-            {
-                _fromWarehouse = _warehouses[0].Code;
-                _toWarehouse = _warehouses.Count > 1 ? _warehouses[1].Code : _warehouses[0].Code;
-            }
+            _warehouseCode = (await StockApiClient.GetCurrentWarehouseAsync()).Code;
 
             var items = await MasterDataAdminClient.GetItemsAsync(null, null, "Active", 1, 500);
             _items.Clear();
@@ -214,18 +193,6 @@
 
     private async Task CreateAsync()
     {
-        if (string.IsNullOrWhiteSpace(_fromWarehouse) || string.IsNullOrWhiteSpace(_toWarehouse))
-        {
-            ToastService.ShowError(L["Transfers.Create.Toast.FromToWarehouseAreRequired"].Value);
-            return;
-        }
-
-        if (string.Equals(_fromWarehouse.Trim(), _toWarehouse.Trim(), StringComparison.OrdinalIgnoreCase))
-        {
-            ToastService.ShowError(L["Transfers.Create.Toast.FromWarehouseAndToWarehouseMustBeDifferent"].Value);
-            return;
-        }
-
         var lines = _lines
             .Where(x => x.ItemId.HasValue && x.FromLocationId.HasValue && x.ToLocationId.HasValue && x.Qty > 0m)
             .Select(x => new TransferLineDto
@@ -257,8 +224,8 @@
             var request = new CreateTransferRequestDto
             {
                 CommandId = Guid.NewGuid(),
-                FromWarehouse = _fromWarehouse.Trim(),
-                ToWarehouse = _toWarehouse.Trim(),
+                FromWarehouse = _warehouseCode,
+                ToWarehouse = _warehouseCode,
                 Lines = lines
             };
 

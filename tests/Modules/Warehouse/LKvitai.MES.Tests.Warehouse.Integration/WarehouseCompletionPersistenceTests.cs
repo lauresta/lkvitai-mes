@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using FluentAssertions;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
@@ -15,7 +16,7 @@ public partial class PickingWorkflowIntegrationTests
 {
     private DatabaseWarehouseStore DurableStore(WarehouseDbContext db) => new(db, _store!,
         new PostgresBalanceGuardLockFactory(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string,string?> {
-            ["ConnectionStrings:WarehouseDb"] = _postgres!.GetConnectionString() }).Build()));
+            ["ConnectionStrings:WarehouseDb"] = _postgres!.GetConnectionString() }).Build()), WarehouseCodeProvider.For("WH1"));
 
     [SkippableTheory]
     [InlineData("RESTOCK", false)]
@@ -105,7 +106,7 @@ public partial class PickingWorkflowIntegrationTests
         await headersStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
         var service = new DatabaseWarehouseStore(db, headersStore,
             new PostgresBalanceGuardLockFactory(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string,string?> {
-                ["ConnectionStrings:WarehouseDb"] = _postgres!.GetConnectionString() }).Build()));
+                ["ConnectionStrings:WarehouseDb"] = _postgres!.GetConnectionString() }).Build()), WarehouseCodeProvider.For("WH1"));
         var missing = () => service.CreateWave([Guid.NewGuid()], "QA-C6");
         missing.Should().Throw<WarehouseOperationValidationException>();
         (await Reservations(db).AllocateAsync(order, () => order.Allocate(order.Id), default)).IsSuccess.Should().BeTrue();

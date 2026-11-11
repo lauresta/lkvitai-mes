@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Modules.Warehouse.Domain;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
@@ -51,7 +52,7 @@ public sealed partial class DatabaseWarehouseStore
         var itemIds = await db.Set<WarehouseRmaLine>().Where(x => x.RmaId == id).Select(x => x.ItemId).Distinct().ToArrayAsync(ct);
         var items = await db.Items.Where(x => itemIds.Contains(x.Id)).ToDictionaryAsync(x => x.Id, ct);
         await using var guard = await locks.CreateAsync(ct);
-        await guard.AcquireAsync(items.Values.Select(x => StockLockKey.ForLocation("WH1", "QC_HOLD", x.InternalSKU)).Distinct().Order().ToArray(), ct);
+        await guard.AcquireAsync(items.Values.Select(x => StockLockKey.ForLocation(warehouse.Code, "QC_HOLD", x.InternalSKU)).Distinct().Order().ToArray(), ct);
         var result = await db.Database.CreateExecutionStrategy().ExecuteAsync(async () => {
             await using var tx = await db.Database.BeginTransactionAsync(ct);
             var row = await db.Set<WarehouseRma>().FromSqlInterpolated($"SELECT * FROM public.warehouse_rmas WHERE \"Id\"={id} FOR UPDATE").SingleOrDefaultAsync(ct);
@@ -76,15 +77,15 @@ public sealed partial class DatabaseWarehouseStore
                 {
                     var adjustmentId = Guid.NewGuid();
                     session.Events.StartStream($"stock-adjustment:{adjustmentId:N}", new StockAdjustedEvent {
-                        AggregateId = adjustmentId, AdjustmentId = adjustmentId, UserId = user, WarehouseId = "WH1",
+                        AggregateId = adjustmentId, AdjustmentId = adjustmentId, UserId = user, WarehouseId = warehouse.Code,
                         ItemId = item.Id, SKU = item.InternalSKU, LocationId = hold.Id, Location = "QC_HOLD", QtyDelta = qty,
                         ReasonCode = "RMA", Notes = $"{row.Reason}; RMA-{row.Number:0000}", Timestamp = DateTime.UtcNow });
                 }
                 else
                 {
-                    Require(await CommittedLocationStock.ReadAsync(events, item.InternalSKU, "QC_HOLD", ct) >= qty,
+                    Require(await CommittedLocationStock.ReadAsync(events, warehouse.Code, item.InternalSKU, "QC_HOLD", ct) >= qty,
                         "Insufficient committed stock in QC_HOLD.");
-                    session.Events.Append(StockLedgerStreamId.For("WH1", "QC_HOLD", item.InternalSKU), new StockMovedEvent {
+                    session.Events.Append(StockLedgerStreamId.For(warehouse.Code, "QC_HOLD", item.InternalSKU), new StockMovedEvent {
                         MovementId = Guid.NewGuid(), SKU = item.InternalSKU, Quantity = qty, FromLocation = "QC_HOLD",
                         ToLocation = destination, OperatorId = Guid.TryParse(user, out var operatorId) ? operatorId : Guid.Empty, MovementType = "RMA", Timestamp = DateTime.UtcNow, Reason = $"{row.Reason}; RMA-{row.Number:0000}" });
                 }

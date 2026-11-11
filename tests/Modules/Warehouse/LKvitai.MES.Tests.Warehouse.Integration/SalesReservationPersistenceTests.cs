@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using FluentAssertions;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
@@ -27,7 +28,7 @@ public partial class PickingWorkflowIntegrationTests
         services.AddScoped<IAllocateReservationOrchestration, MartenAllocateReservationOrchestration>();
         services.AddMediatR(c => c.RegisterServicesFromAssemblyContaining<AllocateReservationCommandHandler>());
         var provider = services.BuildServiceProvider();
-        return new SalesOrderReservationService(db, _store!, provider.GetRequiredService<IMediator>(), new QuietBus());
+        return new SalesOrderReservationService(db, _store!, provider.GetRequiredService<IMediator>(), new QuietBus(), WarehouseCodeProvider.For("WH1"));
     }
 
     private static async Task<SalesOrder> Draft(WarehouseDbContext db)
@@ -62,7 +63,7 @@ public partial class PickingWorkflowIntegrationTests
         var projection = new LKvitai.MES.Modules.Warehouse.Projections.AvailableStockProjection();
         var stock = new AvailableStockView { Id = AvailableStockView.ComputeId("WH1", "A-01", "RM-0001"), OnHandQty = 5 };
         projection.Apply(allocations, stock).AvailableQty.Should().Be(0);
-        var cancel = new CancelSalesOrderCommandHandler(db, new QuietBus(), new StaticCurrentUserService("QA-C3"), _store!);
+        var cancel = new CancelSalesOrderCommandHandler(db, new QuietBus(), new StaticCurrentUserService("QA-C3"), _store!, WarehouseCodeProvider.For("WH1"));
         (await cancel.Handle(new CancelSalesOrderCommand { SalesOrderId = first.Id, Reason = "QA-C3-release" }, default))
             .IsSuccess.Should().BeTrue();
         var release = (await query.Events.FetchStreamAsync(Reservation.StreamIdFor(first.Id))).Select(x => x.Data)

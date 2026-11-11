@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
@@ -20,7 +21,8 @@ namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 [Route("api/warehouse/v1/cycle-counts")]
 public sealed class CycleCountsController : ControllerBase
 {
-    private const string DefaultWarehouseId = "WH1";
+    private readonly IWarehouseCodeProvider _warehouseCode;
+    private string DefaultWarehouseId => _warehouseCode.Code;
     private readonly IMediator _mediator;
     private readonly WarehouseDbContext _dbContext;
     private readonly IEventBus _eventBus;
@@ -30,6 +32,7 @@ public sealed class CycleCountsController : ControllerBase
     private readonly ICycleCountAdjustmentWriter _adjustmentWriter;
 
     public CycleCountsController(
+        IWarehouseCodeProvider warehouseCode,
         IMediator mediator,
         WarehouseDbContext dbContext,
         IEventBus eventBus,
@@ -38,6 +41,7 @@ public sealed class CycleCountsController : ControllerBase
         ICycleCountAdjustmentWriter adjustmentWriter,
         IItemPriceSnapshotService? prices = null)
     {
+        _warehouseCode = warehouseCode;
         _mediator = mediator;
         _dbContext = dbContext;
         _eventBus = eventBus;

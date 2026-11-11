@@ -249,7 +249,7 @@ public sealed class PackOrderCommandHandler : IRequestHandler<PackOrderCommand, 
             }).ToList()
         };
         await WarehouseOperationPersistence.CommitAsync(_dbContext, _documentStore,
-            $"outbound-pack:{order.Id:N}", packedEvent, [], cancellationToken,
+            $"outbound-pack:{order.Id:N}", packedEvent, [], null, cancellationToken,
             () => packedEvent.ShipmentNumber = shipment.ShipmentNumber);
         await _eventBus.PublishAsync(packedEvent, cancellationToken);
 
