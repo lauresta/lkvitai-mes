@@ -51,15 +51,23 @@ public sealed class CycleCountAdjustmentWriter(
     }
 }
 
+/// <summary>Committed non-zero physical stock of one SKU in one location.</summary>
+public sealed record CycleCountStockBalance(string Location, string Sku, decimal Quantity);
+
 public interface ICycleCountQuantityResolver
 {
-    Task<decimal> ResolveSystemQtyAsync(string locationCode, string sku, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Non-zero physical balances per (location, SKU) of the configured warehouse for the given location codes.
+    /// </summary>
+    Task<IReadOnlyList<CycleCountStockBalance>> ListStockedBalancesAsync(
+        IReadOnlyCollection<string> locationCodes,
+        CancellationToken cancellationToken = default);
 }
 
+/// <summary>Reads expected quantities from committed events (same source as <see cref="CommittedLocationStock"/>), not from lagging projections.</summary>
 public sealed class MartenCycleCountQuantityResolver : ICycleCountQuantityResolver
 {
     private readonly IWarehouseCodeProvider _warehouseCode;
-    private string DefaultWarehouseId => _warehouseCode.Code;
     private readonly IDocumentStore _documentStore;
 
     public MartenCycleCountQuantityResolver(IDocumentStore documentStore, IWarehouseCodeProvider warehouseCode)
@@ -68,16 +76,22 @@ public sealed class MartenCycleCountQuantityResolver : ICycleCountQuantityResolv
         _warehouseCode = warehouseCode;
     }
 
-    public async Task<decimal> ResolveSystemQtyAsync(
-        string locationCode,
-        string sku,
+    public async Task<IReadOnlyList<CycleCountStockBalance>> ListStockedBalancesAsync(
+        IReadOnlyCollection<string> locationCodes,
         CancellationToken cancellationToken = default)
     {
-        await using var querySession = _documentStore.QuerySession();
-        var query = querySession.Query<AvailableStockView>()
-            .Where(x => x.WarehouseId == DefaultWarehouseId && x.Location == locationCode && x.SKU == sku);
+        var wanted = new HashSet<string>(locationCodes, StringComparer.OrdinalIgnoreCase);
+        var warehouse = _warehouseCode.Code;
 
-        return await Marten.QueryableExtensions.SumAsync(query, x => x.OnHandQty, cancellationToken);
+        await using var session = _documentStore.QuerySession();
+        var balances = await CommittedLocationStock.ReadBalancesAsync(session, null, cancellationToken);
+
+        return balances
+            .Where(x => string.Equals(x.Warehouse, warehouse, StringComparison.OrdinalIgnoreCase)
+                        && wanted.Contains(x.Location)
+                        && x.Quantity != 0m)
+            .Select(x => new CycleCountStockBalance(x.Location, x.Sku, x.Quantity))
+            .ToList();
     }
 }
 
@@ -205,21 +219,49 @@ public sealed class ScheduleCycleCountCommandHandler : IRequestHandler<ScheduleC
             ScheduleCommandId = request.CommandId
         };
 
-        for (var i = 0; i < locations.Count; i++)
+        var balances = await _quantityResolver.ListStockedBalancesAsync(
+            locations.Select(x => x.Code).ToList(),
+            cancellationToken);
+
+        var locationsByCode = locations
+            .GroupBy(x => x.Code, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+        var itemsBySku = filteredItems
+            .GroupBy(x => x.InternalSKU, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+        // One line per stocked (location, SKU): the operator counts what is actually there.
+        foreach (var balance in balances
+                     .OrderBy(x => x.Location, StringComparer.OrdinalIgnoreCase)
+                     .ThenBy(x => x.Sku, StringComparer.OrdinalIgnoreCase))
         {
-            var location = locations[i];
-            var item = filteredItems[i % filteredItems.Count];
-            var systemQty = await _quantityResolver.ResolveSystemQtyAsync(location.Code, item.InternalSKU, cancellationToken);
+            if (!locationsByCode.TryGetValue(balance.Location, out var location)
+                || !itemsBySku.TryGetValue(balance.Sku, out var item))
+            {
+                continue;
+            }
+
+            if (cycleCount.Lines.Any(x => x.LocationId == location.Id && x.ItemId == item.Id))
+            {
+                continue;
+            }
 
             cycleCount.Lines.Add(new CycleCountLine
             {
                 ItemId = item.Id,
                 LocationId = location.Id,
-                SystemQty = systemQty,
+                SystemQty = balance.Quantity,
                 PhysicalQty = 0m,
                 Delta = 0m,
                 Status = CycleCountLineStatus.Pending
             });
+        }
+
+        if (cycleCount.Lines.Count == 0)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                "No physical stock found in the selected locations for the selected items.");
         }
 
         _dbContext.CycleCounts.Add(cycleCount);

@@ -130,9 +130,20 @@
             _transfer = await TransfersClient.GetTransferByIdAsync(Id);
             _priceMap = await ItemPricesClient.GetMapAsync(_transfer.Lines.Select(x => ((int?)x.ItemId, (string?)null)));
 
-            var items = await MasterDataAdminClient.GetItemsAsync(null, null, "Active", 1, 500);
+            // Resolve names only for the items on this transfer (the item catalogue is far larger than any page).
             _items.Clear();
-            _items.AddRange(items.Items);
+            foreach (var itemId in _transfer.Lines.Select(x => x.ItemId).Distinct())
+            {
+                try
+                {
+                    var details = await MasterDataAdminClient.GetItemByIdAsync(itemId);
+                    _items.Add(new AdminItemDto { Id = details.Id, InternalSKU = details.InternalSKU, Name = details.Name });
+                }
+                catch (ApiException)
+                {
+                    // The line is still shown with its id.
+                }
+            }
 
             var locations = await MasterDataAdminClient.GetLocationsAsync(null, "Active", true, 1, 500);
             _locations.Clear();

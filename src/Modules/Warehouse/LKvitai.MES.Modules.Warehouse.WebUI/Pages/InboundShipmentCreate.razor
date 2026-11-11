@@ -109,12 +109,12 @@
                 </MudTd>
                 <MudTd DataLabel="@L["Common.Qty"]" Style="width: 90px;">
                     <div class="lk-field--inline">
-                        <MudNumericField T="decimal" Variant="Variant.Text" Culture="NumberCulture" Min="0.001m" @bind-Value="context.ExpectedQty" />
+                        <LkDecimalField T="decimal" Variant="Variant.Text" Min="0.001m" @bind-Value="context.ExpectedQty" />
                     </div>
                 </MudTd>
                 <MudTd DataLabel="@L["InboundShipmentCreate.InvoiceUnitPrice"]" Style="width: 130px;">
                     <div class="lk-field--inline">
-                        <MudNumericField T="decimal?" Variant="Variant.Text" Culture="NumberCulture" Min="0m" Format="0.####" @bind-Value="context.UnitPrice" />
+                        <LkDecimalField T="decimal?" Variant="Variant.Text" Min="0m" Format="0.####" @bind-Value="context.UnitPrice" />
                     </div>
                 </MudTd>
                 <MudTd DataLabel="@L["Common.Ccy"]" Style="width: 76px;">
@@ -174,7 +174,7 @@
                 </MudTd>
                 <MudTd DataLabel="@L["Common.Amount"]" Style="width: 140px;">
                     <div class="lk-field--inline">
-                        <MudNumericField T="decimal" Variant="Variant.Text" Culture="NumberCulture" Min="0m" Format="0.00" Adornment="Adornment.End" AdornmentText="€" @bind-Value="context.Amount" />
+                        <LkDecimalField T="decimal" Variant="Variant.Text" Min="0m" Format="0.00" Adornment="Adornment.End" AdornmentText="€" @bind-Value="context.Amount" />
                     </div>
                 </MudTd>
                 <MudTd DataLabel="@L["Common.Ccy"]" Style="width: 76px;">

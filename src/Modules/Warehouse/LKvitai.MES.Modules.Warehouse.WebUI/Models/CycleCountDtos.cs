@@ -13,6 +13,9 @@ public record CycleCountLineDto
     public string? Reason { get; init; }
     public string? AdjustmentApprovedBy { get; init; }
     public DateTimeOffset? AdjustmentApprovedAt { get; init; }
+    public string? LocationCode { get; init; }
+    public string? ItemSku { get; init; }
+    public string? ItemName { get; init; }
 }
 
 public record CycleCountDto

@@ -58,6 +58,9 @@ public sealed class CycleCountsController : ControllerBase
         var cycleCounts = await _dbContext.CycleCounts
             .AsNoTracking()
             .Include(x => x.Lines)
+            .ThenInclude(x => x.Location)
+            .Include(x => x.Lines)
+            .ThenInclude(x => x.Item)
             .OrderByDescending(x => x.ScheduledDate)
             .ThenByDescending(x => x.CreatedAt)
             .ToListAsync(cancellationToken);
@@ -72,6 +75,9 @@ public sealed class CycleCountsController : ControllerBase
         var cycleCount = await _dbContext.CycleCounts
             .AsNoTracking()
             .Include(x => x.Lines)
+            .ThenInclude(x => x.Location)
+            .Include(x => x.Lines)
+            .ThenInclude(x => x.Item)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (cycleCount is null)
         {
@@ -111,6 +117,9 @@ public sealed class CycleCountsController : ControllerBase
         var cycleCount = await _dbContext.CycleCounts
             .AsNoTracking()
             .Include(x => x.Lines)
+            .ThenInclude(x => x.Location)
+            .Include(x => x.Lines)
+            .ThenInclude(x => x.Item)
             .FirstOrDefaultAsync(x => x.ScheduleCommandId == commandId, cancellationToken);
         if (cycleCount is null)
         {
@@ -381,6 +390,9 @@ public sealed class CycleCountsController : ControllerBase
         var cycleCount = await _dbContext.CycleCounts
             .AsNoTracking()
             .Include(x => x.Lines)
+            .ThenInclude(x => x.Location)
+            .Include(x => x.Lines)
+            .ThenInclude(x => x.Item)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (cycleCount is null)
         {
@@ -417,7 +429,10 @@ public sealed class CycleCountsController : ControllerBase
                 x.Status.ToString().ToUpperInvariant(),
                 x.Reason,
                 x.AdjustmentApprovedBy,
-                x.AdjustmentApprovedAt)).ToList());
+                x.AdjustmentApprovedAt,
+                x.Location?.Code,
+                x.Item?.InternalSKU,
+                x.Item?.Name)).ToList());
     }
 
     private async Task<Location?> ResolveLocationAsync(RecordCountRequest request, CancellationToken cancellationToken)
@@ -569,7 +584,10 @@ public sealed class CycleCountsController : ControllerBase
         string Status,
         string? Reason,
         string? AdjustmentApprovedBy = null,
-        DateTimeOffset? AdjustmentApprovedAt = null);
+        DateTimeOffset? AdjustmentApprovedAt = null,
+        string? LocationCode = null,
+        string? ItemSku = null,
+        string? ItemName = null);
 
     public sealed record CycleCountResponse(
         Guid Id,

@@ -29,12 +29,14 @@
 
             <div class="table-responsive">
                 <table class="table table-sm align-middle">
-                    <thead><tr><th>@L["Common.Item"]</th><th>@L["CycleCounts.Execute.Discrepancy"]</th><th>@L["Pricing.Cost"]</th><th>@L["Pricing.Sale"]</th><th>@L["Common.ValueCurrentCost"]</th></tr></thead>
+                    <thead><tr><th>@L["Common.Location"]</th><th>@L["Common.SKU"]</th><th>@L["Common.Item"]</th><th>@L["CycleCounts.Execute.Discrepancy"]</th><th>@L["Pricing.Cost"]</th><th>@L["Pricing.Sale"]</th><th>@L["Common.ValueCurrentCost"]</th></tr></thead>
                     <tbody>
                         @foreach (var line in _cycleCount.Lines)
                         {
-                            <tr>
-                                <td class="mono">@line.ItemId</td>
+                            <tr class="@(IsSelected(line) ? "table-active" : null)" role="button" @onclick="() => SelectLine(line)">
+                                <td class="mono">@(line.LocationCode ?? line.LocationId.ToString())</td>
+                                <td class="mono">@(line.ItemSku ?? line.ItemId.ToString())</td>
+                                <td>@line.ItemName</td>
                                 <td class="mono">@line.Delta.ToString("0.###")</td>
                                 <td class="mono">@Money.FormatUnit(_priceMap.Get(line.ItemId, null)?.EffectiveCost)</td>
                                 <td class="mono">@Money.Format(_priceMap.Get(line.ItemId, null)?.BasePrice)</td>
@@ -79,6 +81,22 @@
     private string _locationCode = string.Empty;
     private string _itemBarcode = string.Empty;
     private decimal _physicalQty;
+
+    private bool IsSelected(CycleCountLineDto line) =>
+        !string.IsNullOrWhiteSpace(line.LocationCode)
+        && string.Equals(line.LocationCode, _locationCode?.Trim(), StringComparison.OrdinalIgnoreCase)
+        && string.Equals(line.ItemSku, _itemBarcode?.Trim(), StringComparison.OrdinalIgnoreCase);
+
+    private void SelectLine(CycleCountLineDto line)
+    {
+        if (string.IsNullOrWhiteSpace(line.LocationCode) || string.IsNullOrWhiteSpace(line.ItemSku))
+        {
+            return;
+        }
+
+        _locationCode = line.LocationCode;
+        _itemBarcode = line.ItemSku;
+    }
 
     private int CountedLocations =>
         _cycleCount?.Lines

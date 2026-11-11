@@ -70,13 +70,8 @@
                             var line = _lines[i];
                             <tr>
                                 <td>
-                                    <select class="form-select" @bind="line.ItemId">
-                                        <option value="">@L["Common.SelectItem"]</option>
-                                        @foreach (var item in _items)
-                                        {
-                                            <option value="@item.Id">@item.InternalSKU - @item.Name</option>
-                                        }
-                                    </select>
+                                    <ItemSearchPicker ItemId="@line.ItemId"
+                                                      ItemSelected="@(item => OnLineItemSelectedAsync(line, item))" />
                                     <ItemPriceHint ItemId="@line.ItemId" />
                                 </td>
                                 <td>
@@ -150,11 +145,6 @@
         {
             _warehouseCode = (await StockApiClient.GetCurrentWarehouseAsync()).Code;
 
-            var items = await MasterDataAdminClient.GetItemsAsync(null, null, "Active", 1, 500);
-            _items.Clear();
-            _items.AddRange(items.Items);
-            _priceMap = await ItemPricesClient.GetMapAsync(_items.Select(x => ((int?)x.Id, (string?)x.InternalSKU)));
-
             var locations = await MasterDataAdminClient.GetLocationsAsync(null, "Active", true, 1, 500);
             _locations.Clear();
             _locations.AddRange(locations.Items);
@@ -168,6 +158,18 @@
         {
             _isLoading = false;
         }
+    }
+
+    private async Task OnLineItemSelectedAsync(TransferLineModel line, AdminItemDto? item)
+    {
+        line.ItemId = item?.Id;
+        if (item is not null && _items.All(x => x.Id != item.Id))
+        {
+            _items.Add(item);
+        }
+
+        // Prices are loaded only for the items actually picked.
+        _priceMap = await ItemPricesClient.GetMapAsync(_items.Select(x => ((int?)x.Id, (string?)x.InternalSKU)));
     }
 
     private void AddLine()

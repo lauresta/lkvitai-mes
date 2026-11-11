@@ -28,13 +28,8 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">@L["Common.Item"]</label>
-                        <select class="form-select" @bind="_createItemId">
-                            <option value="0">@L["Common.SelectItem"]</option>
-                            @foreach (var item in _items)
-                            {
-                                <option value="@item.Id">@item.InternalSKU - @item.Name</option>
-                            }
-                        </select>
+                        <ItemSearchPicker ItemId="@(_createItemId > 0 ? _createItemId : null)"
+                                          ItemSelected="OnCreateItemSelected" />
                         <ItemPriceHint ItemId="@(_createItemId > 0 ? _createItemId : null)" />
                     </div>
                     <div class="col-md-4">
@@ -131,7 +126,6 @@
 </div>
 
 @code {
-    private readonly List<AdminItemDto> _items = [];
     private readonly List<PickLocationSuggestionDto> _suggestions = [];
     private int? _suggestionItemId;
     private PriceMap _priceMap = PriceMap.Empty;
@@ -152,19 +146,9 @@
     private string? _completeLocationBarcode;
     private string? _completeNotes;
 
-    protected override async Task OnInitializedAsync()
+    private void OnCreateItemSelected(AdminItemDto? item)
     {
-        try
-        {
-            var items = await MasterDataAdminClient.GetItemsAsync(null, null, "Active", 1, 300);
-            _items.AddRange(items.Items.OrderBy(x => x.InternalSKU, StringComparer.OrdinalIgnoreCase));
-            _priceMap = await ItemPricesClient.GetMapAsync(_items.Select(x => ((int?)x.Id, (string?)x.InternalSKU)));
-        }
-        catch (ApiException ex)
-        {
-            _apiError = ex;
-            ToastService.ShowError(BuildErrorMessage(ex));
-        }
+        _createItemId = item?.Id ?? 0;
     }
 
     private async Task CreateTaskAsync()
@@ -210,6 +194,7 @@
         {
             var response = await PickingTasksClient.GetLocationSuggestionsAsync(taskId);
             _suggestionItemId = response.ItemId;
+            _priceMap = await ItemPricesClient.GetMapAsync([((int?)response.ItemId, (string?)null)]);
             _suggestions.Clear();
             _suggestions.AddRange(response.Locations);
         }
