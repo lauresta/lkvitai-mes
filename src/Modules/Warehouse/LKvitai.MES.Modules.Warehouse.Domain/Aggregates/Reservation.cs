@@ -14,6 +14,7 @@ public class Reservation
     public string Id { get; set; } = string.Empty;
 
     public Guid ReservationId { get; private set; }
+    public string Purpose { get; private set; } = string.Empty;
     public ReservationStatus Status { get; private set; }
     public ReservationLockType LockType { get; private set; }
     public int Priority { get; private set; }
@@ -26,6 +27,7 @@ public class Reservation
     public void Apply(ReservationCreatedEvent e)
     {
         ReservationId = e.ReservationId;
+        Purpose = e.Purpose;
         Status = ReservationStatus.PENDING;
         Priority = e.Priority;
         Lines = e.RequestedLines.Select(l => new ReservationLine
@@ -62,7 +64,7 @@ public class Reservation
 
     public void Apply(ReservationConsumedEvent e)
     {
-        Status = ReservationStatus.CONSUMED;
+        if (e.Completed) Status = ReservationStatus.CONSUMED;
     }
 
     public void Apply(ReservationCancelledEvent e)
@@ -85,6 +87,9 @@ public class Reservation
     /// </summary>
     public void ValidateCanStartPicking()
     {
+        if (Purpose == "SALES_ORDER")
+            throw new DomainException(DomainErrorCodes.ValidationError, "Sales reservations are consumed through order pick tasks.");
+
         if (Status != ReservationStatus.ALLOCATED)
             throw new DomainException(
                 DomainErrorCodes.ReservationNotAllocated,

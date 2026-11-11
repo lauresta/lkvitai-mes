@@ -339,6 +339,14 @@ public sealed class SalesOrder : AuditableEntity
         return Result.Ok();
     }
 
+    public Result WaitForStock()
+    {
+        if (Status is not (SalesOrderStatus.Draft or SalesOrderStatus.PendingApproval or SalesOrderStatus.PendingStock))
+            return Result.Fail(DomainErrorCodes.ValidationError, "Only unallocated orders can wait for stock.");
+        Status = SalesOrderStatus.PendingStock;
+        return Result.Ok();
+    }
+
     public Result Allocate(Guid reservationId)
     {
         if (Status is not (SalesOrderStatus.Draft or SalesOrderStatus.PendingStock))

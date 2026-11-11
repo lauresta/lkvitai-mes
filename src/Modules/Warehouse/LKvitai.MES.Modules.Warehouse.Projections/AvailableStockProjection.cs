@@ -61,6 +61,16 @@ public class AvailableStockProjection : MultiStreamProjection<AvailableStockView
         return current;
     }
 
+    public AvailableStockView Apply(StockAllocatedEvent evt, AvailableStockView current)
+    {
+        if (evt.SalesOrderReservation)
+            current.SalesReservedQty += evt.Allocations.Where(x => current.Id ==
+                AvailableStockView.ComputeId(x.WarehouseId, x.Location, x.SKU)).Sum(x => x.Quantity);
+        current.RecomputeAvailable();
+        current.LastUpdated = evt.Timestamp;
+        return current;
+    }
+
     public AvailableStockView Apply(ReservationConsumedEvent evt, AvailableStockView current)
     {
         var matchingLine = evt.ReleasedHardLockLines.FirstOrDefault(l =>
@@ -71,6 +81,9 @@ public class AvailableStockProjection : MultiStreamProjection<AvailableStockView
             current.HardLockedQty = Math.Max(0m, current.HardLockedQty - matchingLine.HardLockedQty);
         }
 
+        current.SalesReservedQty = Math.Max(0, current.SalesReservedQty - evt.ReleasedSoftLines
+            .Where(x => current.Id == AvailableStockView.ComputeId(x.WarehouseId, x.Location, x.SKU))
+            .Sum(x => x.Quantity));
         current.RecomputeAvailable();
         current.LastUpdated = evt.Timestamp;
         return current;
@@ -86,6 +99,9 @@ public class AvailableStockProjection : MultiStreamProjection<AvailableStockView
             current.HardLockedQty = Math.Max(0m, current.HardLockedQty - matchingLine.HardLockedQty);
         }
 
+        current.SalesReservedQty = Math.Max(0, current.SalesReservedQty - evt.ReleasedSoftLines
+            .Where(x => current.Id == AvailableStockView.ComputeId(x.WarehouseId, x.Location, x.SKU))
+            .Sum(x => x.Quantity));
         current.RecomputeAvailable();
         current.LastUpdated = evt.Timestamp;
         return current;
@@ -196,6 +212,10 @@ public class AvailableStockGrouper : IAggregateGrouper<string>
                 case StockMovedEvent stockMoved:
                     GroupStockMoved(evt, stockMoved, grouping);
                     break;
+                case StockAllocatedEvent allocated when allocated.SalesOrderReservation:
+                    foreach (var key in allocated.Allocations.Select(x => AvailableStockView.ComputeId(x.WarehouseId, x.Location, x.SKU)).Distinct())
+                        grouping.AddEvent(key, evt);
+                    break;
                 case PickingStartedEvent pickingStarted:
                     GroupPickingStarted(evt, pickingStarted, grouping);
                     break;
@@ -281,6 +301,8 @@ public class AvailableStockGrouper : IAggregateGrouper<string>
 
     private static void GroupReservationConsumed(IEvent evt, ReservationConsumedEvent consumed, ITenantSliceGroup<string> grouping)
     {
+        foreach (var key in consumed.ReleasedSoftLines.Select(x => AvailableStockView.ComputeId(x.WarehouseId, x.Location, x.SKU)).Distinct())
+            grouping.AddEvent(key, evt);
         foreach (var line in consumed.ReleasedHardLockLines)
         {
             var key = AvailableStockView.ComputeId(line.WarehouseId, line.Location, line.SKU);
@@ -290,6 +312,8 @@ public class AvailableStockGrouper : IAggregateGrouper<string>
 
     private static void GroupReservationCancelled(IEvent evt, ReservationCancelledEvent cancelled, ITenantSliceGroup<string> grouping)
     {
+        foreach (var key in cancelled.ReleasedSoftLines.Select(x => AvailableStockView.ComputeId(x.WarehouseId, x.Location, x.SKU)).Distinct())
+            grouping.AddEvent(key, evt);
         foreach (var line in cancelled.ReleasedHardLockLines)
         {
             var key = AvailableStockView.ComputeId(line.WarehouseId, line.Location, line.SKU);
@@ -368,6 +392,9 @@ public static class AvailableStockAggregation
             current.HardLockedQty = Math.Max(0m, current.HardLockedQty - matchingLine.HardLockedQty);
         }
 
+        current.SalesReservedQty = Math.Max(0, current.SalesReservedQty - evt.ReleasedSoftLines
+            .Where(x => current.Id == AvailableStockView.ComputeId(x.WarehouseId, x.Location, x.SKU))
+            .Sum(x => x.Quantity));
         current.RecomputeAvailable();
         current.LastUpdated = evt.Timestamp;
         return current;
@@ -383,6 +410,9 @@ public static class AvailableStockAggregation
             current.HardLockedQty = Math.Max(0m, current.HardLockedQty - matchingLine.HardLockedQty);
         }
 
+        current.SalesReservedQty = Math.Max(0, current.SalesReservedQty - evt.ReleasedSoftLines
+            .Where(x => current.Id == AvailableStockView.ComputeId(x.WarehouseId, x.Location, x.SKU))
+            .Sum(x => x.Quantity));
         current.RecomputeAvailable();
         current.LastUpdated = evt.Timestamp;
         return current;

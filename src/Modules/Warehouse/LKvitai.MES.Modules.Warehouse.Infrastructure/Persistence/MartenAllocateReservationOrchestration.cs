@@ -5,6 +5,9 @@ using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 using LKvitai.MES.BuildingBlocks.SharedKernel;
 using Marten;
+using Microsoft.EntityFrameworkCore.Storage;
+using Npgsql;
+using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using Marten.Exceptions;
 using Microsoft.Extensions.Logging;
 
@@ -21,14 +24,17 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 public class MartenAllocateReservationOrchestration : IAllocateReservationOrchestration
 {
     private readonly IDocumentStore _store;
+    private readonly WarehouseDbContext? _db;
     private readonly ILogger<MartenAllocateReservationOrchestration> _logger;
     private const int MaxAttempts = 3;
 
     public MartenAllocateReservationOrchestration(
         IDocumentStore store,
-        ILogger<MartenAllocateReservationOrchestration> logger)
+        ILogger<MartenAllocateReservationOrchestration> logger,
+        WarehouseDbContext? db = null)
     {
         _store = store;
+        _db = db;
         _logger = logger;
     }
 
@@ -37,7 +43,9 @@ public class MartenAllocateReservationOrchestration : IAllocateReservationOrches
     {
         for (int attempt = 1; attempt <= MaxAttempts; attempt++)
         {
-            await using var session = _store.LightweightSession();
+            await using var session = _db?.Database.CurrentTransaction is { } transaction
+                ? _store.LightweightSession(Marten.Services.SessionOptions.ForTransaction((NpgsqlTransaction)transaction.GetDbTransaction(), false))
+                : _store.LightweightSession();
 
             try
             {
@@ -55,6 +63,9 @@ public class MartenAllocateReservationOrchestration : IAllocateReservationOrches
                 {
                     return Result.Fail(DomainErrorCodes.ReservationNotPending);
                 }
+
+                if (reservation.Purpose == SalesReservationBalance.Purpose)
+                    return await AllocateSalesAsync(session, reservation, warehouseId, ct);
 
                 // ── Step 2: Query AvailableStock for each line ─────────────────
                 var allocations = new List<AllocationDto>();
@@ -156,4 +167,52 @@ public class MartenAllocateReservationOrchestration : IAllocateReservationOrches
 
         return Result.Fail(DomainErrorCodes.AllocationFailed);
     }
+    private async Task<Result> AllocateSalesAsync(IDocumentSession session, Reservation reservation, string warehouseId, CancellationToken ct)
+    {
+        if (_db?.Database.CurrentTransaction is not { } transaction)
+            throw new InvalidOperationException("Sales allocation requires the order transaction.");
+        var npgTransaction = (NpgsqlTransaction)transaction.GetDbTransaction();
+        // Serialize competing sales reservations per SKU until their transaction commits.
+        foreach (var sku in reservation.Lines.Select(x => x.SKU.ToUpperInvariant()).Distinct().OrderBy(x => x))
+        {
+            await using var command = new NpgsqlCommand("SELECT pg_advisory_xact_lock(hashtextextended(@key, 0))", npgTransaction.Connection, npgTransaction);
+            command.Parameters.AddWithValue("key", $"warehouse-sales:{warehouseId}:{sku}");
+            await command.ExecuteNonQueryAsync(ct);
+        }
+        var locations = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(_db.Locations, ct);
+        var physical = locations.Where(PhysicalLocation.IsPhysical).Select(x => x.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var existing = await session.Events.QueryRawEventDataOnly<StockAllocatedEvent>()
+            .Where(x => x.SalesOrderReservation).ToListAsync(ct);
+        var outstanding = new List<AllocationDto>();
+        foreach (var id in existing.Select(x => x.ReservationId).Distinct())
+            outstanding.AddRange(await SalesReservationBalance.LoadAsync(session, id, ct));
+        var allocations = new List<AllocationDto>();
+        foreach (var line in reservation.Lines)
+        {
+            var stocks = await session.Query<AvailableStockView>().Where(x => x.WarehouseId == warehouseId && x.SKU == line.SKU)
+                .ToListAsync(ct);
+            var needed = line.RequestedQuantity;
+            foreach (var stock in stocks.Where(x => physical.Contains(x.Location)).OrderBy(x => x.Location, StringComparer.Ordinal))
+            {
+                var reserved = outstanding.Concat(allocations).Where(x => x.WarehouseId == warehouseId && x.Location == stock.Location &&
+                    string.Equals(x.SKU, line.SKU, StringComparison.OrdinalIgnoreCase)).Sum(x => x.Quantity);
+                var available = Math.Max(0, stock.OnHandQty - stock.HardLockedQty - stock.ReservedQty - reserved);
+                var take = Math.Min(needed, available);
+                if (take <= 0) continue;
+                allocations.Add(new AllocationDto { SKU = line.SKU, WarehouseId = warehouseId, Location = stock.Location, Quantity = take });
+                needed -= take;
+                if (needed == 0) break;
+            }
+            if (needed > 0) return Result.Fail(DomainErrorCodes.InsufficientAvailableStock);
+        }
+        var stream = Reservation.StreamIdFor(reservation.ReservationId);
+        var state = await session.Events.FetchStreamStateAsync(stream, ct);
+        session.Events.Append(stream, state!.Version + 1, new StockAllocatedEvent
+        {
+            ReservationId = reservation.ReservationId, SalesOrderReservation = true, LockType = "SOFT", Allocations = allocations
+        });
+        await session.SaveChangesAsync(ct);
+        return Result.Ok();
+    }
+
 }

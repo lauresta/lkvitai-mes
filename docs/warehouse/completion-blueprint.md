@@ -212,6 +212,15 @@ Allocate (`SalesOrderCommandHandlers.cs`, `AllocateSalesOrderCommandHandler`) с
   UI на test: `RM-BOLT-M8` / `R3-C6-L1-B1` изменился 0 → 12 после утверждения, повтор не добавил события,
   второй QA-пересчёт вернул 12 → 0. Причины `QA-C1-approval-increase` / `QA-C1-approval-restore`.
 
+- C2: PR #318 влит, main `9fa61e35`, CI и Deploy to Test #42995571933 зелёные.
+  793 unit и 8 PostgreSQL/Marten-тестов прошли. UI на test: отбор 2 + остаток 3, HU содержит 5,
+  dispatch перевёл 5 из SHIPPING в CUSTOMER. Второй заказ после отбора 2 отменён: RECEIVING +2,
+  SHIPPING 0. QA-добавки убраны обычными корректировками, исходная ячейка вернулась к 3.
+  Успешный прогон без ERROR/exception в API и WebUI; сценарий и результаты локально `/tmp/warehouse-c2-smoke`.
+
+- C3: реализация SOFT-резерва готова к CI/test: транзакция с заказом, физические ячейки,
+  сериализация конкурирующих Allocate, частичное потребление и отмена. 12 PostgreSQL/Marten-тестов зелёные.
+
 ### Отклонения
 
 - C0: `OutboundOrderSummary` не содержал `SalesOrderId`; добавлено поле в существующий ответ API и WebUI DTO,
@@ -227,11 +236,17 @@ Allocate (`SalesOrderCommandHandlers.cs`, `AllocateSalesOrderCommandHandler`) с
   В этот PR включено исправление механики проверки C0: ожидание привязки обработчиков Blazor и готовности 2D/3D,
   без `network idle` и фиксированных пауз. Исходный прогон был красным из-за ввода до гидратации.
 
+- C2 → C3: Release не создаёт PickTask, хотя контракт раздела 2 этого требует. C2 проверен с заданиями,
+  созданными обычной формой; создание заданий при Release добавляется в C3 в существующем SalesOrderCommandHandlers.
+
+- C3: старый дополнительный AllocationAndPickStockIntegrationTests не поднимает mt_streams;
+  диагностический запуск также выявил неверную expected-version в setup deferred-теста.
+  Производственный HARD-путь не изменялся; эти тестовые дефекты не исправлялись в рамках C3.
+
 ### Осталось
 
 - C0: штатного способа применить исправленный регистр при несовпадающем checksum нет;
   остаётся Qty 1 / Value 10 вместо Qty 3 / Value 30 для `000-000-101`. Защита не обходилась, SQL-записей не было.
-- C2: код и проверки готовы локально: 793 unit и 8 PostgreSQL/Marten-тестов прошли; ожидаются CI, deploy и UI-проверка.
-- C3–C7: выполнять последовательно.
+- C3–C7: выполнять последовательно; C3 начат от main `9fa61e35`.
 - Временный QA-вход: только `X-Warehouse-QA-Key`, срок сессии и proof не более четырёх часов;
   ключ, настройки и временный код удалить после проверок.

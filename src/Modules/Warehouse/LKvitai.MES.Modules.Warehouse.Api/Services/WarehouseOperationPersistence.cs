@@ -13,13 +13,14 @@ internal static class WarehouseOperationPersistence
     // Warehouse EF state and Marten are configured with the same WarehouseDb connection.
     public static Task CommitAsync(WarehouseDbContext db, IDocumentStore store,
         string operationStream, object operationEvent, IReadOnlyList<StockMovedEvent> movements,
-        CancellationToken cancellationToken, Action? afterEfSave = null) => db.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
+        CancellationToken cancellationToken, Action? afterEfSave = null, Func<IDocumentSession, Task>? appendRelated = null) => db.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
     {
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         await using var session = store.LightweightSession(
             Marten.Services.SessionOptions.ForTransaction((NpgsqlTransaction)transaction.GetDbTransaction(), false));
         await db.SaveChangesAsync(acceptAllChangesOnSuccess: false, cancellationToken);
         afterEfSave?.Invoke();
+        if (appendRelated is not null) await appendRelated(session);
         // A unique operation stream prevents concurrent requests from posting the same movement twice.
         session.Events.StartStream(operationStream, operationEvent);
         foreach (var movement in movements)

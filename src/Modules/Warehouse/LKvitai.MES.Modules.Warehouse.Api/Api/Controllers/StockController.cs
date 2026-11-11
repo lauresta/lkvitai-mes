@@ -167,7 +167,7 @@ public sealed class StockController : ControllerBase
                 row.LotNumber,
                 row.ExpiryDate,
                 row.OnHandQty,
-                includeReserved ? row.ReservedQty : 0m,
+                includeReserved ? row.ReservedQty + row.SalesReservedQty : 0m,
                 row.AvailableQty,
                 row.BaseUoM ?? item?.BaseUoM ?? string.Empty,
                 row.LastUpdated,
