@@ -92,7 +92,7 @@
                                 <td class="text-end is-money is-num">@string.Join(" / ", row.Lines.Select(x => Money.FormatUnit(_priceMap.Get(x.ItemId, null)?.EffectiveCost)))</td>
                                 <td class="text-end is-money is-num">@string.Join(" / ", row.Lines.Select(x => Money.Format(_priceMap.Get(x.ItemId, null)?.BasePrice)))</td>
                                 <td class="text-end is-money is-num">@Money.Format(RmaValue(row)) <small>@L["Pricing.WithoutCost", row.Lines.Count(x => !_priceMap.Value(x.Qty, x.ItemId, null).HasValue)]</small></td>
-                                <td>@(row.CreditAmount?.ToString("0.00") ?? "-")</td>
+                                <td class="text-end is-money is-num">@Money.Format(row.CreditAmount)</td>
                                 <td>@(row.UpdatedBy ?? row.CreatedBy)</td>
                                 <td class="d-flex gap-1">
                                     @if (row.Status == "PendingReceipt")
