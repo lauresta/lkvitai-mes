@@ -28,7 +28,7 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Projections;
 /// [HOTFIX H / MED-01] Uses field-based checksum instead of jsonb::text to avoid
 /// nondeterminism from JSON key ordering and whitespace differences.
 /// </summary>
-public class ProjectionRebuildService : IProjectionRebuildService
+public partial class ProjectionRebuildService : IProjectionRebuildService, IOnHandValueRebuildService
 {
     private static readonly Meter RebuildMeter = new("LKvitai.MES.Modules.Warehouse.Projections.Rebuild");
     private static readonly Histogram<double> RebuildDurationSeconds =
@@ -128,6 +128,8 @@ public class ProjectionRebuildService : IProjectionRebuildService
 
             await using var writeConnection = new NpgsqlConnection(connectionString);
             await writeConnection.OpenAsync(cancellationToken);
+            await using var onHandLock = projectionName == "OnHandValue"
+                ? await AcquireOnHandLockAsync(writeConnection, cancellationToken) : null;
 
             var tableName = projectionName switch
             {
