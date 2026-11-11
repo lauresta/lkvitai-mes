@@ -166,7 +166,7 @@ public sealed class AgnumExportOrchestrator : IAgnumExportOrchestrator
                           historyQuery,
                           x => x.Id == historyId.Value,
                           cancellationToken)
-                      ?? CreateHistory(config.Id, trigger);
+                      ?? CreateHistory(config.Id, trigger, historyId);
         }
         else
         {
@@ -588,12 +588,12 @@ public sealed class AgnumExportOrchestrator : IAgnumExportOrchestrator
                     x.OnHandValue)).ToList()));
     }
 
-    private static AgnumExportHistory CreateHistory(Guid configId, string trigger)
+    private static AgnumExportHistory CreateHistory(Guid configId, string trigger, Guid? historyId = null)
     {
         var exportNumber = $"AGX-{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}";
         return new AgnumExportHistory
         {
-            Id = Guid.NewGuid(),
+            Id = historyId ?? Guid.NewGuid(),
             ExportConfigId = configId,
             ExportNumber = exportNumber,
             ExportedAt = DateTimeOffset.UtcNow,
@@ -669,7 +669,7 @@ public sealed class AgnumExportRecurringJob
         var result = await _orchestrator.ExecuteAsync(
             trigger,
             retryAttempt,
-            historyId,
+            correlationId,
             CancellationToken.None);
 
         if (result.IsSuccess)
