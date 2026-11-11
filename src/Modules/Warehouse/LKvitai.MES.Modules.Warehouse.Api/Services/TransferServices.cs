@@ -438,33 +438,16 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
             {
                 TransferId = transfer.Id, TransferNumber = transfer.TransferNumber,
                 InTransitLocationCode = inTransitLocation.Code, LineCount = transfer.Lines.Count,
-                ExecutedAt = transfer.ExecutedAt!.Value.UtcDateTime
+                ExecutedAt = transfer.ExecutedAt.GetValueOrDefault().UtcDateTime
             };
-            var movements = new List<(string Warehouse, StockMovedEvent Event)>();
-            foreach (var line in transfer.Lines)
-            {
-                var first = new StockMovedEvent
-                {
-                    MovementId = Guid.NewGuid(), SKU = line.Item!.InternalSKU, Quantity = line.Qty,
-                    FromLocation = line.FromLocation!.Code, ToLocation = inTransitLocation.Code,
-                    MovementType = MovementType.Transfer, OperatorId = ResolveOperatorId(_currentUserService.GetCurrentUserId()),
-                    Reason = $"Transfer {transfer.TransferNumber}"
-                };
-                var second = new StockMovedEvent
-                {
-                    MovementId = Guid.NewGuid(), SKU = line.Item.InternalSKU, Quantity = line.Qty,
-                    FromLocation = inTransitLocation.Code, ToLocation = line.ToLocation!.Code,
-                    MovementType = MovementType.Transfer, OperatorId = first.OperatorId, Reason = first.Reason
-                };
-                movements.Add((transfer.FromWarehouse, first));
-                movements.Add((transfer.ToWarehouse, second));
-            }
+            var movements = BuildMovements(transfer, inTransitLocation.Code,
+                ResolveOperatorId(_currentUserService.GetCurrentUserId()));
             var completeResult = transfer.Complete(DateTimeOffset.UtcNow);
             if (!completeResult.IsSuccess) return completeResult;
             var completed = new TransferCompletedEvent
             {
                 TransferId = transfer.Id, TransferNumber = transfer.TransferNumber,
-                CompletedAt = transfer.CompletedAt!.Value.UtcDateTime
+                CompletedAt = transfer.CompletedAt.GetValueOrDefault().UtcDateTime
             };
             // One operation stream also rejects simultaneous executions of the same transfer.
             session.Events.StartStream($"transfer-execution:{transfer.Id:N}", executed, completed);
@@ -496,6 +479,25 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
             return Result.Ok();
         });
     }
+
+    private static (string Warehouse, StockMovedEvent Event)[] BuildMovements(Transfer transfer, string transit, Guid operatorId)
+        => transfer.Lines.SelectMany(line => new[]
+        {
+            (transfer.FromWarehouse, new StockMovedEvent
+            {
+                MovementId = Guid.NewGuid(), SKU = line.Item!.InternalSKU, Quantity = line.Qty,
+                FromLocation = line.FromLocation!.Code, ToLocation = transit,
+                MovementType = MovementType.Transfer, OperatorId = operatorId,
+                Reason = $"Transfer {transfer.TransferNumber}"
+            }),
+            (transfer.ToWarehouse, new StockMovedEvent
+            {
+                MovementId = Guid.NewGuid(), SKU = line.Item!.InternalSKU, Quantity = line.Qty,
+                FromLocation = transit, ToLocation = line.ToLocation!.Code,
+                MovementType = MovementType.Transfer, OperatorId = operatorId,
+                Reason = $"Transfer {transfer.TransferNumber}"
+            })
+        }).ToArray();
 
     private async Task<Location> EnsureInTransitLocationAsync(Transfer transfer, CancellationToken cancellationToken)
     {
