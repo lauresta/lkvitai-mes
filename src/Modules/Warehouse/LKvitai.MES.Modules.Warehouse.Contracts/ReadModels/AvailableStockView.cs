@@ -37,8 +37,10 @@ public class AvailableStockView
     /// </summary>
     public decimal ReservedQty { get; set; }
 
+    public decimal SalesReservedQty { get; set; }
+
     /// <summary>
-    /// Available quantity = max(0, OnHandQty - HardLockedQty - ReservedQty).
+    /// Available quantity = max(0, OnHandQty - HardLockedQty - ReservedQty - SalesReservedQty).
     /// </summary>
     public decimal AvailableQty { get; set; }
 
@@ -46,7 +48,7 @@ public class AvailableStockView
 
     public void RecomputeAvailable()
     {
-        AvailableQty = Math.Max(0m, OnHandQty - HardLockedQty - ReservedQty);
+        AvailableQty = Math.Max(0m, OnHandQty - HardLockedQty - ReservedQty - SalesReservedQty);
     }
 
     public static string ComputeId(string warehouseId, string location, string sku)

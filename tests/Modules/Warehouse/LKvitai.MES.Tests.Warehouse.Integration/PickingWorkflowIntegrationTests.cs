@@ -19,7 +19,7 @@ using Xunit;
 
 namespace LKvitai.MES.Tests.Warehouse.Integration;
 
-public class PickingWorkflowIntegrationTests : IAsyncLifetime
+public partial class PickingWorkflowIntegrationTests : IAsyncLifetime
 {
     private PostgreSqlContainer? _postgres;
     private DbContextOptions<WarehouseDbContext>? _dbOptions;

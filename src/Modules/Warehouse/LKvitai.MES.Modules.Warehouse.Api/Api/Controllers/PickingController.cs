@@ -122,6 +122,23 @@ public sealed class PickingController : ControllerBase
             .ToListAsync(cancellationToken);
 
         await using var querySession = _documentStore.QuerySession();
+        // A sales pick must still offer its own reserved locations when general availability is zero.
+        var outbound = await _dbContext.OutboundOrders.AsNoTracking().Include(x => x.SalesOrder)
+            .FirstOrDefaultAsync(x => x.Id.ToString() == task.OrderId || x.OrderNumber == task.OrderId, cancellationToken);
+        if (outbound?.SalesOrder?.ReservationId is { } reservationId)
+        {
+            var own = await SalesReservationBalance.LoadAsync(querySession, reservationId, cancellationToken);
+            if (own.Count > 0)
+            {
+                var locations = await _dbContext.Locations.AsNoTracking().ToListAsync(cancellationToken);
+                var physical = locations.Where(PhysicalLocation.IsPhysical).Select(x => x.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var reserved = own.Where(x => x.WarehouseId == DefaultWarehouseId &&
+                    string.Equals(x.SKU, item.InternalSKU, StringComparison.OrdinalIgnoreCase) && physical.Contains(x.Location))
+                    .GroupBy(x => x.Location).OrderBy(x => x.Key).Take(5)
+                    .Select(x => new PickLocationSuggestion(x.Key, x.Sum(y => y.Quantity), null, null)).ToList();
+                return Ok(new PickLocationSuggestionResponse(task.TaskId, item.Id, item.InternalSKU, reserved));
+            }
+        }
         var stock = querySession.Query<AvailableStockView>()
             .Where(x => x.WarehouseId == DefaultWarehouseId && x.SKU == item.InternalSKU && x.AvailableQty > 0m &&
                         !virtualLocationCodes.Contains(x.Location));
@@ -263,7 +280,34 @@ public sealed class PickingController : ControllerBase
             x => x.AvailableQty,
             cancellationToken);
 
-        if (availableQty < request.PickedQty)
+        string? reservationStream = null;
+        long reservationVersion = 0;
+        ReservationConsumedEvent? consumed = null;
+        decimal ownReserved = 0;
+        if (outboundOrder?.SalesOrder?.ReservationId is { } reservationId)
+        {
+            var stream = LKvitai.MES.Modules.Warehouse.Domain.Aggregates.Reservation.StreamIdFor(reservationId);
+            var events = await querySession.Events.FetchStreamAsync(stream, token: cancellationToken);
+            if (events.Any(x => x.Data is ReservationCreatedEvent { Purpose: SalesReservationBalance.Purpose }))
+            {
+                var outstanding = SalesReservationBalance.Remaining(events.Select(x => x.Data));
+                ownReserved = outstanding.Where(x => x.WarehouseId == DefaultWarehouseId && x.Location == fromLocation.Code &&
+                    string.Equals(x.SKU, item.InternalSKU, StringComparison.OrdinalIgnoreCase)).Sum(x => x.Quantity);
+                if (ownReserved < request.PickedQty)
+                    return UnprocessableFailure("Pick from a location reserved for this order, within its remaining quantity.");
+                reservationStream = stream;
+                reservationVersion = events.Last().Version;
+                consumed = new ReservationConsumedEvent
+                {
+                    ReservationId = reservationId, ActualQuantity = request.PickedQty,
+                    Completed = outstanding.Sum(x => x.Quantity) == request.PickedQty,
+                    ReleasedSoftLines = [new AllocationDto { WarehouseId = DefaultWarehouseId, Location = fromLocation.Code,
+                        SKU = item.InternalSKU, Quantity = request.PickedQty }]
+                };
+            }
+        }
+
+        if (availableQty + ownReserved < request.PickedQty)
         {
             return UnprocessableFailure(
                 $"Available quantity at location '{fromLocation.Code}' is {availableQty}. Cannot pick {request.PickedQty}.");
@@ -356,7 +400,11 @@ public sealed class PickingController : ControllerBase
         }
 
         await LKvitai.MES.Modules.Warehouse.Api.Services.WarehouseOperationPersistence.CommitAsync(
-            _dbContext, _documentStore, $"pick-task:{task.TaskId:N}", evt, [], cancellationToken);
+            _dbContext, _documentStore, $"pick-task:{task.TaskId:N}", evt, [], cancellationToken, appendRelated: session =>
+            {
+                if (consumed is not null) session.Events.Append(reservationStream!, reservationVersion + 1, consumed);
+                return Task.CompletedTask;
+            });
 
         return Ok(new CompletePickTaskResponse(
             task.TaskId,

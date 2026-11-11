@@ -141,16 +141,16 @@ public sealed class SubmitSalesOrderCommandHandler : IRequestHandler<SubmitSales
 {
     private readonly WarehouseDbContext _dbContext;
     private readonly IEventBus _eventBus;
-    private readonly IDocumentStore _documentStore;
+    private readonly SalesOrderReservationService _reservations;
 
     public SubmitSalesOrderCommandHandler(
         WarehouseDbContext dbContext,
         IEventBus eventBus,
-        IDocumentStore documentStore)
+        SalesOrderReservationService reservations)
     {
         _dbContext = dbContext;
         _eventBus = eventBus;
-        _documentStore = documentStore;
+        _reservations = reservations;
     }
 
     public async Task<Result> Handle(SubmitSalesOrderCommand request, CancellationToken cancellationToken)
@@ -170,39 +170,9 @@ public sealed class SubmitSalesOrderCommandHandler : IRequestHandler<SubmitSales
                                order.TotalAmount > order.Customer.CreditLimit.Value;
 
         if (!requiresApproval)
-        {
-            var stockValidationResult = await SalesOrderStockValidation.EnsureSufficientAvailableStockAsync(
-                order,
-                _documentStore,
-                cancellationToken);
-            if (!stockValidationResult.IsSuccess)
-            {
-                return stockValidationResult;
-            }
-        }
-
-        var submitResult = order.Submit(requiresApproval);
-        if (!submitResult.IsSuccess)
-        {
-            return submitResult;
-        }
-
-        if (order.Status == SalesOrderStatus.Allocated)
-        {
-            var reservationResult = order.AssignReservation(Guid.NewGuid());
-            if (!reservationResult.IsSuccess)
-            {
-                return reservationResult;
-            }
-
-            await _eventBus.PublishAsync(new SalesOrderAllocatedEvent
-            {
-                Id = order.Id,
-                ReservationId = order.ReservationId!.Value,
-                AllocatedAt = order.AllocatedAt?.UtcDateTime ?? DateTime.UtcNow
-            }, cancellationToken);
-        }
-
+            return await _reservations.AllocateAsync(order, () => order.Submit(false), cancellationToken);
+        var submitted = order.Submit(true);
+        if (!submitted.IsSuccess) return submitted;
         await _dbContext.SaveChangesAsync(cancellationToken);
         return Result.Ok();
     }
@@ -212,16 +182,16 @@ public sealed class ApproveSalesOrderCommandHandler : IRequestHandler<ApproveSal
 {
     private readonly WarehouseDbContext _dbContext;
     private readonly IEventBus _eventBus;
-    private readonly IDocumentStore _documentStore;
+    private readonly SalesOrderReservationService _reservations;
 
     public ApproveSalesOrderCommandHandler(
         WarehouseDbContext dbContext,
         IEventBus eventBus,
-        IDocumentStore documentStore)
+        SalesOrderReservationService reservations)
     {
         _dbContext = dbContext;
         _eventBus = eventBus;
-        _documentStore = documentStore;
+        _reservations = reservations;
     }
 
     public async Task<Result> Handle(ApproveSalesOrderCommand request, CancellationToken cancellationToken)
@@ -236,37 +206,7 @@ public sealed class ApproveSalesOrderCommandHandler : IRequestHandler<ApproveSal
             return Result.Fail(DomainErrorCodes.NotFound, "Sales order not found.");
         }
 
-        var stockValidationResult = await SalesOrderStockValidation.EnsureSufficientAvailableStockAsync(
-            order,
-            _documentStore,
-            cancellationToken);
-        if (!stockValidationResult.IsSuccess)
-        {
-            return stockValidationResult;
-        }
-
-        var approveResult = order.Approve();
-        if (!approveResult.IsSuccess)
-        {
-            return approveResult;
-        }
-
-        var reservationResult = order.AssignReservation(Guid.NewGuid());
-        if (!reservationResult.IsSuccess)
-        {
-            return reservationResult;
-        }
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        await _eventBus.PublishAsync(new SalesOrderAllocatedEvent
-        {
-            Id = order.Id,
-            ReservationId = order.ReservationId!.Value,
-            AllocatedAt = order.AllocatedAt?.UtcDateTime ?? DateTime.UtcNow
-        }, cancellationToken);
-
-        return Result.Ok();
+        return await _reservations.AllocateAsync(order, order.Approve, cancellationToken);
     }
 }
 
@@ -274,16 +214,16 @@ public sealed class AllocateSalesOrderCommandHandler : IRequestHandler<AllocateS
 {
     private readonly WarehouseDbContext _dbContext;
     private readonly IEventBus _eventBus;
-    private readonly IDocumentStore _documentStore;
+    private readonly SalesOrderReservationService _reservations;
 
     public AllocateSalesOrderCommandHandler(
         WarehouseDbContext dbContext,
         IEventBus eventBus,
-        IDocumentStore documentStore)
+        SalesOrderReservationService reservations)
     {
         _dbContext = dbContext;
         _eventBus = eventBus;
-        _documentStore = documentStore;
+        _reservations = reservations;
     }
 
     public async Task<Result> Handle(AllocateSalesOrderCommand request, CancellationToken cancellationToken)
@@ -298,31 +238,7 @@ public sealed class AllocateSalesOrderCommandHandler : IRequestHandler<AllocateS
             return Result.Fail(DomainErrorCodes.NotFound, "Sales order not found.");
         }
 
-        var stockValidationResult = await SalesOrderStockValidation.EnsureSufficientAvailableStockAsync(
-            order,
-            _documentStore,
-            cancellationToken);
-        if (!stockValidationResult.IsSuccess)
-        {
-            return stockValidationResult;
-        }
-
-        var allocationResult = order.Allocate(Guid.NewGuid());
-        if (!allocationResult.IsSuccess)
-        {
-            return allocationResult;
-        }
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        await _eventBus.PublishAsync(new SalesOrderAllocatedEvent
-        {
-            Id = order.Id,
-            ReservationId = order.ReservationId!.Value,
-            AllocatedAt = order.AllocatedAt?.UtcDateTime ?? DateTime.UtcNow
-        }, cancellationToken);
-
-        return Result.Ok();
+        return await _reservations.AllocateAsync(order, () => order.Allocate(order.Id), cancellationToken);
     }
 }
 
@@ -380,6 +296,11 @@ public sealed class ReleaseSalesOrderCommandHandler : IRequestHandler<ReleaseSal
 
             foreach (var line in order.Lines)
             {
+                _dbContext.PickTasks.Add(new PickTask
+                {
+                    OrderId = outboundOrder.Id.ToString(), ItemId = line.ItemId,
+                    Qty = line.OrderedQty, Status = "Pending"
+                });
                 outboundOrder.Lines.Add(new OutboundOrderLine
                 {
                     ItemId = line.ItemId,
@@ -506,71 +427,30 @@ public sealed class CancelSalesOrderCommandHandler : IRequestHandler<CancelSales
             CancelledAt = DateTime.UtcNow,
             CancelledBy = _currentUserService.GetCurrentUserId()
         };
+        string? reservationStream = null;
+        long reservationVersion = 0;
+        ReservationCancelledEvent? release = null;
+        if (order.ReservationId is { } reservationId)
+        {
+            await using var query = _store.QuerySession();
+            var stream = LKvitai.MES.Modules.Warehouse.Domain.Aggregates.Reservation.StreamIdFor(reservationId);
+            var events = await query.Events.FetchStreamAsync(stream, token: cancellationToken);
+            if (events.Any(x => x.Data is ReservationCreatedEvent { Purpose: SalesReservationBalance.Purpose }))
+            {
+                reservationStream = stream;
+                reservationVersion = events.Last().Version;
+                release = new ReservationCancelledEvent { ReservationId = reservationId, Reason = request.Reason,
+                    ReleasedSoftLines = SalesReservationBalance.Remaining(events.Select(x => x.Data)) };
+            }
+        }
         await WarehouseOperationPersistence.CommitAsync(_dbContext, _store,
-            $"order-cancel:{order.Id:N}", cancelled, movements, cancellationToken);
+            $"order-cancel:{order.Id:N}", cancelled, movements, cancellationToken, appendRelated: session =>
+            {
+                if (release is not null) session.Events.Append(reservationStream!, reservationVersion + 1, release);
+                return Task.CompletedTask;
+            });
         foreach (var movement in movements) await _eventBus.PublishAsync(movement, cancellationToken);
         await _eventBus.PublishAsync(cancelled, cancellationToken);
-
-        return Result.Ok();
-    }
-}
-
-internal static class SalesOrderStockValidation
-{
-    public static async Task<Result> EnsureSufficientAvailableStockAsync(
-        SalesOrder order,
-        IDocumentStore documentStore,
-        CancellationToken cancellationToken)
-    {
-        if (order.Lines.Count == 0)
-        {
-            return Result.Fail(DomainErrorCodes.ValidationError, "Sales order must contain at least one line.");
-        }
-
-        var requiredBySku = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
-        foreach (var line in order.Lines)
-        {
-            if (line.OrderedQty <= 0m)
-            {
-                continue;
-            }
-
-            var sku = line.Item?.InternalSKU;
-            if (string.IsNullOrWhiteSpace(sku))
-            {
-                return Result.Fail(
-                    DomainErrorCodes.ValidationError,
-                    $"Sales order line '{line.Id}' cannot be allocated because SKU is missing.");
-            }
-
-            requiredBySku[sku] = requiredBySku.GetValueOrDefault(sku) + line.OrderedQty;
-        }
-
-        if (requiredBySku.Count == 0)
-        {
-            return Result.Fail(DomainErrorCodes.ValidationError, "Sales order has no allocatable quantity.");
-        }
-
-        var skus = requiredBySku.Keys.ToList();
-        await using var querySession = documentStore.QuerySession();
-        var stockRows = await Marten.QueryableExtensions.ToListAsync(
-            querySession.Query<AvailableStockView>().Where(x => skus.Contains(x.SKU)),
-            cancellationToken);
-
-        var availableBySku = stockRows
-            .GroupBy(x => x.SKU, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(x => x.Key, x => x.Sum(y => y.AvailableQty), StringComparer.OrdinalIgnoreCase);
-
-        foreach (var requirement in requiredBySku)
-        {
-            var availableQty = availableBySku.GetValueOrDefault(requirement.Key, 0m);
-            if (availableQty < requirement.Value)
-            {
-                return Result.Fail(
-                    DomainErrorCodes.InsufficientAvailableStock,
-                    $"Insufficient stock for SKU '{requirement.Key}': requested {requirement.Value}, available {availableQty}.");
-            }
-        }
 
         return Result.Ok();
     }

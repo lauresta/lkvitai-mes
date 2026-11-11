@@ -10,6 +10,7 @@ public class ReservationCreatedEvent : DomainEvent
 
 public class StockAllocatedEvent : DomainEvent
 {
+    public bool SalesOrderReservation { get; set; }
     public Guid ReservationId { get; set; }
     public List<AllocationDto> Allocations { get; set; } = new();
     public string LockType { get; set; } = string.Empty;
@@ -33,6 +34,8 @@ public class PickingStartedEvent : DomainEvent
 
 public class ReservationConsumedEvent : DomainEvent
 {
+    public bool Completed { get; set; } = true;
+    public List<AllocationDto> ReleasedSoftLines { get; set; } = new();
     public Guid ReservationId { get; set; }
     public decimal ActualQuantity { get; set; }
 
@@ -46,6 +49,7 @@ public class ReservationConsumedEvent : DomainEvent
 
 public class ReservationCancelledEvent : DomainEvent
 {
+    public List<AllocationDto> ReleasedSoftLines { get; set; } = new();
     public Guid ReservationId { get; set; }
     public string Reason { get; set; } = string.Empty;
 

@@ -60,7 +60,7 @@
                 <td>@reservation.LockType</td>
                 <td>@reservation.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                 <td class="d-flex gap-2">
-                    @if (reservation.Status == "ALLOCATED")
+                    @if (reservation.Status == "ALLOCATED" && reservation.Purpose != "SALES_ORDER")
                     {
                         <button class="btn btn-sm btn-outline-primary"
                                 @onclick="() => OpenStartPickingConfirmation(reservation)"

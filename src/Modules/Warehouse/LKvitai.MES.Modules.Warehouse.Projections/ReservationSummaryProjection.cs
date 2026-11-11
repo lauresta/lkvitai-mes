@@ -67,7 +67,7 @@ public static class ReservationSummaryAggregation
 
     public static void ApplyConsumed(ReservationConsumedEvent evt, ReservationSummaryView view)
     {
-        view.Status = ReservationStatus.CONSUMED.ToString();
+        if (evt.Completed) view.Status = ReservationStatus.CONSUMED.ToString();
     }
 
     public static void ApplyCancelled(ReservationCancelledEvent evt, ReservationSummaryView view)
