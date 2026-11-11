@@ -730,10 +730,20 @@ public sealed class ReceivingController : ControllerBase
             .FirstOrDefaultAsync(x => x.ItemId == itemId, cancellationToken);
 
         var newCost = landedUnitCost;
-        if (existingValuation is not null && existingValuation.Qty > 0m)
+        if (existingValuation is not null)
         {
-            newCost = ((existingValuation.Qty * existingValuation.UnitCost) + (receivedQty * landedUnitCost))
-                / (existingValuation.Qty + receivedQty);
+            // OnHandValue intentionally excludes virtual intake locations. A prior priced
+            // receipt still waiting for QC/putaway must participate in the next receipt's WAC.
+            // The current receipt is already committed, so subtract it exactly once.
+            var physicalQty = await new MartenAvailableStockQuantityResolver(_documentStore, _dbContext)
+                .ResolveTotalQtyAsync(itemId, existingValuation.ItemSku, cancellationToken);
+            var receivingQty = await CommittedLocationStock.ReadAsync(
+                _documentStore, existingValuation.ItemSku, "RECEIVING", cancellationToken);
+            var qcQty = await CommittedLocationStock.ReadAsync(
+                _documentStore, existingValuation.ItemSku, "QC_HOLD", cancellationToken);
+            var priorQty = Math.Max(0m, physicalQty + receivingQty + qcQty - receivedQty);
+            newCost = ((priorQty * existingValuation.UnitCost) + (receivedQty * landedUnitCost))
+                / (priorQty + receivedQty);
         }
 
         var adjustResult = await _mediator.Send(

@@ -47,4 +47,8 @@
     <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.PortalAuth\LKvitai.MES.BuildingBlocks.PortalAuth.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Temporary C8 test access, removed after deployed acceptance. Warehouse only. -->
+    <Compile Include="../LKvitai.MES.Modules.Warehouse.WebUI/Infrastructure/WarehouseQaProof.cs" Link="Security/WarehouseQaProof.cs" />
+  </ItemGroup>
 </Project>

@@ -150,7 +150,7 @@ public class PickStockSagaStateTests
         var state = new PickStockSagaState();
 
         state.CorrelationId.Should().Be(Guid.Empty);
-        state.CurrentState.Should().BeEmpty();
+        state.CurrentState.Should().BeNull();
         state.ReservationId.Should().Be(Guid.Empty);
         state.MovementId.Should().Be(Guid.Empty);
         state.RetryCount.Should().Be(0);
