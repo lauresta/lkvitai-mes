@@ -33,13 +33,8 @@
             </div>
             <div class="col-md-3">
                 <label class="form-label">@L["Common.Item"]</label>
-                <select class="form-select" @bind="_itemFilter">
-                    <option value="">@L["Common.All"]</option>
-                    @foreach (var item in _items)
-                    {
-                        <option value="@item.Id">@item.InternalSKU - @item.Name</option>
-                    }
-                </select>
+                <ItemSearchPicker ItemId="@(int.TryParse(_itemFilter, out var filterItemId) ? filterItemId : null)"
+                                  ItemSelected="@(item => _itemFilter = item?.Id.ToString())" />
             </div>
             <div class="col-md-2 d-grid">
                 <button class="btn btn-primary" @onclick="ApplyFiltersAsync">@L["Common.Filter"]</button>
@@ -131,12 +126,8 @@
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">@L["Common.Item"]</label>
-                    <select class="form-select" @bind="_create.ItemId">
-                        @foreach (var item in _items)
-                        {
-                            <option value="@item.Id">@item.InternalSKU - @item.Name</option>
-                        }
-                    </select>
+                    <ItemSearchPicker ItemId="@(_create.ItemId > 0 ? _create.ItemId : null)"
+                                      ItemSelected="@(item => _create.ItemId = item?.Id ?? 0)" />
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">@L["Common.LeadTimeDays"]</label>
@@ -182,12 +173,8 @@
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">@L["Common.Item"]</label>
-                    <select class="form-select" @bind="_editing.ItemId">
-                        @foreach (var item in _items)
-                        {
-                            <option value="@item.Id">@item.InternalSKU - @item.Name</option>
-                        }
-                    </select>
+                    <ItemSearchPicker ItemId="@(_editing.ItemId > 0 ? _editing.ItemId : null)"
+                                      ItemSelected="@(item => _editing.ItemId = item?.Id ?? 0)" />
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">@L["Common.LeadTimeDays"]</label>
@@ -212,7 +199,6 @@
 @code {
     private readonly List<AdminSupplierMappingDto> _mappings = [];
     private readonly List<AdminSupplierDto> _suppliers = [];
-    private readonly List<AdminItemDto> _items = [];
 
     private string? _search;
     private string? _supplierFilter;
@@ -269,18 +255,9 @@
         _suppliers.Clear();
         _suppliers.AddRange(supplierResult.Items);
 
-        var itemResult = await AdminClient.GetItemsAsync(null, null, null, 1, 500);
-        _items.Clear();
-        _items.AddRange(itemResult.Items);
-
         if (_create.SupplierId == 0 && _suppliers.Count > 0)
         {
             _create.SupplierId = _suppliers[0].Id;
-        }
-
-        if (_create.ItemId == 0 && _items.Count > 0)
-        {
-            _create.ItemId = _items[0].Id;
         }
     }
 
@@ -331,7 +308,7 @@
             _create = new MappingFormModel
             {
                 SupplierId = _suppliers.FirstOrDefault()?.Id ?? 0,
-                ItemId = _items.FirstOrDefault()?.Id ?? 0
+                ItemId = 0
             };
 
             await LoadMappingsAsync();

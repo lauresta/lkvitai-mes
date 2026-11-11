@@ -98,21 +98,21 @@
                           Margin="Margin.Dense"
                           @bind-Value="_model.PrimaryBarcode" />
 
-            <MudNumericField T="decimal?"
+            <LkDecimalField T="decimal?"
                              Label="@L["Common.Weight"]"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="0.001m"
                              @bind-Value="_model.Weight" />
 
-            <MudNumericField T="decimal?"
+            <LkDecimalField T="decimal?"
                              Label="@L["Common.Volume"]"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="0.001m"
                              @bind-Value="_model.Volume" />
 
-            <MudNumericField T="decimal?"
+            <LkDecimalField T="decimal?"
                              Label="@L["Common.BasePrice"]"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
@@ -122,7 +122,7 @@
                              AdornmentText="€"
                              @bind-Value="_model.BasePrice" />
 
-            <MudNumericField T="decimal?"
+            <LkDecimalField T="decimal?"
                              Label="@L["AdminItemEditorDialog.PurchasePrice"]"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"

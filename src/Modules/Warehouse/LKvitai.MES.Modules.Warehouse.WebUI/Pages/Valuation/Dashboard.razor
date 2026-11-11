@@ -180,10 +180,10 @@
                         <tr>
                             <td><span class="sku-link" role="button" @onclick="() => OpenItem(row.ItemId)">@row.ItemSku</span></td>
                             <td>@row.ChangedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
-                            <td class="text-end">@(row.OldCost.HasValue ? row.OldCost.Value.ToString("0.####", CultureInfo.InvariantCulture) : "-")</td>
-                            <td class="text-end">@(row.NewCost.HasValue ? row.NewCost.Value.ToString("0.####", CultureInfo.InvariantCulture) : "-")</td>
+                            <td class="text-end is-money is-num">@Money.FormatUnit(row.OldCost)</td>
+                            <td class="text-end is-money is-num">@Money.FormatUnit(row.NewCost)</td>
                             <td>@row.Reason</td>
-                            <td>@(string.IsNullOrWhiteSpace(row.ApprovedBy) ? "-" : row.ApprovedBy)</td>
+                            <td>@ApprovedByLabel(row.ApprovedBy)</td>
                         </tr>
                     }
                 }
@@ -194,6 +194,19 @@
 </div>
 
 @code {
+    private string ApprovedByLabel(string? actor)
+    {
+        if (string.IsNullOrWhiteSpace(actor))
+        {
+            return "-";
+        }
+
+        var value = actor.Trim();
+        return ActorLabel.LooksLikeOpaqueId(value)
+            ? L["Valuation.Dashboard.UnknownUser", ActorLabel.Short(value)].Value
+            : value;
+    }
+
     private readonly List<OnHandValueRowDto> _onHandRows = [];
     private PriceMap _priceMap = PriceMap.Empty;
     private readonly List<CostHistoryRowDto> _costHistoryRows = [];

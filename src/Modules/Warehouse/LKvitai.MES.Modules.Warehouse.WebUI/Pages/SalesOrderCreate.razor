@@ -100,13 +100,8 @@
                             var line = _lines[i];
                             <tr>
                                 <td>
-                                    <select class="form-select" @bind="line.ItemId" @bind:after="() => OnLineItemChangedAsync(line)">
-                                        <option value="">@L["Common.SelectItem"]</option>
-                                        @foreach (var item in _items)
-                                        {
-                                            <option value="@item.Id">@item.InternalSKU - @item.Name</option>
-                                        }
-                                    </select>
+                                    <ItemSearchPicker ItemId="@line.ItemId"
+                                                      ItemSelected="@(item => OnLineItemSelectedAsync(line, item))" />
                                     <ItemPriceHint ItemId="@line.ItemId" />
                                 </td>
                                 <td>
@@ -169,10 +164,6 @@
             var customers = await SalesOrdersClient.GetCustomersAsync();
             _customers.Clear();
             _customers.AddRange(customers);
-
-            var items = await SalesOrdersClient.GetItemsAsync();
-            _items.Clear();
-            _items.AddRange(items.Items);
         }
         catch (ApiException ex)
         {
@@ -227,8 +218,14 @@
         }
     }
 
-    private Task OnLineItemChangedAsync(LineFormModel line)
+    private Task OnLineItemSelectedAsync(LineFormModel line, AdminItemDto? item)
     {
+        line.ItemId = item?.Id;
+        if (item is not null && _items.All(x => x.Id != item.Id))
+        {
+            _items.Add(item);
+        }
+
         ApplyEffectivePrice(line);
         return Task.CompletedTask;
     }

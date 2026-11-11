@@ -1,0 +1,114 @@
+@inject MasterDataAdminClient MasterDataAdminClient
+
+@* Server-side item search picker: queries /api/warehouse/v1/items?search= (SKU, name, barcode), top 20, debounced. *@
+<MudAutocomplete T="AdminItemDto"
+                 Value="@_selected"
+                 ValueChanged="OnValueChangedAsync"
+                 SearchFunc="SearchAsync"
+                 ToStringFunc="@(i => i is null ? string.Empty : $"{i.InternalSKU} - {i.Name}")"
+                 DebounceInterval="300"
+                 MinCharacters="1"
+                 MaxItems="@PageSize"
+                 ResetValueOnEmptyText="true"
+                 CoerceText="false"
+                 Label="@Label"
+                 Variant="@Variant"
+                 Margin="@Margin"
+                 Disabled="@Disabled"
+                 Class="@Class"
+                 Placeholder="@(Placeholder ?? L["Common.SelectItem"].Value)"
+                 NoItemsTemplate="@NoItems" />
+
+@code {
+    private const int PageSize = 20;
+
+    private AdminItemDto? _selected;
+    private int? _loadedItemId;
+
+    /// <summary>Currently selected item id (two-way).</summary>
+    [Parameter] public int? ItemId { get; set; }
+    [Parameter] public EventCallback<int?> ItemIdChanged { get; set; }
+
+    /// <summary>Raised with the full item row (price, UoM, ...) whenever the selection changes.</summary>
+    [Parameter] public EventCallback<AdminItemDto?> ItemSelected { get; set; }
+
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public Variant Variant { get; set; } = Variant.Outlined;
+    [Parameter] public Margin Margin { get; set; } = Margin.Dense;
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private RenderFragment NoItems => builder =>
+    {
+        builder.OpenElement(0, "span");
+        builder.AddAttribute(1, "class", "px-3 py-2");
+        builder.AddContent(2, L["Common.NoItemsFound"].Value);
+        builder.CloseElement();
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var wanted = ItemId is > 0 ? ItemId : null;
+        if (wanted == (_selected?.Id))
+        {
+            return;
+        }
+
+        if (wanted is null)
+        {
+            _selected = null;
+            _loadedItemId = null;
+            return;
+        }
+
+        if (_loadedItemId == wanted)
+        {
+            return;
+        }
+
+        // Selection was set from outside (e.g. editing an existing row): resolve its label once.
+        _loadedItemId = wanted;
+        try
+        {
+            var details = await MasterDataAdminClient.GetItemByIdAsync(wanted.Value);
+            _selected = new AdminItemDto
+            {
+                Id = details.Id,
+                InternalSKU = details.InternalSKU,
+                Name = details.Name,
+                BaseUoM = details.BaseUoM,
+                BasePrice = details.BasePrice,
+                PurchasePrice = details.PurchasePrice,
+                Status = details.Status,
+                ItemType = details.ItemType,
+                CostType = details.CostType
+            };
+        }
+        catch (ApiException)
+        {
+            _selected = null;
+        }
+    }
+
+    private async Task<IEnumerable<AdminItemDto>> SearchAsync(string value)
+    {
+        try
+        {
+            var result = await MasterDataAdminClient.GetItemsAsync(value, null, "Active", 1, PageSize);
+            return result.Items;
+        }
+        catch (ApiException)
+        {
+            return Array.Empty<AdminItemDto>();
+        }
+    }
+
+    private async Task OnValueChangedAsync(AdminItemDto? item)
+    {
+        _selected = item;
+        _loadedItemId = item?.Id;
+        await ItemIdChanged.InvokeAsync(item?.Id);
+        await ItemSelected.InvokeAsync(item);
+    }
+}

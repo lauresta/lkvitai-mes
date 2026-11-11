@@ -62,12 +62,14 @@ public sealed class ItemsController : ControllerBase
             .Include(i => i.Category)
             .AsQueryable();
 
+        string? normalized = null;
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var normalized = search.Trim().ToLowerInvariant();
+            normalized = search.Trim().ToLowerInvariant();
             query = query.Where(i =>
                 i.InternalSKU.ToLower().Contains(normalized) ||
                 i.Name.ToLower().Contains(normalized) ||
+                (i.PrimaryBarcode != null && i.PrimaryBarcode.ToLower() == normalized) ||
                 (i.Tags != null && i.Tags.ToLower().Contains(normalized.TrimStart('#'))));
         }
 
@@ -82,8 +84,14 @@ public sealed class ItemsController : ControllerBase
         }
 
         var totalCount = await query.CountAsync(cancellationToken);
-        var items = await query
-            .OrderBy(i => i.InternalSKU)
+        // With a search term, exact SKU matches first, then SKU prefix matches, so a typed SKU is on top of a small picker page.
+        var ordered = normalized is null
+            ? query.OrderBy(i => i.InternalSKU)
+            : query
+                .OrderBy(i => i.InternalSKU.ToLower() == normalized ? 0 : i.InternalSKU.ToLower().StartsWith(normalized) ? 1 : 2)
+                .ThenBy(i => i.InternalSKU);
+
+        var items = await ordered
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .Select(i => new ItemListItemDto(

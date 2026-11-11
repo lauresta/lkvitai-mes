@@ -1123,7 +1123,7 @@
   <data name="Valuation.ApplyLandedCost.SelectShipment" xml:space="preserve"><value>Pasirinkite siuntą</value></data>
   <data name="Valuation.Dashboard.AdjustValuationFiltersAndTryAgain" xml:space="preserve"><value>Sureguliuokite vertinimo filtrus ir bandykite dar kartą.</value></data>
   <data name="Valuation.Dashboard.ApplyFilters" xml:space="preserve"><value>Taikyti filtrus</value></data>
-  <data name="Valuation.Dashboard.CostHistoryReport" xml:space="preserve"><value>Išlaidų istorijos ataskaita</value></data>
+  <data name="Valuation.Dashboard.CostHistoryReport" xml:space="preserve"><value>Savikainos istorijos ataskaita</value></data>
   <data name="Valuation.Dashboard.Date" xml:space="preserve"><value>Data</value></data>
   <data name="Valuation.Dashboard.DateFrom" xml:space="preserve"><value>Data Nuo</value></data>
   <data name="Valuation.Dashboard.DateTo" xml:space="preserve"><value>Data Iki</value></data>
@@ -1134,7 +1134,7 @@
   <data name="Valuation.Dashboard.OldCost" xml:space="preserve"><value>Senoji kaina</value></data>
   <data name="Valuation.Dashboard.OnHandValueReport" xml:space="preserve"><value>Atsargų vertinimo registras</value></data>
   <data name="Valuation.Dashboard.PendingApprovals" xml:space="preserve"><value>Laukiama patvirtinimų</value></data>
-  <data name="Valuation.Dashboard.RecentCostChanges7d" xml:space="preserve"><value>Naujausi mokesčių pakeitimai (7 d.)</value></data>
+  <data name="Valuation.Dashboard.RecentCostChanges7d" xml:space="preserve"><value>Naujausi savikainos pakeitimai (7 d.)</value></data>
   <data name="Valuation.Dashboard.RegisterOnlyNote" xml:space="preserve"><value>Atsargos be vertinimo įrašo neįtraukiamos.</value></data>
   <data name="Valuation.Dashboard.TotalOnHandValue" xml:space="preserve"><value>Įvertintų atsargų suma</value></data>
   <data name="Valuation.Dashboard.ValuationDashboard" xml:space="preserve"><value>Vertinimo prietaisų skydelis</value></data>
@@ -1859,4 +1859,10 @@
   <data name="Projections.Consolidation.Reason.HardLock" xml:space="preserve"><value>Aktyvus HARD užraktas</value></data>
   <data name="Projections.Consolidation.Reason.NegativeBalance" xml:space="preserve"><value>Neigiamas likutis</value></data>
   <data name="Agnum.Balances.WarehouseNotConfigured" xml:space="preserve"><value>Nustatytas sandėlis nėra aktyvus sandėlis. Patikrinkite sandėlio kodo nustatymą.</value></data>
+  <data name="Valuation.Dashboard.UnknownUser" xml:space="preserve"><value>Naudotojas …{0}</value></data>
+  <data name="Common.SKU" xml:space="preserve"><value>SKU</value></data>
+  <data name="Common.SearchItemHint" xml:space="preserve"><value>Įveskite SKU arba pavadinimą</value></data>
+  <data name="Common.NoItemsFound" xml:space="preserve"><value>Tinkamų prekių nerasta</value></data>
+  <data name="Common.InvalidNumber" xml:space="preserve"><value>Netinkamas skaičius</value></data>
+  <data name="Common.NumberOutOfRange" xml:space="preserve"><value>Reikšmė už leistino intervalo</value></data>
 </root>

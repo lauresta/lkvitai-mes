@@ -41,17 +41,9 @@
 
     <div class="adjustment-form-grid">
         <div class="lk-field--filter adjustment-field adjustment-field--item">
-            <MudSelect T="int"
-                       Label="@L["Common.Item"]"
-                       Variant="Variant.Outlined"
-                       Margin="Margin.Dense"
-                       @bind-Value="_itemId">
-                <MudSelectItem T="int" Value="0">@L["Common.SelectItem"]</MudSelectItem>
-                @foreach (var item in _items)
-                {
-                    <MudSelectItem T="int" Value="@item.Id">@item.InternalSKU - @item.Name</MudSelectItem>
-                }
-            </MudSelect>
+            <ItemSearchPicker Label="@L["Common.Item"]"
+                              ItemId="@(_itemId > 0 ? _itemId : null)"
+                              ItemSelected="OnItemSelected" />
             <ItemPriceHint ItemId="@(_itemId > 0 ? _itemId : null)" />
         </div>
 
@@ -70,11 +62,10 @@
         </div>
 
         <div class="lk-field--filter adjustment-field adjustment-field--qty">
-            <MudNumericField T="decimal"
+            <LkDecimalField T="decimal"
                              Label="@L["StockAdjustments.QtyDelta"]"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
-                             Step="0.01m"
                              @bind-Value="_qtyDelta" />
         </div>
 
@@ -179,7 +170,6 @@
 </MudPaper>
 
 @code {
-    private readonly List<AdminItemDto> _items = [];
     private readonly List<AdminLocationDto> _locations = [];
     private readonly List<ReasonCodeDto> _reasons = [];
     private readonly List<AdjustmentHistoryItemDto> _history = [];
@@ -207,10 +197,6 @@
     {
         try
         {
-            var items = await MasterDataAdminClient.GetItemsAsync(null, null, "Active", 1, 300);
-            _items.Clear();
-            _items.AddRange(items.Items.OrderBy(x => x.InternalSKU, StringComparer.OrdinalIgnoreCase));
-
             var locations = await MasterDataAdminClient.GetLocationsAsync(null, "Active", true, 1, 500);
             _locations.Clear();
             _locations.AddRange(locations.Items.OrderBy(x => x.Code, StringComparer.OrdinalIgnoreCase));
@@ -224,6 +210,11 @@
             _apiError = ex;
             ToastService.ShowError(BuildErrorMessage(ex));
         }
+    }
+
+    private void OnItemSelected(AdminItemDto? item)
+    {
+        _itemId = item?.Id ?? 0;
     }
 
     private async Task LoadHistoryAsync()

@@ -28,14 +28,17 @@ public sealed class ValuationController : ControllerBase
     private readonly IDocumentStore _documentStore;
     private readonly IAvailableStockQuantityResolver _quantityResolver;
     private readonly IReasonCodeService _reasonCodeService;
+    private readonly IAdminUserStore _userStore;
 
     public ValuationController(
         IMediator mediator,
         WarehouseDbContext dbContext,
         IDocumentStore documentStore,
         IAvailableStockQuantityResolver quantityResolver,
-        IReasonCodeService reasonCodeService)
+        IReasonCodeService reasonCodeService,
+        IAdminUserStore userStore)
     {
+        _userStore = userStore;
         _mediator = mediator;
         _dbContext = dbContext;
         _documentStore = documentStore;
@@ -418,6 +421,11 @@ public sealed class ValuationController : ControllerBase
             }
         }
 
+        var userNames = BuildUserNameLookup();
+        rows = rows
+            .Select(x => x with { ApprovedBy = ResolveUserName(x.ApprovedBy, userNames) })
+            .ToList();
+
         var filtered = rows.AsEnumerable();
         if (dateFrom.HasValue)
         {
@@ -450,6 +458,38 @@ public sealed class ValuationController : ControllerBase
             .ThenBy(x => x.ItemSku)
             .Take(2000)
             .ToList());
+    }
+
+    private Dictionary<string, string> BuildUserNameLookup()
+    {
+        var lookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            foreach (var user in _userStore.GetAll())
+            {
+                if (!string.IsNullOrWhiteSpace(user.Username))
+                {
+                    lookup[user.Id.ToString()] = user.Username;
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // Display name is cosmetic; fall back to the stored actor id when the user store is unavailable.
+        }
+
+        return lookup;
+    }
+
+    public static string? ResolveUserName(string? actor, IReadOnlyDictionary<string, string> lookup)
+    {
+        if (string.IsNullOrWhiteSpace(actor))
+        {
+            return actor;
+        }
+
+        var key = actor.Trim();
+        return lookup.TryGetValue(key, out var name) ? name : key;
     }
 
     private ObjectResult Failure(Result result)

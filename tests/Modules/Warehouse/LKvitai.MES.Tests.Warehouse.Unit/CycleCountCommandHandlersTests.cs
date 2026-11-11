@@ -29,8 +29,8 @@ public class CycleCountCommandHandlersTests
 
         var resolver = new Mock<ICycleCountQuantityResolver>(MockBehavior.Strict);
         resolver
-            .Setup(x => x.ResolveSystemQtyAsync("LOC-001", "ITEM-001", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(25m);
+            .Setup(x => x.ListStockedBalancesAsync(It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new CycleCountStockBalance("LOC-001", "ITEM-001", 25m)]);
 
         var bus = new RecordingEventBus();
         var handler = new ScheduleCycleCountCommandHandler(
@@ -292,8 +292,8 @@ public class CycleCountCommandHandlersTests
 
         var resolver = new Mock<ICycleCountQuantityResolver>(MockBehavior.Strict);
         resolver
-            .Setup(x => x.ResolveSystemQtyAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(0m);
+            .Setup(x => x.ListStockedBalancesAsync(It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new CycleCountStockBalance("LOC-001", "ITEM-001", 3m)]);
 
         var handler = new ScheduleCycleCountCommandHandler(
             db,
@@ -314,6 +314,88 @@ public class CycleCountCommandHandlersTests
         var cycleCount = await db.CycleCounts.SingleAsync();
         cycleCount.AbcClass.Should().Be("ALL");
         cycleCount.AssignedOperator.Should().Be("operator-42");
+    }
+
+    [Fact]
+    [Trait("Category", "CycleCounting")]
+    public async Task ScheduleCycleCount_ShouldCreateOneLinePerStockedLocationAndSku()
+    {
+        await using var db = CreateDbContext();
+        await SeedItemsAndLocationsAsync(db);
+        db.Items.AddRange(
+            new Item { Id = 2, InternalSKU = "1514251720", Name = "Fabric A", CategoryId = 1, BaseUoM = "M", Status = "Active" },
+            new Item { Id = 3, InternalSKU = "ITEM-INACTIVE", Name = "Old", CategoryId = 1, BaseUoM = "PCS", Status = "Inactive" });
+        db.Locations.AddRange(
+            new Location { Id = 12, Code = "R3-C6-L1-B1", Barcode = "B12", Type = "Bin", Status = "Active" },
+            new Location { Id = 13, Code = "EMPTY-BIN", Barcode = "B13", Type = "Bin", Status = "Active" });
+        await db.SaveChangesAsync();
+
+        IReadOnlyCollection<string>? askedLocations = null;
+        var resolver = new Mock<ICycleCountQuantityResolver>(MockBehavior.Strict);
+        resolver
+            .Setup(x => x.ListStockedBalancesAsync(It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+            .Callback<IReadOnlyCollection<string>, CancellationToken>((codes, _) => askedLocations = codes)
+            .ReturnsAsync(
+            [
+                new CycleCountStockBalance("r3-c6-l1-b1", "1514251720", 42.5m),
+                new CycleCountStockBalance("R3-C6-L1-B1", "ITEM-001", 7m),
+                new CycleCountStockBalance("LOC-001", "ITEM-001", 1m),
+                new CycleCountStockBalance("LOC-001", "ITEM-INACTIVE", 9m),
+                new CycleCountStockBalance("LOC-001", "UNKNOWN-SKU", 9m)
+            ]);
+
+        var result = await new ScheduleCycleCountCommandHandler(
+            db,
+            new RecordingEventBus(),
+            resolver.Object,
+            Mock.Of<ILogger<ScheduleCycleCountCommandHandler>>()).Handle(new ScheduleCycleCountCommand
+        {
+            CommandId = Guid.NewGuid(),
+            ScheduledDate = DateTimeOffset.UtcNow.Date.AddDays(1),
+            AbcClass = "ALL",
+            AssignedOperator = "operator-1",
+            LocationIds = [11, 12, 13]
+        }, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        askedLocations.Should().BeEquivalentTo(["LOC-001", "R3-C6-L1-B1", "EMPTY-BIN"]);
+        var lines = (await db.CycleCounts.Include(x => x.Lines).SingleAsync()).Lines
+            .OrderBy(x => x.LocationId).ThenBy(x => x.ItemId).ToList();
+        lines.Select(x => (x.LocationId, x.ItemId, x.SystemQty)).Should().Equal(
+            (11, 1, 1m),
+            (12, 1, 7m),
+            (12, 2, 42.5m));
+        lines.Should().OnlyContain(x => x.Status == CycleCountLineStatus.Pending && x.PhysicalQty == 0m);
+    }
+
+    [Fact]
+    [Trait("Category", "CycleCounting")]
+    public async Task ScheduleCycleCount_WhenSelectedLocationsHaveNoStock_ShouldFailWithoutCreatingCount()
+    {
+        await using var db = CreateDbContext();
+        await SeedItemsAndLocationsAsync(db);
+
+        var resolver = new Mock<ICycleCountQuantityResolver>(MockBehavior.Strict);
+        resolver
+            .Setup(x => x.ListStockedBalancesAsync(It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        var result = await new ScheduleCycleCountCommandHandler(
+            db,
+            new RecordingEventBus(),
+            resolver.Object,
+            Mock.Of<ILogger<ScheduleCycleCountCommandHandler>>()).Handle(new ScheduleCycleCountCommand
+        {
+            CommandId = Guid.NewGuid(),
+            ScheduledDate = DateTimeOffset.UtcNow.Date.AddDays(1),
+            AbcClass = "ALL",
+            AssignedOperator = "operator-1",
+            LocationIds = [11]
+        }, CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorCode.Should().Be(DomainErrorCodes.ValidationError);
+        (await db.CycleCounts.CountAsync()).Should().Be(0);
     }
 
     private static WarehouseDbContext CreateDbContext()

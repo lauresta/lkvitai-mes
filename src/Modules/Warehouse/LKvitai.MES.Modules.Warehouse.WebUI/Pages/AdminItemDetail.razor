@@ -235,7 +235,7 @@
                         @if (_editingGroupId == row.PriceGroupId)
                         {
                             <td class="is-num">
-                                <MudNumericField T="decimal?" Variant="Variant.Outlined" Margin="Margin.Dense" Format="0.00" @bind-Value="_editingAmount" />
+                                <LkDecimalField T="decimal?" Variant="Variant.Outlined" Margin="Margin.Dense" Format="0.00" @bind-Value="_editingAmount" />
                             </td>
                             <td class="is-num">-</td>
                             <td class="text-end">
