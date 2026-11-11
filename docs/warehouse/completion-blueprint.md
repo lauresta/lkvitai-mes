@@ -248,11 +248,14 @@ Allocate (`SalesOrderCommandHandlers.cs`, `AllocateSalesOrderCommandHandler`) с
   QA-резерв снят, QA-добавки убраны обычными корректировками; физическая ячейка снова 3 / доступно 3.
   Ошибок браузера и WebUI нет. API log gate красный из-за отдельной AgnumExportSaga (см. «Осталось»),
   хотя CSV экспорт и сохранение/чтение отчёта успешны. Локальные доказательства `/tmp/warehouse-c6-smoke`.
-- C7: начат от свежего main `0b2662d6`. Compliance использует общий Redis вместо памяти.
-  791 unit-тест и тест реального Redis с независимыми соединениями/переподключением прошли.
-  QA-код удалён; GitHub test variables WAREHOUSE_QA_* и secret удалены. E2E использует
-  обычную SSO-сессию из WAREHOUSE_E2E_STORAGE_STATE. После деплоя остаётся проверить отказ старому
-  QA proof и заголовку и удалить временные файлы ключа/утилиты.
+- C7: PR #325 влит, main `14259fd5`; все проверки зелёные, включая Sonar.
+  Deploy to Test #43017662802 успешен. 791 unit-тест и тест реального Redis с независимыми
+  соединениями/переподключением прошли; E2E-проект собирается. Compliance читает общий Redis-хеш.
+  Временный QA-код, GitHub variables/secret и файлы ключей/proof/утилиты на Mac и test удалены.
+  Проверено после деплоя: прежний API proof → 401, прежний заголовок в браузере → обычный Lauresta SSO через Portal,
+  `/api/warehouse/v1/qa/rebuild-stock` → 404; QA-переменных в API/WebUI нет, оба healthy.
+  Повторные deployed-аудиты используют обычную SSO-сессию через WAREHOUSE_E2E_STORAGE_STATE.
+
 
 ### Отклонения
 
@@ -309,6 +312,9 @@ Allocate (`SalesOrderCommandHandlers.cs`, `AllocateSalesOrderCommandHandler`) с
   Включение этого OAuth-пути не входило в задание. Живой LotTraceStore заменён общим Redis-хешем;
   Compliance читает Count/TryGetAny через интерфейс, без приведения к InMemory.
 
+- Итоговая запись результатов C7 сделана отдельным docs-only PR после завершения деплоя;
+  код сервиса в нём не меняется, повторное развёртывание не требуется.
+
 ### Осталось
 
 - C0: штатного способа применить исправленный регистр при несовпадающем checksum нет;
@@ -319,6 +325,3 @@ Allocate (`SalesOrderCommandHandlers.cs`, `AllocateSalesOrderCommandHandler`) с
 - C6: фоновый `AgnumExportSaga` на StartAgnumExport выдаёт `UnknownStateException` (пустое имя состояния).
   Сам CSV-экспорт успешен, отчёт сверки сохранён в БД и прочитан после рестарта. Исправление саги
   не предусмотрено пунктом C6 о хранении отчёта; синхронизация цен и внешняя запись не включались.
-- C7: завершить проверки общего Redis и удалить временный QA-доступ.
-- Временный QA-вход: только `X-Warehouse-QA-Key`, срок сессии и proof не более четырёх часов;
-  ключ, настройки и временный код удалить после проверок.
