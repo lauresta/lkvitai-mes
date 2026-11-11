@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Qa;
 using LKvitai.MES.BuildingBlocks.WebUI.Localization;
 using System.Net.Http.Headers;
 using System.Security.Claims;
@@ -15,10 +16,12 @@ builder.Services.AddCikadaLocalization(builder.Configuration);
 builder.Services.AddMudServices();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
+builder.Services.AddWarehouseQaAccess(builder.Environment, builder.Configuration);
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddBuildVersion();
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<WarehouseQaProof>();
 builder.Services.AddSingleton<CikadaUserBridgeProof>();
 if (builder.Configuration.IsCikadaSsoEnabled())
 {
@@ -94,6 +97,7 @@ app.UsePortalSecureHosting(app.Environment);
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
+app.UseWarehouseQaAccess();
 app.UseWarehouseDevAuth();
 app.UseAuthorization();
 

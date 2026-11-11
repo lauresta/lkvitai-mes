@@ -44,7 +44,8 @@ public static class MartenConfiguration
             RegisterMartenEventTypes(options);
             RegisterMartenDocumentAliases(options);
 
-            options.Projections.Snapshot<ItemValuation>(SnapshotLifecycle.Inline);
+            // Valuation handlers rehydrate from the event stream. An inline snapshot cannot
+            // restore ItemValuation private setters and breaks the second persisted event.
             
             // Performance tuning
             options.Events.MetadataConfig.HeadersEnabled = true;

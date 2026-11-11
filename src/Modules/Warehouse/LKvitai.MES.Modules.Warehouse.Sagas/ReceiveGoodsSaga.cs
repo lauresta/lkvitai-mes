@@ -14,5 +14,5 @@ public class ReceiveGoodsSaga : MassTransitStateMachine<ReceiveGoodsSagaState>
 public class ReceiveGoodsSagaState : SagaStateMachineInstance
 {
     public Guid CorrelationId { get; set; }
-    public string CurrentState { get; set; } = string.Empty;
+    public string? CurrentState { get; set; }
 }

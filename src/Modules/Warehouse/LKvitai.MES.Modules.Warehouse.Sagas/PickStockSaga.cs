@@ -270,7 +270,7 @@ public class ConsumeReservationActivity :
 public class PickStockSagaState : SagaStateMachineInstance
 {
     public Guid CorrelationId { get; set; }
-    public string CurrentState { get; set; } = string.Empty;
+    public string? CurrentState { get; set; }
 
     // ── Saga data ──────────────────────────────────────────────────
     public Guid ReservationId { get; set; }

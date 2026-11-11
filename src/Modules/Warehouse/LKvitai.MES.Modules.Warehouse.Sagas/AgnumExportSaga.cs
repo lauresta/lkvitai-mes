@@ -65,7 +65,7 @@ public sealed class AgnumExportSaga : MassTransitStateMachine<AgnumExportSagaSta
 public sealed class AgnumExportSagaState : SagaStateMachineInstance
 {
     public Guid CorrelationId { get; set; }
-    public string CurrentState { get; set; } = string.Empty;
+    public string? CurrentState { get; set; }
 
     public string Trigger { get; set; } = string.Empty;
     public int RetryCount { get; set; }
