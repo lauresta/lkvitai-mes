@@ -62,6 +62,15 @@ public sealed class ReceivingClient
     public Task<QcActionResponseDto> FailQcAsync(QcActionRequestDto request, CancellationToken cancellationToken = default)
         => PostAsync<QcActionResponseDto>("/api/warehouse/v1/qc/fail", request, cancellationToken);
 
+    public Task<ShipmentUpdatedResponseDto> CloseShortAsync(int id, string? notes, CancellationToken cancellationToken = default)
+        => PostAsync<ShipmentUpdatedResponseDto>($"/api/warehouse/v1/inbound-shipments/{id}/close-short", new { Notes = notes }, cancellationToken);
+
+    public Task<IReadOnlyList<QcPendingRowDto>> GetQuarantineAsync(CancellationToken cancellationToken = default)
+        => GetAsync<IReadOnlyList<QcPendingRowDto>>("/api/warehouse/v1/qc/quarantine", cancellationToken);
+
+    public Task<QcActionResponseDto> DisposeQuarantineAsync(int itemId, decimal qty, string destination, string? notes, CancellationToken cancellationToken = default)
+        => PostAsync<QcActionResponseDto>("/api/warehouse/v1/qc/quarantine/dispose", new { ItemId = itemId, Qty = qty, Destination = destination, Notes = notes }, cancellationToken);
+
     private Task<T> GetAsync<T>(string relativeUrl, CancellationToken cancellationToken)
         => SendAndReadAsync<T>(() =>
         {

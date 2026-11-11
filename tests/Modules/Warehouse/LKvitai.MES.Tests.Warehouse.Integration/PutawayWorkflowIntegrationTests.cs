@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using FluentAssertions;
 using LKvitai.MES.Modules.Warehouse.Api.Controllers;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
@@ -16,7 +17,7 @@ using Xunit;
 
 namespace LKvitai.MES.Tests.Warehouse.Integration;
 
-public class PutawayWorkflowIntegrationTests : IAsyncLifetime
+public partial class PutawayWorkflowIntegrationTests : IAsyncLifetime
 {
     private PostgreSqlContainer? _postgres;
     private DbContextOptions<WarehouseDbContext>? _dbOptions;
@@ -47,6 +48,8 @@ public class PutawayWorkflowIntegrationTests : IAsyncLifetime
             .UseNpgsql(_postgres.GetConnectionString())
             .Options;
 
+        await using (var db = CreateDbContext()) await db.Database.EnsureCreatedAsync();
+
         _store = DocumentStore.For(opts =>
         {
             opts.Connection(_postgres.GetConnectionString());
@@ -57,9 +60,7 @@ public class PutawayWorkflowIntegrationTests : IAsyncLifetime
         });
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
-        await using var db = CreateDbContext();
-        await db.Database.EnsureDeletedAsync();
-        await db.Database.EnsureCreatedAsync();
+
     }
 
     public async Task DisposeAsync()
@@ -142,7 +143,7 @@ public class PutawayWorkflowIntegrationTests : IAsyncLifetime
         await using var db = CreateDbContext();
         db.Locations.Add(new Location
         {
-            Code = "BLOCK-1",
+            Id = 3, Code = "BLOCK-1",
             Barcode = "BAR-BLOCK",
             Type = "Bin",
             IsVirtual = false,
@@ -168,7 +169,7 @@ public class PutawayWorkflowIntegrationTests : IAsyncLifetime
         => new(_dbOptions!, new StaticCurrentUserService("tester"));
 
     private PutawayController CreatePutawayController(WarehouseDbContext db)
-        => new(db, _store!, new StaticCurrentUserService("operator"))
+        => new(db, _store!, new StaticCurrentUserService("operator"), BalanceLocks())
         {
             ControllerContext = new ControllerContext
             {
@@ -203,6 +204,7 @@ public class PutawayWorkflowIntegrationTests : IAsyncLifetime
     private async Task SeedStockProjectionAsync(decimal receivingQty, decimal destinationQty)
     {
         await using var session = _store!.LightweightSession();
+        session.Events.Append("QA-receiving-seed", new GoodsReceivedEvent { WarehouseId = "WH1", SKU = "RM-0001", DestinationLocation = "RECEIVING", ReceivedQty = receivingQty });
         session.Store(new AvailableStockView
         {
             Id = AvailableStockView.ComputeId("WH1", "RECEIVING", "RM-0001"),
@@ -234,6 +236,9 @@ public class PutawayWorkflowIntegrationTests : IAsyncLifetime
 
         await session.SaveChangesAsync();
     }
+
+    private PostgresBalanceGuardLockFactory BalanceLocks() => new(new ConfigurationBuilder()
+        .AddInMemoryCollection(new Dictionary<string,string?> { ["ConnectionStrings:WarehouseDb"] = _postgres!.GetConnectionString() }).Build());
 
     private sealed class StaticCurrentUserService : ICurrentUserService
     {

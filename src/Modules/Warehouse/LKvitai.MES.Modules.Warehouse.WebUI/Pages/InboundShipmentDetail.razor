@@ -42,6 +42,10 @@
                     {
                         <button class="btn btn-outline-primary btn-sm" @onclick="OpenEdit">@L["Common.Edit"]</button>
                     }
+                    @if (_shipment.Status is "Draft" or "Partial" && TotalReceived < TotalExpected)
+                    {
+                        <button class="btn btn-outline-primary btn-sm" disabled="@_isSubmitting" @onclick="CloseShortAsync">@L["Completion.CloseShort"]</button>
+                    }
                     <button class="btn btn-outline-secondary btn-sm" @onclick="BackToList">@L["Common.Back"]</button>
                     <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync">@L["Common.Refresh"]</button>
                 </div>
@@ -91,7 +95,7 @@
                             <input type="number" min="0.01" step="0.01" class="form-control" @bind="_receivedQty" />
                         </div>
                         <div class="col-md-2 d-flex">
-                            <button class="btn btn-primary mt-auto" @onclick="ReceiveAsync" disabled="@_isSubmitting">@L["Common.Receive"]</button>
+                            <button class="btn btn-primary mt-auto" @onclick="ReceiveAsync" disabled="@(_isSubmitting || _shipment.Status is "Complete" or "Cancelled")">@L["Common.Receive"]</button>
                         </div>
                     </div>
 
@@ -291,6 +295,19 @@
 
         _selectedLineId = matched.LineId.ToString();
         ToastService.ShowSuccess(L["InboundShipmentDetail.Toast.SelectedLine", matched.LineId, matched.ItemSku].Value);
+    }
+
+    private async Task CloseShortAsync()
+    {
+        _isSubmitting = true;
+        try
+        {
+            await ReceivingClient.CloseShortAsync(Id, _notes);
+            await LoadAsync();
+            ToastService.ShowSuccess(L["Completion.ClosedShort"].Value);
+        }
+        catch (ApiException ex) { _apiError = ex; ToastService.ShowError(BuildErrorMessage(ex)); }
+        finally { _isSubmitting = false; }
     }
 
     private async Task ReceiveAsync()

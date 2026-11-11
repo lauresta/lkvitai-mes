@@ -10,8 +10,16 @@ public static class StockEventQuantity
     {
         var physical = locations.Where(PhysicalLocation.IsPhysical).Select(x => x.Code)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return CalculateAt(events, sku, location => physical.Contains(location));
+    }
+
+    public static decimal CalculateAtLocation(IEnumerable<object> events, string sku, string location)
+        => CalculateAt(events, sku, value => Same(value, location));
+
+    private static decimal CalculateAt(IEnumerable<object> events, string sku, Func<string, bool> includes)
+    {
         decimal total = 0m;
-        decimal At(string? location, decimal qty) => location is not null && physical.Contains(location) ? qty : 0m;
+        decimal At(string? location, decimal qty) => location is not null && includes(location) ? qty : 0m;
         foreach (var evt in events)
         {
             total += evt switch
