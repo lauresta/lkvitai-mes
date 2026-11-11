@@ -72,7 +72,7 @@ public sealed class DeployedPriceAuditTests
             foreach (var (name, path) in routes)
             {
                 var onlyRoute = Environment.GetEnvironmentVariable("WAREHOUSE_PRICE_AUDIT_ROUTE");
-                if (!string.IsNullOrWhiteSpace(onlyRoute) && name != onlyRoute) continue;
+                if (!string.IsNullOrWhiteSpace(onlyRoute) && !onlyRoute.Split(',').Contains(name)) continue;
                 if (path is null)
                 {
                     await File.WriteAllTextAsync(Path.Combine(directory, name + ".skip.txt"),
@@ -151,8 +151,14 @@ public sealed class DeployedPriceAuditTests
 
     private static async Task WaitReadyAsync(IPage page)
     {
-        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await page.Locator("h1:visible,h2:visible,h3:visible,[data-testid]:visible,canvas:visible,.viz-refresh-age:visible").First.WaitForAsync(new() { State = WaitForSelectorState.Visible });
         await page.Locator("body").WaitForAsync(new() { State = WaitForSelectorState.Visible });
+        // Server prerender is visible before Blazor attaches event handlers. Typing earlier
+        // is discarded during hydration. Wait for the actual bound controls, not a delay.
+        await page.WaitForFunctionAsync("""
+            () => Array.from(document.querySelectorAll('button,input,select'))
+              .some(e => Object.keys(e).some(k => k.startsWith('_blazorEvents_')))
+            """, null, new() { Timeout = 30000 });
         await page.Locator(".spinner-border[role=status]").Last.WaitForAsync(new()
         {
             State = WaitForSelectorState.Hidden, Timeout = 30000

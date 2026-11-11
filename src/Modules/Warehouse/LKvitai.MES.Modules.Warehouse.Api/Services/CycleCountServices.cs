@@ -11,9 +11,44 @@ using LKvitai.MES.BuildingBlocks.SharedKernel;
 using Marten;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using SessionOptions = Marten.Services.SessionOptions;
+using Npgsql;
 using IDocumentStore = Marten.IDocumentStore;
 
 namespace LKvitai.MES.Modules.Warehouse.Api.Services;
+
+public interface ICycleCountAdjustmentWriter
+{
+    Task CommitAsync(IReadOnlyList<StockAdjustedEvent> adjustments, CancellationToken cancellationToken);
+}
+
+/// <summary>EF and Marten both use WarehouseDb. Approvals and stock events commit together.</summary>
+public sealed class CycleCountAdjustmentWriter(
+    WarehouseDbContext dbContext,
+    IDocumentStore documentStore) : ICycleCountAdjustmentWriter
+{
+    public async Task CommitAsync(IReadOnlyList<StockAdjustedEvent> adjustments, CancellationToken cancellationToken)
+    {
+        await dbContext.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
+        {
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+            await using var session = documentStore.LightweightSession(
+                SessionOptions.ForTransaction((NpgsqlTransaction)transaction.GetDbTransaction(), false));
+            foreach (var adjustment in adjustments)
+            {
+                // Stable line identity also guards concurrent approval and ambiguous commit retries.
+                var stream = $"stock-adjustment:{adjustment.AdjustmentId:N}";
+                if (await session.Events.FetchStreamStateAsync(stream, cancellationToken) is null)
+                    session.Events.StartStream(stream, adjustment);
+            }
+            await dbContext.SaveChangesAsync(acceptAllChangesOnSuccess: false, cancellationToken);
+            await session.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            dbContext.ChangeTracker.AcceptAllChanges();
+        });
+    }
+}
 
 public interface ICycleCountQuantityResolver
 {
@@ -312,6 +347,7 @@ public sealed class ApplyAdjustmentCommandHandler : IRequestHandler<ApplyAdjustm
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IBusinessTelemetryService _businessTelemetryService;
     private readonly ILogger<ApplyAdjustmentCommandHandler> _logger;
+    private readonly ICycleCountAdjustmentWriter _adjustmentWriter;
 
     public ApplyAdjustmentCommandHandler(
         WarehouseDbContext dbContext,
@@ -319,7 +355,8 @@ public sealed class ApplyAdjustmentCommandHandler : IRequestHandler<ApplyAdjustm
         ICurrentUserService currentUserService,
         IHttpContextAccessor httpContextAccessor,
         IBusinessTelemetryService businessTelemetryService,
-        ILogger<ApplyAdjustmentCommandHandler> logger)
+        ILogger<ApplyAdjustmentCommandHandler> logger,
+        ICycleCountAdjustmentWriter adjustmentWriter)
     {
         _dbContext = dbContext;
         _eventBus = eventBus;
@@ -327,6 +364,7 @@ public sealed class ApplyAdjustmentCommandHandler : IRequestHandler<ApplyAdjustm
         _httpContextAccessor = httpContextAccessor;
         _businessTelemetryService = businessTelemetryService;
         _logger = logger;
+        _adjustmentWriter = adjustmentWriter;
     }
 
     public async Task<Result> Handle(ApplyAdjustmentCommand request, CancellationToken cancellationToken)
@@ -356,8 +394,14 @@ public sealed class ApplyAdjustmentCommandHandler : IRequestHandler<ApplyAdjustm
 
         var approvedLines = 0;
         var discrepancyLines = 0;
+        var adjustments = new List<StockAdjustedEvent>();
         foreach (var line in cycleCount.Lines)
         {
+            if (line.Status == CycleCountLineStatus.Approved)
+            {
+                approvedLines++;
+                continue;
+            }
             line.Delta = decimal.Round(line.PhysicalQty - line.SystemQty, 3, MidpointRounding.AwayFromZero);
             if (line.Delta == 0m)
             {
@@ -391,8 +435,8 @@ public sealed class ApplyAdjustmentCommandHandler : IRequestHandler<ApplyAdjustm
                     impact);
             }
 
-            var adjustmentId = Guid.NewGuid();
-            await _eventBus.PublishAsync(new StockAdjustedEvent
+            var adjustmentId = line.Id;
+            adjustments.Add(new StockAdjustedEvent
             {
                 AggregateId = cycleCount.Id,
                 UserId = currentUserId,
@@ -406,7 +450,7 @@ public sealed class ApplyAdjustmentCommandHandler : IRequestHandler<ApplyAdjustm
                 ReasonCode = "CYCLE_COUNT",
                 Notes = line.Reason,
                 Timestamp = DateTime.UtcNow
-            }, cancellationToken);
+            });
             _businessTelemetryService.TrackStockAdjusted(
                 adjustmentId,
                 line.ItemId,
@@ -414,6 +458,8 @@ public sealed class ApplyAdjustmentCommandHandler : IRequestHandler<ApplyAdjustm
                 "CYCLE_COUNT");
 
             line.Status = CycleCountLineStatus.Approved;
+            line.AdjustmentApprovedBy = string.IsNullOrWhiteSpace(request.ApproverId) ? currentUserId : request.ApproverId.Trim();
+            line.AdjustmentApprovedAt = DateTimeOffset.UtcNow;
             approvedLines++;
 
             CycleCountMetrics.DiscrepanciesTotal.Add(
@@ -430,7 +476,9 @@ public sealed class ApplyAdjustmentCommandHandler : IRequestHandler<ApplyAdjustm
             return completeResult;
         }
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _adjustmentWriter.CommitAsync(adjustments, cancellationToken);
+        foreach (var adjustment in adjustments)
+            await _eventBus.PublishAsync(adjustment, cancellationToken);
 
         var accuracy = cycleCount.Lines.Count == 0
             ? 100d
