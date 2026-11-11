@@ -1,4 +1,3 @@
-using LKvitai.MES.Modules.Warehouse.Qa;
 using Microsoft.AspNetCore.DataProtection;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.Modules.Warehouse.Api.Configuration;
@@ -139,7 +138,6 @@ builder.Services.AddDataProtection()
         ?? Path.Combine(builder.Environment.ContentRootPath,".auth-keys")))
     .DisableAutomaticKeyGeneration();
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton<WarehouseQaProof>();
 builder.Services.AddSingleton<LKvitai.MES.BuildingBlocks.PortalAuth.CikadaUserBridgeProof>();
 builder.Services.AddSingleton<CikadaSsoAccountProof>();
 builder.Services.AddScoped<TrustedUserAdministrationFilter>();
