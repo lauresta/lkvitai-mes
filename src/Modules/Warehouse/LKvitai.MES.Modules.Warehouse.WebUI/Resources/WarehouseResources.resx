@@ -1830,5 +1830,4 @@
   <data name="Rmas.OrderLineId" xml:space="preserve"><value>Order line ID (optional for a unique item)</value></data>
   <data name="Status.Restocked" xml:space="preserve"><value>Restocked</value></data>
   <data name="Status.PendingReceipt" xml:space="preserve"><value>Pending receipt</value></data>
-  <data name="Status.Assigned" xml:space="preserve"><value>Assigned</value></data>
 </root>
