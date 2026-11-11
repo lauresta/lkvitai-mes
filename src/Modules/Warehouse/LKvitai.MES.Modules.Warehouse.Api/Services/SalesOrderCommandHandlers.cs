@@ -436,15 +436,18 @@ public sealed class ReleaseSalesOrderCommandHandler : IRequestHandler<ReleaseSal
 public sealed class CancelSalesOrderCommandHandler : IRequestHandler<CancelSalesOrderCommand, Result>
 {
     private readonly WarehouseDbContext _dbContext;
+    private readonly IDocumentStore _store;
     private readonly IEventBus _eventBus;
     private readonly ICurrentUserService _currentUserService;
 
     public CancelSalesOrderCommandHandler(
         WarehouseDbContext dbContext,
         IEventBus eventBus,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IDocumentStore store)
     {
         _dbContext = dbContext;
+        _store = store;
         _eventBus = eventBus;
         _currentUserService = currentUserService;
     }
@@ -459,21 +462,54 @@ public sealed class CancelSalesOrderCommandHandler : IRequestHandler<CancelSales
             return Result.Fail(DomainErrorCodes.NotFound, "Sales order not found.");
         }
 
+        if (order.Status is SalesOrderStatus.Shipped or SalesOrderStatus.Delivered or SalesOrderStatus.Invoiced)
+            return Result.Fail(DomainErrorCodes.ValidationError, "Dispatched orders cannot be cancelled; use a return.");
+
+        var outbound = await _dbContext.OutboundOrders
+            .Include(x => x.Lines).ThenInclude(x => x.Item)
+            .FirstOrDefaultAsync(x => x.SalesOrderId == order.Id, cancellationToken);
+        var shipments = outbound is null ? [] : await _dbContext.Shipments
+            .Where(x => x.OutboundOrderId == outbound.Id).ToListAsync(cancellationToken);
+        if (shipments.Any(x => x.Status is ShipmentStatus.Dispatched or ShipmentStatus.InTransit or ShipmentStatus.Delivered))
+            return Result.Fail(DomainErrorCodes.ValidationError, "Dispatched shipments cannot be cancelled.");
+
         var cancelResult = order.Cancel(request.Reason);
         if (!cancelResult.IsSuccess)
         {
             return cancelResult;
         }
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        await _eventBus.PublishAsync(new SalesOrderCancelledEvent
+        var movements = new List<StockMovedEvent>();
+        if (outbound is not null)
+        {
+            foreach (var line in outbound.Lines.Where(x => x.PickedQty > 0))
+                movements.Add(new StockMovedEvent
+                {
+                    MovementId = Guid.NewGuid(), SKU = line.Item!.InternalSKU, Quantity = line.PickedQty,
+                    FromLocation = "SHIPPING", ToLocation = "RECEIVING",
+                    MovementType = LKvitai.MES.Modules.Warehouse.Domain.MovementType.Transfer,
+                    OperatorId = Guid.TryParse(_currentUserService.GetCurrentUserId(), out var id) ? id : Guid.Empty,
+                    Reason = request.Reason
+                });
+            outbound.Cancel(request.Reason);
+            foreach (var shipment in shipments.Where(x => x.Status != ShipmentStatus.Cancelled)) shipment.Cancel(request.Reason);
+            var outboundId = outbound.Id.ToString();
+            var tasks = await _dbContext.PickTasks.Where(x => x.Status == "Pending" &&
+                (x.OrderId == outbound.OrderNumber || x.OrderId == outboundId || x.OrderId == order.OrderNumber))
+                .ToListAsync(cancellationToken);
+            foreach (var task in tasks) task.Status = "Cancelled";
+        }
+        var cancelled = new SalesOrderCancelledEvent
         {
             Id = order.Id,
             Reason = request.Reason,
             CancelledAt = DateTime.UtcNow,
             CancelledBy = _currentUserService.GetCurrentUserId()
-        }, cancellationToken);
+        };
+        await WarehouseOperationPersistence.CommitAsync(_dbContext, _store,
+            $"order-cancel:{order.Id:N}", cancelled, movements, cancellationToken);
+        foreach (var movement in movements) await _eventBus.PublishAsync(movement, cancellationToken);
+        await _eventBus.PublishAsync(cancelled, cancellationToken);
 
         return Result.Ok();
     }

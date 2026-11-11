@@ -7,6 +7,8 @@ using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.Modules.Warehouse.Integration.Carrier;
 using LKvitai.MES.BuildingBlocks.SharedKernel;
 using MediatR;
+using IDocumentStore = Marten.IDocumentStore;
+using Movement = LKvitai.MES.Modules.Warehouse.Domain.MovementType;
 using Microsoft.EntityFrameworkCore;
 
 namespace LKvitai.MES.Modules.Warehouse.Api.Services;
@@ -14,6 +16,7 @@ namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 public sealed class DispatchShipmentCommandHandler : IRequestHandler<DispatchShipmentCommand, Result>
 {
     private readonly WarehouseDbContext _dbContext;
+    private readonly IDocumentStore _store;
     private readonly ICarrierApiService _carrierApiService;
     private readonly IEventBus _eventBus;
     private readonly ICurrentUserService _currentUserService;
@@ -26,9 +29,11 @@ public sealed class DispatchShipmentCommandHandler : IRequestHandler<DispatchShi
         IEventBus eventBus,
         ICurrentUserService currentUserService,
         IBusinessTelemetryService businessTelemetryService,
-        ILogger<DispatchShipmentCommandHandler> logger)
+        ILogger<DispatchShipmentCommandHandler> logger,
+        IDocumentStore store)
     {
         _dbContext = dbContext;
+        _store = store;
         _carrierApiService = carrierApiService;
         _eventBus = eventBus;
         _currentUserService = currentUserService;
@@ -39,6 +44,7 @@ public sealed class DispatchShipmentCommandHandler : IRequestHandler<DispatchShi
     public async Task<Result> Handle(DispatchShipmentCommand request, CancellationToken cancellationToken)
     {
         var shipment = await _dbContext.Shipments
+            .Include(x => x.Lines).ThenInclude(x => x.Item)
             .FirstOrDefaultAsync(x => x.Id == request.ShipmentId, cancellationToken);
 
         if (shipment is null)
@@ -72,6 +78,11 @@ public sealed class DispatchShipmentCommandHandler : IRequestHandler<DispatchShi
             parsedCarrier = Carrier.Other;
         }
 
+        if (!await _dbContext.Locations.AnyAsync(x => x.Code == "CUSTOMER" && x.IsVirtual, cancellationToken))
+            return Result.Fail(DomainErrorCodes.ValidationError, "CUSTOMER dispatch location is missing.");
+        if (shipment.Lines.Count == 0 || shipment.Lines.Any(x => x.Qty <= 0 || x.Item is null))
+            return Result.Fail(DomainErrorCodes.ValidationError, "Shipment has no valid packed contents.");
+
         var shipmentResult = shipment.Dispatch(parsedCarrier, trackingNumber, dispatchAt);
         if (!shipmentResult.IsSuccess)
         {
@@ -103,9 +114,7 @@ public sealed class DispatchShipmentCommandHandler : IRequestHandler<DispatchShi
             }
         }
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        await _eventBus.PublishAsync(new ShipmentDispatchedEvent
+        var dispatched = new ShipmentDispatchedEvent
         {
             ShipmentId = shipment.Id,
             ShipmentNumber = shipment.ShipmentNumber,
@@ -117,7 +126,18 @@ public sealed class DispatchShipmentCommandHandler : IRequestHandler<DispatchShi
             DispatchedAt = dispatchAt.UtcDateTime,
             DispatchedBy = _currentUserService.GetCurrentUserId(),
             ManualTracking = manualTracking
-        }, cancellationToken);
+        };
+        var movements = shipment.Lines.Select(line => new StockMovedEvent
+        {
+            MovementId = Guid.NewGuid(), SKU = line.Item!.InternalSKU, Quantity = line.Qty,
+            FromLocation = "SHIPPING", ToLocation = "CUSTOMER", MovementType = Movement.Dispatch,
+            OperatorId = Guid.TryParse(_currentUserService.GetCurrentUserId(), out var userId) ? userId : Guid.Empty,
+            HandlingUnitId = line.HandlingUnitId, Reason = $"Dispatch {shipment.ShipmentNumber} / {trackingNumber}"
+        }).ToList();
+        await WarehouseOperationPersistence.CommitAsync(_dbContext, _store,
+            $"shipment-dispatch:{shipment.Id:N}", dispatched, movements, cancellationToken);
+        foreach (var movement in movements) await _eventBus.PublishAsync(movement, cancellationToken);
+        await _eventBus.PublishAsync(dispatched, cancellationToken);
         _businessTelemetryService.TrackShipmentDispatched(
             shipment.Id,
             outboundOrder.Id,
