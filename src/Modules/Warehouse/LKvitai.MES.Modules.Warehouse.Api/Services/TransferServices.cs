@@ -334,12 +334,11 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
         TransferMeter.CreateCounter<long>("transfers_executed_total");
     private static readonly Histogram<double> TransferExecutionDurationMs =
         TransferMeter.CreateHistogram<double>("transfer_execution_duration_ms");
-    private const int StockLedgerAppendMaxRetries = 3;
 
     private readonly WarehouseDbContext _dbContext;
     private readonly IEventBus _eventBus;
     private readonly ITransferStockAvailabilityService _stockAvailabilityService;
-    private readonly IStockLedgerRepository _stockLedgerRepository;
+    private readonly IDocumentStore _documentStore;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<ExecuteTransferCommandHandler> _logger;
 
@@ -347,14 +346,14 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
         WarehouseDbContext dbContext,
         IEventBus eventBus,
         ITransferStockAvailabilityService stockAvailabilityService,
-        IStockLedgerRepository stockLedgerRepository,
+        IDocumentStore documentStore,
         ICurrentUserService currentUserService,
         ILogger<ExecuteTransferCommandHandler> logger)
     {
         _dbContext = dbContext;
         _eventBus = eventBus;
         _stockAvailabilityService = stockAvailabilityService;
-        _stockLedgerRepository = stockLedgerRepository;
+        _documentStore = documentStore;
         _currentUserService = currentUserService;
         _logger = logger;
     }
@@ -428,117 +427,47 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
                 }
             }
 
-            IDbContextTransaction? transaction = null;
-            try
+            var startResult = transfer.StartExecution(_currentUserService.GetCurrentUserId(), request.CommandId, DateTimeOffset.UtcNow);
+            if (!startResult.IsSuccess) return startResult;
+
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+            await using var session = _documentStore.LightweightSession(Marten.Services.SessionOptions.ForTransaction(
+                (Npgsql.NpgsqlTransaction)transaction.GetDbTransaction(), false));
+            var inTransitLocation = await EnsureInTransitLocationAsync(transfer, cancellationToken);
+            var executed = new TransferExecutedEvent
             {
-                if (_dbContext.Database.IsRelational())
-                {
-                    transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-                }
-
-                var startResult = transfer.StartExecution(
-                    _currentUserService.GetCurrentUserId(),
-                    request.CommandId,
-                    DateTimeOffset.UtcNow);
-                if (!startResult.IsSuccess)
-                {
-                    return startResult;
-                }
-
-                var inTransitLocation = await EnsureInTransitLocationAsync(transfer, cancellationToken);
-                await _dbContext.SaveChangesAsync(cancellationToken);
-
-                await _eventBus.PublishAsync(new TransferExecutedEvent
-                {
-                    TransferId = transfer.Id,
-                    TransferNumber = transfer.TransferNumber,
-                    InTransitLocationCode = inTransitLocation.Code,
-                    LineCount = transfer.Lines.Count,
-                    ExecutedAt = transfer.ExecutedAt?.UtcDateTime ?? DateTime.UtcNow
-                }, cancellationToken);
-
-                var operatorId = ResolveOperatorId(_currentUserService.GetCurrentUserId());
-                foreach (var line in transfer.Lines)
-                {
-                    var itemSku = line.Item!.InternalSKU;
-                    var fromLocationCode = line.FromLocation!.Code;
-                    var toLocationCode = line.ToLocation!.Code;
-
-                    var toTransitMovement = new StockMovedEvent
-                    {
-                        MovementId = Guid.NewGuid(),
-                        SKU = itemSku,
-                        Quantity = line.Qty,
-                        FromLocation = fromLocationCode,
-                        ToLocation = inTransitLocation.Code,
-                        MovementType = MovementType.Transfer,
-                        OperatorId = operatorId,
-                        Reason = $"Transfer {transfer.TransferNumber}"
-                    };
-
-                    var appendToTransitResult = await AppendStockMovementAsync(
-                        transfer.FromWarehouse,
-                        toTransitMovement.FromLocation,
-                        toTransitMovement,
-                        cancellationToken);
-                    if (!appendToTransitResult.IsSuccess)
-                    {
-                        return appendToTransitResult;
-                    }
-
-                    await _eventBus.PublishAsync(toTransitMovement, cancellationToken);
-
-                    var fromTransitMovement = new StockMovedEvent
-                    {
-                        MovementId = Guid.NewGuid(),
-                        SKU = itemSku,
-                        Quantity = line.Qty,
-                        FromLocation = inTransitLocation.Code,
-                        ToLocation = toLocationCode,
-                        MovementType = MovementType.Transfer,
-                        OperatorId = operatorId,
-                        Reason = $"Transfer {transfer.TransferNumber}"
-                    };
-
-                    var appendFromTransitResult = await AppendStockMovementAsync(
-                        transfer.ToWarehouse,
-                        fromTransitMovement.FromLocation,
-                        fromTransitMovement,
-                        cancellationToken);
-                    if (!appendFromTransitResult.IsSuccess)
-                    {
-                        return appendFromTransitResult;
-                    }
-
-                    await _eventBus.PublishAsync(fromTransitMovement, cancellationToken);
-                }
-
-                var completeResult = transfer.Complete(DateTimeOffset.UtcNow);
-                if (!completeResult.IsSuccess)
-                {
-                    return completeResult;
-                }
-
-                await _dbContext.SaveChangesAsync(cancellationToken);
-                await _eventBus.PublishAsync(new TransferCompletedEvent
-                {
-                    TransferId = transfer.Id,
-                    TransferNumber = transfer.TransferNumber,
-                    CompletedAt = transfer.CompletedAt?.UtcDateTime ?? DateTime.UtcNow
-                }, cancellationToken);
-
-                if (transaction is not null)
-                {
-                    await transaction.CommitAsync(cancellationToken);
-                }
-            }
-            finally
+                TransferId = transfer.Id, TransferNumber = transfer.TransferNumber,
+                InTransitLocationCode = inTransitLocation.Code, LineCount = transfer.Lines.Count,
+                ExecutedAt = transfer.ExecutedAt.GetValueOrDefault().UtcDateTime
+            };
+            var movements = BuildMovements(transfer, inTransitLocation.Code,
+                ResolveOperatorId(_currentUserService.GetCurrentUserId()));
+            var completeResult = transfer.Complete(DateTimeOffset.UtcNow);
+            if (!completeResult.IsSuccess) return completeResult;
+            var completed = new TransferCompletedEvent
             {
-                if (transaction is not null)
-                {
-                    await transaction.DisposeAsync();
-                }
+                TransferId = transfer.Id, TransferNumber = transfer.TransferNumber,
+                CompletedAt = transfer.CompletedAt.GetValueOrDefault().UtcDateTime
+            };
+            // One operation stream also rejects simultaneous executions of the same transfer.
+            session.Events.StartStream($"transfer-execution:{transfer.Id:N}", executed, completed);
+            foreach (var group in movements.GroupBy(x => StockLedgerStreamId.For(
+                         x.Warehouse.Trim().ToUpperInvariant(), x.Event.FromLocation, x.Event.SKU)))
+            {
+                var state = await session.Events.FetchStreamStateAsync(group.Key, cancellationToken);
+                var events = group.Select(x => (object)x.Event).ToArray();
+                session.Events.Append(group.Key, (state?.Version ?? 0) + events.Length, events);
             }
+            await _dbContext.SaveChangesAsync(acceptAllChangesOnSuccess: false, cancellationToken);
+            // Both legs of every line, together with EF state, commit or roll back together.
+            await session.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            _dbContext.ChangeTracker.AcceptAllChanges();
+
+            // OnHandValue consumes the bus; publish only after the complete movement is committed.
+            await _eventBus.PublishAsync(executed, cancellationToken);
+            foreach (var movement in movements) await _eventBus.PublishAsync(movement.Event, cancellationToken);
+            await _eventBus.PublishAsync(completed, cancellationToken);
 
             TransfersExecutedTotal.Add(1, new KeyValuePair<string, object?>("to_warehouse", transfer.ToWarehouse));
             TransferExecutionDurationMs.Record(Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds);
@@ -550,6 +479,25 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
             return Result.Ok();
         });
     }
+
+    private static (string Warehouse, StockMovedEvent Event)[] BuildMovements(Transfer transfer, string transit, Guid operatorId)
+        => transfer.Lines.SelectMany(line => new[]
+        {
+            (transfer.FromWarehouse, new StockMovedEvent
+            {
+                MovementId = Guid.NewGuid(), SKU = line.Item!.InternalSKU, Quantity = line.Qty,
+                FromLocation = line.FromLocation!.Code, ToLocation = transit,
+                MovementType = MovementType.Transfer, OperatorId = operatorId,
+                Reason = $"Transfer {transfer.TransferNumber}"
+            }),
+            (transfer.ToWarehouse, new StockMovedEvent
+            {
+                MovementId = Guid.NewGuid(), SKU = line.Item!.InternalSKU, Quantity = line.Qty,
+                FromLocation = transit, ToLocation = line.ToLocation!.Code,
+                MovementType = MovementType.Transfer, OperatorId = operatorId,
+                Reason = $"Transfer {transfer.TransferNumber}"
+            })
+        }).ToArray();
 
     private async Task<Location> EnsureInTransitLocationAsync(Transfer transfer, CancellationToken cancellationToken)
     {
@@ -575,70 +523,6 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
 
         _dbContext.Locations.Add(location);
         return location;
-    }
-
-    private async Task<Result> AppendStockMovementAsync(
-        string warehouseId,
-        string streamLocation,
-        StockMovedEvent movementEvent,
-        CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(warehouseId))
-        {
-            return Result.Fail(DomainErrorCodes.ValidationError, "Transfer warehouse is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(streamLocation))
-        {
-            return Result.Fail(DomainErrorCodes.ValidationError, "Transfer location is required.");
-        }
-
-        var streamId = StockLedgerStreamId.For(
-            warehouseId.Trim().ToUpperInvariant(),
-            streamLocation.Trim(),
-            movementEvent.SKU);
-
-        for (var attempt = 1; attempt <= StockLedgerAppendMaxRetries; attempt++)
-        {
-            var (_, version) = await _stockLedgerRepository.LoadAsync(streamId, cancellationToken);
-
-            try
-            {
-                await _stockLedgerRepository.AppendEventAsync(
-                    streamId,
-                    movementEvent,
-                    version,
-                    cancellationToken);
-
-                return Result.Ok();
-            }
-            catch (ConcurrencyException ex) when (attempt < StockLedgerAppendMaxRetries)
-            {
-                _logger.LogWarning(
-                    ex,
-                    "Stock ledger concurrency conflict for stream {StreamId}, attempt {Attempt}/{MaxAttempts}",
-                    streamId,
-                    attempt,
-                    StockLedgerAppendMaxRetries);
-
-                await Task.Delay(50 * attempt, cancellationToken);
-            }
-            catch (ConcurrencyException ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Stock ledger append failed after retries for stream {StreamId}",
-                    streamId);
-
-                return Result.Fail(
-                    DomainErrorCodes.ConcurrencyConflict,
-                    $"Stock movement append failed for stream '{streamId}'.");
-            }
-        }
-
-        return Result.Fail(
-            DomainErrorCodes.ConcurrencyConflict,
-            $"Stock movement append failed for stream '{streamId}'.");
     }
 
     private static Guid ResolveOperatorId(string userId)
