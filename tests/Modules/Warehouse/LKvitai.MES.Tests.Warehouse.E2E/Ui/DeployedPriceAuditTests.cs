@@ -14,9 +14,9 @@ public sealed class DeployedPriceAuditTests
     [Fact]
     public async Task CapturePriceScreensInBothLanguages()
     {
-        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("WAREHOUSE_QA_KEY")))
+        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("WAREHOUSE_E2E_STORAGE_STATE")))
         {
-            Console.WriteLine("Deployed price audit requires an explicit test credential.");
+            Console.WriteLine("Deployed price audit requires an ordinary authenticated browser storage-state file.");
             return;
         }
         using var expected = JsonDocument.Parse(File.ReadAllText(Path.Combine(Output, "expected.json")));
@@ -63,7 +63,8 @@ public sealed class DeployedPriceAuditTests
         {
             await using var context = await browser.NewContextAsync(new()
             {
-                ViewportSize = new() { Width = 1440, Height = 900 }, AcceptDownloads = true
+                ViewportSize = new() { Width = 1440, Height = 900 }, AcceptDownloads = true,
+                StorageStatePath = Environment.GetEnvironmentVariable("WAREHOUSE_E2E_STORAGE_STATE")
             });
             await AuthorizeAsync(context, language);
             var directory = Path.Combine(Output, language);
@@ -136,13 +137,6 @@ public sealed class DeployedPriceAuditTests
 
     private static async Task AuthorizeAsync(IBrowserContext context, string language)
     {
-        var key = Environment.GetEnvironmentVariable("WAREHOUSE_QA_KEY");
-        Assert.False(string.IsNullOrWhiteSpace(key));
-        var entry = await context.APIRequest.GetAsync(Origin + "/warehouse/", new()
-        {
-            Headers = new Dictionary<string, string> { ["X-Warehouse-QA-Key"] = key! }, MaxRedirects = 0
-        });
-        Assert.Equal(302, entry.Status);
         var culture = await context.APIRequest.GetAsync(
             Origin + "/warehouse/culture/set?culture=" + language + "&returnUrl=%2Fwarehouse%2Fdashboard",
             new() { MaxRedirects = 0 });

@@ -29,9 +29,10 @@ if snapshot.returncode:
     sys.exit(2)
 (OUT / "expected.json").write_text(snapshot.stdout)
 
-key_file = pathlib.Path(os.environ.get("WAREHOUSE_QA_KEY_FILE", "/tmp/warehouse-qa-price-key"))
 environment = os.environ.copy()
-environment["WAREHOUSE_QA_KEY"] = key_file.read_text().strip()
+storage_state = environment.get("WAREHOUSE_E2E_STORAGE_STATE")
+if not storage_state or not pathlib.Path(storage_state).is_file():
+    sys.exit("Set WAREHOUSE_E2E_STORAGE_STATE to an ordinary authenticated browser storage-state file.")
 project = HERE.parent / "LKvitai.MES.Tests.Warehouse.E2E.csproj"
 test = subprocess.run(["dotnet", "test", str(project), "-c", "Release", "--no-restore",
                        "--filter", "FullyQualifiedName~DeployedPriceAuditTests",

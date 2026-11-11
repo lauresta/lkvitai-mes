@@ -238,6 +238,22 @@ Allocate (`SalesOrderCommandHandlers.cs`, `AllocateSalesOrderCommandHandler`) с
   и создание IN_TRANSIT; повтор успешной операции не добавляет событий. На test API перемещений отвечает 200.
   Публикация в шину сохранена: OnHandValue получает движения через существующего потребителя шины.
 
+- C6: PR #323 и корректирующий #324 влиты, main `0b2662d6`; все проверки зелёные, включая Sonar.
+  Deploy to Test #43015421339 успешен. 791 unit, 8 первоначальных PostgreSQL/Marten-проверок,
+  затем 7 проверок сохранения и 10 проверок резерва/волны/async-guard прошли.
+  На test обычными API созданы QA-волна, cross-dock, серийный номер с историей, шаблон/дефект QC
+  с Minio-вложением, RMA RESTOCK/SCRAP с кредитом, очередь этикеток и CSV-отчёт сверки.
+  Все данные проверены API до и после перезапуска API; шесть экранов проверены EN/LT, плашек нет.
+  Очередь этикеток проверена без подключённого принтера; физическая печать не проверялась.
+  QA-резерв снят, QA-добавки убраны обычными корректировками; физическая ячейка снова 3 / доступно 3.
+  Ошибок браузера и WebUI нет. API log gate красный из-за отдельной AgnumExportSaga (см. «Осталось»),
+  хотя CSV экспорт и сохранение/чтение отчёта успешны. Локальные доказательства `/tmp/warehouse-c6-smoke`.
+- C7: начат от свежего main `0b2662d6`. Compliance использует общий Redis вместо памяти.
+  791 unit-тест и тест реального Redis с независимыми соединениями/переподключением прошли.
+  QA-код удалён; GitHub test variables WAREHOUSE_QA_* и secret удалены. E2E использует
+  обычную SSO-сессию из WAREHOUSE_E2E_STORAGE_STATE. После деплоя остаётся проверить отказ старому
+  QA proof и заголовку и удалить временные файлы ключа/утилиты.
+
 ### Отклонения
 
 - C0: `OutboundOrderSummary` не содержал `SalesOrderId`; добавлено поле в существующий ответ API и WebUI DTO,
@@ -288,6 +304,11 @@ Allocate (`SalesOrderCommandHandlers.cs`, `AllocateSalesOrderCommandHandler`) с
   Добавлен доступ app только к каталогу CSV; PostgreSQL-тест включает headers как приложение.
   Для исправления после merge нужен дополнительный PR C6 перед C7. Запись в Agnum не включалась.
 
+- C7: `MfaSessionTokenService` не хранит состояние экземпляра. `OAuthLoginStateStore` на test
+  не используется: OAuth.Enabled=false, override отсутствует, контроллер отклоняет запрос до создания state.
+  Включение этого OAuth-пути не входило в задание. Живой LotTraceStore заменён общим Redis-хешем;
+  Compliance читает Count/TryGetAny через интерфейс, без приведения к InMemory.
+
 ### Осталось
 
 - C0: штатного способа применить исправленный регистр при несовпадающем checksum нет;
@@ -295,6 +316,9 @@ Allocate (`SalesOrderCommandHandlers.cs`, `AllocateSalesOrderCommandHandler`) с
 - C0/C4: существующий регистр Valuation item 7682 отвергает AdjustValuationCostCommand:
   `Event item id does not match aggregate item id`. Приход QA-C4-short (shipment 6) записан 1/2,
   WAC не обновлён; API явно сообщил об этом. Исправление/пересоздание valuation aggregate не предусмотрено C4.
-- C6–C7: выполнять последовательно; C6 начат от main `ba6efeba`.
+- C6: фоновый `AgnumExportSaga` на StartAgnumExport выдаёт `UnknownStateException` (пустое имя состояния).
+  Сам CSV-экспорт успешен, отчёт сверки сохранён в БД и прочитан после рестарта. Исправление саги
+  не предусмотрено пунктом C6 о хранении отчёта; синхронизация цен и внешняя запись не включались.
+- C7: завершить проверки общего Redis и удалить временный QA-доступ.
 - Временный QA-вход: только `X-Warehouse-QA-Key`, срок сессии и proof не более четырёх часов;
   ключ, настройки и временный код удалить после проверок.

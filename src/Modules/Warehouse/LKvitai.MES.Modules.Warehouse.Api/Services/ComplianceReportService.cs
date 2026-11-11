@@ -85,11 +85,7 @@ public sealed class ComplianceReportService : IComplianceReportService
             .AsNoTracking()
             .CountAsync(x => x.Status == TransactionExportStatus.Pending, cancellationToken);
 
-        var recentTraces = 0;
-        if (_lotTraceStore is InMemoryLotTraceStore inMemory)
-        {
-            recentTraces = inMemory.Count;
-        }
+        var recentTraces = _lotTraceStore.Count;
 
         var varianceAlerts = await _dbContext.CycleCountLines
             .AsNoTracking()
@@ -365,7 +361,7 @@ public sealed class ComplianceReportService : IComplianceReportService
 
     private async Task<string> GenerateLotTraceCsvAsync(CancellationToken cancellationToken)
     {
-        if (_lotTraceStore is not InMemoryLotTraceStore store || !store.TryGetAny(out var report) || report is null)
+        if (!_lotTraceStore.TryGetAny(out var report) || report is null)
         {
             var fileName = $"lot-trace-empty-{DateTime.UtcNow:yyyyMMddHHmmss}.csv";
             var filePath = Path.Combine(_options.ReportRootPath, fileName);
