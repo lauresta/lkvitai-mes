@@ -26,6 +26,7 @@ RUN dotnet restore Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/LKvitai.M
 
 # Copy source code
 COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/ Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/
+COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/Infrastructure/WarehouseQaProof.cs Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/Infrastructure/
 COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Application/ Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Application/
 COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Infrastructure/ Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Infrastructure/
 COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Projections/ Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Projections/
