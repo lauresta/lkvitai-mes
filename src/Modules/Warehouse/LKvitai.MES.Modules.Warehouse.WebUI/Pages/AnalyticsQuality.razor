@@ -5,7 +5,6 @@
 
 <PageTitle>@L["AnalyticsQuality.QualityAnalyticsCikadaMES"]</PageTitle>
 
-<VolatileDataBanner />
 
 <h3>@L["AnalyticsQuality.QCDefectsAndLateShipments"]</h3>
 
@@ -81,7 +80,7 @@
     <div class="col-lg-7">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h5>@L["AnalyticsQuality.LateShipmentRootCauses"]</h5>
+                <h5>@L["AnalyticsQuality.LateShipments"]</h5>
                 @if (_analytics is null || _analytics.LateShipments.Count == 0)
                 {
                     <EmptyState Title="@L["AnalyticsQuality.NoLateShipments"]"
@@ -98,7 +97,7 @@
                                     <th>@L["Common.Order"]</th>
                                     <th>@L["Common.Requested"]</th>
                                     <th>@L["Common.Shipped"]</th>
-                                    <th>@L["AnalyticsQuality.RootCause"]</th>
+                                    <th>@L["AnalyticsQuality.CurrentStatus"]</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -108,7 +107,7 @@
                                         <td>@row.OrderNumber</td>
                                         <td>@(row.RequestedShipDate?.ToLocalTime().ToString("yyyy-MM-dd") ?? "-")</td>
                                         <td>@(row.ShippedAt?.ToLocalTime().ToString("yyyy-MM-dd") ?? "-")</td>
-                                        <td>@row.RootCause</td>
+                                        <td>@WarehouseStatusText.Get(L, row.CurrentStatus)</td>
                                     </tr>
                                 }
                             </tbody>

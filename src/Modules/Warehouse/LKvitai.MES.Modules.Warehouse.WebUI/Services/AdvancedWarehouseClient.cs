@@ -34,9 +34,6 @@ public sealed class AdvancedWarehouseClient
     public Task<WaveDto> StartWaveAsync(Guid id)
         => PostAsync<WaveDto>($"/api/warehouse/v1/waves/{id}/start", new { });
 
-    public Task<WaveDto> CompleteWaveLinesAsync(Guid id, int lines)
-        => PostAsync<WaveDto>($"/api/warehouse/v1/waves/{id}/complete-lines", new CompleteWaveLinesRequestDto(lines));
-
     public Task<IReadOnlyList<CrossDockDto>> GetCrossDocksAsync()
         => GetAsync<IReadOnlyList<CrossDockDto>>("/api/warehouse/v1/cross-dock");
 

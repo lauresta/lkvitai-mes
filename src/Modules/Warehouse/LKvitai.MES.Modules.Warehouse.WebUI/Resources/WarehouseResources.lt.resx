@@ -1820,4 +1820,12 @@
   <data name="Completion.ReturnToStock" xml:space="preserve"><value>Grąžinti į sandėlį</value></data>
   <data name="Completion.ReturnSupplier" xml:space="preserve"><value>Grąžinti tiekėjui</value></data>
   <data name="Completion.Scrap" xml:space="preserve"><value>Nurašyti</value></data>
+  <data name="WavePicking.ReleasedOrderIds" xml:space="preserve"><value>Išleistų išsiuntimo užsakymų ID (atskirti kableliais)</value></data>
+  <data name="WavePicking.OpenTasks" xml:space="preserve"><value>Atidaryti komplektavimo užduotis</value></data>
+  <data name="CrossDock.InboundShipmentLineId" xml:space="preserve"><value>Gaunamos siuntos eilutės ID</value></data>
+  <data name="CrossDock.Toast.InvalidLinkIds" xml:space="preserve"><value>Įveskite teigiamą siuntos eilutės ID ir galiojantį išsiuntimo užsakymo ID.</value></data>
+  <data name="CrossDock.LinkOnly" xml:space="preserve"><value>Susiekite gaunamos siuntos eilutę su užsakymu. Šis ryšys atsargų neperkelia.</value></data>
+  <data name="AnalyticsQuality.LateShipments" xml:space="preserve"><value>Vėluojančios siuntos</value></data>
+  <data name="AnalyticsQuality.CurrentStatus" xml:space="preserve"><value>Dabartinė užsakymo būsena</value></data>
+  <data name="Rmas.OrderLineId" xml:space="preserve"><value>Užsakymo eilutės ID (nebūtinas, jei prekė viena)</value></data>
 </root>

@@ -36,6 +36,12 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
 
             modelBuilder.HasSequence("transfer_number_seq");
 
+            modelBuilder.HasSequence("warehouse_cross_dock_number_seq");
+
+            modelBuilder.HasSequence("warehouse_rma_number_seq");
+
+            modelBuilder.HasSequence("warehouse_wave_number_seq");
+
             modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Aggregates.HandlingUnit", b =>
                 {
                     b.Property<Guid>("HUId")
@@ -478,6 +484,26 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("agnum_product_links", "public");
+                });
+
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.AgnumReconciliationReportEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("GeneratedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GeneratedAt");
+
+                    b.ToTable("agnum_reconciliation_reports", "public");
                 });
 
             modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.AgnumVirtualWarehouseBalance", b =>
@@ -1997,6 +2023,44 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.LabelPrintJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DataJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("ErrorMessage")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("LastAttemptAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("RetryCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TemplateType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status", "CreatedAt");
+
+                    b.ToTable("label_print_jobs", "public");
+                });
+
             modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.LocalUserAccount", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2365,7 +2429,6 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
                     b.Property<Guid?>("SalesOrderId")
@@ -3436,6 +3499,42 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                     b.ToTable("serial_numbers", "public");
                 });
 
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.SerialStatusHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ChangedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Location")
+                        .HasColumnType("text");
+
+                    b.Property<string>("NewStatus")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PreviousStatus")
+                        .HasColumnType("text");
+
+                    b.Property<int>("SerialNumberId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly?>("WarrantyExpiryDate")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SerialNumberId", "ChangedAt");
+
+                    b.ToTable("serial_status_history", "public");
+                });
+
             modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.Shipment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3484,7 +3583,6 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
                     b.Property<string>("ShipmentNumber")
@@ -4063,6 +4161,59 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                     b.ToTable("user_role_assignments", "public");
                 });
 
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseCrossDockLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("InboundShipmentLineId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("Number")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValueSql("nextval('public.warehouse_cross_dock_number_seq')");
+
+                    b.Property<Guid>("OutboundOrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Qty")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ItemId");
+
+                    b.HasIndex("Number")
+                        .IsUnique();
+
+                    b.HasIndex("OutboundOrderId");
+
+                    b.HasIndex("InboundShipmentLineId", "OutboundOrderId")
+                        .IsUnique();
+
+                    b.ToTable("warehouse_cross_dock_links", "public");
+                });
+
             modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseLayout", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4105,6 +4256,182 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("ck_warehouse_layouts_width", "\"WidthMeters\" > 0");
                         });
+                });
+
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseQcDefect", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AttachmentsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("DefectType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LotNumber")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("SupplierId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("DefectType");
+
+                    b.HasIndex("ItemId");
+
+                    b.HasIndex("SupplierId");
+
+                    b.ToTable("warehouse_qc_defects", "public");
+                });
+
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseQcTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CategoryCode")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ItemsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("SupplierId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("SupplierId");
+
+                    b.ToTable("warehouse_qc_templates", "public");
+                });
+
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseRma", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal?>("CreditAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Disposition")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("InspectedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Number")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValueSql("nextval('public.warehouse_rma_number_seq')");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SalesOrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Number")
+                        .IsUnique();
+
+                    b.HasIndex("SalesOrderId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("warehouse_rmas", "public");
+                });
+
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseRmaLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Qty")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<string>("ReasonCode")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("RmaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SalesOrderLineId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ItemId");
+
+                    b.HasIndex("RmaId");
+
+                    b.HasIndex("SalesOrderLineId");
+
+                    b.ToTable("warehouse_rma_lines", "public");
                 });
 
             modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseSettings", b =>
@@ -4155,6 +4482,59 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("ck_warehouse_settings_singleton", "\"Id\" = 1");
                         });
+                });
+
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseWave", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("AssignedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("AssignedOperator")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Number")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValueSql("nextval('public.warehouse_wave_number_seq')");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Number")
+                        .IsUnique();
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("warehouse_waves", "public");
+                });
+
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseWaveOrder", b =>
+                {
+                    b.Property<Guid>("WaveId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("OutboundOrderId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("WaveId", "OutboundOrderId");
+
+                    b.HasIndex("OutboundOrderId")
+                        .IsUnique();
+
+                    b.ToTable("warehouse_wave_orders", "public");
                 });
 
             modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.ZoneDefinition", b =>
@@ -4796,6 +5176,17 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.SerialStatusHistory", b =>
+                {
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.SerialNumber", "SerialNumber")
+                        .WithMany()
+                        .HasForeignKey("SerialNumberId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("SerialNumber");
+                });
+
             modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.Shipment", b =>
                 {
                     b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.OutboundOrder", "OutboundOrder")
@@ -4889,6 +5280,94 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseCrossDockLink", b =>
+                {
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.InboundShipmentLine", null)
+                        .WithMany()
+                        .HasForeignKey("InboundShipmentLineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.Item", null)
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.OutboundOrder", null)
+                        .WithMany()
+                        .HasForeignKey("OutboundOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseQcDefect", b =>
+                {
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.Item", null)
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseQcTemplate", b =>
+                {
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseRma", b =>
+                {
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.SalesOrder", null)
+                        .WithMany()
+                        .HasForeignKey("SalesOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseRmaLine", b =>
+                {
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.Item", null)
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseRma", null)
+                        .WithMany("Lines")
+                        .HasForeignKey("RmaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.SalesOrderLine", null)
+                        .WithMany()
+                        .HasForeignKey("SalesOrderLineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseWaveOrder", b =>
+                {
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.OutboundOrder", null)
+                        .WithMany()
+                        .HasForeignKey("OutboundOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseWave", null)
+                        .WithMany("Orders")
+                        .HasForeignKey("WaveId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.ZoneDefinition", b =>
@@ -4992,6 +5471,16 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseLayout", b =>
                 {
                     b.Navigation("Zones");
+                });
+
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseRma", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseWave", b =>
+                {
+                    b.Navigation("Orders");
                 });
 #pragma warning restore 612, 618
         }

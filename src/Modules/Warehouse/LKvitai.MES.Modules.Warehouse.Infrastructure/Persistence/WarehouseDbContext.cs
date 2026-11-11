@@ -110,6 +110,7 @@ public class WarehouseDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.ConfigureWarehouseCompletion();
 
         // Schema separation contract:
         // - EF Core state tables in `public`

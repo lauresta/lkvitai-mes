@@ -233,6 +233,11 @@ Allocate (`SalesOrderCommandHandlers.cs`, `AllocateSalesOrderCommandHandler`) с
   `Event item id does not match aggregate item id` в существующем регистре Valuation для item 7682.
   Ошибка теперь не скрывается; приёмка не повторялась. Сценарий `/tmp/warehouse-c4-smoke`.
 
+- C5: PR #322 влит, main `ba6efeba`, все проверки зелёные, Deploy to Test #43009613923 успешен.
+  796 unit и 2 PostgreSQL/Marten-теста прошли. Сбой второй части откатывает первую, статус EF
+  и создание IN_TRANSIT; повтор успешной операции не добавляет событий. На test API перемещений отвечает 200.
+  Публикация в шину сохранена: OnHandValue получает движения через существующего потребителя шины.
+
 ### Отклонения
 
 - C0: `OutboundOrderSummary` не содержал `SalesOrderId`; добавлено поле в существующий ответ API и WebUI DTO,
@@ -268,6 +273,15 @@ Allocate (`SalesOrderCommandHandlers.cs`, `AllocateSalesOrderCommandHandler`) с
   и C3 (уже выделенные резервы). Fixtures теперь используют реальные имена событий.
   Ошибка обнаружена после merge; исправление требует дополнительного PR C4 перед переходом к C5.
 
+- C6: строка прихода имеет int ID; прежний фиктивный cross-dock принимал Guid документа.
+  Контракт исправлен на InboundShipmentLineId, связь проверяет действительные строку и заказ.
+- C6: Release переводит продажу в Picking, отдельного статуса Released нет. Волна принимает такие
+  выпущенные заказы и реальные задания. У неотобранного задания FromLocationId ещё не задан:
+  ячейки берутся из его реального SOFT-резерва; завершение определяется обычным отбором.
+- C6: RMA связывается с конкретной строкой заказа (ID можно не вводить при единственной строке товара).
+  Приёмка RMA использует StockAdjustedEvent в QC_HOLD без выдуманного документа прихода;
+  EF и события в одной транзакции. Серийные статусы API передаются строками, как ожидает WebUI.
+
 ### Осталось
 
 - C0: штатного способа применить исправленный регистр при несовпадающем checksum нет;
@@ -275,6 +289,6 @@ Allocate (`SalesOrderCommandHandlers.cs`, `AllocateSalesOrderCommandHandler`) с
 - C0/C4: существующий регистр Valuation item 7682 отвергает AdjustValuationCostCommand:
   `Event item id does not match aggregate item id`. Приход QA-C4-short (shipment 6) записан 1/2,
   WAC не обновлён; API явно сообщил об этом. Исправление/пересоздание valuation aggregate не предусмотрено C4.
-- C5–C7: выполнять последовательно; C5 начат от main `e0247d9e`.
+- C6–C7: выполнять последовательно; C6 начат от main `ba6efeba`.
 - Временный QA-вход: только `X-Warehouse-QA-Key`, срок сессии и proof не более четырёх часов;
   ключ, настройки и временный код удалить после проверок.
