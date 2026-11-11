@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using System.Reflection;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
@@ -19,7 +20,8 @@ namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 [Route("api/dashboard")]
 public sealed class DashboardController : ControllerBase
 {
-    private const string DefaultWarehouseId = "WH1";
+    private readonly IWarehouseCodeProvider _warehouseCode;
+    private string DefaultWarehouseId => _warehouseCode.Code;
 
     private readonly IDocumentStore _documentStore;
     private readonly WarehouseDbContext _dbContext;
@@ -28,11 +30,13 @@ public sealed class DashboardController : ControllerBase
     private readonly IWarehouseSettingsService _warehouseSettingsService;
 
     public DashboardController(
+        IWarehouseCodeProvider warehouseCode,
         IDocumentStore documentStore,
         WarehouseDbContext dbContext,
         IProjectionHealthService projectionHealthService,
         IWarehouseSettingsService warehouseSettingsService, IItemPriceSnapshotService? prices = null)
     {
+        _warehouseCode = warehouseCode;
         _documentStore = documentStore;
         _dbContext = dbContext;
         _prices = prices ?? new ItemPriceSnapshotService(dbContext);

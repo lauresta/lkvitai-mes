@@ -1,4 +1,3 @@
-using LKvitai.MES.Modules.Warehouse.Qa;
 using Microsoft.AspNetCore.DataProtection;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.Modules.Warehouse.Api.Configuration;
@@ -94,6 +93,9 @@ builder.Services.Configure<AlertEscalationOptions>(builder.Configuration.GetSect
 builder.Services.Configure<SlaMonitoringOptions>(builder.Configuration.GetSection(SlaMonitoringOptions.SectionName));
 builder.Services.Configure<CapacityPlanningOptions>(builder.Configuration.GetSection(CapacityPlanningOptions.SectionName));
 builder.Services.Configure<FeatureFlagsOptions>(builder.Configuration.GetSection(FeatureFlagsOptions.SectionName));
+builder.Services.Configure<WarehouseCodeOptions>(builder.Configuration.GetSection(WarehouseCodeOptions.SectionName));
+builder.Services.AddSingleton<IWarehouseCodeProvider, WarehouseCodeProvider>();
+builder.Services.AddHostedService<WarehouseCodeStartupCheck>();
 builder.Services.Configure<DevAuthOptions>(builder.Configuration.GetSection(DevAuthOptions.SectionName));
 builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection(OAuthOptions.SectionName));
 builder.Services.AddCikadaSsoTokenValidation(builder.Configuration);
@@ -139,7 +141,6 @@ builder.Services.AddDataProtection()
         ?? Path.Combine(builder.Environment.ContentRootPath,".auth-keys")))
     .DisableAutomaticKeyGeneration();
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton<WarehouseQaProof>();
 builder.Services.AddSingleton<LKvitai.MES.BuildingBlocks.PortalAuth.CikadaUserBridgeProof>();
 builder.Services.AddSingleton<CikadaSsoAccountProof>();
 builder.Services.AddScoped<TrustedUserAdministrationFilter>();
@@ -282,6 +283,7 @@ builder.Services.AddScoped<LabelPrintQueueRecurringJob>();
 builder.Services.AddScoped<ITransferStockAvailabilityService, MartenTransferStockAvailabilityService>();
 builder.Services.AddScoped<ICycleCountQuantityResolver, MartenCycleCountQuantityResolver>();
 builder.Services.AddScoped<SalesOrderReservationService>();
+builder.Services.AddScoped<IWarehouseConsolidationService, WarehouseConsolidationService>();
 builder.Services.AddScoped<ICycleCountAdjustmentWriter, CycleCountAdjustmentWriter>();
 builder.Services.AddScoped<IAdvancedWarehouseStore, DatabaseWarehouseStore>();
 builder.Services.AddScoped<IWarehouseSettingsService, WarehouseSettingsService>();

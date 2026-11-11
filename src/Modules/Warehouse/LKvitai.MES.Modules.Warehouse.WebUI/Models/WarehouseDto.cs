@@ -9,3 +9,10 @@ public record WarehouseDto
     public bool IsVirtual { get; init; }
     public string Status { get; init; } = string.Empty;
 }
+
+public record CurrentWarehouseDto
+{
+    public string Code { get; init; } = string.Empty;
+    public string? Name { get; init; }
+    public bool IsActive { get; init; }
+}

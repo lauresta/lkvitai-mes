@@ -1,4 +1,5 @@
 using LKvitai.MES.BuildingBlocks.SharedKernel;
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
@@ -16,10 +17,25 @@ public sealed class WarehousesController : ControllerBase
     private static readonly string[] AllowedStatuses = ["Active", "Inactive"];
 
     private readonly WarehouseDbContext _dbContext;
+    private readonly IWarehouseCodeProvider _warehouseCode;
 
-    public WarehousesController(WarehouseDbContext dbContext)
+    public WarehousesController(WarehouseDbContext dbContext, IWarehouseCodeProvider warehouseCode)
     {
         _dbContext = dbContext;
+        _warehouseCode = warehouseCode;
+    }
+
+    /// <summary>The single configured warehouse that every stock operation is written under.</summary>
+    [HttpGet("current")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> GetCurrentAsync(CancellationToken cancellationToken = default)
+    {
+        var code = _warehouseCode.Code;
+        var row = await _dbContext.Warehouses.AsNoTracking()
+            .Where(x => x.Code == code)
+            .Select(x => new { x.Name, x.Status, x.IsVirtual })
+            .FirstOrDefaultAsync(cancellationToken);
+        return Ok(new CurrentWarehouseDto(code, row?.Name, row is { Status: "Active", IsVirtual: false }));
     }
 
     [HttpGet]
@@ -255,6 +271,8 @@ public sealed class WarehousesController : ControllerBase
         string Status,
         DateTimeOffset CreatedAt,
         DateTimeOffset? UpdatedAt);
+
+    public sealed record CurrentWarehouseDto(string Code, string? Name, bool IsActive);
 
     public sealed record PagedResponse<T>(
         IReadOnlyList<T> Items,

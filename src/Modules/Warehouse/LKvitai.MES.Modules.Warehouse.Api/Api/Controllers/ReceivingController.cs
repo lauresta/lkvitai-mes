@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
@@ -28,7 +29,8 @@ namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 [Route("api/warehouse/v1/inbound-shipments")]
 public sealed class ReceivingController : ControllerBase
 {
-    private const string DefaultWarehouseId = "WH1";
+    private readonly IWarehouseCodeProvider _warehouseCode;
+    private string DefaultWarehouseId => _warehouseCode.Code;
 
     /// <summary>
     /// Marker passed as ApprovedBy when the receiving flow auto-adjusts an item's
@@ -48,6 +50,7 @@ public sealed class ReceivingController : ControllerBase
     private readonly IItemPriceSnapshotService _itemPriceSnapshots;
 
     public ReceivingController(
+        IWarehouseCodeProvider warehouseCode,
         WarehouseDbContext dbContext,
         IDocumentStore documentStore,
         ICurrentUserService currentUserService,
@@ -55,6 +58,7 @@ public sealed class ReceivingController : ControllerBase
         ILogger<ReceivingController> logger,
         IItemPriceSnapshotService itemPriceSnapshots, IBalanceGuardLockFactory balanceLocks)
     {
+        _warehouseCode = warehouseCode;
         _balanceLocks = balanceLocks;
         _dbContext = dbContext;
         _documentStore = documentStore;
@@ -738,9 +742,9 @@ public sealed class ReceivingController : ControllerBase
             var physicalQty = await new MartenAvailableStockQuantityResolver(_documentStore, _dbContext)
                 .ResolveTotalQtyAsync(itemId, existingValuation.ItemSku, cancellationToken);
             var receivingQty = await CommittedLocationStock.ReadAsync(
-                _documentStore, existingValuation.ItemSku, "RECEIVING", cancellationToken);
+                _documentStore, DefaultWarehouseId, existingValuation.ItemSku, "RECEIVING", cancellationToken);
             var qcQty = await CommittedLocationStock.ReadAsync(
-                _documentStore, existingValuation.ItemSku, "QC_HOLD", cancellationToken);
+                _documentStore, DefaultWarehouseId, existingValuation.ItemSku, "QC_HOLD", cancellationToken);
             var priorQty = Math.Max(0m, physicalQty + receivingQty + qcQty - receivedQty);
             newCost = ((priorQty * existingValuation.UnitCost) + (receivedQty * landedUnitCost))
                 / (priorQty + receivedQty);

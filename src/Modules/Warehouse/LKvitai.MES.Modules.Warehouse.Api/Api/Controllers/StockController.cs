@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using System.Globalization;
 using System.Text;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
@@ -22,14 +23,17 @@ namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 [Route("api/warehouse/v1/stock")]
 public sealed class StockController : ControllerBase
 {
-    private const string DefaultWarehouseId = "WH1";
+    private readonly IWarehouseCodeProvider _warehouseCode;
+    private string DefaultWarehouseId => _warehouseCode.Code;
 
     private readonly IDocumentStore _documentStore;
     private readonly WarehouseDbContext _dbContext;
     private readonly IItemPriceSnapshotService _prices;
 
-    public StockController(IDocumentStore documentStore, WarehouseDbContext dbContext, IItemPriceSnapshotService? prices = null)
+    public StockController(IWarehouseCodeProvider warehouseCode,
+        IDocumentStore documentStore, WarehouseDbContext dbContext, IItemPriceSnapshotService? prices = null)
     {
+        _warehouseCode = warehouseCode;
         _documentStore = documentStore;
         _dbContext = dbContext;
         _prices = prices ?? new ItemPriceSnapshotService(dbContext);

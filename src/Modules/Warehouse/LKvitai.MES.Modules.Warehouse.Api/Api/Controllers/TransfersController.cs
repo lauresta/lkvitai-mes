@@ -147,8 +147,8 @@ public sealed class TransfersController : ControllerBase
         {
             CommandId = commandId,
             CorrelationId = ResolveCorrelationId(),
-            FromWarehouse = request.FromWarehouse,
-            ToWarehouse = request.ToWarehouse,
+            FromWarehouse = request.FromWarehouse ?? string.Empty,
+            ToWarehouse = request.ToWarehouse ?? string.Empty,
             RequestedBy = request.RequestedBy ?? string.Empty,
             Lines = request.Lines.Select(x => new TransferLineCommand
             {
@@ -300,8 +300,8 @@ public sealed class TransfersController : ControllerBase
 
     public sealed record CreateTransferRequest(
         Guid CommandId,
-        string FromWarehouse,
-        string ToWarehouse,
+        string? FromWarehouse,
+        string? ToWarehouse,
         IReadOnlyList<TransferLineRequest> Lines,
         string? RequestedBy = null);
 

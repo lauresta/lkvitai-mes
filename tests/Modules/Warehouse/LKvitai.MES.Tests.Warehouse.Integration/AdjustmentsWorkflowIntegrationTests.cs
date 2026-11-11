@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using System.Text;
 using FluentAssertions;
 using LKvitai.MES.Modules.Warehouse.Api.Controllers;
@@ -277,7 +278,7 @@ public class AdjustmentsWorkflowIntegrationTests : IAsyncLifetime
         => new(_dbOptions!, new StaticCurrentUserService("manager-1"));
 
     private AdjustmentsController CreateController(WarehouseDbContext db)
-        => new(
+        => new(WarehouseCodeProvider.For("WH1"), 
             db,
             _store!,
             new StaticCurrentUserService("manager-1"),

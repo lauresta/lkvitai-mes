@@ -178,6 +178,70 @@
     </div>
 </div>
 
+<div class="card shadow-sm mb-3" data-testid="warehouse-consolidation">
+    <div class="card-header">@L["Projections.Consolidation.Title"]</div>
+    <div class="card-body">
+        <p>@L["Projections.Consolidation.Explanation"]</p>
+        <button class="btn btn-outline-primary mb-3" data-testid="warehouse-consolidation-check"
+                @onclick="CheckConsolidationAsync" disabled="@_isBusy">@L["Projections.Consolidation.Check"]</button>
+
+        @if (_consolidation is not null)
+        {
+            <p class="mb-2">@L["Projections.Consolidation.Target"]: <strong class="font-monospace">@_consolidation.TargetWarehouse</strong></p>
+            @if (_consolidation.Rows.Count == 0)
+            {
+                <p class="text-muted" data-testid="warehouse-consolidation-empty">@L["Projections.Consolidation.Nothing"]</p>
+            }
+            else
+            {
+                <p>@L["Projections.Consolidation.Summary", MovableCount, _consolidation.Rows.Count - MovableCount]</p>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead><tr>
+                            <th>@L["Common.Warehouse"]</th><th>@L["Common.Location"]</th><th>SKU</th>
+                            <th class="text-end">@L["Common.Quantity"]</th><th>@L["Common.Status"]</th>
+                        </tr></thead>
+                        <tbody>
+                        @foreach (var row in _consolidation.Rows)
+                        {
+                            <tr>
+                                <td class="font-monospace">@row.Warehouse</td>
+                                <td class="font-monospace">@row.Location</td>
+                                <td class="font-monospace">@row.Sku</td>
+                                <td class="text-end font-monospace">@Amount(row.Quantity)</td>
+                                <td>
+                                    <span class="@ConsolidationChip(row.Status)">@L[$"Projections.Consolidation.Status.{row.Status}"]</span>
+                                    @if (row.Reason is not null)
+                                    {
+                                        <span class="text-muted small ms-1">@L[$"Projections.Consolidation.Reason.{row.Reason}"]</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+                @if (MovableCount > 0)
+                {
+                    <AuthorizeView Roles="WarehouseAdmin">
+                        <Authorized>
+                            <label for="warehouse-consolidation-reason" class="form-label">@L["Projections.ApplyReason"]</label>
+                            <input id="warehouse-consolidation-reason" class="form-control mb-2" maxlength="2000"
+                                   @bind="_consolidationReason" @bind:event="oninput" />
+                            <button class="btn btn-primary" data-testid="warehouse-consolidation-apply" @onclick="ApplyConsolidationAsync"
+                                    disabled="@(_isBusy || string.IsNullOrWhiteSpace(_consolidationReason))">@L["Projections.Consolidation.Apply"]</button>
+                        </Authorized>
+                    </AuthorizeView>
+                }
+            }
+        }
+        @if (_consolidationMessage is not null)
+        {
+            <p role="status" class="mt-2" data-testid="warehouse-consolidation-message">@_consolidationMessage</p>
+        }
+    </div>
+</div>
+
 <div class="card shadow-sm">
     <div class="card-header">@L["Projections.Runbook"]</div>
     <div class="card-body">
@@ -231,6 +295,43 @@
         {
             _valuePreview = null;
             _valueMessage = L["Projections.PreviewStale"];
+        }
+        catch (ApiException ex) { _apiError = ex; }
+        finally { _isBusy = false; }
+    }
+
+    private ConsolidationPreviewDto? _consolidation;
+    private string _consolidationReason = string.Empty;
+    private string? _consolidationMessage;
+    private int MovableCount => _consolidation?.Rows.Count(x => x.Status == "Movable") ?? 0;
+    private static string ConsolidationChip(string status) => status switch
+    {
+        "Movable" => "chip chip--ok",
+        "Blocked" => "chip chip--danger",
+        _ => "chip chip--slate"
+    };
+
+    private async Task CheckConsolidationAsync()
+    {
+        _isBusy = true;
+        _apiError = null;
+        _consolidationMessage = null;
+        try { _consolidation = await ProjectionsClient.PreviewWarehouseConsolidationAsync(); }
+        catch (ApiException ex) { _apiError = ex; }
+        finally { _isBusy = false; }
+    }
+
+    private async Task ApplyConsolidationAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_consolidationReason)) return;
+        _isBusy = true;
+        _apiError = null;
+        try
+        {
+            var result = await ProjectionsClient.ApplyWarehouseConsolidationAsync(_consolidationReason);
+            _consolidationMessage = L["Projections.Consolidation.Applied", result.Moved.Count, result.SkippedRows];
+            _consolidationReason = string.Empty;
+            _consolidation = await ProjectionsClient.PreviewWarehouseConsolidationAsync();
         }
         catch (ApiException ex) { _apiError = ex; }
         finally { _isBusy = false; }

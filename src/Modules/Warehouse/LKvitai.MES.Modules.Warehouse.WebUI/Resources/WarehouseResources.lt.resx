@@ -1844,4 +1844,19 @@
   <data name="Projections.ApplyPreview" xml:space="preserve"><value>Taikyti peržiūrėtus pakeitimus</value></data>
   <data name="Projections.ApplySucceeded" xml:space="preserve"><value>Vertės registras perskaičiuotas; priežastis ir kontrolinės sumos išsaugotos audito žurnale.</value></data>
   <data name="Projections.PreviewStale" xml:space="preserve"><value>Duomenys pasikeitė. Prieš taikydami paleiskite peržiūrą iš naujo.</value></data>
+  <data name="Projections.Consolidation.Title" xml:space="preserve"><value>Sandėlių sujungimas</value></data>
+  <data name="Projections.Consolidation.Explanation" xml:space="preserve"><value>Perkelia fizines atsargas, užregistruotas po kitais sandėlių kodais, į vienintelį nustatytą sandėlį. Kiekiai imami iš užregistruotų atsargų judėjimų, o ne iš projekcijų. Eilutės su rezervacija ar HARD užraktu, neigiami likučiai ir virtualios vietos rodomos, bet neperkeliamos.</value></data>
+  <data name="Projections.Consolidation.Target" xml:space="preserve"><value>Tikslinis sandėlis</value></data>
+  <data name="Projections.Consolidation.Check" xml:space="preserve"><value>Patikrinti</value></data>
+  <data name="Projections.Consolidation.Apply" xml:space="preserve"><value>Perkelti atsargas</value></data>
+  <data name="Projections.Consolidation.Nothing" xml:space="preserve"><value>Po kitais sandėlių kodais atsargų nėra.</value></data>
+  <data name="Projections.Consolidation.Summary" xml:space="preserve"><value>Bus perkelta: {0}; neperkeliama: {1}.</value></data>
+  <data name="Projections.Consolidation.Applied" xml:space="preserve"><value>Perkeltos eilutės: {0}; praleista: {1}. Priežastis išsaugota audito žurnale.</value></data>
+  <data name="Projections.Consolidation.Status.Movable" xml:space="preserve"><value>Bus perkelta</value></data>
+  <data name="Projections.Consolidation.Status.Blocked" xml:space="preserve"><value>Neperkeliama</value></data>
+  <data name="Projections.Consolidation.Status.Virtual" xml:space="preserve"><value>Virtuali vieta, neperkeliama</value></data>
+  <data name="Projections.Consolidation.Reason.Reservation" xml:space="preserve"><value>Aktyvi rezervacija</value></data>
+  <data name="Projections.Consolidation.Reason.HardLock" xml:space="preserve"><value>Aktyvus HARD užraktas</value></data>
+  <data name="Projections.Consolidation.Reason.NegativeBalance" xml:space="preserve"><value>Neigiamas likutis</value></data>
+  <data name="Agnum.Balances.WarehouseNotConfigured" xml:space="preserve"><value>Nustatytas sandėlis nėra aktyvus sandėlis. Patikrinkite sandėlio kodo nustatymą.</value></data>
 </root>

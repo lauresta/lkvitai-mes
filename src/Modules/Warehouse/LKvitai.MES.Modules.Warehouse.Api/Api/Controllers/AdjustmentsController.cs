@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
@@ -22,7 +23,8 @@ namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 [Route("api/warehouse/v1/adjustments")]
 public sealed class AdjustmentsController : ControllerBase
 {
-    private const string DefaultWarehouseId = "WH1";
+    private readonly IWarehouseCodeProvider _warehouseCode;
+    private string DefaultWarehouseId => _warehouseCode.Code;
 
     private readonly WarehouseDbContext _dbContext;
     private readonly IDocumentStore _documentStore;
@@ -30,11 +32,13 @@ public sealed class AdjustmentsController : ControllerBase
     private readonly IReasonCodeService _reasonCodeService;
 
     public AdjustmentsController(
+        IWarehouseCodeProvider warehouseCode,
         WarehouseDbContext dbContext,
         IDocumentStore documentStore,
         ICurrentUserService currentUserService,
         IReasonCodeService reasonCodeService)
     {
+        _warehouseCode = warehouseCode;
         _dbContext = dbContext;
         _documentStore = documentStore;
         _currentUserService = currentUserService;

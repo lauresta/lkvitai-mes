@@ -112,6 +112,10 @@ public class StockClient
         return await response.Content.ReadAsByteArrayAsync(cancellationToken);
     }
 
+    /// <summary>The single warehouse configured on the API; stock operations never choose another.</summary>
+    public Task<CurrentWarehouseDto> GetCurrentWarehouseAsync(CancellationToken cancellationToken = default)
+        => GetAsync<CurrentWarehouseDto>("/api/warehouse/v1/warehouses/current", cancellationToken);
+
     public async Task<IReadOnlyList<WarehouseDto>> GetWarehousesAsync(CancellationToken cancellationToken = default)
     {
         var result = await GetAsync<PagedApiResponse<WarehouseDto>>(

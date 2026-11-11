@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using System.Security.Claims;
 using FluentAssertions;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
@@ -106,7 +107,7 @@ public class CycleCountCommandHandlersTests
             new HttpContextAccessor { HttpContext = BuildHttpContextWithRoles() },
             Mock.Of<IBusinessTelemetryService>(),
             Mock.Of<ILogger<ApplyAdjustmentCommandHandler>>(),
-            writer);
+            writer, WarehouseCodeProvider.For("WH1"));
 
         var result = await handler.Handle(new ApplyAdjustmentCommand
         {
@@ -146,7 +147,7 @@ public class CycleCountCommandHandlersTests
             new HttpContextAccessor { HttpContext = BuildHttpContextWithRoles() },
             Mock.Of<IBusinessTelemetryService>(),
             Mock.Of<ILogger<ApplyAdjustmentCommandHandler>>(),
-            new ProjectedCycleCountAdjustmentWriter(db));
+            new ProjectedCycleCountAdjustmentWriter(db), WarehouseCodeProvider.For("WH1"));
 
         var result = await handler.Handle(new ApplyAdjustmentCommand
         {
@@ -178,7 +179,7 @@ public class CycleCountCommandHandlersTests
             },
             Mock.Of<IBusinessTelemetryService>(),
             Mock.Of<ILogger<ApplyAdjustmentCommandHandler>>(),
-            new ProjectedCycleCountAdjustmentWriter(db));
+            new ProjectedCycleCountAdjustmentWriter(db), WarehouseCodeProvider.For("WH1"));
 
         var result = await handler.Handle(new ApplyAdjustmentCommand
         {

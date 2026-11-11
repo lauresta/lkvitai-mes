@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using FluentAssertions;
 using LKvitai.MES.BuildingBlocks.SharedKernel;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
@@ -96,6 +97,28 @@ public class DistributeAgnumBalanceCommandHandlerTests
         distribution.DistributedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
     }
 
+    [Fact]
+    public async Task DistributeEndpoint_ReturnsBadRequest_AndWritesNothing_WhenWarehouseIsNotTheConfiguredOne()
+    {
+        await using var db = CreateDbContext();
+        var balance = await SeedVirtualBalanceAsync(db);
+        var receive = new Mock<IMediator>(MockBehavior.Strict);
+        var handler = CreateHandler(db, receive);
+        var mediator = new Mock<IMediator>();
+        mediator.Setup(x => x.Send(It.IsAny<DistributeAgnumBalanceCommand>(), It.IsAny<CancellationToken>()))
+            .Returns<IRequest<Result>, CancellationToken>((command, ct) => handler.Handle((DistributeAgnumBalanceCommand)command, ct));
+        var controller = new LKvitai.MES.Modules.Warehouse.Api.Controllers.AgnumImportController(
+            db, null!, null!, null!, null!, mediator.Object);
+
+        var response = await controller.DistributeBalanceAsync(balance.Id,
+            new LKvitai.MES.Modules.Warehouse.Api.Controllers.AgnumImportController.DistributeAgnumBalanceRequest(
+                "A-01", "OTHER", 7m, OperatorId));
+
+        response.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestObjectResult>();
+        (await db.AgnumBalanceDistributions.CountAsync()).Should().Be(0);
+        receive.VerifyNoOtherCalls();
+    }
+
     private static readonly Guid OperatorId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
 
     private static DistributeAgnumBalanceCommand CreateCommand(Guid virtualBalanceId)
@@ -115,7 +138,7 @@ public class DistributeAgnumBalanceCommandHandlerTests
         => new(
             db,
             mediator.Object,
-            Mock.Of<ILogger<DistributeAgnumBalanceCommandHandler>>());
+            Mock.Of<ILogger<DistributeAgnumBalanceCommandHandler>>(), WarehouseCodeProvider.For("WH-1"));
 
     private static async Task<AgnumVirtualWarehouseBalance> SeedVirtualBalanceAsync(WarehouseDbContext db)
     {

@@ -1844,4 +1844,19 @@
   <data name="Projections.ApplyPreview" xml:space="preserve"><value>Apply reviewed changes</value></data>
   <data name="Projections.ApplySucceeded" xml:space="preserve"><value>Valuation register rebuilt; the reason and checksums were saved in the audit log.</value></data>
   <data name="Projections.PreviewStale" xml:space="preserve"><value>Data changed. Run the preview again before applying.</value></data>
+  <data name="Projections.Consolidation.Title" xml:space="preserve"><value>Warehouse consolidation</value></data>
+  <data name="Projections.Consolidation.Explanation" xml:space="preserve"><value>Moves physical stock recorded under other warehouse codes to the single configured warehouse. The quantities come from recorded stock movements, not from projections. Rows with a reservation or HARD lock, negative balances and virtual locations are shown but never moved.</value></data>
+  <data name="Projections.Consolidation.Target" xml:space="preserve"><value>Target warehouse</value></data>
+  <data name="Projections.Consolidation.Check" xml:space="preserve"><value>Check</value></data>
+  <data name="Projections.Consolidation.Apply" xml:space="preserve"><value>Move stock</value></data>
+  <data name="Projections.Consolidation.Nothing" xml:space="preserve"><value>No stock is recorded under other warehouse codes.</value></data>
+  <data name="Projections.Consolidation.Summary" xml:space="preserve"><value>To move: {0}; not moved: {1}.</value></data>
+  <data name="Projections.Consolidation.Applied" xml:space="preserve"><value>Moved {0} row(s); {1} skipped. The reason is saved in the audit log.</value></data>
+  <data name="Projections.Consolidation.Status.Movable" xml:space="preserve"><value>Will be moved</value></data>
+  <data name="Projections.Consolidation.Status.Blocked" xml:space="preserve"><value>Not moved</value></data>
+  <data name="Projections.Consolidation.Status.Virtual" xml:space="preserve"><value>Virtual location, not moved</value></data>
+  <data name="Projections.Consolidation.Reason.Reservation" xml:space="preserve"><value>Active reservation</value></data>
+  <data name="Projections.Consolidation.Reason.HardLock" xml:space="preserve"><value>Active HARD lock</value></data>
+  <data name="Projections.Consolidation.Reason.NegativeBalance" xml:space="preserve"><value>Negative balance</value></data>
+  <data name="Agnum.Balances.WarehouseNotConfigured" xml:space="preserve"><value>The configured warehouse is not an active warehouse. Check the warehouse code setting.</value></data>
 </root>

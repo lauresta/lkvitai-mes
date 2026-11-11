@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using FluentAssertions;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Application.Commands;
@@ -290,7 +291,7 @@ public partial class PickingWorkflowIntegrationTests : IAsyncLifetime
         hu.Lines.Single().SKU.Should().Be("RM-0001");
         var shipment = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync(db.Shipments);
         var dispatch = new DispatchShipmentCommandHandler(db, null!, new QuietBus(), new StaticCurrentUserService("QA-C2"),
-            new BusinessTelemetryService(), NullLogger<DispatchShipmentCommandHandler>.Instance, _store!);
+            new BusinessTelemetryService(), NullLogger<DispatchShipmentCommandHandler>.Instance, _store!, WarehouseCodeProvider.For("WH1"));
         var command = new DispatchShipmentCommand { ShipmentId = shipment.Id, Carrier = "OTHER", ManualTrackingNumber = "QA-C2" };
         (await dispatch.Handle(command, default)).IsSuccess.Should().BeTrue();
         (await dispatch.Handle(command, default)).IsSuccess.Should().BeFalse();
@@ -315,7 +316,7 @@ public partial class PickingWorkflowIntegrationTests : IAsyncLifetime
         (await CreateController(db).CompleteTaskAsync(task.TaskId,
             new PickingController.CompletePickTaskRequest(2, 2, null, "BAR-ITEM-1", "LOC-A01", "QA-cancel")))
             .Should().BeOfType<OkObjectResult>();
-        var cancel = new CancelSalesOrderCommandHandler(db, new QuietBus(), new StaticCurrentUserService("QA-C2"), _store!);
+        var cancel = new CancelSalesOrderCommandHandler(db, new QuietBus(), new StaticCurrentUserService("QA-C2"), _store!, WarehouseCodeProvider.For("WH1"));
         var command = new CancelSalesOrderCommand { SalesOrderId = order.SalesOrderId!.Value, Reason = "QA-C2-cancel" };
         (await cancel.Handle(command, default)).IsSuccess.Should().BeTrue();
         (await cancel.Handle(command, default)).IsSuccess.Should().BeFalse();
@@ -389,7 +390,7 @@ public partial class PickingWorkflowIntegrationTests : IAsyncLifetime
         => new(_dbOptions!, new StaticCurrentUserService("picker"));
 
     private PickingController CreateController(WarehouseDbContext db)
-        => new(db, _store!, new StaticCurrentUserService("picker"))
+        => new(WarehouseCodeProvider.For("WH1"), db, _store!, new StaticCurrentUserService("picker"))
         {
             ControllerContext = new ControllerContext
             {

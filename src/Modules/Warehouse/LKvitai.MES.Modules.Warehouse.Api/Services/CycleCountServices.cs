@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using System.Diagnostics.Metrics;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Application.Commands;
@@ -57,12 +58,14 @@ public interface ICycleCountQuantityResolver
 
 public sealed class MartenCycleCountQuantityResolver : ICycleCountQuantityResolver
 {
-    private const string DefaultWarehouseId = "WH1";
+    private readonly IWarehouseCodeProvider _warehouseCode;
+    private string DefaultWarehouseId => _warehouseCode.Code;
     private readonly IDocumentStore _documentStore;
 
-    public MartenCycleCountQuantityResolver(IDocumentStore documentStore)
+    public MartenCycleCountQuantityResolver(IDocumentStore documentStore, IWarehouseCodeProvider warehouseCode)
     {
         _documentStore = documentStore;
+        _warehouseCode = warehouseCode;
     }
 
     public async Task<decimal> ResolveSystemQtyAsync(
@@ -339,7 +342,8 @@ public sealed class RecordCountCommandHandler : IRequestHandler<RecordCountComma
 
 public sealed class ApplyAdjustmentCommandHandler : IRequestHandler<ApplyAdjustmentCommand, Result>
 {
-    private const string DefaultWarehouseId = "WH1";
+    private readonly IWarehouseCodeProvider _warehouseCode;
+    private string DefaultWarehouseId => _warehouseCode.Code;
 
     private readonly WarehouseDbContext _dbContext;
     private readonly IEventBus _eventBus;
@@ -356,8 +360,10 @@ public sealed class ApplyAdjustmentCommandHandler : IRequestHandler<ApplyAdjustm
         IHttpContextAccessor httpContextAccessor,
         IBusinessTelemetryService businessTelemetryService,
         ILogger<ApplyAdjustmentCommandHandler> logger,
-        ICycleCountAdjustmentWriter adjustmentWriter)
+        ICycleCountAdjustmentWriter adjustmentWriter,
+        IWarehouseCodeProvider warehouseCode)
     {
+        _warehouseCode = warehouseCode;
         _dbContext = dbContext;
         _eventBus = eventBus;
         _currentUserService = currentUserService;

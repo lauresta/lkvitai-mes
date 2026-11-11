@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using System.Diagnostics;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
@@ -23,7 +24,8 @@ namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 [Route("api/warehouse/v1/putaway")]
 public sealed class PutawayController : ControllerBase
 {
-    private const string DefaultWarehouseId = "WH1";
+    private readonly IWarehouseCodeProvider _warehouseCode;
+    private string DefaultWarehouseId => _warehouseCode.Code;
 
     private readonly IBalanceGuardLockFactory _balanceLocks;
     private readonly WarehouseDbContext _dbContext;
@@ -31,10 +33,12 @@ public sealed class PutawayController : ControllerBase
     private readonly ICurrentUserService _currentUserService;
 
     public PutawayController(
+        IWarehouseCodeProvider warehouseCode,
         WarehouseDbContext dbContext,
         IDocumentStore documentStore,
         ICurrentUserService currentUserService, IBalanceGuardLockFactory balanceLocks)
     {
+        _warehouseCode = warehouseCode;
         _balanceLocks = balanceLocks;
         _dbContext = dbContext;
         _documentStore = documentStore;
@@ -127,7 +131,7 @@ public sealed class PutawayController : ControllerBase
 
         await using var balanceLock = await _balanceLocks.CreateAsync(cancellationToken);
         await balanceLock.AcquireAsync([StockLockKey.ForLocation(DefaultWarehouseId, "RECEIVING", item.InternalSKU)], cancellationToken);
-        var availableQty = await CommittedLocationStock.ReadAsync(_documentStore, item.InternalSKU, "RECEIVING", cancellationToken);
+        var availableQty = await CommittedLocationStock.ReadAsync(_documentStore, DefaultWarehouseId, item.InternalSKU, "RECEIVING", cancellationToken);
 
         if (availableQty < request.Qty)
         {

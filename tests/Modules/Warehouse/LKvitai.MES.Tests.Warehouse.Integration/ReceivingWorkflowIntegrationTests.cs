@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using Microsoft.Extensions.Configuration;
 using FluentAssertions;
 using LKvitai.MES.Modules.Warehouse.Api.Controllers;
@@ -425,7 +426,7 @@ public partial class ReceivingWorkflowIntegrationTests : IAsyncLifetime
     private ReceivingController CreateReceivingController(WarehouseDbContext db, out NoOpMediator mediator)
     {
         mediator = new NoOpMediator();
-        return new ReceivingController(db, _store!, new StaticCurrentUserService("tester"), mediator,
+        return new ReceivingController(WarehouseCodeProvider.For("WH1"), db, _store!, new StaticCurrentUserService("tester"), mediator,
             NullLogger<ReceivingController>.Instance, new ItemPriceSnapshotService(db), BalanceLocks())
         {
             ControllerContext = new ControllerContext
@@ -436,7 +437,7 @@ public partial class ReceivingWorkflowIntegrationTests : IAsyncLifetime
     }
 
     private QCController CreateQcController(WarehouseDbContext db)
-        => new(db, _store!, new StaticCurrentUserService("qc-tester"), new StubSignatureService(), BalanceLocks())
+        => new(WarehouseCodeProvider.For("WH1"), db, _store!, new StaticCurrentUserService("qc-tester"), new StubSignatureService(), BalanceLocks())
         {
             ControllerContext = new ControllerContext
             {
