@@ -139,6 +139,7 @@ builder.Services.AddDataProtection()
     .DisableAutomaticKeyGeneration();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<LKvitai.MES.BuildingBlocks.PortalAuth.CikadaUserBridgeProof>();
+builder.Services.AddSingleton<WarehouseQaProof>();
 builder.Services.AddSingleton<CikadaSsoAccountProof>();
 builder.Services.AddScoped<TrustedUserAdministrationFilter>();
 
@@ -160,6 +161,12 @@ builder.Services.AddAuthorization(options =>
     options.DefaultPolicy = new AuthorizationPolicyBuilder(WarehouseAuthenticationDefaults.Scheme)
         .RequireAuthenticatedUser()
         .Build();
+
+    options.AddPolicy(WarehousePolicies.ReadWarehouse, policy =>
+        policy.RequireRole(WarehouseRoles.WarehouseAdmin, WarehouseRoles.WarehouseManager,
+            WarehouseRoles.Operator, WarehouseRoles.QCInspector, WarehouseRoles.SalesAdmin,
+            WarehouseRoles.PackingOperator, WarehouseRoles.DispatchClerk, WarehouseRoles.InventoryAccountant,
+            WarehouseRoles.CFO, WarehouseRoles.Auditor));
 
     options.AddPolicy(WarehousePolicies.AdminOnly, policy =>
         policy.RequireRole(WarehouseRoles.WarehouseAdmin));

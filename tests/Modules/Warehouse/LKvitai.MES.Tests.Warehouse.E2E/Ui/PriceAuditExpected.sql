@@ -19,7 +19,8 @@ priced_stock AS (
               ELSE NULL END AS cost,
          i."PurchasePrice" AS purchase,
          i."BasePrice" AS sale,
-         COALESCE(l."IsVirtual", false) OR upper(s.location_code) = 'AGNUM' AS virtual,
+         (l."Id" IS NULL OR l."IsVirtual" OR upper(s.location_code) = 'AGNUM'
+           OR left(upper(s.location_code), 11) = 'IN_TRANSIT_') AS virtual,
          left(upper(s.location_code), 11) = 'IN_TRANSIT_' AS in_transit
   FROM stock s
   LEFT JOIN public.items i ON lower(i."InternalSKU") = lower(s.sku)

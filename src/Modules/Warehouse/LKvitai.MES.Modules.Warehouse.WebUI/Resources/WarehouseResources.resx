@@ -1132,10 +1132,11 @@
   <data name="Valuation.Dashboard.NoOnHandValueRows" xml:space="preserve"><value>No on-hand value rows</value></data>
   <data name="Valuation.Dashboard.NoValuationRowsWereReturned" xml:space="preserve"><value>No valuation rows were returned.</value></data>
   <data name="Valuation.Dashboard.OldCost" xml:space="preserve"><value>Old Cost</value></data>
-  <data name="Valuation.Dashboard.OnHandValueReport" xml:space="preserve"><value>On-Hand Value Report</value></data>
+  <data name="Valuation.Dashboard.OnHandValueReport" xml:space="preserve"><value>Valuation register</value></data>
   <data name="Valuation.Dashboard.PendingApprovals" xml:space="preserve"><value>Pending Approvals</value></data>
   <data name="Valuation.Dashboard.RecentCostChanges7d" xml:space="preserve"><value>Recent Cost Changes (7d)</value></data>
-  <data name="Valuation.Dashboard.TotalOnHandValue" xml:space="preserve"><value>Total On-Hand Value</value></data>
+  <data name="Valuation.Dashboard.RegisterOnlyNote" xml:space="preserve"><value>Stock without a valuation record is excluded.</value></data>
+  <data name="Valuation.Dashboard.TotalOnHandValue" xml:space="preserve"><value>Valued stock total</value></data>
   <data name="Valuation.Dashboard.ValuationDashboard" xml:space="preserve"><value>Valuation Dashboard</value></data>
   <data name="Valuation.WriteDown.NewValue" xml:space="preserve"><value>New Value</value></data>
   <data name="Valuation.WriteDown.WriteDownInventoryValue" xml:space="preserve"><value>Write Down Inventory Value</value></data>
@@ -1806,4 +1807,11 @@
   <data name="Dashboard.Expiry8To30Days" xml:space="preserve"><value>8–30 days</value></data>
   <data name="Dashboard.Expiry31To90Days" xml:space="preserve"><value>31–90 days</value></data>
   <data name="ReportsTraceability.ReportLotToOrder" xml:space="preserve"><value>Traceability report (Lot → Order)</value></data>
+  <data name="VolatileData.Screen" xml:space="preserve"><value>Data on this screen is not saved and will be lost on restart.</value></data>
+  <data name="VolatileData.PrintQueue" xml:space="preserve"><value>The print queue is not saved and will be lost on restart.</value></data>
+  <data name="OutboundDispatch.TrackingNumber" xml:space="preserve"><value>Tracking number</value></data>
+  <data name="OutboundDispatch.TrackingRequired" xml:space="preserve"><value>Enter the carrier and tracking number.</value></data>
+  <data name="Pricing.WithoutCost" xml:space="preserve"><value>Without cost: {0} items</value></data>
+  <data name="Pricing.WithoutSale" xml:space="preserve"><value>Without sale price: {0} items</value></data>
+  <data name="WarehouseLocationDetail.NotFound" xml:space="preserve"><value>Location {0} was not found.</value></data>
 </root>

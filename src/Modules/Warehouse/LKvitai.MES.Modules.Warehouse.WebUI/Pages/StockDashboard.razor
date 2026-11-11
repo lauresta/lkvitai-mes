@@ -336,7 +336,7 @@
                     _locationId,
                     _categoryId,
                     includeReserved: true,
-                    includeVirtualLocations: true,
+                    includeVirtualLocations: false,
                     expiringBefore: null,
                     pageNumber: page,
                     pageSize: pageSize);
@@ -365,7 +365,7 @@
                 _locationId,
                 _categoryId,
                 includeReserved: true,
-                includeVirtualLocations: true,
+                includeVirtualLocations: false,
                 expiringBefore: null);
 
             await JavaScript.InvokeVoidAsync(

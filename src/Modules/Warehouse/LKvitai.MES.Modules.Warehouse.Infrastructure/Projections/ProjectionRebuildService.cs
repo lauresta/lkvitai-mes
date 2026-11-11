@@ -840,18 +840,10 @@ public class ProjectionRebuildService : IProjectionRebuildService
 
         var availableRows = await querySession.Query<AvailableStockView>()
             .ToListAsync(ct);
-        var qtyByItemId = availableRows
-            .Where(x => x.ItemId.HasValue)
-            .GroupBy(x => x.ItemId!.Value)
-            .ToDictionary(g => g.Key, g => g.Sum(x => x.AvailableQty));
         var stockUpdatedAtByItemId = availableRows
             .Where(x => x.ItemId.HasValue)
             .GroupBy(x => x.ItemId!.Value)
             .ToDictionary(g => g.Key, g => g.Max(x => DateTime.SpecifyKind(x.LastUpdated, DateTimeKind.Utc)));
-        var qtyBySku = availableRows
-            .Where(x => !string.IsNullOrWhiteSpace(x.SKU))
-            .GroupBy(x => x.SKU, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.Sum(x => x.AvailableQty), StringComparer.OrdinalIgnoreCase);
         var stockUpdatedAtBySku = availableRows
             .Where(x => !string.IsNullOrWhiteSpace(x.SKU))
             .GroupBy(x => x.SKU, StringComparer.OrdinalIgnoreCase)
@@ -859,6 +851,15 @@ public class ProjectionRebuildService : IProjectionRebuildService
                 g => g.Key,
                 g => g.Max(x => DateTime.SpecifyKind(x.LastUpdated, DateTimeKind.Utc)),
                 StringComparer.OrdinalIgnoreCase);
+
+        var locations = new List<Domain.Entities.Location>();
+        await using (var locationsCmd = writeConnection.CreateCommand())
+        {
+            locationsCmd.CommandText = "SELECT \"Code\", \"IsVirtual\" FROM public.locations";
+            await using var locationsReader = await locationsCmd.ExecuteReaderAsync(ct);
+            while (await locationsReader.ReadAsync(ct))
+                locations.Add(new Domain.Entities.Location { Code = locationsReader.GetString(0), IsVirtual = locationsReader.GetBoolean(1) });
+        }
 
         await using var itemsCmd = writeConnection.CreateCommand();
         itemsCmd.CommandText = @"
@@ -888,11 +889,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
                 continue;
             }
 
-            var qty = qtyByItemId.TryGetValue(item.ItemId, out var qtyById)
-                ? qtyById
-                : qtyBySku.TryGetValue(item.Sku, out var qtyBySkuValue)
-                    ? qtyBySkuValue
-                    : 0m;
+            var qty = Pricing.StockEventQuantity.Calculate(allEvents.Select(x => x.Data), item.Sku, locations);
 
             var totalValue = decimal.Round(qty * unitCost, 4, MidpointRounding.AwayFromZero);
             var id = Domain.Aggregates.ValuationItemId.ToValuationItemId(item.ItemId);

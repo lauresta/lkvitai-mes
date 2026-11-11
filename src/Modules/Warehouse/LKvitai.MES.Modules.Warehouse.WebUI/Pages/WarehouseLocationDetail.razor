@@ -1,15 +1,81 @@
 @page "/locations/{Id:int}"
+@inject MasterDataAdminClient MasterData
+@inject ReportsClient Reports
 
 <PageTitle>@L["WarehouseLocationDetail.LocationDetails"]</PageTitle>
-
-<h1>@L["WarehouseLocationDetail.LocationDetails"]</h1>
-<p class="text-muted">@L["WarehouseLocationDetail.LocationID", Id]</p>
-<p>
-    @L["WarehouseLocationDetail.ManageLocationMetadataInTheAdminLocationWorkspace"]
-</p>
+<h1>@L["WarehouseLocationDetail.LocationDetails"] <span class="mono">@_location?.Code</span></h1>
+@if (_loading)
+{
+    <LoadingSpinner IsLoading="true" />
+}
+else if (_error is not null)
+{
+    <ErrorBanner Message="@WarehouseErrorText.Get(L, _error)" TraceId="@_error.TraceId" OnRetry="LoadAsync" />
+}
+else if (_location is null)
+{
+    <p>@L["WarehouseLocationDetail.NotFound", Id]</p>
+}
+else
+{
+    <p>@L["Common.Status"]: @WarehouseStatusText.Get(L, _location.Status) · <span class="mono">@_location.Barcode</span></p>
+    <div class="panel table-responsive">
+        <table class="table table-sm" data-testid="location-stock-table">
+            <thead><tr>
+                <th>@L["AdminItemEditorDialog.InternalSKU"]</th><th>@L["Common.Item"]</th><th>@L["Common.Quantity"]</th>
+                <th>@L["Pricing.Cost"]</th><th>@L["Pricing.Sale"]</th><th>@L["Common.TotalValue"]</th>
+            </tr></thead>
+            <tbody>
+                @foreach (var row in _stock.Items)
+                {
+                    <tr><td class="mono">@row.InternalSku</td><td>@row.ItemName</td><td class="mono">@row.Qty @row.BaseUom</td>
+                        <td class="mono">@Money.FormatUnit(row.UnitCost)</td><td class="mono">@Money.Format(row.BasePrice)</td><td class="mono">@Money.Format(row.TotalValue)</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="d-flex gap-2 my-2">
+        <button class="btn btn-outline-secondary" disabled="@(_page == 1)" @onclick="PreviousAsync">@L["Common.Previous"]</button>
+        <span class="mono">@_page</span>
+        <button class="btn btn-outline-secondary" disabled="@(_page * 50 >= _stock.TotalCount)" @onclick="NextAsync">@L["Common.Next"]</button>
+    </div>
+}
 <a class="btn btn-outline-secondary" href="admin/locations">@L["WarehouseLocationDetail.OpenAdminLocations"]</a>
 
 @code {
-    [Parameter]
-    public int Id { get; set; }
+    [Parameter] public int Id { get; set; }
+    private AdminLocationDto? _location;
+    private StockLevelResponseDto _stock = new();
+    private ApiException? _error;
+    private bool _loading;
+    private int _page = 1;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _page = 1;
+        _location = null;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            // The existing metadata API is paged; do not assume the first page contains the location.
+            for (var page = 1; _location is null; page++)
+            {
+                var result = await MasterData.GetLocationsAsync(null, null, true, page, 500);
+                _location = result.Items.FirstOrDefault(x => x.Id == Id);
+                if (page * 500 >= result.TotalCount) break;
+            }
+            if (_location is not null)
+                _stock = await Reports.GetStockLevelAsync(null, Id, null, true, true, null, _page, 50);
+        }
+        catch (ApiException ex) { _error = ex; }
+        finally { _loading = false; }
+    }
+    private async Task PreviousAsync() { _page--; await LoadAsync(); }
+    private async Task NextAsync() { _page++; await LoadAsync(); }
 }

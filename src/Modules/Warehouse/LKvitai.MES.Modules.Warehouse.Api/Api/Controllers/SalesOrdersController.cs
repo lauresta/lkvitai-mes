@@ -36,6 +36,11 @@ public sealed class SalesOrdersController : ControllerBase
             return ValidationFailure("Request body is required.");
         }
 
+        if (request.Lines.Any(x => x.UnitPrice < 0m))
+        {
+            return ValidationFailure("Unit price cannot be negative.");
+        }
+
         var orderId = Guid.NewGuid();
         var command = new CreateSalesOrderCommand
         {
@@ -232,7 +237,7 @@ public sealed class SalesOrdersController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(status))
         {
-            if (!Enum.TryParse<SalesOrderStatus>(status, true, out var parsedStatus))
+            if (!Enum.TryParse<SalesOrderStatus>(status.Replace("_", string.Empty), true, out var parsedStatus))
             {
                 return ValidationFailure("Invalid status filter value.");
             }

@@ -1132,10 +1132,11 @@
   <data name="Valuation.Dashboard.NoOnHandValueRows" xml:space="preserve"><value>Nėra turimų verčių eilučių</value></data>
   <data name="Valuation.Dashboard.NoValuationRowsWereReturned" xml:space="preserve"><value>Vertinimo eilučių negrąžinta.</value></data>
   <data name="Valuation.Dashboard.OldCost" xml:space="preserve"><value>Senoji kaina</value></data>
-  <data name="Valuation.Dashboard.OnHandValueReport" xml:space="preserve"><value>Turimos vertės ataskaita</value></data>
+  <data name="Valuation.Dashboard.OnHandValueReport" xml:space="preserve"><value>Atsargų vertinimo registras</value></data>
   <data name="Valuation.Dashboard.PendingApprovals" xml:space="preserve"><value>Laukiama patvirtinimų</value></data>
   <data name="Valuation.Dashboard.RecentCostChanges7d" xml:space="preserve"><value>Naujausi mokesčių pakeitimai (7 d.)</value></data>
-  <data name="Valuation.Dashboard.TotalOnHandValue" xml:space="preserve"><value>Bendra turima vertė</value></data>
+  <data name="Valuation.Dashboard.RegisterOnlyNote" xml:space="preserve"><value>Atsargos be vertinimo įrašo neįtraukiamos.</value></data>
+  <data name="Valuation.Dashboard.TotalOnHandValue" xml:space="preserve"><value>Įvertintų atsargų suma</value></data>
   <data name="Valuation.Dashboard.ValuationDashboard" xml:space="preserve"><value>Vertinimo prietaisų skydelis</value></data>
   <data name="Valuation.WriteDown.NewValue" xml:space="preserve"><value>Nauja vertė</value></data>
   <data name="Valuation.WriteDown.WriteDownInventoryValue" xml:space="preserve"><value>Užsirašykite atsargų vertę</value></data>
@@ -1806,4 +1807,11 @@
   <data name="Dashboard.Expiry8To30Days" xml:space="preserve"><value>8–30 dienų</value></data>
   <data name="Dashboard.Expiry31To90Days" xml:space="preserve"><value>31–90 dienų</value></data>
   <data name="ReportsTraceability.ReportLotToOrder" xml:space="preserve"><value>Atsekamumo ataskaita (partija → užsakymas)</value></data>
+  <data name="VolatileData.Screen" xml:space="preserve"><value>Šio ekrano duomenys neišsaugomi ir bus prarasti paleidus sistemą iš naujo.</value></data>
+  <data name="VolatileData.PrintQueue" xml:space="preserve"><value>Spausdinimo eilė neišsaugoma ir bus prarasta paleidus sistemą iš naujo.</value></data>
+  <data name="OutboundDispatch.TrackingNumber" xml:space="preserve"><value>Siuntos sekimo numeris</value></data>
+  <data name="OutboundDispatch.TrackingRequired" xml:space="preserve"><value>Įveskite vežėją ir siuntos sekimo numerį.</value></data>
+  <data name="Pricing.WithoutCost" xml:space="preserve"><value>Be savikainos: {0} poz.</value></data>
+  <data name="Pricing.WithoutSale" xml:space="preserve"><value>Be pardavimo kainos: {0} poz.</value></data>
+  <data name="WarehouseLocationDetail.NotFound" xml:space="preserve"><value>Vieta {0} nerasta.</value></data>
 </root>

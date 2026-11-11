@@ -166,25 +166,33 @@ public sealed class DeployedPriceAuditTests
         await Task.Delay(next - now);
     }
 
-    private static string Price(JsonElement row, string property)
+    private static string Price(JsonElement row, string property, string language)
     {
         var value = row.GetProperty(property);
-        return value.ValueKind == JsonValueKind.Null ? "–" : value.GetDecimal().ToString("0.00", CultureInfo.InvariantCulture) + " €";
+        return value.ValueKind == JsonValueKind.Null ? "–" : ExpectedMoney(value.GetDecimal(), language);
+    }
+
+    private static string ExpectedMoney(decimal value, string language)
+    {
+        var culture = (CultureInfo)CultureInfo.GetCultureInfo(language).Clone();
+        if (language == "lt") culture.NumberFormat.NumberGroupSeparator = " ";
+        culture.NumberFormat.NegativeSign = "-";
+        return decimal.Round(value, 2, MidpointRounding.AwayFromZero).ToString("#,##0.00", culture) + " €";
     }
 
     private static void CheckDashboard(string body, JsonElement expected, string language, List<string> failures)
     {
         var positive = expected.GetProperty("stock").EnumerateArray()
-            .Where(x => x.GetProperty("qty").GetDecimal() > 0).ToList();
+            .Where(x => x.GetProperty("qty").GetDecimal() > 0 && !x.GetProperty("virtual").GetBoolean()).ToList();
         var quantity = positive.Sum(x => x.GetProperty("qty").GetDecimal());
         var skus = positive.Select(x => x.GetProperty("sku").GetString()).Distinct(StringComparer.OrdinalIgnoreCase).Count();
         if (!body.Contains($"\n{quantity:0.###}\n", StringComparison.Ordinal) ||
             !body.Contains($"\n{skus}\n", StringComparison.Ordinal))
             failures.Add($"{language}/dashboard: SKU/quantity differs from DB ({skus}/{quantity})");
-        if (positive.Any(x => x.GetProperty("cost").ValueKind == JsonValueKind.Null) &&
-            !body.Contains("COST TOTAL\n–", StringComparison.Ordinal) &&
-            !body.Contains("SAVIKAINOS SUMA\n–", StringComparison.OrdinalIgnoreCase))
-            failures.Add($"{language}/dashboard: incomplete cost total must be –");
+        var total = positive.Where(x => x.GetProperty("value").ValueKind != JsonValueKind.Null)
+            .Sum(x => x.GetProperty("value").GetDecimal());
+        if (!body.Contains(ExpectedMoney(total, language), StringComparison.Ordinal))
+            failures.Add($"{language}/dashboard: priced-row cost total differs from DB ({total})");
     }
 
     private static void CheckStockReport(string body, JsonElement expected, string language, List<string> failures)
@@ -198,9 +206,9 @@ public sealed class DeployedPriceAuditTests
             var match = lines.FirstOrDefault(x => x.StartsWith(sku + "\t", StringComparison.OrdinalIgnoreCase)
                 && x.Contains("\t" + location + "\t", StringComparison.Ordinal)
                 && x.Contains("\t" + qty + "\t", StringComparison.Ordinal));
-            if (match is null || !match.Contains(Price(row, "cost"), StringComparison.Ordinal) ||
-                !match.Contains(Price(row, "sale"), StringComparison.Ordinal) ||
-                !match.EndsWith(Price(row, "value"), StringComparison.Ordinal))
+            if (match is null || !match.Contains(Price(row, "cost", language), StringComparison.Ordinal) ||
+                !match.Contains(Price(row, "sale", language), StringComparison.Ordinal) ||
+                !match.EndsWith(Price(row, "value", language), StringComparison.Ordinal))
                 failures.Add($"{language}/stock-report: DB price mismatch {sku}/{location}/{qty}");
         }
         if (lines.Any(x => x.Contains("\tAGNUM\t", StringComparison.Ordinal)))
@@ -215,8 +223,8 @@ public sealed class DeployedPriceAuditTests
         var match = body.Split('\n').FirstOrDefault(x => x.StartsWith("000-000-101 -", StringComparison.Ordinal));
         var qty = row.GetProperty("qty").GetDecimal().ToString("0.###", CultureInfo.InvariantCulture);
         if (match is null || !match.Contains("\t" + qty + "\t", StringComparison.Ordinal) ||
-            !match.EndsWith(Price(row, "value"), StringComparison.Ordinal))
-            failures.Add($"{language}/valuation: 000-000-101 differs from DB ({qty} × {Price(row, "cost")} = {Price(row, "value")}); UI: {match}");
+            !match.EndsWith(Price(row, "value", language), StringComparison.Ordinal))
+            failures.Add($"{language}/valuation: 000-000-101 differs from DB ({qty} × {Price(row, "cost", language)} = {Price(row, "value", language)}); UI: {match}");
     }
 
     private static async Task CheckAvailableStockAsync(IPage page, JsonElement expected, string language, List<string> failures)
@@ -248,8 +256,8 @@ public sealed class DeployedPriceAuditTests
                 var warehouse = row.GetProperty("warehouse").GetString();
                 var location = row.GetProperty("location").GetString();
                 var match = actual.FirstOrDefault(x => x.Length >= 11 && x[0] == warehouse && x[1] == location && x[2] == sku);
-                if (match is null || match[8] != Price(row, "cost") || match[9] != Price(row, "sale") ||
-                    match[10] != Price(row, "value"))
+                if (match is null || match[8] != Price(row, "cost", language) || match[9] != Price(row, "sale", language) ||
+                    match[10] != Price(row, "value", language))
                     failures.Add($"{language}/available-stock: DB price mismatch {sku}/{warehouse}/{location}: {string.Join("|", match ?? [])}");
             }
             if (actual.Any(x => x.Length >= 2 && (x[1] == "AGNUM" || x[1].StartsWith("IN_TRANSIT_", StringComparison.Ordinal) || x[1] == "SHIPPING")))
@@ -271,7 +279,7 @@ public sealed class DeployedPriceAuditTests
                 try
                 {
                     await page.WaitForFunctionAsync("([sku,qty]) => Array.from(document.querySelectorAll('table tbody tr')).some(tr => tr.cells[0]?.textContent?.trim().toLowerCase() === sku.toLowerCase() && tr.cells[3]?.textContent?.trim() === qty)", new[] { sku, qty }, new() { Timeout = 15000 });
-                    await page.WaitForFunctionAsync("([sku,cost]) => Array.from(document.querySelectorAll('table tbody tr')).some(tr => tr.cells[0]?.textContent?.trim().toLowerCase() === sku.toLowerCase() && tr.cells[4]?.textContent?.trim() === cost)", new[] { sku, Price(row, "cost") }, new() { Timeout = 15000 });
+                    await page.WaitForFunctionAsync("([sku,cost]) => Array.from(document.querySelectorAll('table tbody tr')).some(tr => tr.cells[0]?.textContent?.trim().toLowerCase() === sku.toLowerCase() && tr.cells[4]?.textContent?.trim() === cost)", new[] { sku, Price(row, "cost", language) }, new() { Timeout = 15000 });
                 }
                 catch (TimeoutException)
                 {
@@ -282,8 +290,8 @@ public sealed class DeployedPriceAuditTests
                 var cells = new List<string[]>();
                 foreach (var tr in matches) cells.Add((await tr.Locator("td").AllTextContentsAsync()).Select(x => x.Trim()).ToArray());
                 var match = cells.Where(x => x.Length >= 7 && x[0].Equals(sku, StringComparison.OrdinalIgnoreCase)).ToList();
-                if (match.Count != 1 || match[0][4] != Price(row, "cost") || match[0][5] != Price(row, "sale") ||
-                    match[0][6] != Price(row, "costValue"))
+                if (match.Count != 1 || match[0][4] != Price(row, "cost", language) || match[0][5] != Price(row, "sale", language) ||
+                    match[0][6] != Price(row, "costValue", language))
                     failures.Add($"{language}/agnum-balances: DB price mismatch or duplicate SND {group.Key} SKU {sku}");
             }
         }
@@ -297,8 +305,8 @@ public sealed class DeployedPriceAuditTests
                      .Where(x => x.GetProperty("orderId").GetString() == orderId))
         {
             var sku = line.GetProperty("sku").GetString();
-            var amount = Price(line, "calculatedLineAmount");
-            var price = Price(line, "unitPrice");
+            var amount = Price(line, "calculatedLineAmount", language);
+            var price = Price(line, "unitPrice", language);
             if (line.GetProperty("lineAmount").GetDecimal() != line.GetProperty("calculatedLineAmount").GetDecimal())
                 failures.Add($"{language}/{name}: stored sales line amount differs from qty × price for {sku}");
             var rows = await page.Locator("table tbody tr").AllAsync();
@@ -341,7 +349,7 @@ public sealed class DeployedPriceAuditTests
         await page.WaitForFunctionAsync("expected => Number(Array.from(document.querySelectorAll('table tbody tr input[type=number]'))[1]?.value) === Number(expected)", price,
             new() { Timeout = 10000 });
         await page.WaitForFunctionAsync("([cost,sale]) => { const hint = document.querySelector('table tbody tr td:first-child .small')?.textContent || ''; return hint.includes(cost) && hint.includes(sale); }",
-            new[] { Price(priced, "cost"), Price(priced, "sale") }, new() { Timeout = 10000 });
+            new[] { Price(priced, "cost", language), Price(priced, "sale", language) }, new() { Timeout = 10000 });
         await page.Locator("#customer").SelectOptionAsync(ids[1]);
         await page.WaitForFunctionAsync("expected => Number(Array.from(document.querySelectorAll('table tbody tr input[type=number]'))[1]?.value) === Number(expected)", price,
             new() { Timeout = 10000 });

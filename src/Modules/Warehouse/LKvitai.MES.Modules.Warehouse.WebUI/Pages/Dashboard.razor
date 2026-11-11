@@ -51,7 +51,9 @@
         @if (_overview.Data is not null)
         {
             <span class="kpi__val mono">@Money.Format(_overview.Data.TotalStockCostValue)</span>
+            <span class="kpi__delta">@L["Pricing.WithoutCost", _overview.Data.MissingCostCount]</span>
             <span class="kpi__delta">@L["Pricing.SaleTotal"]: <span class="is-money is-num">@Money.Format(_overview.Data.TotalStockSaleValue)</span></span>
+            <span class="kpi__delta">@L["Pricing.WithoutSale", _overview.Data.MissingSaleCount]</span>
         }
         else
         {
@@ -121,7 +123,7 @@
                         <div class="dash-legend__row">
                             <span class="dash-legend__dot" style="background:@PaletteColor(index)"></span>
                             <span class="dash-legend__label">@row.CategoryName</span>
-                            <span class="mono">@FormatMoney(row.Value)</span>
+                            <span class="mono">@FormatMoney(row.Value) <small>@L["Pricing.WithoutCost", row.MissingCostCount]</small></span>
                             <span class="mono dash-legend__pct">@row.Percent.ToString("0.#", CultureInfo.InvariantCulture)%</span>
                         </div>
                     }
@@ -160,7 +162,7 @@
                         <span class="dash-bar-row__track">
                             <span class="dash-bar-row__fill" style="width:@(WidthPercent(row.Value ?? 0m, maxValue))%"></span>
                         </span>
-                        <span class="dash-bar-row__value mono">@Money.Format(row.Value)</span>
+                        <span class="dash-bar-row__value mono">@Money.Format(row.Value) <small>@L["Pricing.WithoutCost", row.MissingCostCount]</small></span>
                     </div>
                 }
                 <div class="dash-bar-foot">

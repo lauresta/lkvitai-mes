@@ -173,7 +173,7 @@ public sealed class ValuationController : ControllerBase
     }
 
     [HttpGet("on-hand-value")]
-    [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
+    [Authorize(Policy = WarehousePolicies.ReadWarehouse)]
     public async Task<IActionResult> GetOnHandValueAsync(
         [FromQuery] int? itemId,
         [FromQuery] int? categoryId,
@@ -288,7 +288,7 @@ public sealed class ValuationController : ControllerBase
     }
 
     [HttpGet("cost-history")]
-    [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
+    [Authorize(Policy = WarehousePolicies.ReadWarehouse)]
     public async Task<IActionResult> GetCostHistoryAsync(
         [FromQuery] int? itemId,
         [FromQuery] DateTimeOffset? dateFrom,

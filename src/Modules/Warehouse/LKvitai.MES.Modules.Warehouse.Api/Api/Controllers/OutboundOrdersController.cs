@@ -119,6 +119,7 @@ public sealed class OutboundOrdersController : ControllerBase
             .Select(x => new
             {
                 x.Id,
+                x.SalesOrderId,
                 x.OrderNumber,
                 x.Type,
                 x.Status,
@@ -148,7 +149,7 @@ public sealed class OutboundOrdersController : ControllerBase
             x.ShippedAt,
             x.ShipmentId,
             x.ShipmentNumber,
-            x.TrackingNumber)).ToList();
+            x.TrackingNumber, x.SalesOrderId)).ToList();
 
         return Ok(rows);
     }
@@ -279,7 +280,8 @@ public sealed class OutboundOrdersController : ControllerBase
         DateTimeOffset? ShippedAt,
         Guid? ShipmentId,
         string? ShipmentNumber,
-        string? TrackingNumber);
+        string? TrackingNumber,
+        Guid? SalesOrderId = null);
 
     public sealed record OutboundOrderDetailResponse(
         Guid Id,

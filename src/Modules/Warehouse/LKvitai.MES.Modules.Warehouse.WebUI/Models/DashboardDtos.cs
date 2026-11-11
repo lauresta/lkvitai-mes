@@ -12,11 +12,13 @@ public sealed record DashboardOverviewDto(
     int OutOfStockCount,
     int ExpiringSoonCount,
     int ExpiredCount,
-    string AgnumStatus = "Unknown");
+    string AgnumStatus = "Unknown",
+    int MissingCostCount = 0,
+    int MissingSaleCount = 0);
 
-public sealed record CategoryValueDto(string CategoryName, decimal Value, decimal Percent);
+public sealed record CategoryValueDto(string CategoryName, decimal Value, decimal Percent, int MissingCostCount = 0);
 
-public sealed record WarehouseValueDto(string WarehouseCode, string WarehouseName, decimal? Value, decimal Quantity);
+public sealed record WarehouseValueDto(string WarehouseCode, string WarehouseName, decimal? Value, decimal Quantity, int MissingCostCount = 0);
 
 public sealed record LowStockResponseDto(IReadOnlyList<LowStockItemDto> Items, int TotalCount);
 

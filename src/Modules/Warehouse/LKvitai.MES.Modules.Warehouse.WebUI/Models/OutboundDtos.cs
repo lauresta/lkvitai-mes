@@ -2,6 +2,7 @@ namespace LKvitai.MES.Modules.Warehouse.WebUI.Models;
 
 public record OutboundOrderSummaryDto
 {
+    public Guid? SalesOrderId { get; init; }
     public Guid Id { get; init; }
     public string OrderNumber { get; init; } = string.Empty;
     public string Type { get; init; } = string.Empty;

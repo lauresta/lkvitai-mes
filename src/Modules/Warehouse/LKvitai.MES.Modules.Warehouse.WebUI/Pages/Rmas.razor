@@ -7,6 +7,8 @@
 
 <PageTitle>@L["Rmas.RMAsCikadaMES"]</PageTitle>
 
+<VolatileDataBanner />
+
 <h3>@L["Rmas.ReturnsRMA"]</h3>
 
 @if (_error is not null)
@@ -86,7 +88,7 @@
                                 <td class="mono">@string.Join(", ", row.Lines.Select(x => x.ItemId))</td>
                                 <td class="text-end is-money is-num">@string.Join(" / ", row.Lines.Select(x => Money.FormatUnit(_priceMap.Get(x.ItemId, null)?.EffectiveCost)))</td>
                                 <td class="text-end is-money is-num">@string.Join(" / ", row.Lines.Select(x => Money.Format(_priceMap.Get(x.ItemId, null)?.BasePrice)))</td>
-                                <td class="text-end is-money is-num">@Money.Format(RmaValue(row))</td>
+                                <td class="text-end is-money is-num">@Money.Format(RmaValue(row)) <small>@L["Pricing.WithoutCost", row.Lines.Count(x => !_priceMap.Value(x.Qty, x.ItemId, null).HasValue)]</small></td>
                                 <td>@(row.CreditAmount?.ToString("0.00") ?? "-")</td>
                                 <td>@(row.UpdatedBy ?? row.CreatedBy)</td>
                                 <td class="d-flex gap-1">
@@ -138,9 +140,7 @@
     private decimal? RmaValue(RmaDto row)
     {
         var values = row.Lines.Select(x => _priceMap.Value(x.Qty, x.ItemId, null)).ToList();
-        return values.Count > 0 && values.All(x => x.HasValue)
-            ? values.Sum(x => x!.Value)
-            : null;
+        return values.Sum(x => x ?? 0m);
     }
 
     private async Task CreateAsync()

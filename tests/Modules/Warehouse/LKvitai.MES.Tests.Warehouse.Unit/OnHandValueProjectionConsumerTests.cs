@@ -193,6 +193,49 @@ public class OnHandValueProjectionConsumerTests
             .Should().Be(1);
     }
 
+    [Fact]
+    public async Task TwoReceipts_UseCommittedQuantitiesAndPersistCumulativeValuation()
+    {
+        await using var db = CreateDbContext();
+        db.ItemCategories.Add(new ItemCategory { Id = 11, Code = "RAW", Name = "Raw" });
+        db.UnitOfMeasures.Add(new UnitOfMeasure { Code = "PCS", Name = "Pieces", Type = "Piece" });
+        db.Items.Add(new Item { Id = 101, InternalSKU = "SKU", Name = "Receipt item", BaseUoM = "PCS", CategoryId = 11 });
+        await db.SaveChangesAsync();
+        var resolver = new EventQuantityResolver();
+        var sut = new OnHandValueProjectionConsumer(db, resolver, CreateLogger<OnHandValueProjectionConsumer>());
+        resolver.Events.Add(new GoodsReceivedEvent { SKU = "sku", DestinationLocation = "RECEIVING", ReceivedQty = 1m });
+        resolver.Events.Add(new StockMovedEvent { SKU = "SKU", FromLocation = "RECEIVING", ToLocation = "BIN", Quantity = 1m });
+        await sut.Consume(CreateContext(new ValuationInitialized
+        {
+            EventId = Guid.NewGuid(), ItemId = ValuationItemId.ToValuationItemId(101), InitialUnitCost = 10m
+        }));
+        (await db.OnHandValues.SingleAsync()).Qty.Should().Be(1m);
+
+        resolver.Events.Add(new GoodsReceivedEvent { SKU = "SKU", DestinationLocation = "RECEIVING", ReceivedQty = 2m });
+        resolver.Events.Add(new StockMovedEvent { SKU = "SKU", FromLocation = "RECEIVING", ToLocation = "BIN", Quantity = 2m });
+        // Legacy snapshot and transit rows are not physical stock, even with bad metadata.
+        resolver.Events.Add(new StockAdjustedEvent { SKU = "SKU", Location = "AGNUM", QtyDelta = -500m });
+        resolver.Events.Add(new StockAdjustedEvent { SKU = "SKU", Location = "IN_TRANSIT_1", QtyDelta = 20m });
+        var second = new CostAdjusted { EventId = Guid.NewGuid(), ItemId = ValuationItemId.ToValuationItemId(101), NewUnitCost = 10m };
+        await sut.Consume(CreateContext(second));
+        await sut.Consume(CreateContext(second));
+        db.ChangeTracker.Clear();
+        var persisted = await db.OnHandValues.SingleAsync();
+        persisted.Qty.Should().Be(3m);
+        persisted.TotalValue.Should().Be(30m);
+    }
+
+    private sealed class EventQuantityResolver : IAvailableStockQuantityResolver
+    {
+        public List<object> Events { get; } = [];
+        public Task<decimal> ResolveTotalQtyAsync(int itemId, string itemSku, CancellationToken cancellationToken) =>
+            Task.FromResult(LKvitai.MES.Modules.Warehouse.Infrastructure.Pricing.StockEventQuantity.Calculate(Events, itemSku,
+            [new Location { Code = "BIN" }, new Location { Code = "RECEIVING", IsVirtual = true },
+             new Location { Code = "AGNUM" }, new Location { Code = "IN_TRANSIT_1" }]));
+        public Task<IReadOnlyDictionary<string, decimal>> ResolveQtyBySkuForLocationAsync(string locationCode, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+    }
+
     private static WarehouseDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<WarehouseDbContext>()

@@ -86,12 +86,12 @@ public sealed class AgnumController : ControllerBase
             return ValidationFailure("Request body is required.");
         }
 
-        if (!Enum.TryParse<AgnumExportScope>(request.Scope, true, out var scope))
+        if (!Enum.TryParse<AgnumExportScope>(request.Scope?.Replace("_", string.Empty), true, out var scope))
         {
             return ValidationFailure($"Invalid scope '{request.Scope}'.");
         }
 
-        if (!Enum.TryParse<AgnumExportFormat>(request.Format, true, out var format))
+        if (!Enum.TryParse<AgnumExportFormat>(request.Format?.Replace("_", string.Empty), true, out var format))
         {
             return ValidationFailure($"Invalid format '{request.Format}'.");
         }
