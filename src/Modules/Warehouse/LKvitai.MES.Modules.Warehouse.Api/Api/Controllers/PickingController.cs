@@ -306,10 +306,16 @@ public sealed class PickingController : ControllerBase
             Timestamp = now
         };
 
-        await using (var session = _documentStore.LightweightSession())
+        if (request.PickedQty < task.Qty)
         {
-            session.Events.Append($"pick-task:{task.TaskId:N}", evt);
-            await session.SaveChangesAsync(cancellationToken);
+            _dbContext.PickTasks.Add(new PickTask
+            {
+                OrderId = task.OrderId,
+                ItemId = task.ItemId,
+                Qty = task.Qty - request.PickedQty,
+                AssignedToUserId = task.AssignedToUserId,
+                Status = "Pending"
+            });
         }
 
         task.Status = "Completed";
@@ -349,7 +355,8 @@ public sealed class PickingController : ControllerBase
             }
         }
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await LKvitai.MES.Modules.Warehouse.Api.Services.WarehouseOperationPersistence.CommitAsync(
+            _dbContext, _documentStore, $"pick-task:{task.TaskId:N}", evt, [], cancellationToken);
 
         return Ok(new CompletePickTaskResponse(
             task.TaskId,

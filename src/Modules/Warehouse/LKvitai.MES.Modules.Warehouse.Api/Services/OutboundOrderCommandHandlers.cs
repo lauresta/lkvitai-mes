@@ -9,6 +9,8 @@ using LKvitai.MES.BuildingBlocks.SharedKernel;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using HandlingUnitAggregate = LKvitai.MES.Modules.Warehouse.Domain.Aggregates.HandlingUnit;
+using HandlingUnitLine = LKvitai.MES.Modules.Warehouse.Domain.Aggregates.HandlingUnitLine;
+using IDocumentStore = Marten.IDocumentStore;
 
 namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
@@ -17,15 +19,18 @@ public sealed class PackOrderCommandHandler : IRequestHandler<PackOrderCommand, 
     private readonly WarehouseDbContext _dbContext;
     private readonly IEventBus _eventBus;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IDocumentStore _documentStore;
 
     public PackOrderCommandHandler(
         WarehouseDbContext dbContext,
         IEventBus eventBus,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IDocumentStore documentStore)
     {
         _dbContext = dbContext;
         _eventBus = eventBus;
         _currentUserService = currentUserService;
+        _documentStore = documentStore;
     }
 
     public async Task<Result> Handle(PackOrderCommand request, CancellationToken cancellationToken)
@@ -157,6 +162,8 @@ public sealed class PackOrderCommandHandler : IRequestHandler<PackOrderCommand, 
 
         foreach (var line in order.Lines)
         {
+            if (line.PickedQty != line.Qty)
+                return Result.Fail(DomainErrorCodes.ValidationError, "Every order line must be fully picked before packing.");
             var scannedQty = scannedByItem.GetValueOrDefault(line.ItemId);
             if (scannedQty != line.Qty)
             {
@@ -191,10 +198,16 @@ public sealed class PackOrderCommandHandler : IRequestHandler<PackOrderCommand, 
 
         foreach (var line in order.Lines)
         {
+            var sku = line.Item!.InternalSKU;
+            var content = handlingUnit.Lines.SingleOrDefault(x => x.SKU == sku);
+            if (content is null)
+                handlingUnit.Lines.Add(new HandlingUnitLine { HUId = handlingUnit.HUId, SKU = sku, Quantity = line.PickedQty });
+            else
+                content.Quantity += line.PickedQty;
             shipment.Lines.Add(new ShipmentLine
             {
                 ItemId = line.ItemId,
-                Qty = line.Qty,
+                Qty = line.PickedQty,
                 HandlingUnitId = handlingUnit.HUId
             });
         }
@@ -214,28 +227,9 @@ public sealed class PackOrderCommandHandler : IRequestHandler<PackOrderCommand, 
             }
         }
 
-        await using var tx = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-
         _dbContext.HandlingUnits.Add(handlingUnit);
         _dbContext.Shipments.Add(shipment);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        foreach (var line in order.Lines)
-        {
-            await _eventBus.PublishAsync(new StockMovedEvent
-            {
-                MovementId = Guid.NewGuid(),
-                SKU = line.Item?.InternalSKU ?? string.Empty,
-                Quantity = line.Qty,
-                FromLocation = "PICKING_STAGING",
-                ToLocation = "SHIPPING",
-                MovementType = MovementType.Dispatch,
-                OperatorId = Guid.Empty,
-                HandlingUnitId = handlingUnit.HUId
-            }, cancellationToken);
-        }
-
-        await _eventBus.PublishAsync(new ShipmentPackedEvent
+        var packedEvent = new ShipmentPackedEvent
         {
             ShipmentId = shipment.Id,
             ShipmentNumber = shipment.ShipmentNumber,
@@ -253,9 +247,11 @@ public sealed class PackOrderCommandHandler : IRequestHandler<PackOrderCommand, 
                 ItemSku = x.Item?.InternalSKU ?? string.Empty,
                 Qty = x.Qty
             }).ToList()
-        }, cancellationToken);
-
-        await tx.CommitAsync(cancellationToken);
+        };
+        await WarehouseOperationPersistence.CommitAsync(_dbContext, _documentStore,
+            $"outbound-pack:{order.Id:N}", packedEvent, [], cancellationToken,
+            () => packedEvent.ShipmentNumber = shipment.ShipmentNumber);
+        await _eventBus.PublishAsync(packedEvent, cancellationToken);
 
         return Result.Ok();
     }

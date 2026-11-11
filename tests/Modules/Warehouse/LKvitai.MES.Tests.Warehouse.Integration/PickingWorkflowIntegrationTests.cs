@@ -1,4 +1,8 @@
 using FluentAssertions;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Application.Commands;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
+using Microsoft.Extensions.Logging.Abstractions;
 using LKvitai.MES.Modules.Warehouse.Api.Controllers;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Contracts.Events;
@@ -43,12 +47,14 @@ public class PickingWorkflowIntegrationTests : IAsyncLifetime
         }
 
         _dbOptions = new DbContextOptionsBuilder<WarehouseDbContext>()
-            .UseNpgsql(_postgres.GetConnectionString())
+            .UseNpgsql(_postgres.GetConnectionString(), o => o.EnableRetryOnFailure())
             .Options;
 
         await using (var db = CreateDbContext())
         {
             await db.Database.EnsureCreatedAsync();
+            // EnsureCreated omits the SQL default supplied by AddSalesOrderRowVersion.
+            await db.Database.ExecuteSqlRawAsync("""ALTER TABLE public.sales_orders ALTER COLUMN "RowVersion" SET DEFAULT decode('', 'hex')""");
         }
 
         _store = DocumentStore.For(opts =>
@@ -245,6 +251,135 @@ public class PickingWorkflowIntegrationTests : IAsyncLifetime
         payload.Locations.Should().HaveCount(2);
         payload.Locations[0].LocationCode.Should().Be("A-03");
         payload.Locations[1].LocationCode.Should().Be("A-02");
+    }
+
+    [SkippableFact]
+    public async Task PartialPick_Pack_Dispatch_PersistContentsAndOnlyRealStockMovements()
+    {
+        DockerRequirement.EnsureEnabled();
+        await SeedBaseDataAsync();
+        await SeedAvailableStockAsync(5);
+        await using var db = CreateDbContext();
+        var order = await NewSalesOrderAsync(db);
+        var task = await CreateTaskAsync(db, order.OrderNumber, 1, 5);
+        var controller = CreateController(db);
+        (await controller.CompleteTaskAsync(task.TaskId,
+            new PickingController.CompletePickTaskRequest(2, 2, null, "BAR-ITEM-1", "LOC-A01", "QA-partial")))
+            .Should().BeOfType<OkObjectResult>();
+        var remainder = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync(
+            db.PickTasks.Where(x => x.Status == "Pending"));
+        remainder.Qty.Should().Be(3);
+        (await controller.CompleteTaskAsync(remainder.TaskId,
+            new PickingController.CompletePickTaskRequest(2, 3, null, "BAR-ITEM-1", "LOC-A01", "QA-remainder")))
+            .Should().BeOfType<OkObjectResult>();
+        var pack = new PackOrderCommandHandler(db, new QuietBus(), new StaticCurrentUserService("QA-C2"), _store!);
+        (await pack.Handle(new PackOrderCommand { OutboundOrderId = order.Id,
+            ScannedItems = [new() { Barcode = "BAR-ITEM-1", Qty = 5 }] }, default)).IsSuccess.Should().BeTrue();
+        await using var query = _store!.QuerySession();
+        (await query.Events.FetchStreamAsync($"outbound-pack:{order.Id:N}")).Should().ContainSingle()
+            .Which.Data.Should().BeOfType<ShipmentPackedEvent>();
+        (await query.Events.FetchStreamAsync($"pick-task:{task.TaskId:N}")).Single().Data
+            .Should().BeOfType<PickCompletedEvent>().Which.PickedQty.Should().Be(2);
+        (await query.Events.FetchStreamAsync($"pick-task:{remainder.TaskId:N}")).Single().Data
+            .Should().BeOfType<PickCompletedEvent>().Which.PickedQty.Should().Be(3);
+        var hu = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync(db.HandlingUnits.Include(x => x.Lines));
+        hu.Lines.Should().ContainSingle().Which.Quantity.Should().Be(5);
+        hu.Lines.Single().SKU.Should().Be("RM-0001");
+        var shipment = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync(db.Shipments);
+        var dispatch = new DispatchShipmentCommandHandler(db, null!, new QuietBus(), new StaticCurrentUserService("QA-C2"),
+            new BusinessTelemetryService(), NullLogger<DispatchShipmentCommandHandler>.Instance, _store!);
+        var command = new DispatchShipmentCommand { ShipmentId = shipment.Id, Carrier = "OTHER", ManualTrackingNumber = "QA-C2" };
+        (await dispatch.Handle(command, default)).IsSuccess.Should().BeTrue();
+        (await dispatch.Handle(command, default)).IsSuccess.Should().BeFalse();
+        var movements = (await query.Events.FetchStreamAsync(
+            LKvitai.MES.Modules.Warehouse.Domain.StockLedgerStreamId.For("WH1", "SHIPPING", "RM-0001")))
+            .Select(x => x.Data).OfType<StockMovedEvent>().ToList();
+        movements.Should().ContainSingle();
+        movements[0].Quantity.Should().Be(5);
+        movements[0].FromLocation.Should().Be("SHIPPING");
+        movements[0].ToLocation.Should().Be("CUSTOMER");
+    }
+
+    [SkippableFact]
+    public async Task CancelAfterPartialPick_ReturnsOnlyPickedStockAndCancelsRemainder()
+    {
+        DockerRequirement.EnsureEnabled();
+        await SeedBaseDataAsync();
+        await SeedAvailableStockAsync(5);
+        await using var db = CreateDbContext();
+        var order = await NewSalesOrderAsync(db);
+        var task = await CreateTaskAsync(db, order.OrderNumber, 1, 5);
+        (await CreateController(db).CompleteTaskAsync(task.TaskId,
+            new PickingController.CompletePickTaskRequest(2, 2, null, "BAR-ITEM-1", "LOC-A01", "QA-cancel")))
+            .Should().BeOfType<OkObjectResult>();
+        var cancel = new CancelSalesOrderCommandHandler(db, new QuietBus(), new StaticCurrentUserService("QA-C2"), _store!);
+        var command = new CancelSalesOrderCommand { SalesOrderId = order.SalesOrderId!.Value, Reason = "QA-C2-cancel" };
+        (await cancel.Handle(command, default)).IsSuccess.Should().BeTrue();
+        (await cancel.Handle(command, default)).IsSuccess.Should().BeFalse();
+        await using var verify = CreateDbContext();
+        (await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(verify.PickTasks.Where(x => x.Status == "Pending"))).Should().Be(0);
+        await using var query = _store!.QuerySession();
+        var moves = (await query.Events.FetchStreamAsync(
+            LKvitai.MES.Modules.Warehouse.Domain.StockLedgerStreamId.For("WH1", "SHIPPING", "RM-0001")))
+            .Select(x => x.Data).OfType<StockMovedEvent>().ToList();
+        moves.Should().ContainSingle();
+        moves[0].Quantity.Should().Be(2);
+        moves[0].ToLocation.Should().Be("RECEIVING");
+    }
+
+    [SkippableFact]
+    public async Task PickMartenFailure_RollsBackTaskAndOutboundCounters()
+    {
+        DockerRequirement.EnsureEnabled();
+        await SeedBaseDataAsync();
+        await SeedAvailableStockAsync(5);
+        await using var db = CreateDbContext();
+        var order = await NewSalesOrderAsync(db);
+        var task = await CreateTaskAsync(db, order.OrderNumber, 1, 5);
+        await using (var conn = new Npgsql.NpgsqlConnection(_postgres!.GetConnectionString()))
+        {
+            await conn.OpenAsync();
+            await using var cmd = new Npgsql.NpgsqlCommand("""
+                CREATE FUNCTION warehouse_events.qa_fail() RETURNS trigger AS $$
+                BEGIN RAISE EXCEPTION 'QA event failure'; END; $$ LANGUAGE plpgsql;
+                CREATE TRIGGER qa_fail BEFORE INSERT ON warehouse_events.mt_events
+                FOR EACH ROW EXECUTE FUNCTION warehouse_events.qa_fail();
+                """, conn);
+            await cmd.ExecuteNonQueryAsync();
+        }
+        var action = async () => await CreateController(db).CompleteTaskAsync(task.TaskId,
+            new PickingController.CompletePickTaskRequest(2, 2, null, "BAR-ITEM-1", "LOC-A01", "QA-failure"));
+        await action.Should().ThrowAsync<Exception>();
+        await using var verify = CreateDbContext();
+        (await verify.PickTasks.FindAsync(task.TaskId))!.Status.Should().Be("Pending");
+        (await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync(verify.OutboundOrderLines)).PickedQty.Should().Be(0);
+        (await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(verify.PickTasks)).Should().Be(1);
+        await using var query = _store!.QuerySession();
+        (await query.Events.FetchStreamAsync($"pick-task:{task.TaskId:N}")).Should().BeEmpty();
+    }
+
+    private async Task<OutboundOrder> NewSalesOrderAsync(WarehouseDbContext db)
+    {
+        var customer = new Customer { CustomerCode = "QA-C2", Name = "QA-C2" };
+        var sale = new SalesOrder { OrderNumber = "QA-C2-SALE", Customer = customer };
+        sale.Lines.Add(new SalesOrderLine { ItemId = 1, OrderedQty = 5, UnitPrice = 10 });
+        sale.Allocate(Guid.NewGuid()).IsSuccess.Should().BeTrue();
+        sale.Release().IsSuccess.Should().BeTrue();
+        var order = new OutboundOrder { OrderNumber = "QA-C2-OUT", SalesOrder = sale };
+        order.MarkAllocated(sale.ReservationId!.Value).IsSuccess.Should().BeTrue();
+        order.StartPicking().IsSuccess.Should().BeTrue();
+        order.Lines.Add(new OutboundOrderLine { ItemId = 1, Qty = 5 });
+        db.OutboundOrders.Add(order);
+        db.Locations.AddRange(
+            new Location { Id = 5, Code = "CUSTOMER", Barcode = "CUSTOMER", Type = "Zone", IsVirtual = true },
+            new Location { Id = 6, Code = "RECEIVING", Barcode = "RECEIVING", Type = "Zone", IsVirtual = true });
+        await db.SaveChangesAsync();
+        return order;
+    }
+
+    private sealed class QuietBus : IEventBus
+    {
+        public Task PublishAsync<T>(T message, CancellationToken ct = default) where T : class => Task.CompletedTask;
     }
 
     private WarehouseDbContext CreateDbContext()
