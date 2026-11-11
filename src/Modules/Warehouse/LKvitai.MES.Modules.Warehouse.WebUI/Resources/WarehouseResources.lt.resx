@@ -1828,4 +1828,6 @@
   <data name="AnalyticsQuality.LateShipments" xml:space="preserve"><value>Vėluojančios siuntos</value></data>
   <data name="AnalyticsQuality.CurrentStatus" xml:space="preserve"><value>Dabartinė užsakymo būsena</value></data>
   <data name="Rmas.OrderLineId" xml:space="preserve"><value>Užsakymo eilutės ID (nebūtinas, jei prekė viena)</value></data>
+  <data name="Status.Restocked" xml:space="preserve"><value>Grąžintas į sandėlį</value></data>
+  <data name="Status.PendingReceipt" xml:space="preserve"><value>Laukiama priėmimo</value></data>
 </root>
