@@ -1830,4 +1830,18 @@
   <data name="Rmas.OrderLineId" xml:space="preserve"><value>Order line ID (optional for a unique item)</value></data>
   <data name="Status.Restocked" xml:space="preserve"><value>Restocked</value></data>
   <data name="Status.PendingReceipt" xml:space="preserve"><value>Pending receipt</value></data>
+  <data name="Projections.ValuePreviewExplanation" xml:space="preserve"><value>Compare the rebuilt valuation with the current register. Review all changes before applying. Other projections are not affected.</value></data>
+  <data name="Projections.BeforeQty" xml:space="preserve"><value>Qty before</value></data>
+  <data name="Projections.AfterQty" xml:space="preserve"><value>Qty after</value></data>
+  <data name="Projections.BeforeCost" xml:space="preserve"><value>Unit cost before</value></data>
+  <data name="Projections.AfterCost" xml:space="preserve"><value>Unit cost after</value></data>
+  <data name="Projections.BeforeValue" xml:space="preserve"><value>Value before</value></data>
+  <data name="Projections.AfterValue" xml:space="preserve"><value>Value after</value></data>
+  <data name="Projections.Change.Added" xml:space="preserve"><value>Added</value></data>
+  <data name="Projections.Change.Removed" xml:space="preserve"><value>Removed</value></data>
+  <data name="Projections.Change.Changed" xml:space="preserve"><value>Changed</value></data>
+  <data name="Projections.ApplyReason" xml:space="preserve"><value>Reason (required)</value></data>
+  <data name="Projections.ApplyPreview" xml:space="preserve"><value>Apply reviewed changes</value></data>
+  <data name="Projections.ApplySucceeded" xml:space="preserve"><value>Valuation register rebuilt; the reason and checksums were saved in the audit log.</value></data>
+  <data name="Projections.PreviewStale" xml:space="preserve"><value>Data changed. Run the preview again before applying.</value></data>
 </root>

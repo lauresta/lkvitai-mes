@@ -96,6 +96,44 @@
             </button>
         </div>
 
+        @if (_selectedProjection == "OnHandValue" && _valuePreview is not null)
+        {
+            <section class="panel p-3 mb-3" data-testid="valuation-rebuild-preview">
+                <p>@L["Projections.ValuePreviewExplanation"]</p>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead><tr>
+                            <th>@L["Common.SKU"]</th><th>@L["Common.Status"]</th>
+                            <th>@L["Projections.BeforeQty"]</th><th>@L["Projections.AfterQty"]</th>
+                            <th>@L["Projections.BeforeCost"]</th><th>@L["Projections.AfterCost"]</th>
+                            <th>@L["Projections.BeforeValue"]</th><th>@L["Projections.AfterValue"]</th>
+                        </tr></thead>
+                        <tbody>
+                        @foreach (var row in _valuePreview.Rows)
+                        {
+                            <tr><td class="font-monospace">@row.Sku</td><td>@L[$"Projections.Change.{row.Change}"]</td>
+                                <td class="font-monospace">@Amount(row.Before?.Qty)</td><td class="font-monospace">@Amount(row.After?.Qty)</td>
+                                <td class="font-monospace">@Amount(row.Before?.UnitCost)</td><td class="font-monospace">@Amount(row.After?.UnitCost)</td>
+                                <td class="font-monospace">@Amount(row.Before?.TotalValue)</td><td class="font-monospace">@Amount(row.After?.TotalValue)</td></tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+                <AuthorizeView Roles="WarehouseAdmin">
+                    <Authorized>
+                        <label for="valuation-rebuild-reason" class="form-label">@L["Projections.ApplyReason"]</label>
+                        <input id="valuation-rebuild-reason" class="form-control mb-2" maxlength="2000" @bind="_applyReason" @bind:event="oninput" />
+                        <button class="btn btn-primary" data-testid="valuation-rebuild-apply" @onclick="ApplyValuePreviewAsync"
+                                disabled="@(_isBusy || string.IsNullOrWhiteSpace(_applyReason))">@L["Projections.ApplyPreview"]</button>
+                    </Authorized>
+                </AuthorizeView>
+            </section>
+        }
+        @if (_valueMessage is not null)
+        {
+            <p role="status" data-testid="valuation-rebuild-message">@_valueMessage</p>
+        }
+
         @if (_rebuildResult is not null)
         {
             var resultClass = _rebuildResult.ChecksumMatch && _rebuildResult.Swapped
@@ -172,6 +210,32 @@
         "InboundShipmentSummary"
     ];
 
+    private OnHandValuePreviewDto? _valuePreview;
+    private string _applyReason = string.Empty;
+    private string? _valueMessage;
+    private static string Amount(decimal? value) => value?.ToString("N4", System.Globalization.CultureInfo.CurrentUICulture) ?? "–";
+
+    private async Task ApplyValuePreviewAsync()
+    {
+        if (_valuePreview is null || string.IsNullOrWhiteSpace(_applyReason)) return;
+        _isBusy = true;
+        _valueMessage = null;
+        try
+        {
+            await ProjectionsClient.ApplyOnHandValueAsync(_valuePreview, _applyReason);
+            _valuePreview = null;
+            _applyReason = string.Empty;
+            _valueMessage = L["Projections.ApplySucceeded"];
+        }
+        catch (ApiException ex) when (ex.StatusCode == 409)
+        {
+            _valuePreview = null;
+            _valueMessage = L["Projections.PreviewStale"];
+        }
+        catch (ApiException ex) { _apiError = ex; }
+        finally { _isBusy = false; }
+    }
+
     private string _selectedProjection = "LocationBalance";
     private bool _isBusy;
     private bool _showRebuildConfirm;
@@ -189,6 +253,9 @@
     private void OnProjectionChanged(ChangeEventArgs args)
     {
         _selectedProjection = args.Value?.ToString() ?? "LocationBalance";
+        _valuePreview = null;
+        _valueMessage = null;
+        _applyReason = string.Empty;
     }
 
     private void OpenRebuildConfirmation()
@@ -209,6 +276,16 @@
 
         try
         {
+            if (_selectedProjection == "OnHandValue")
+            {
+                _valuePreview = null;
+                _valueMessage = null;
+                _applyReason = string.Empty;
+                _valuePreview = await ProjectionsClient.PreviewOnHandValueAsync();
+                _rebuildResult = null;
+                _verifyResult = null;
+                return;
+            }
             _rebuildResult = await ProjectionsClient.RebuildAsync(_selectedProjection);
             _verifyResult = null;
 
@@ -359,6 +436,9 @@
         {
             return "Selected projection is not supported for rebuild. Choose one of the supported projections in the selector.";
         }
+
+        if (text.Contains("checksum", StringComparison.OrdinalIgnoreCase))
+            return L["Projections.ValuePreviewExplanation"];
 
         if (text.Contains("42P01", StringComparison.OrdinalIgnoreCase) ||
             text.Contains("schema", StringComparison.OrdinalIgnoreCase) ||

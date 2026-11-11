@@ -1830,4 +1830,18 @@
   <data name="Rmas.OrderLineId" xml:space="preserve"><value>Užsakymo eilutės ID (nebūtinas, jei prekė viena)</value></data>
   <data name="Status.Restocked" xml:space="preserve"><value>Grąžintas į sandėlį</value></data>
   <data name="Status.PendingReceipt" xml:space="preserve"><value>Laukiama priėmimo</value></data>
+  <data name="Projections.ValuePreviewExplanation" xml:space="preserve"><value>Palyginkite perskaičiuotą vertę su dabartiniu registru. Prieš taikydami peržiūrėkite visus pakeitimus. Kitos projekcijos nekeičiamos.</value></data>
+  <data name="Projections.BeforeQty" xml:space="preserve"><value>Kiekis prieš</value></data>
+  <data name="Projections.AfterQty" xml:space="preserve"><value>Kiekis po</value></data>
+  <data name="Projections.BeforeCost" xml:space="preserve"><value>Savikaina prieš</value></data>
+  <data name="Projections.AfterCost" xml:space="preserve"><value>Savikaina po</value></data>
+  <data name="Projections.BeforeValue" xml:space="preserve"><value>Vertė prieš</value></data>
+  <data name="Projections.AfterValue" xml:space="preserve"><value>Vertė po</value></data>
+  <data name="Projections.Change.Added" xml:space="preserve"><value>Pridėta</value></data>
+  <data name="Projections.Change.Removed" xml:space="preserve"><value>Pašalinta</value></data>
+  <data name="Projections.Change.Changed" xml:space="preserve"><value>Pakeista</value></data>
+  <data name="Projections.ApplyReason" xml:space="preserve"><value>Priežastis (privaloma)</value></data>
+  <data name="Projections.ApplyPreview" xml:space="preserve"><value>Taikyti peržiūrėtus pakeitimus</value></data>
+  <data name="Projections.ApplySucceeded" xml:space="preserve"><value>Vertės registras perskaičiuotas; priežastis ir kontrolinės sumos išsaugotos audito žurnale.</value></data>
+  <data name="Projections.PreviewStale" xml:space="preserve"><value>Duomenys pasikeitė. Prieš taikydami paleiskite peržiūrą iš naujo.</value></data>
 </root>

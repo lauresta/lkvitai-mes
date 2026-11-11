@@ -19,17 +19,41 @@ namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 public sealed class ProjectionsController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IOnHandValueRebuildService? _onHandValueRebuild;
     private readonly IProjectionRebuildService? _projectionRebuildService;
     private readonly IProjectionCleanupService? _projectionCleanupService;
 
     public ProjectionsController(
         IMediator mediator,
         IProjectionRebuildService? projectionRebuildService = null,
-        IProjectionCleanupService? projectionCleanupService = null)
+        IProjectionCleanupService? projectionCleanupService = null,
+        IOnHandValueRebuildService? onHandValueRebuild = null)
     {
         _mediator = mediator;
+        _onHandValueRebuild = onHandValueRebuild;
         _projectionRebuildService = projectionRebuildService;
         _projectionCleanupService = projectionCleanupService;
+    }
+
+    [HttpPost("on-hand-value/preview")]
+    public async Task<IActionResult> PreviewOnHandValueAsync(CancellationToken cancellationToken = default)
+        => Ok(await _onHandValueRebuild!.PreviewAsync(cancellationToken));
+
+    [HttpPost("on-hand-value/apply")]
+    public async Task<IActionResult> ApplyOnHandValueAsync(
+        [FromBody] OnHandValueApply request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Reason) || request.Reason.Length > 2000 ||
+            string.IsNullOrWhiteSpace(request.ProductionChecksum) || string.IsNullOrWhiteSpace(request.ShadowChecksum))
+            return ValidationFailure("Both checksums and a reason (1–2000 characters) are required.");
+        var actor = new ProjectionAuditActor(
+            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? User.Identity?.Name ?? "unknown",
+            HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            Request.Headers.UserAgent.ToString());
+        return await _onHandValueRebuild!.ApplyAsync(request, actor, cancellationToken)
+            ? Ok(new { applied = true })
+            : Conflict(new ProblemDetails { Status = 409, Title = "Projection data changed",
+                Detail = "Data changed. Run the preview again." });
     }
 
     [HttpPost("rebuild")]

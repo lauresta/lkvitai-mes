@@ -24,6 +24,20 @@ public class ProjectionsClient
         _logger = logger;
     }
 
+    public Task<OnHandValuePreviewDto> PreviewOnHandValueAsync()
+        => PostAsync<OnHandValuePreviewDto>("/api/warehouse/v1/admin/projections/on-hand-value/preview", new { });
+
+    public async Task ApplyOnHandValueAsync(OnHandValuePreviewDto preview, string reason)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        using var response = await client.PostAsJsonAsync("/api/warehouse/v1/admin/projections/on-hand-value/apply",
+            new { preview.ProductionChecksum, preview.ShadowChecksum, reason });
+        if (response.IsSuccessStatusCode) return;
+        var problem = await ProblemDetailsParser.ParseAsync(response);
+        if (response.StatusCode != HttpStatusCode.Conflict) LogFailure(response, problem);
+        throw new ApiException(problem, (int)response.StatusCode);
+    }
+
     public Task<RebuildResultDto> RebuildAsync(string projectionName)
     {
         return PostAsync<RebuildResultDto>("/api/warehouse/v1/admin/projections/rebuild", new { projectionName });
