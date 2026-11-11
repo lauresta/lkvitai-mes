@@ -55,6 +55,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf 
 # host bind-mount for /app/logs is chowned to 1654:1654 by deploy-test.yml
 # so Serilog's file sink can write daily-rolled warehouse-YYYYMMDD.log.
 COPY --from=build /app/publish .
+# CSV reconciliation reads exports produced by the non-root API process.
+RUN mkdir -p /app/exports/agnum && chown app:app /app/exports/agnum
 USER app
 
 # Expose port

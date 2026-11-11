@@ -93,12 +93,26 @@ public partial class PickingWorkflowIntegrationTests
         DockerRequirement.EnsureEnabled(); await SeedBaseDataAsync(); await SeedAvailableStockAsync(5);
         await using var db = CreateDbContext();
         var order = await Draft(db);
-        var service = DurableStore(db);
+        using var headersStore = Marten.DocumentStore.For(opts => {
+            opts.Connection(_postgres!.GetConnectionString());
+            opts.DatabaseSchemaName = "warehouse_events";
+            opts.Events.DatabaseSchemaName = "warehouse_events";
+            opts.Events.StreamIdentity = Marten.Events.StreamIdentity.AsString;
+            opts.Events.MetadataConfig.HeadersEnabled = true;
+            typeof(MartenConfiguration).GetMethod("RegisterMartenEventTypes", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+                .Invoke(null, new object[] { opts });
+        });
+        await headersStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        var service = new DatabaseWarehouseStore(db, headersStore,
+            new PostgresBalanceGuardLockFactory(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string,string?> {
+                ["ConnectionStrings:WarehouseDb"] = _postgres!.GetConnectionString() }).Build()));
         var missing = () => service.CreateWave([Guid.NewGuid()], "QA-C6");
         missing.Should().Throw<WarehouseOperationValidationException>();
         (await Reservations(db).AllocateAsync(order, () => order.Allocate(order.Id), default)).IsSuccess.Should().BeTrue();
         (await new ReleaseSalesOrderCommandHandler(db, new QuietBus()).Handle(new ReleaseSalesOrderCommand { SalesOrderId = order.Id }, default)).IsSuccess.Should().BeTrue();
         var task = await db.PickTasks.SingleAsync();
+        // Deployed events have JSONB headers; reading only payloads must work without dynamic JSON opt-in.
+        await db.Database.ExecuteSqlRawAsync("UPDATE warehouse_events.mt_events SET headers = jsonb_build_object()");
         var wave = service.CreateWave([order.OutboundOrderId!.Value], "QA-C6");
         wave.PickList.Single().TaskId.Should().Be(task.TaskId);
         wave.PickList.Single().Location.Should().Be("A-01");
