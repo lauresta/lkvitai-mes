@@ -732,7 +732,6 @@ public class WarehouseDbContext : DbContext
             {
                 t.HasCheckConstraint("ck_transfers_from_warehouse", "\"FromWarehouse\" <> ''");
                 t.HasCheckConstraint("ck_transfers_to_warehouse", "\"ToWarehouse\" <> ''");
-                t.HasCheckConstraint("ck_transfers_from_to_not_equal", "\"FromWarehouse\" <> \"ToWarehouse\"");
             });
         });
 

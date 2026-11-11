@@ -4016,8 +4016,6 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
 
                     b.ToTable("transfers", "public", t =>
                         {
-                            t.HasCheckConstraint("ck_transfers_from_to_not_equal", "\"FromWarehouse\" <> \"ToWarehouse\"");
-
                             t.HasCheckConstraint("ck_transfers_from_warehouse", "\"FromWarehouse\" <> ''");
 
                             t.HasCheckConstraint("ck_transfers_to_warehouse", "\"ToWarehouse\" <> ''");
