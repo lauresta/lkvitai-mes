@@ -65,6 +65,29 @@ public class ComplianceReportServiceTests
         db.GeneratedReportHistories.Any().Should().BeTrue();
     }
 
+    [Fact]
+    public async Task LotTraceDashboardAndCsv_UseSharedStoreContract()
+    {
+        await using var db = CreateDbContext();
+        LotTraceReport? report = new(Guid.NewGuid(), "QA-C7-shared-lot", LotTraceDirection.Forward,
+            new LotTraceNode("LOT", "QA-C7", "QA-C7", DateTimeOffset.UtcNow, []), false, DateTimeOffset.UtcNow);
+        var traces = new Mock<ILotTraceStore>();
+        traces.SetupGet(x => x.Count).Returns(1);
+        traces.Setup(x => x.TryGetAny(out report)).Returns(true);
+        var directory = Path.Combine(Path.GetTempPath(), "warehouse-c7-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var service = new ComplianceReportService(db, Mock.Of<ITransactionExportService>(), traces.Object,
+                Options.Create(new ComplianceReportOptions { ReportRootPath = directory }),
+                Microsoft.Extensions.Logging.Abstractions.NullLogger<ComplianceReportService>.Instance);
+            (await service.GetDashboardAsync()).RecentTraces.Should().Be(1);
+            var history = await service.TriggerAsync(ComplianceReportType.LotTrace, ComplianceReportFormat.Csv, "QA-C7");
+            history.Status.Should().Be(ComplianceReportStatus.Completed);
+            (await File.ReadAllTextAsync(history.FilePath!)).Should().Contain("QA-C7-shared-lot");
+        }
+        finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
+    }
+
     private static WarehouseDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<WarehouseDbContext>()

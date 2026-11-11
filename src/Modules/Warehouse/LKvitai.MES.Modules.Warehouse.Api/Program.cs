@@ -139,7 +139,6 @@ builder.Services.AddDataProtection()
     .DisableAutomaticKeyGeneration();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<LKvitai.MES.BuildingBlocks.PortalAuth.CikadaUserBridgeProof>();
-builder.Services.AddSingleton<WarehouseQaProof>();
 builder.Services.AddSingleton<CikadaSsoAccountProof>();
 builder.Services.AddScoped<TrustedUserAdministrationFilter>();
 
@@ -267,7 +266,10 @@ builder.Services.AddScoped<IAgnumReconciliationReportStore, DatabaseAgnumReconci
 builder.Services.AddScoped<IAgnumReconciliationService, AgnumReconciliationService>();
 builder.Services.AddSingleton<LabelTemplateEngine>();
 builder.Services.AddScoped<ILotTraceabilityService, LotTraceabilityService>();
-builder.Services.AddSingleton<ILotTraceStore, InMemoryLotTraceStore>();
+builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(sp =>
+    StackExchange.Redis.ConnectionMultiplexer.Connect(sp.GetRequiredService<IConfiguration>()["Caching:RedisConnectionString"]
+        ?? throw new InvalidOperationException("Redis is required for Warehouse compliance state.")));
+builder.Services.AddSingleton<ILotTraceStore, RedisLotTraceStore>();
 builder.Services.AddSingleton<ILabelPrinterTransport, TcpLabelPrinterTransport>();
 builder.Services.AddScoped<ILabelPrintQueueStore, DatabaseLabelPrintQueueStore>();
 builder.Services.AddScoped<ILabelPrinterClient, TcpLabelPrinterClient>();

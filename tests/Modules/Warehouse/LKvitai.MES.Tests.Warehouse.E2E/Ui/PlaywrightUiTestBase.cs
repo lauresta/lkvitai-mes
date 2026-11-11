@@ -36,26 +36,9 @@ public abstract class PlaywrightUiTestBase
     {
         await using var context = await Fixture.Browser.NewContextAsync(new BrowserNewContextOptions
         {
-            AcceptDownloads = true
+            AcceptDownloads = true,
+            StorageStatePath = Environment.GetEnvironmentVariable("WAREHOUSE_E2E_STORAGE_STATE")
         });
-
-        var qaKey = Environment.GetEnvironmentVariable("WAREHOUSE_QA_KEY");
-        if (!string.IsNullOrWhiteSpace(qaKey))
-        {
-            // APIRequestContext shares cookies with this browser context. Exchange
-            // before tracing, so the key never appears in browser URLs or traces.
-            var entry = await context.APIRequest.GetAsync(
-                new Uri(Fixture.Settings.BaseUrl, "/warehouse/").ToString(),
-                new APIRequestContextOptions
-                {
-                    Headers = new Dictionary<string, string> { ["X-Warehouse-QA-Key"] = qaKey },
-                    MaxRedirects = 0
-                });
-            if (entry.Status != 302)
-            {
-                throw new InvalidOperationException($"Warehouse QA entry returned HTTP {entry.Status}.");
-            }
-        }
 
         await context.Tracing.StartAsync(new TracingStartOptions
         {
