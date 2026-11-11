@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using FluentAssertions;
 using LKvitai.MES.Modules.Warehouse.Api.Controllers;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
@@ -22,7 +23,7 @@ using Xunit;
 
 namespace LKvitai.MES.Tests.Warehouse.Integration;
 
-public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
+public partial class ReceivingWorkflowIntegrationTests : IAsyncLifetime
 {
     private PostgreSqlContainer? _postgres;
     private DbContextOptions<WarehouseDbContext>? _dbOptions;
@@ -98,7 +99,7 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
             null,
             [new ReceivingController.CreateInboundShipmentLineRequest(1, 100m, 10m, "EUR")]));
 
-        var created = result.Should().BeOfType<CreatedAtActionResult>().Subject;
+        var created = result.Should().BeOfType<CreatedResult>().Subject;
         var payload = created.Value.Should().BeOfType<ReceivingController.ShipmentCreatedResponse>().Subject;
 
         payload.Id.Should().BeGreaterThan(0);
@@ -151,7 +152,7 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
                 new ReceivingController.CreateInboundShipmentLineRequest(2, 1m, 50m, "EUR")
             ]));
 
-        var created = createResult.Should().BeOfType<CreatedAtActionResult>().Subject;
+        var created = createResult.Should().BeOfType<CreatedResult>().Subject;
         var payload = created.Value.Should().BeOfType<ReceivingController.ShipmentCreatedResponse>().Subject;
 
         var shipment = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync(
@@ -422,7 +423,7 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
     {
         mediator = new NoOpMediator();
         return new ReceivingController(db, _store!, new StaticCurrentUserService("tester"), mediator,
-            NullLogger<ReceivingController>.Instance, new ItemPriceSnapshotService(db))
+            NullLogger<ReceivingController>.Instance, new ItemPriceSnapshotService(db), BalanceLocks())
         {
             ControllerContext = new ControllerContext
             {
@@ -432,7 +433,7 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
     }
 
     private QCController CreateQcController(WarehouseDbContext db)
-        => new(db, _store!, new StaticCurrentUserService("qc-tester"), new StubSignatureService())
+        => new(db, _store!, new StaticCurrentUserService("qc-tester"), new StubSignatureService(), BalanceLocks())
         {
             ControllerContext = new ControllerContext
             {
@@ -508,6 +509,9 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
         await daemon.WaitForNonStaleData(TimeSpan.FromSeconds(15));
     }
 
+    private PostgresBalanceGuardLockFactory BalanceLocks() => new(new ConfigurationBuilder()
+        .AddInMemoryCollection(new Dictionary<string,string?> { ["ConnectionStrings:WarehouseDb"] = _postgres!.GetConnectionString() }).Build());
+
     private sealed class StaticCurrentUserService : ICurrentUserService
     {
         private readonly string _user;
@@ -522,15 +526,14 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
 
     /// <summary>
     /// Minimal IMediator stub for tests that don't exercise the valuation pipeline.
-    /// ReceivingController's post-receipt valuation call is best-effort (wrapped in a
-    /// try/catch that never fails the physical receipt), so returning a failure Result
-    /// here exercises exactly that fallback path.
+    /// Physical persistence tests stub only valuation; the dedicated failure test makes its error explicit.
     /// </summary>
     private sealed class NoOpMediator : IMediator
     {
         /// <summary>Last command handed to <see cref="Send{TResponse}"/>, for tests that need to
         /// inspect what the controller computed (e.g. the landed unit cost) without a real
         /// valuation pipeline behind it.</summary>
+        public bool Fail { get; set; }
         public object? LastCommand { get; private set; }
 
         public Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
@@ -539,7 +542,7 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
 
             if (typeof(TResponse) == typeof(Result))
             {
-                var failure = Result.Fail(DomainErrorCodes.InternalError, "Valuation is not available in this test.");
+                var failure = Fail ? Result.Fail(DomainErrorCodes.InternalError, "QA valuation failure") : Result.Ok();
                 return Task.FromResult((TResponse)(object)failure);
             }
 

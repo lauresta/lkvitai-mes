@@ -1814,4 +1814,10 @@
   <data name="Pricing.WithoutCost" xml:space="preserve"><value>Be savikainos: {0} poz.</value></data>
   <data name="Pricing.WithoutSale" xml:space="preserve"><value>Be pardavimo kainos: {0} poz.</value></data>
   <data name="WarehouseLocationDetail.NotFound" xml:space="preserve"><value>Vieta {0} nerasta.</value></data>
+  <data name="Completion.CloseShort" xml:space="preserve"><value>Uždaryti su trūkumu</value></data>
+  <data name="Completion.ClosedShort" xml:space="preserve"><value>Siunta uždaryta su trūkumu. Likučiai nepakeisti.</value></data>
+  <data name="Completion.Quarantine" xml:space="preserve"><value>Karantinas</value></data>
+  <data name="Completion.ReturnToStock" xml:space="preserve"><value>Grąžinti į sandėlį</value></data>
+  <data name="Completion.ReturnSupplier" xml:space="preserve"><value>Grąžinti tiekėjui</value></data>
+  <data name="Completion.Scrap" xml:space="preserve"><value>Nurašyti</value></data>
 </root>

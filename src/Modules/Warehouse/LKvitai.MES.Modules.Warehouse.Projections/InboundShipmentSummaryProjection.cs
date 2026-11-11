@@ -47,6 +47,12 @@ public sealed class InboundShipmentSummaryProjection : SingleStreamProjection<In
         view.LastUpdated = evt.Timestamp;
     }
 
+    public void Apply(InboundShipmentClosedEvent evt, InboundShipmentSummaryView view)
+    {
+        view.Status = "Complete";
+        view.LastUpdated = evt.Timestamp;
+    }
+
     public void Apply(GoodsReceivedEvent evt, InboundShipmentSummaryView view)
     {
         view.TotalReceivedQty += evt.ReceivedQty;

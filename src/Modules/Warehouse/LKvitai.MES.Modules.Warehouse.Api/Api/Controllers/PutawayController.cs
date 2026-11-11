@@ -1,4 +1,7 @@
 using System.Diagnostics;
+using LKvitai.MES.Modules.Warehouse.Domain.Entities;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
@@ -22,6 +25,7 @@ public sealed class PutawayController : ControllerBase
 {
     private const string DefaultWarehouseId = "WH1";
 
+    private readonly IBalanceGuardLockFactory _balanceLocks;
     private readonly WarehouseDbContext _dbContext;
     private readonly IDocumentStore _documentStore;
     private readonly ICurrentUserService _currentUserService;
@@ -29,8 +33,9 @@ public sealed class PutawayController : ControllerBase
     public PutawayController(
         WarehouseDbContext dbContext,
         IDocumentStore documentStore,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService, IBalanceGuardLockFactory balanceLocks)
     {
+        _balanceLocks = balanceLocks;
         _dbContext = dbContext;
         _documentStore = documentStore;
         _currentUserService = currentUserService;
@@ -117,14 +122,12 @@ public sealed class PutawayController : ControllerBase
             return ValidationFailure("Putaway source location must be RECEIVING.");
         }
 
-        await using var querySession = _documentStore.QuerySession();
-        var availableQty = await Marten.QueryableExtensions.SumAsync(
-            querySession.Query<AvailableStockView>()
-                .Where(x => x.WarehouseId == DefaultWarehouseId &&
-                            x.Location == fromLocation.Code &&
-                            x.SKU == item.InternalSKU),
-            x => x.AvailableQty,
-            cancellationToken);
+        if (!PhysicalLocation.IsPhysical(toLocation))
+            return ValidationFailure("Putaway destination must be a physical storage location.");
+
+        await using var balanceLock = await _balanceLocks.CreateAsync(cancellationToken);
+        await balanceLock.AcquireAsync([StockLockKey.ForLocation(DefaultWarehouseId, "RECEIVING", item.InternalSKU)], cancellationToken);
+        var availableQty = await CommittedLocationStock.ReadAsync(_documentStore, item.InternalSKU, "RECEIVING", cancellationToken);
 
         if (availableQty < request.Qty)
         {
@@ -155,6 +158,7 @@ public sealed class PutawayController : ControllerBase
             await session.SaveChangesAsync(cancellationToken);
         }
 
+        await balanceLock.CommitAsync(cancellationToken);
         return Ok(new PutawayResponse(
             evt.EventId,
             item.Id,

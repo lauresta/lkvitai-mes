@@ -1,4 +1,7 @@
 using System.Diagnostics;
+using Microsoft.EntityFrameworkCore.Storage;
+using Npgsql;
+using LKvitai.MES.Modules.Warehouse.Domain;
 using System.Globalization;
 using System.Text;
 using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
@@ -36,6 +39,7 @@ public sealed class ReceivingController : ControllerBase
     /// </summary>
     private const string ReceivingValuationActor = "system:receiving";
 
+    private readonly IBalanceGuardLockFactory _balanceLocks;
     private readonly WarehouseDbContext _dbContext;
     private readonly IDocumentStore _documentStore;
     private readonly ICurrentUserService _currentUserService;
@@ -49,8 +53,9 @@ public sealed class ReceivingController : ControllerBase
         ICurrentUserService currentUserService,
         IMediator mediator,
         ILogger<ReceivingController> logger,
-        IItemPriceSnapshotService itemPriceSnapshots)
+        IItemPriceSnapshotService itemPriceSnapshots, IBalanceGuardLockFactory balanceLocks)
     {
+        _balanceLocks = balanceLocks;
         _dbContext = dbContext;
         _documentStore = documentStore;
         _currentUserService = currentUserService;
@@ -448,6 +453,39 @@ public sealed class ReceivingController : ControllerBase
         return Ok(new ShipmentUpdatedResponse(shipment.Id, shipment.ReferenceNumber, shipment.Status, now));
     }
 
+    [HttpPost("{id:int}/close-short")]
+    [Authorize(Policy = WarehousePolicies.QcOrManager)]
+    public async Task<IActionResult> CloseShortAsync(int id, [FromBody] CloseShortRequest request, CancellationToken cancellationToken = default)
+    {
+        await using var shipmentLock = await _balanceLocks.CreateAsync(cancellationToken);
+        await shipmentLock.AcquireAsync([StockLockKey.ForLocation(DefaultWarehouseId, "INBOUND", id.ToString(CultureInfo.InvariantCulture))], cancellationToken);
+        var shipment = await _dbContext.InboundShipments.Include(x => x.Lines).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (shipment is null) return Failure(Result.Fail(DomainErrorCodes.NotFound, "Shipment not found."));
+        if (shipment.Status is "Complete" or "Cancelled") return ValidationFailure("Shipment is already closed.");
+        if (!shipment.Lines.Any(x => x.ReceivedQty < x.ExpectedQty)) return ValidationFailure("Shipment has no shortage.");
+        shipment.Status = "Complete";
+        var evt = new InboundShipmentClosedEvent { ShipmentId = id, UserId = _currentUserService.GetCurrentUserId(),
+            Notes = request.Notes, Timestamp = DateTime.UtcNow };
+        await PersistShipmentEventAsync(id, evt, null, cancellationToken);
+        return Ok(new ShipmentUpdatedResponse(id, shipment.ReferenceNumber, shipment.Status, evt.Timestamp));
+    }
+
+    public sealed record CloseShortRequest(string? Notes);
+
+    private Task PersistShipmentEventAsync(int id, object evt, Action? afterEfSave, CancellationToken ct)
+        => _dbContext.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
+        {
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync(ct);
+            await using var session = _documentStore.LightweightSession(Marten.Services.SessionOptions.ForTransaction(
+                (NpgsqlTransaction)transaction.GetDbTransaction(), false));
+            await _dbContext.SaveChangesAsync(acceptAllChangesOnSuccess: false, ct);
+            afterEfSave?.Invoke();
+            session.Events.Append(ShipmentStreamId(id), evt);
+            await session.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+            _dbContext.ChangeTracker.AcceptAllChanges();
+        });
+
     [HttpPost("{id:int}/receive")]
     [HttpPost("{id:int}/receive-items")]
     [Authorize(Policy = WarehousePolicies.QcOrManager)]
@@ -466,6 +504,9 @@ public sealed class ReceivingController : ControllerBase
             return ValidationFailure("Field 'receivedQty' must be greater than 0.");
         }
 
+        await using var shipmentLock = await _balanceLocks.CreateAsync(cancellationToken);
+        await shipmentLock.AcquireAsync([StockLockKey.ForLocation(DefaultWarehouseId, "INBOUND", id.ToString(CultureInfo.InvariantCulture))], cancellationToken);
+
         var shipment = await _dbContext.InboundShipments
             .Include(x => x.Lines)
                 .ThenInclude(x => x.Item)
@@ -476,6 +517,9 @@ public sealed class ReceivingController : ControllerBase
         {
             return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Shipment '{id}' does not exist."));
         }
+
+        if (shipment.Status is "Complete" or "Cancelled")
+            return ValidationFailure("Shipment is closed and cannot receive more stock.");
 
         var line = shipment.Lines.FirstOrDefault(x => x.Id == request.LineId);
         if (line is null)
@@ -564,8 +608,6 @@ public sealed class ReceivingController : ControllerBase
 
         shipment.Status = ComputeShipmentStatus(shipment.Lines);
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
         var now = DateTime.UtcNow;
         var evt = new GoodsReceivedEvent
         {
@@ -590,17 +632,10 @@ public sealed class ReceivingController : ControllerBase
             Timestamp = now
         };
 
-        await using (var session = _documentStore.LightweightSession())
-        {
-            session.Events.Append(ShipmentStreamId(shipment.Id), evt);
-            await session.SaveChangesAsync(cancellationToken);
-        }
+        await PersistShipmentEventAsync(shipment.Id, evt, () => evt.LotId = lot?.Id, cancellationToken);
 
-        // Best-effort: fold this receipt's price (plus its proportional share of the
-        // shipment's header-level landed costs) into the item's weighted-average cost.
-        // The physical receipt above has already succeeded and must not be rolled back
-        // or fail the request because of a valuation hiccup — see Non-Negotiable
-        // Constraints (valuation is a separate concern from physical stock).
+        // Receipt is committed atomically. Report a valuation failure explicitly so it
+        // cannot masquerade as a fully successful receipt or invite a duplicate receipt.
         try
         {
             await UpdateItemValuationForReceiptAsync(
@@ -613,11 +648,13 @@ public sealed class ReceivingController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(
-                ex,
-                "Failed to update valuation for item {ItemId} after receiving shipment line {LineId}. Physical receipt was still recorded.",
-                item.Id,
-                line.Id);
+            _logger.LogError(ex, "Receipt recorded but valuation failed for item {ItemId}, line {LineId}.", item.Id, line.Id);
+            return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+            {
+                Title = "Receipt recorded; valuation update failed",
+                Detail = $"Shipment {shipment.Id}, line {line.Id}, quantity {request.ReceivedQty} was received. Do not receive it again; retry the valuation update.",
+                Status = StatusCodes.Status500InternalServerError
+            });
         }
 
         return Ok(new ReceiveGoodsResponse(
@@ -711,10 +748,7 @@ public sealed class ReceivingController : ControllerBase
 
         if (!adjustResult.IsSuccess)
         {
-            _logger.LogWarning(
-                "Valuation adjust command failed for item {ItemId} after receipt: {Error}",
-                itemId,
-                adjustResult.Error);
+            throw new InvalidOperationException($"Valuation update failed for item {itemId}: {adjustResult.Error}");
         }
     }
 

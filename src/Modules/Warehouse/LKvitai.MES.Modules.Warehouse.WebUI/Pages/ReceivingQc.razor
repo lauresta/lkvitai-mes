@@ -17,6 +17,11 @@
                  OnDismiss="DismissError" />
 }
 
+<div class="btn-group mb-3" role="group">
+    <button class="btn btn-outline-primary @(!_quarantine ? "active" : "")" @onclick="() => SelectQueueAsync(false)">@L["ReceivingQc.ReceivingQCQueue"]</button>
+    <button class="btn btn-outline-primary @(_quarantine ? "active" : "")" @onclick="() => SelectQueueAsync(true)">@L["Completion.Quarantine"]</button>
+</div>
+
 <div class="card shadow-sm mb-3">
     <div class="card-body">
         <div class="row g-2 align-items-end">
@@ -40,7 +45,7 @@
 
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle">
+            <table class="table table-sm table-hover align-middle" data-testid="qc-queue">
                 <thead>
                     <tr>
                         <th>SKU</th>
@@ -85,6 +90,14 @@
                                            @onchange="args => SetNotes(row, args.Value?.ToString())" />
                                 </td>
                                 <td class="d-flex gap-1">
+                                    @if (_quarantine)
+                                    {
+                                        <button class="btn btn-sm btn-outline-primary" @onclick='() => DisposeAsync(row, "RECEIVING")' disabled="@_isSubmitting">@L["Completion.ReturnToStock"]</button>
+                                        <button class="btn btn-sm btn-outline-secondary" @onclick='() => DisposeAsync(row, "RETURN_TO_SUPPLIER")' disabled="@_isSubmitting">@L["Completion.ReturnSupplier"]</button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick='() => DisposeAsync(row, "SCRAP")' disabled="@_isSubmitting">@L["Completion.Scrap"]</button>
+                                    }
+                                    else
+                                    {
                                     <button class="btn btn-sm btn-success"
                                             @onclick="() => PassAsync(row)"
                                             disabled="@_isSubmitting">
@@ -95,6 +108,7 @@
                                             disabled="@_isSubmitting">
                                         @L["ReceivingQc.Fail"]
                                     </button>
+                                    }
                                 </td>
                             </tr>
                         }
@@ -110,6 +124,7 @@
     private PriceMap _priceMap = PriceMap.Empty;
     private readonly Dictionary<string, string> _notesByKey = new(StringComparer.OrdinalIgnoreCase);
     private ApiException? _apiError;
+    private bool _quarantine;
     private bool _isLoading;
     private bool _isSubmitting;
 
@@ -131,7 +146,7 @@
 
         try
         {
-            var rows = await ReceivingClient.GetPendingQcAsync();
+            var rows = _quarantine ? await ReceivingClient.GetQuarantineAsync() : await ReceivingClient.GetPendingQcAsync();
             _rows.Clear();
             _rows.AddRange(rows);
             _priceMap = await ItemPricesClient.GetMapAsync(_rows.Select(x => ((int?)x.ItemId, (string?)x.ItemSku)));
@@ -145,6 +160,21 @@
         {
             _isLoading = false;
         }
+    }
+
+    private async Task SelectQueueAsync(bool quarantine) { _quarantine = quarantine; await LoadAsync(); }
+
+    private async Task DisposeAsync(QcPendingRowDto row, string destination)
+    {
+        _isSubmitting = true;
+        _apiError = null;
+        try
+        {
+            await ReceivingClient.DisposeQuarantineAsync(row.ItemId, row.Qty, destination, GetNotes(row));
+            await LoadAsync();
+        }
+        catch (ApiException ex) { _apiError = ex; ToastService.ShowError(BuildErrorMessage(ex)); }
+        finally { _isSubmitting = false; }
     }
 
     private async Task PassAsync(QcPendingRowDto row)

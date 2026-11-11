@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Domain;
 using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
@@ -23,6 +25,7 @@ public sealed class QCController : ControllerBase
 {
     private const string DefaultWarehouseId = "WH1";
 
+    private readonly IBalanceGuardLockFactory _balanceLocks;
     private readonly WarehouseDbContext _dbContext;
     private readonly IDocumentStore _documentStore;
     private readonly ICurrentUserService _currentUserService;
@@ -32,8 +35,9 @@ public sealed class QCController : ControllerBase
         WarehouseDbContext dbContext,
         IDocumentStore documentStore,
         ICurrentUserService currentUserService,
-        IElectronicSignatureService signatureService)
+        IElectronicSignatureService signatureService, IBalanceGuardLockFactory balanceLocks)
     {
+        _balanceLocks = balanceLocks;
         _dbContext = dbContext;
         _documentStore = documentStore;
         _currentUserService = currentUserService;
@@ -42,13 +46,20 @@ public sealed class QCController : ControllerBase
 
     [HttpGet("pending")]
     public async Task<IActionResult> GetPendingAsync(CancellationToken cancellationToken = default)
+        => await GetQueueAsync("QC_HOLD", cancellationToken);
+
+    [HttpGet("quarantine")]
+    public Task<IActionResult> GetQuarantineAsync(CancellationToken cancellationToken = default)
+        => GetQueueAsync("QUARANTINE", cancellationToken);
+
+    private async Task<IActionResult> GetQueueAsync(string location, CancellationToken cancellationToken)
     {
         await using var querySession = _documentStore.QuerySession();
 
         var rows = await Marten.QueryableExtensions.ToListAsync(
             querySession.Query<AvailableStockView>()
                 .Where(x => x.WarehouseId == DefaultWarehouseId &&
-                            x.Location == "QC_HOLD" &&
+                            x.Location == location &&
                             x.AvailableQty > 0m),
             cancellationToken);
 
@@ -108,6 +119,31 @@ public sealed class QCController : ControllerBase
     [HttpPost("fail")]
     public Task<IActionResult> FailAsync([FromBody] QcActionRequest request, CancellationToken cancellationToken = default)
         => ProcessQcAsync(request, false, cancellationToken);
+
+    [HttpPost("quarantine/dispose")]
+    public async Task<IActionResult> DisposeQuarantineAsync([FromBody] QuarantineDispositionRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.Qty <= 0 || request.Destination is not ("RECEIVING" or "RETURN_TO_SUPPLIER" or "SCRAP"))
+            return ValidationFailure("Select a valid quarantine destination and a positive quantity.");
+        var item = await _dbContext.Items.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.ItemId, cancellationToken);
+        if (item is null) return ValidationFailure("Item does not exist.");
+        if (!await _dbContext.Locations.AnyAsync(x => x.Code == request.Destination, cancellationToken))
+            return ValidationFailure("Destination does not exist.");
+        await using var balanceLock = await _balanceLocks.CreateAsync(cancellationToken);
+        await balanceLock.AcquireAsync([StockLockKey.ForLocation(DefaultWarehouseId, "QUARANTINE", item.InternalSKU)], cancellationToken);
+        var available = await CommittedLocationStock.ReadAsync(_documentStore, item.InternalSKU, "QUARANTINE", cancellationToken);
+        if (available < request.Qty) return UnprocessableFailure("Insufficient quarantine stock.");
+        var evt = new StockMovedEvent { MovementId = Guid.NewGuid(), SKU = item.InternalSKU,
+            Quantity = request.Qty, FromLocation = "QUARANTINE", ToLocation = request.Destination,
+            MovementType = "QuarantineDisposition", Reason = request.Notes, Timestamp = DateTime.UtcNow };
+        await using var session = _documentStore.LightweightSession();
+        session.Events.Append(StockLedgerStreamId.For(DefaultWarehouseId, "QUARANTINE", item.InternalSKU), evt);
+        await session.SaveChangesAsync(cancellationToken);
+        await balanceLock.CommitAsync(cancellationToken);
+        return Ok(new QcActionResponse(evt.EventId, item.Id, request.Qty, request.Destination, evt.Timestamp));
+    }
+
+    public sealed record QuarantineDispositionRequest(int ItemId, decimal Qty, string Destination, string? Notes);
 
     private async Task<IActionResult> ProcessQcAsync(
         QcActionRequest request,

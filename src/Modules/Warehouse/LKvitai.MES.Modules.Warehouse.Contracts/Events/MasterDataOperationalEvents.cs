@@ -149,3 +149,9 @@ public sealed class QCFailedEvent : WarehouseOperationalEvent
     public string ReasonCode { get; set; } = string.Empty;
     public string? InspectorNotes { get; set; }
 }
+
+public sealed class InboundShipmentClosedEvent : WarehouseOperationalEvent
+{
+    public int ShipmentId { get; set; }
+    public string? Notes { get; set; }
+}
