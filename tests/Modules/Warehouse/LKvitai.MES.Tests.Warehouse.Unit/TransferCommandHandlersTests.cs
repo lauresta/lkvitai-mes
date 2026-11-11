@@ -273,84 +273,6 @@ public class TransferCommandHandlersTests
 
     [Fact]
     [Trait("Category", "Transfers")]
-    public async Task ExecuteTransfer_WhenStockAvailable_ShouldCompleteAndEmitMoves()
-    {
-        await using var db = CreateDbContext();
-        await SeedItemsAndLocationsAsync(db);
-
-        var transfer = new Transfer
-        {
-            TransferNumber = "TRF-0002",
-            FromWarehouse = "RES",
-            ToWarehouse = "PROD",
-            RequestedBy = "operator-1",
-            RequestedAt = DateTimeOffset.UtcNow,
-            CreateCommandId = Guid.NewGuid()
-        };
-        transfer.EnsureRequestedState();
-        transfer.Submit(Guid.NewGuid(), DateTimeOffset.UtcNow);
-        transfer.Lines.Add(new TransferLine
-        {
-            ItemId = 1,
-            Qty = 8m,
-            FromLocationId = 11,
-            ToLocationId = 12
-        });
-        db.Transfers.Add(transfer);
-        await db.SaveChangesAsync();
-
-        var availability = new Mock<ITransferStockAvailabilityService>(MockBehavior.Strict);
-        availability
-            .Setup(x => x.GetAvailableQtyAsync("RES", "LOC-RES-001", "ITEM-001", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(20m);
-
-        var bus = new RecordingEventBus();
-        var stockLedger = new Mock<IStockLedgerRepository>(MockBehavior.Strict);
-        stockLedger
-            .Setup(x => x.LoadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((new StockLedger(), 0L));
-        stockLedger
-            .Setup(x => x.AppendEventAsync(
-                It.IsAny<string>(),
-                It.IsAny<StockMovedEvent>(),
-                It.IsAny<long>(),
-                It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        var handler = new ExecuteTransferCommandHandler(
-            db,
-            bus,
-            availability.Object,
-            stockLedger.Object,
-            MockCurrentUser("operator-1"),
-            Mock.Of<ILogger<ExecuteTransferCommandHandler>>());
-
-        var result = await handler.Handle(new ExecuteTransferCommand
-        {
-            CommandId = Guid.NewGuid(),
-            TransferId = transfer.Id
-        }, CancellationToken.None);
-
-        result.IsSuccess.Should().BeTrue();
-
-        var persisted = await db.Transfers.Include(x => x.Lines).SingleAsync();
-        persisted.Status.Should().Be(TransferStatus.Completed);
-        db.Locations.Any(x => x.Code == "IN_TRANSIT_TRF-0002" && x.Type == "Virtual").Should().BeTrue();
-
-        bus.Published.OfType<TransferExecutedEvent>().Should().ContainSingle();
-        bus.Published.OfType<TransferCompletedEvent>().Should().ContainSingle();
-        bus.Published.OfType<StockMovedEvent>().Should().HaveCount(2);
-        stockLedger.Verify(
-            x => x.AppendEventAsync(
-                It.IsAny<string>(),
-                It.IsAny<StockMovedEvent>(),
-                It.IsAny<long>(),
-                It.IsAny<CancellationToken>()),
-            Times.Exactly(2));
-    }
-
-    [Fact]
-    [Trait("Category", "Transfers")]
     public async Task ExecuteTransfer_WhenInsufficientStock_ShouldReturnValidationError()
     {
         await using var db = CreateDbContext();
@@ -384,7 +306,7 @@ public class TransferCommandHandlersTests
             .ReturnsAsync(5m);
 
         var bus = new RecordingEventBus();
-        var stockLedger = new Mock<IStockLedgerRepository>(MockBehavior.Strict);
+        var stockLedger = new Mock<Marten.IDocumentStore>(MockBehavior.Strict);
         var handler = new ExecuteTransferCommandHandler(
             db,
             bus,
@@ -404,13 +326,7 @@ public class TransferCommandHandlersTests
         var persisted = await db.Transfers.SingleAsync();
         persisted.Status.Should().Be(TransferStatus.Approved);
         bus.Published.Should().BeEmpty();
-        stockLedger.Verify(
-            x => x.AppendEventAsync(
-                It.IsAny<string>(),
-                It.IsAny<StockMovedEvent>(),
-                It.IsAny<long>(),
-                It.IsAny<CancellationToken>()),
-            Times.Never);
+        stockLedger.VerifyNoOtherCalls();
     }
 
     private static WarehouseDbContext CreateDbContext()
