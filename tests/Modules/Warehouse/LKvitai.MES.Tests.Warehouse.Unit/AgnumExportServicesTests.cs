@@ -161,7 +161,7 @@ public class AgnumExportServicesTests
         var historyId = Guid.NewGuid();
         var orchestrator = new Mock<IAgnumExportOrchestrator>();
         orchestrator
-            .Setup(x => x.ExecuteAsync("SCHEDULED", 0, null, It.IsAny<CancellationToken>()))
+            .Setup(x => x.ExecuteAsync("SCHEDULED", 0, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AgnumExportExecutionResult(
                 false,
                 historyId,
