@@ -44,18 +44,12 @@ public sealed class MartenAvailableStockQuantityResolver : IAvailableStockQuanti
         // Read committed operational events instead of freezing the previous projected quantity.
         var normalizedSku = itemSku.ToLowerInvariant();
         var events = new List<object>();
-        events.AddRange(await Marten.QueryableExtensions.ToListAsync(
-            session.Events.QueryRawEventDataOnly<GoodsReceivedEvent>().Where(x => x.SKU.ToLower() == normalizedSku), cancellationToken));
-        events.AddRange(await Marten.QueryableExtensions.ToListAsync(
-            session.Events.QueryRawEventDataOnly<StockAdjustedEvent>().Where(x => x.SKU.ToLower() == normalizedSku), cancellationToken));
-        events.AddRange(await Marten.QueryableExtensions.ToListAsync(
-            session.Events.QueryRawEventDataOnly<StockMovedEvent>().Where(x => x.SKU.ToLower() == normalizedSku), cancellationToken));
-        events.AddRange(await Marten.QueryableExtensions.ToListAsync(
-            session.Events.QueryRawEventDataOnly<PickCompletedEvent>().Where(x => x.SKU.ToLower() == normalizedSku), cancellationToken));
-        events.AddRange(await Marten.QueryableExtensions.ToListAsync(
-            session.Events.QueryRawEventDataOnly<QCPassedEvent>().Where(x => x.SKU.ToLower() == normalizedSku), cancellationToken));
-        events.AddRange(await Marten.QueryableExtensions.ToListAsync(
-            session.Events.QueryRawEventDataOnly<QCFailedEvent>().Where(x => x.SKU.ToLower() == normalizedSku), cancellationToken));
+        events.AddRange(await CommittedEventData.ReadAsync<GoodsReceivedEvent>(session, normalizedSku, cancellationToken));
+        events.AddRange(await CommittedEventData.ReadAsync<StockAdjustedEvent>(session, normalizedSku, cancellationToken));
+        events.AddRange(await CommittedEventData.ReadAsync<StockMovedEvent>(session, normalizedSku, cancellationToken));
+        events.AddRange(await CommittedEventData.ReadAsync<PickCompletedEvent>(session, normalizedSku, cancellationToken));
+        events.AddRange(await CommittedEventData.ReadAsync<QCPassedEvent>(session, normalizedSku, cancellationToken));
+        events.AddRange(await CommittedEventData.ReadAsync<QCFailedEvent>(session, normalizedSku, cancellationToken));
         var locations = await EntityFrameworkQueryableExtensions.ToListAsync(
             _dbContext.Locations.AsNoTracking(), cancellationToken);
         return StockEventQuantity.Calculate(events, itemSku, locations);

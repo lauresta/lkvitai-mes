@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Pricing;
 using Marten;
@@ -11,20 +12,13 @@ internal static class CommittedLocationStock
     public static async Task<decimal> ReadAsync(IDocumentStore store, string sku, string location, CancellationToken ct)
     {
         await using var session = store.QuerySession();
-        var key = sku.ToLowerInvariant();
         var events = new List<object>();
-        events.AddRange(await session.Events.QueryRawEventDataOnly<GoodsReceivedEvent>()
-            .Where(x => x.SKU.ToLower() == key && x.WarehouseId == "WH1").ToListAsync(ct));
-        events.AddRange(await session.Events.QueryRawEventDataOnly<StockAdjustedEvent>()
-            .Where(x => x.SKU.ToLower() == key && x.WarehouseId == "WH1").ToListAsync(ct));
-        events.AddRange(await session.Events.QueryRawEventDataOnly<StockMovedEvent>()
-            .Where(x => x.SKU.ToLower() == key).ToListAsync(ct));
-        events.AddRange(await session.Events.QueryRawEventDataOnly<PickCompletedEvent>()
-            .Where(x => x.SKU.ToLower() == key && x.WarehouseId == "WH1").ToListAsync(ct));
-        events.AddRange(await session.Events.QueryRawEventDataOnly<QCPassedEvent>()
-            .Where(x => x.SKU.ToLower() == key && x.WarehouseId == "WH1").ToListAsync(ct));
-        events.AddRange(await session.Events.QueryRawEventDataOnly<QCFailedEvent>()
-            .Where(x => x.SKU.ToLower() == key && x.WarehouseId == "WH1").ToListAsync(ct));
+        events.AddRange((await CommittedEventData.ReadAsync<GoodsReceivedEvent>(session, sku, ct)).Where(x => x.WarehouseId == "WH1"));
+        events.AddRange((await CommittedEventData.ReadAsync<StockAdjustedEvent>(session, sku, ct)).Where(x => x.WarehouseId == "WH1"));
+        events.AddRange(await CommittedEventData.ReadAsync<StockMovedEvent>(session, sku, ct));
+        events.AddRange((await CommittedEventData.ReadAsync<PickCompletedEvent>(session, sku, ct)).Where(x => x.WarehouseId == "WH1"));
+        events.AddRange((await CommittedEventData.ReadAsync<QCPassedEvent>(session, sku, ct)).Where(x => x.WarehouseId == "WH1"));
+        events.AddRange((await CommittedEventData.ReadAsync<QCFailedEvent>(session, sku, ct)).Where(x => x.WarehouseId == "WH1"));
         return StockEventQuantity.CalculateAtLocation(events, sku, location);
     }
 }

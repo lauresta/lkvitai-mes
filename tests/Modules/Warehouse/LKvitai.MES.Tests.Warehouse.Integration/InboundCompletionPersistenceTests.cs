@@ -12,6 +12,25 @@ namespace LKvitai.MES.Tests.Warehouse.Integration;
 public partial class ReceivingWorkflowIntegrationTests
 {
     [SkippableFact]
+    public async Task ValuationQuantity_ReadsHistoricalAliasesAndCaseInsensitiveSku()
+    {
+        DockerRequirement.EnsureEnabled();
+        await SeedBaseDataAsync(false, false);
+        await using var db = CreateDbContext();
+        db.Locations.Add(new Location { Id = 4, Code = "A-01", Barcode = "A-01", IsVirtual = false, Type = "Bin", Status = "Active" });
+        await db.SaveChangesAsync();
+        await using (var session = _store!.LightweightSession())
+        {
+            session.Events.Append("QA-alias-receipts",
+                new GoodsReceivedEvent { WarehouseId = "WH1", SKU = "RM-0001", DestinationLocation = "A-01", ReceivedQty = 1 },
+                new GoodsReceivedEvent { WarehouseId = "WH1", SKU = "rm-0001", DestinationLocation = "A-01", ReceivedQty = 2 });
+            await session.SaveChangesAsync();
+        }
+        var resolver = new LKvitai.MES.Modules.Warehouse.Api.Services.MartenAvailableStockQuantityResolver(_store!, db);
+        (await resolver.ResolveTotalQtyAsync(1, "RM-0001", default)).Should().Be(3);
+    }
+
+    [SkippableFact]
     public async Task CloseShort_PersistsStatusWithoutChangingStock_AndBlocksAnotherReceipt()
     {
         DockerRequirement.EnsureEnabled();
@@ -76,10 +95,13 @@ public partial class ReceivingWorkflowIntegrationTests
     }
 
     [SkippableTheory]
-    [InlineData("RECEIVING")]
-    [InlineData("RETURN_TO_SUPPLIER")]
-    [InlineData("SCRAP")]
-    public async Task Quarantine_DispositionPersistsMovement_AndCannotSpendItTwice(string destination)
+    [InlineData("RECEIVING", true)]
+    [InlineData("RECEIVING", false)]
+    [InlineData("RETURN_TO_SUPPLIER", true)]
+    [InlineData("RETURN_TO_SUPPLIER", false)]
+    [InlineData("SCRAP", true)]
+    [InlineData("SCRAP", false)]
+    public async Task Quarantine_DispositionPersistsMovement_AndCannotSpendItTwice(string destination, bool adjustment)
     {
         DockerRequirement.EnsureEnabled();
         await SeedBaseDataAsync(false, true);
@@ -92,9 +114,9 @@ public partial class ReceivingWorkflowIntegrationTests
         }
         await using (var seed = _store!.LightweightSession())
         {
-            seed.Events.Append("QA-C4-quarantine", new GoodsReceivedEvent { WarehouseId = "WH1", SKU = "RM-0001",
-                DestinationLocation = "QC_HOLD", ReceivedQty = 5 }, new QCFailedEvent { WarehouseId = "WH1",
-                SKU = "RM-0001", FromLocation = "QC_HOLD", ToLocation = "QUARANTINE", Qty = 5 });
+            if (adjustment) seed.Events.Append("QA-C4-quarantine", new StockAdjustedEvent { WarehouseId = "WH1", SKU = "RM-0001", Location = "QUARANTINE", QtyDelta = 5 });
+            else seed.Events.Append("QA-C4-quarantine", new GoodsReceivedEvent { WarehouseId = "WH1", SKU = "RM-0001", DestinationLocation = "QC_HOLD", ReceivedQty = 5 },
+                new QCFailedEvent { WarehouseId = "WH1", SKU = "RM-0001", FromLocation = "QC_HOLD", ToLocation = "QUARANTINE", Qty = 5 });
             await seed.SaveChangesAsync();
         }
         var controller = CreateQcController(db);
@@ -103,7 +125,7 @@ public partial class ReceivingWorkflowIntegrationTests
             .Which.StatusCode.Should().Be(422);
         await using var query = _store!.QuerySession();
         // Stream ID is derived by the production helper; verify the actual movement and its projection input.
-        var all = await Marten.QueryableExtensions.ToListAsync(query.Events.QueryRawEventDataOnly<StockMovedEvent>());
+        var all = await LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.CommittedEventData.ReadAsync<StockMovedEvent>(query, "RM-0001", default);
         all.Should().ContainSingle().Which.ToLocation.Should().Be(destination);
         var rows = new object[] { new GoodsReceivedEvent { SKU = "RM-0001", DestinationLocation = "QUARANTINE", ReceivedQty = 5 }, all.Single() };
         StockEventQuantity.CalculateAtLocation(rows, "RM-0001", "QUARANTINE").Should().Be(0);
@@ -127,9 +149,9 @@ public partial class PutawayWorkflowIntegrationTests
         results.OfType<OkObjectResult>().Should().ContainSingle();
         results.OfType<ObjectResult>().Count(x => x.StatusCode == 422).Should().Be(1);
         await using var query = _store!.QuerySession();
-        var moves = await Marten.QueryableExtensions.ToListAsync(query.Events.QueryRawEventDataOnly<StockMovedEvent>());
+        var moves = await LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.CommittedEventData.ReadAsync<StockMovedEvent>(query, "RM-0001", default);
         moves.Should().ContainSingle().Which.Quantity.Should().Be(8);
-        var receipts = await Marten.QueryableExtensions.ToListAsync(query.Events.QueryRawEventDataOnly<GoodsReceivedEvent>());
+        var receipts = await LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.CommittedEventData.ReadAsync<GoodsReceivedEvent>(query, "RM-0001", default);
         StockEventQuantity.CalculateAtLocation(receipts.Cast<object>().Concat(moves), "RM-0001", "RECEIVING").Should().Be(2);
     }
 }
