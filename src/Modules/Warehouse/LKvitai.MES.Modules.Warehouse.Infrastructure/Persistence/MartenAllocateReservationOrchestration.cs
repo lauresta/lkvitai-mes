@@ -181,8 +181,8 @@ public class MartenAllocateReservationOrchestration : IAllocateReservationOrches
         }
         var locations = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(_db.Locations, ct);
         var physical = locations.Where(PhysicalLocation.IsPhysical).Select(x => x.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var existing = await session.Events.QueryRawEventDataOnly<StockAllocatedEvent>()
-            .Where(x => x.SalesOrderReservation).ToListAsync(ct);
+        var existing = (await CommittedEventData.ReadAsync<StockAllocatedEvent>(session, null, ct))
+            .Where(x => x.SalesOrderReservation).ToList();
         var outstanding = new List<AllocationDto>();
         foreach (var id in existing.Select(x => x.ReservationId).Distinct())
             outstanding.AddRange(await SalesReservationBalance.LoadAsync(session, id, ct));

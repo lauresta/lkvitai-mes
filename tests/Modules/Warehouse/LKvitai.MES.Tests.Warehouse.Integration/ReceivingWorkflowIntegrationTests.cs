@@ -65,6 +65,9 @@ public partial class ReceivingWorkflowIntegrationTests : IAsyncLifetime
             opts.DatabaseSchemaName = "warehouse_events";
             opts.Events.DatabaseSchemaName = "warehouse_events";
             opts.Events.StreamIdentity = Marten.Events.StreamIdentity.AsString;
+            // Use exactly the deployed historical event aliases; default aliases hide query regressions.
+            typeof(MartenConfiguration).GetMethod("RegisterMartenEventTypes", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+                .Invoke(null, new object[] { opts });
             opts.RegisterProjections();
         });
 
