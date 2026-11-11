@@ -84,7 +84,7 @@ public sealed partial class DatabaseWarehouseStore(WarehouseDbContext db, IDocum
         var locations = db.Locations.AsNoTracking().ToDictionary(x => x.Id, x => x.Code);
         using var query = events.QuerySession();
         var reservedLocations = orders.Values.Where(x => x.SalesOrderId.HasValue).ToDictionary(x => x.Id,
-            x => SalesReservationBalance.LoadAsync(query, x.SalesOrderId!.Value, default).GetAwaiter().GetResult());
+            x => SalesReservationBalance.Load(query, x.SalesOrderId!.Value));
         var lines = tasks.Select(task => {
             var orderId = Guid.Parse(task.OrderId);
             var location = task.FromLocationId.HasValue ? locations.GetValueOrDefault(task.FromLocationId.Value, "–") :
