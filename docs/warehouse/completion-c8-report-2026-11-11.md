@@ -16,6 +16,9 @@
   linked source в Docker-контекст API. Локальный Docker build stage, включая Release publish, успешен.
 - Read-only docker inspect подтвердил: API и WebUI на test остаются на образах `14259fd5` (C7).
   C8a на test ещё не развёрнут; приёмки C8a не создавались.
+- Отчёт — [docs-only PR #330](https://github.com/lauresta/lkvitai-mes/pull/330).
+- Подготовленные `WAREHOUSE_QA_ENABLED`, `WAREHOUSE_QA_EXPIRES_AT_UTC` и секрет `WAREHOUSE_QA_KEY`
+  удалены из GitHub environment test; локальные временные credentials удалены. QA-вход на test не активирован.
 
 ## Отклонения
 
@@ -30,6 +33,8 @@
    [main E2E #43034940802](https://github.com/lauresta/lkvitai-mes/actions/runs/43034940802):
    `Temporary failure resolving 'azure.archive.ubuntu.com'`. Тесты не запускались.
    Смена CI-зависимостей и обход гейта не выполнялись.
+   Последний [E2E корректирующего PR #329, #43036476178](https://github.com/lauresta/lkvitai-mes/actions/runs/43036476178)
+   также отменён около 14:29 UTC по таймауту с тем же DNS-сбоем. Работа остановлена на CI-гейте.
 4. PostgreSQL-регрессия обнаружила дополнительную ошибку WAC при повторной приёмке до putaway.
    Исправление ограничено целью C8a; правило физического количества OnHandValue не изменено.
 
@@ -44,6 +49,8 @@
 
 Следующий разрешённый шаг: успешный E2E PR #329, остальные проверки SUCCESS → merge → Deploy to Test →
 проверка C8a, затем C8b. Нельзя считать локальные PostgreSQL-тесты заменой приёмки на test.
+PR #329 и #330 оставлены открытыми. Для приёмки понадобится новый header-only QA-сеанс до четырёх часов;
+временный QA-код в main неактивен, его удаление остаётся пунктом C8d.
 
 QA-данные не удалялись. Прямых SQL-записей на test не было. Другие модули, prod, legacy SQL,
 Agnum write и синхронизация цен не изменялись.
