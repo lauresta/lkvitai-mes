@@ -121,6 +121,7 @@ public sealed class DashboardController : ControllerBase
             querySession.Query<AvailableStockView>()
                 .Where(x => x.WarehouseId == DefaultWarehouseId && x.OnHandQty > 0m),
             cancellationToken);
+        stockRows = await FilterPhysicalStockAsync(stockRows, cancellationToken);
 
         var totalSkus = stockRows
             .Select(x => x.SKU)
@@ -141,41 +142,9 @@ public sealed class DashboardController : ControllerBase
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        var items = _dbContext.Items
-            .AsNoTracking()
-            .Where(x => skuList.Contains(x.InternalSKU))
-            .Select(x => new { x.Id, x.InternalSKU });
-        var itemList = await EntityFrameworkQueryableExtensions.ToListAsync(items, cancellationToken);
-
-        var itemIdBySku = itemList
-            .GroupBy(x => x.InternalSKU, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.First().Id, StringComparer.OrdinalIgnoreCase);
-
-        var itemIds = itemList.Select(x => x.Id).Distinct().ToList();
-        var minPriceByItemId = !itemIds.Any()
-            ? new Dictionary<int, decimal>()
-            : await _dbContext.SupplierItemMappings
-                .AsNoTracking()
-                .Where(x => itemIds.Contains(x.ItemId) && x.PricePerUnit.HasValue)
-                .GroupBy(x => x.ItemId)
-                .Select(group => new { ItemId = group.Key, UnitPrice = group.Min(x => x.PricePerUnit) })
-                .ToDictionaryAsync(x => x.ItemId, x => x.UnitPrice ?? 0m, cancellationToken);
-
-        decimal totalValue = 0m;
-        foreach (var row in stockRows)
-        {
-            if (!itemIdBySku.TryGetValue(row.SKU, out var itemId))
-            {
-                continue;
-            }
-
-            if (!minPriceByItemId.TryGetValue(itemId, out var unitPrice))
-            {
-                continue;
-            }
-
-            totalValue += row.OnHandQty * unitPrice;
-        }
+        var priceBySku = (await _prices.GetAsync([], skuList, cancellationToken))
+            .ToDictionary(x => x.Sku, StringComparer.OrdinalIgnoreCase);
+        var totalValue = DashboardPricing.Calculate(stockRows.Select(x => (x.SKU, x.OnHandQty)), priceBySku).Cost ?? 0m;
 
         return Ok(new StockSummaryDto
         {
@@ -309,6 +278,7 @@ public sealed class DashboardController : ControllerBase
         }
 
         var stockRows = await Marten.QueryableExtensions.ToListAsync(stockQuery, cancellationToken);
+        stockRows = await FilterPhysicalStockAsync(stockRows, cancellationToken);
 
         var bySku = stockRows
             .GroupBy(x => x.SKU, StringComparer.OrdinalIgnoreCase)
@@ -318,7 +288,7 @@ public sealed class DashboardController : ControllerBase
         var priceBySku = (await _prices.GetAsync([], bySku.Select(x => x.SKU).ToArray(), cancellationToken))
             .ToDictionary(x => x.Sku, StringComparer.OrdinalIgnoreCase);
 
-        var totals = DashboardPricing.Calculate(bySku.Select(x => (x.SKU, x.OnHandQty)), priceBySku);
+        var totals = DashboardPricing.Calculate(stockRows.Select(x => (x.SKU, x.OnHandQty)), priceBySku);
         var lowStockCount = 0;
         var outOfStockCount = 0;
 
@@ -346,6 +316,8 @@ public sealed class DashboardController : ControllerBase
             TotalStockValue = totals.Cost,
             TotalStockCostValue = totals.Cost,
             TotalStockSaleValue = totals.Sale,
+            MissingCostCount = totals.MissingCost,
+            MissingSaleCount = totals.MissingSale,
             TotalSKUs = bySku.Count(x => x.OnHandQty > 0m),
             TotalQuantity = bySku.Sum(x => x.OnHandQty),
             LowStockCount = lowStockCount,
@@ -368,6 +340,7 @@ public sealed class DashboardController : ControllerBase
             stockQuery = stockQuery.Where(x => x.WarehouseId == warehouseId);
 
         var stockRows = await Marten.QueryableExtensions.ToListAsync(stockQuery, cancellationToken);
+        stockRows = await FilterPhysicalStockAsync(stockRows, cancellationToken);
         var qtyBySku = stockRows
             .GroupBy(x => x.SKU, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.Sum(x => x.OnHandQty), StringComparer.OrdinalIgnoreCase);
@@ -375,9 +348,6 @@ public sealed class DashboardController : ControllerBase
 
         var priceBySku = (await _prices.GetAsync([], qtyBySku.Keys.ToArray(), cancellationToken))
             .ToDictionary(x => x.Sku, StringComparer.OrdinalIgnoreCase);
-        if (!DashboardPricing.Calculate(qtyBySku.Select(x => (x.Key, x.Value)), priceBySku).Cost.HasValue)
-            return Ok(Array.Empty<CategoryValueDto>());
-
         var normalizedSkus = qtyBySku.Keys.Select(x => x.ToLowerInvariant()).ToArray();
         var categories = await EntityFrameworkQueryableExtensions.ToListAsync(
             _dbContext.Items.AsNoTracking()
@@ -386,30 +356,31 @@ public sealed class DashboardController : ControllerBase
             cancellationToken);
         var categoryBySku = categories.ToDictionary(x => x.InternalSKU, x => x.CategoryName, StringComparer.OrdinalIgnoreCase);
 
-        var rows = qtyBySku
+        var rows = stockRows
             .Select(x => (
-                Category: categoryBySku.GetValueOrDefault(x.Key) ?? "Uncategorized",
-                Value: ItemPriceResolver.Value(x.Value, priceBySku[x.Key].EffectiveCost)!.Value))
+                Category: categoryBySku.GetValueOrDefault(x.SKU) ?? "Uncategorized",
+                Value: ItemPriceResolver.Value(x.OnHandQty, priceBySku.GetValueOrDefault(x.SKU)?.EffectiveCost) ?? 0m,
+                Missing: priceBySku.GetValueOrDefault(x.SKU)?.EffectiveCost.HasValue != true ? 1 : 0))
             .GroupBy(x => x.Category)
-            .Select(g => (Category: g.Key, Value: g.Sum(x => x.Value)))
+            .Select(g => (Category: g.Key, Value: g.Sum(x => x.Value), Missing: g.Sum(x => x.Missing)))
             .ToList();
 
         var total = rows.Sum(x => x.Value);
-        var ordered = rows.Where(x => x.Value > 0m).OrderByDescending(x => x.Value).ToList();
+        var ordered = rows.OrderByDescending(x => x.Value).ToList();
 
         const int topCategoryCount = 5;
         var top = ordered.Take(topCategoryCount).ToList();
         var otherValue = ordered.Skip(topCategoryCount).Sum(x => x.Value);
-        if (otherValue > 0m)
+        if (ordered.Count > topCategoryCount)
         {
-            top.Add(("Other", otherValue));
+            top.Add(("Other", otherValue, ordered.Skip(topCategoryCount).Sum(x => x.Missing)));
         }
 
         var result = top
             .Select(x => new CategoryValueDto(
                 x.Category,
                 decimal.Round(x.Value, 2, MidpointRounding.AwayFromZero),
-                total == 0m ? 0m : decimal.Round(x.Value / total * 100m, 1, MidpointRounding.AwayFromZero)))
+                total == 0m ? 0m : decimal.Round(x.Value / total * 100m, 1, MidpointRounding.AwayFromZero), x.Missing))
             .ToList();
 
         return Ok(result);
@@ -428,6 +399,7 @@ public sealed class DashboardController : ControllerBase
         var stockRows = await Marten.QueryableExtensions.ToListAsync(
             querySession.Query<AvailableStockView>().Where(x => x.OnHandQty > 0m),
             cancellationToken);
+        stockRows = await FilterPhysicalStockAsync(stockRows, cancellationToken);
 
         var priceBySku = (await _prices.GetAsync([], stockRows.Select(x => x.SKU).Distinct().ToArray(), cancellationToken))
             .ToDictionary(x => x.Sku, StringComparer.OrdinalIgnoreCase);
@@ -438,15 +410,16 @@ public sealed class DashboardController : ControllerBase
                 g => g.Key,
                 g => (
                     Value: DashboardPricing.Calculate(g.Select(x => (x.SKU, x.OnHandQty)), priceBySku).Cost,
-                    Qty: g.Sum(x => x.OnHandQty)),
+                    Qty: g.Sum(x => x.OnHandQty),
+                    Missing: DashboardPricing.Calculate(g.Select(x => (x.SKU, x.OnHandQty)), priceBySku).MissingCost),
                 StringComparer.OrdinalIgnoreCase);
 
         var result = warehouses
             .Select(w =>
             {
-                var (value, qty) = byWarehouse.GetValueOrDefault(w.Code, (0m, 0m));
+                var (value, qty, missing) = byWarehouse.GetValueOrDefault(w.Code, (0m, 0m, 0));
                 return new WarehouseValueDto(w.Code, w.Name,
-                    value.HasValue ? decimal.Round(value.Value, 2, MidpointRounding.AwayFromZero) : null, qty);
+                    value.HasValue ? decimal.Round(value.Value, 2, MidpointRounding.AwayFromZero) : null, qty, missing);
             })
             .OrderByDescending(x => x.Value ?? -1m)
             .ToList();
@@ -471,6 +444,7 @@ public sealed class DashboardController : ControllerBase
         }
 
         var rows = await Marten.QueryableExtensions.ToListAsync(stockQuery, cancellationToken);
+        rows = await FilterPhysicalStockAsync(rows, cancellationToken);
 
         var bySku = rows
             .GroupBy(x => x.SKU, StringComparer.OrdinalIgnoreCase)
@@ -858,10 +832,21 @@ public sealed class DashboardController : ControllerBase
         var physicalRows = await Marten.QueryableExtensions.ToListAsync(
             querySession.Query<AvailableStockView>().Where(x => skuList.Contains(x.SKU) && x.OnHandQty > 0m),
             cancellationToken);
+        physicalRows = await FilterPhysicalStockAsync(physicalRows, cancellationToken);
 
         return physicalRows
             .GroupBy(x => x.SKU, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(x => x.Key, x => x.Sum(y => y.OnHandQty), StringComparer.OrdinalIgnoreCase);
+    }
+
+    private async Task<List<AvailableStockView>> FilterPhysicalStockAsync(
+        IReadOnlyCollection<AvailableStockView> rows, CancellationToken cancellationToken)
+    {
+        var locations = await EntityFrameworkQueryableExtensions.ToListAsync(
+            _dbContext.Locations.AsNoTracking(), cancellationToken);
+        var codes = locations.Where(PhysicalLocation.IsPhysical)
+            .Select(x => x.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return rows.Where(x => codes.Contains(x.LocationCode ?? x.Location)).ToList();
     }
 
     private static string BucketFor(int daysRemaining) => daysRemaining switch
@@ -923,6 +908,8 @@ public sealed record WarehouseOptionDto(string Code, string Name);
 
 public sealed record DashboardOverviewDto
 {
+    public int MissingCostCount { get; init; }
+    public int MissingSaleCount { get; init; }
     public decimal? TotalStockValue { get; init; }
     public decimal? TotalStockCostValue { get; init; }
     public decimal? TotalStockSaleValue { get; init; }
@@ -935,9 +922,9 @@ public sealed record DashboardOverviewDto
     public string AgnumStatus { get; init; } = "Unknown";
 }
 
-public sealed record CategoryValueDto(string CategoryName, decimal Value, decimal Percent);
+public sealed record CategoryValueDto(string CategoryName, decimal Value, decimal Percent, int MissingCostCount = 0);
 
-public sealed record WarehouseValueDto(string WarehouseCode, string WarehouseName, decimal? Value, decimal Quantity);
+public sealed record WarehouseValueDto(string WarehouseCode, string WarehouseName, decimal? Value, decimal Quantity, int MissingCostCount = 0);
 
 public sealed record LowStockResponseDto(IReadOnlyList<LowStockItemDto> Items, int TotalCount);
 

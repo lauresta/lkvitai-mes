@@ -1807,4 +1807,11 @@
   <data name="Dashboard.Expiry8To30Days" xml:space="preserve"><value>8–30 dienų</value></data>
   <data name="Dashboard.Expiry31To90Days" xml:space="preserve"><value>31–90 dienų</value></data>
   <data name="ReportsTraceability.ReportLotToOrder" xml:space="preserve"><value>Atsekamumo ataskaita (partija → užsakymas)</value></data>
+  <data name="VolatileData.Screen" xml:space="preserve"><value>Šio ekrano duomenys neišsaugomi ir bus prarasti paleidus sistemą iš naujo.</value></data>
+  <data name="VolatileData.PrintQueue" xml:space="preserve"><value>Spausdinimo eilė neišsaugoma ir bus prarasta paleidus sistemą iš naujo.</value></data>
+  <data name="OutboundDispatch.TrackingNumber" xml:space="preserve"><value>Siuntos sekimo numeris</value></data>
+  <data name="OutboundDispatch.TrackingRequired" xml:space="preserve"><value>Įveskite vežėją ir siuntos sekimo numerį.</value></data>
+  <data name="Pricing.WithoutCost" xml:space="preserve"><value>Be savikainos: {0} poz.</value></data>
+  <data name="Pricing.WithoutSale" xml:space="preserve"><value>Be pardavimo kainos: {0} poz.</value></data>
+  <data name="WarehouseLocationDetail.NotFound" xml:space="preserve"><value>Vieta {0} nerasta.</value></data>
 </root>

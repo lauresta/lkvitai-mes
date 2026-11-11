@@ -1,0 +1,8 @@
+.volatile-data-warning {
+    background: var(--danger-fg);
+    color: var(--n-0);
+    border: 1px solid var(--danger-fg);
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+}

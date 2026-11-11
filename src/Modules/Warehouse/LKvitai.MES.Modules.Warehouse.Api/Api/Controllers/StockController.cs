@@ -60,6 +60,7 @@ public sealed class StockController : ControllerBase
     {
         var canUseCache = itemId.HasValue &&
                           locationId.HasValue &&
+                          !includeVirtualLocations && includeVirtual != true && !includeReserved && string.IsNullOrWhiteSpace(warehouse) && page is null &&
                           !exportCsv &&
                           string.IsNullOrWhiteSpace(location) &&
                           string.IsNullOrWhiteSpace(sku) &&
@@ -171,9 +172,7 @@ public sealed class StockController : ControllerBase
                 row.BaseUoM ?? item?.BaseUoM ?? string.Empty,
                 row.LastUpdated,
                 item?.CategoryId,
-                location?.IsVirtual == true
-                    || code.Equals("AGNUM", StringComparison.OrdinalIgnoreCase)
-                    || code.StartsWith("IN_TRANSIT_", StringComparison.OrdinalIgnoreCase),
+                !PhysicalLocation.IsPhysical(location),
                 StockMetadataFilter.SplitTags(item?.Tags),
                 item is not null && primaryPhotoByItemId.TryGetValue(item.Id, out var photoUrl)
                     ? photoUrl
@@ -318,6 +317,7 @@ public sealed class StockController : ControllerBase
             .ToDictionary(x => x.Sku, StringComparer.OrdinalIgnoreCase);
 
         var grouped = rows
+            .Where(x => locations.TryGetValue(x.Location, out var loc) && PhysicalLocation.IsPhysical(loc))
             .GroupBy(x => x.Location)
             .Select(group =>
             {

@@ -79,7 +79,6 @@
                                     <button class="btn btn-sm btn-outline-primary" disabled="@(!CanSubmit(row))" @onclick="() => SubmitAsync(row.Id)">@L["Common.Submit"]</button>
                                     <button class="btn btn-sm btn-warning" disabled="@(!CanApprove(row))" @onclick="() => OpenApprove(row)">@L["Common.Approve"]</button>
                                     <button class="btn btn-sm btn-success" disabled="@(!CanExecute(row))" @onclick="() => OpenExecute(row.Id)">@L["Common.Execute"]</button>
-                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => CancelAsync(row.TransferNumber)">@L["Common.Cancel"]</button>
                                 </td>
                             </tr>
                         }

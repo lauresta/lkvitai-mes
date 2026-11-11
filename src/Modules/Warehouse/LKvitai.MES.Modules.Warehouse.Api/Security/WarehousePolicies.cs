@@ -2,6 +2,7 @@ namespace LKvitai.MES.Modules.Warehouse.Api.Security;
 
 public static class WarehousePolicies
 {
+    public const string ReadWarehouse = "Warehouse.Read";
     public const string AdminOnly = "Warehouse.AdminOnly";
     public const string ManagerOrAdmin = "Warehouse.ManagerOrAdmin";
     public const string QcOrManager = "Warehouse.QcOrManager";

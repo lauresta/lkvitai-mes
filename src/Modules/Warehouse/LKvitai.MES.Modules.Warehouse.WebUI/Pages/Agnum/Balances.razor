@@ -47,6 +47,7 @@
             <span>@L["Agnum.Balances.Rows", FilteredRows.Count]</span>
             <span>@L["Agnum.Balances.TotalQty", FilteredRows.Sum(x => x.Quantity).ToString("0.###")]</span>
             <span>@L["Agnum.Balances.DisplayedValue"] <span class="is-money is-num">@Money.Format(VisibleValue)</span></span>
+            <span>@L["Pricing.WithoutCost", FilteredRows.Take(500).Count(x => x.Quantity != 0m && !_priceMap.Value(x.Quantity, x.ItemId, x.Sku).HasValue)]</span>
             <span>@L["Agnum.Balances.DistributedSummary", FilteredRows.Sum(x => x.DistributedQty).ToString("0.###")]</span>
             <span>@L["Agnum.Balances.Remaining", FilteredRows.Sum(x => x.RemainingQty).ToString("0.###")]</span>
             <span>@L["Agnum.Balances.MesPhysicalSummary", FilteredRows.Sum(x => x.MesPhysicalQty).ToString("0.###")]</span>
@@ -266,7 +267,7 @@
 
             var values = rows.Where(x => x.Quantity != 0m)
                 .Select(x => _priceMap.Value(x.Quantity, x.ItemId, x.Sku)).ToList();
-            return values.All(x => x.HasValue) ? values.Sum(x => x!.Value) : null;
+            return values.Sum(x => x ?? 0m);
         }
     }
 

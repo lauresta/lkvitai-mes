@@ -306,7 +306,8 @@
 
         try
         {
-            var ids = _selectedOrderIds.ToArray();
+            var ids = _orders.Where(x => _selectedOrderIds.Contains(x.Id) && x.SalesOrderId.HasValue)
+                .Select(x => x.SalesOrderId!.Value).Distinct().ToArray();
             foreach (var id in ids)
             {
                 await OutboundClient.CancelSalesOrderAsync(id, "Bulk cancel");

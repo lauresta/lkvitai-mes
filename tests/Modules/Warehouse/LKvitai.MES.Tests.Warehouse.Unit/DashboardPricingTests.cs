@@ -14,7 +14,7 @@ public sealed class DashboardPricingTests
     };
 
     [Fact]
-    public void OverviewTotals_UseCaseInsensitiveSku_IgnoreNegativeRows_AndRequireCompletePrices()
+    public void OverviewTotals_UseCaseInsensitiveSku_IgnoreNegativeRows_AndCountMissingPrices()
     {
         var complete = DashboardPricing.Calculate(
             [("sku-a", 3m), ("SKU-A", -100m)], Prices);
@@ -23,8 +23,10 @@ public sealed class DashboardPricingTests
 
         var incomplete = DashboardPricing.Calculate(
             [("sku-a", 3m), ("SKU-B", 2m), ("SKU-A", -100m)], Prices);
-        incomplete.Cost.Should().BeNull();
-        incomplete.Sale.Should().BeNull();
+        incomplete.Cost.Should().Be(30m);
+        incomplete.MissingCost.Should().Be(1);
+        incomplete.Sale.Should().Be(75m);
+        incomplete.MissingSale.Should().Be(1);
     }
 
     [Fact]
@@ -33,13 +35,15 @@ public sealed class DashboardPricingTests
         var pricedCategory = DashboardPricing.Calculate([("SKU-A", 2m)], Prices);
         var unpricedCategory = DashboardPricing.Calculate([("SKU-B", 1m)], Prices);
         pricedCategory.Cost.Should().Be(20m);
-        unpricedCategory.Cost.Should().BeNull();
+        unpricedCategory.Cost.Should().Be(0m);
+        unpricedCategory.MissingCost.Should().Be(1);
 
         var pricedWarehouse = DashboardPricing.Calculate([("SKU-A", 2m)], Prices);
         var mixedWarehouse = DashboardPricing.Calculate([("SKU-A", 2m), ("SKU-B", 1m)], Prices);
         pricedWarehouse.Cost.Should().Be(20m);
-        mixedWarehouse.Cost.Should().BeNull();
-        mixedWarehouse.Sale.Should().BeNull();
+        mixedWarehouse.Cost.Should().Be(20m);
+        mixedWarehouse.MissingCost.Should().Be(1);
+        mixedWarehouse.Sale.Should().Be(50m);
     }
 
     [Fact]

@@ -8,7 +8,7 @@ namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 /// <summary>
 /// Minimal carrier API adapter for dispatch MVP.
-/// Generates deterministic tracking numbers when carrier API is enabled.
+/// Requests tracking numbers only from a configured carrier API.
 /// </summary>
 public sealed class FedExApiService : ICarrierApiService
 {
@@ -58,12 +58,8 @@ public sealed class FedExApiService : ICarrierApiService
         var baseUrl = _configuration["CarrierApi:FedEx:BaseUrl"]?.Trim();
         if (string.IsNullOrWhiteSpace(baseUrl))
         {
-            var localTracking = BuildLocalTrackingNumber(shipmentId);
-            _logger.LogInformation(
-                "FedEx endpoint is not configured. Using deterministic local tracking number for shipment {ShipmentId}: {TrackingNumber}",
-                shipmentId,
-                localTracking);
-            return Result<string>.Ok(localTracking);
+            return Result<string>.Fail(DomainErrorCodes.ValidationError,
+                "FedEx endpoint is not configured. Enter a tracking number manually.");
         }
 
         var trackingPath = _configuration["CarrierApi:FedEx:TrackingPath"]?.Trim();
@@ -130,9 +126,6 @@ public sealed class FedExApiService : ICarrierApiService
                 "Carrier API request failed.");
         }
     }
-
-    private static string BuildLocalTrackingNumber(Guid shipmentId)
-        => $"FDX-{DateTime.UtcNow:yyyyMMddHHmmss}-{shipmentId.ToString("N")[..8]}";
 
     private sealed record FedExTrackingResponse(string? TrackingNumber);
 }

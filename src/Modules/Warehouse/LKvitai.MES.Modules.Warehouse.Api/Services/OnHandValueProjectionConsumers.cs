@@ -11,6 +11,7 @@ using Marten;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Pricing;
 
 namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
@@ -27,29 +28,37 @@ public sealed class MartenAvailableStockQuantityResolver : IAvailableStockQuanti
 {
     private readonly IDocumentStore _documentStore;
 
-    public MartenAvailableStockQuantityResolver(IDocumentStore documentStore)
+    private readonly WarehouseDbContext _dbContext;
+
+    public MartenAvailableStockQuantityResolver(IDocumentStore documentStore, WarehouseDbContext dbContext)
     {
         _documentStore = documentStore;
+        _dbContext = dbContext;
     }
 
     public async Task<decimal> ResolveTotalQtyAsync(int itemId, string itemSku, CancellationToken cancellationToken)
     {
         await using var session = _documentStore.QuerySession();
 
-        var byItemId = await Marten.QueryableExtensions.ToListAsync(
-            session.Query<AvailableStockView>().Where(x => x.ItemId == itemId),
-            cancellationToken);
-
-        if (byItemId.Count > 0)
-        {
-            return byItemId.Sum(x => x.AvailableQty);
-        }
-
-        var bySku = await Marten.QueryableExtensions.ToListAsync(
-            session.Query<AvailableStockView>().Where(x => x.SKU == itemSku),
-            cancellationToken);
-
-        return bySku.Sum(x => x.AvailableQty);
+        // A receipt and its valuation are written before the async stock projection catches up.
+        // Read committed operational events instead of freezing the previous projected quantity.
+        var normalizedSku = itemSku.ToLowerInvariant();
+        var events = new List<object>();
+        events.AddRange(await Marten.QueryableExtensions.ToListAsync(
+            session.Events.QueryRawEventDataOnly<GoodsReceivedEvent>().Where(x => x.SKU.ToLower() == normalizedSku), cancellationToken));
+        events.AddRange(await Marten.QueryableExtensions.ToListAsync(
+            session.Events.QueryRawEventDataOnly<StockAdjustedEvent>().Where(x => x.SKU.ToLower() == normalizedSku), cancellationToken));
+        events.AddRange(await Marten.QueryableExtensions.ToListAsync(
+            session.Events.QueryRawEventDataOnly<StockMovedEvent>().Where(x => x.SKU.ToLower() == normalizedSku), cancellationToken));
+        events.AddRange(await Marten.QueryableExtensions.ToListAsync(
+            session.Events.QueryRawEventDataOnly<PickCompletedEvent>().Where(x => x.SKU.ToLower() == normalizedSku), cancellationToken));
+        events.AddRange(await Marten.QueryableExtensions.ToListAsync(
+            session.Events.QueryRawEventDataOnly<QCPassedEvent>().Where(x => x.SKU.ToLower() == normalizedSku), cancellationToken));
+        events.AddRange(await Marten.QueryableExtensions.ToListAsync(
+            session.Events.QueryRawEventDataOnly<QCFailedEvent>().Where(x => x.SKU.ToLower() == normalizedSku), cancellationToken));
+        var locations = await EntityFrameworkQueryableExtensions.ToListAsync(
+            _dbContext.Locations.AsNoTracking(), cancellationToken);
+        return StockEventQuantity.Calculate(events, itemSku, locations);
     }
 
     public async Task<IReadOnlyDictionary<string, decimal>> ResolveQtyBySkuForLocationAsync(
@@ -66,7 +75,7 @@ public sealed class MartenAvailableStockQuantityResolver : IAvailableStockQuanti
             .GroupBy(x => x.SKU, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
                 g => g.Key,
-                g => g.Sum(x => x.AvailableQty),
+                g => g.Sum(x => x.OnHandQty),
                 StringComparer.OrdinalIgnoreCase);
     }
 }

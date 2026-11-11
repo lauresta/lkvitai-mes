@@ -78,15 +78,13 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label" for="dispatch-carrier">@L["Common.Carrier"]</label>
-                        <select id="dispatch-carrier" class="form-select" @bind="_carrier">
-                            <option value="FEDEX">FEDEX</option>
-                            <option value="UPS">UPS</option>
-                            <option value="DHL">DHL</option>
-                            <option value="USPS">USPS</option>
-                            <option value="OTHER">OTHER</option>
-                        </select>
+                        <input id="dispatch-carrier" class="form-control" type="text" @bind="_carrier" required />
                     </div>
 
+                    <div class="mb-3">
+                        <label class="form-label" for="dispatch-tracking">@L["OutboundDispatch.TrackingNumber"]</label>
+                        <input id="dispatch-tracking" class="form-control" type="text" @bind="_trackingNumber" required />
+                    </div>
                     <div class="mb-3">
                         <label class="form-label" for="vehicle-id">@L["OutboundDispatch.VehicleID"]</label>
                         <input id="vehicle-id" class="form-control" type="text" @bind="_vehicleId" />
@@ -112,6 +110,7 @@
     private bool _showModal;
     private ShipmentSummaryDto? _selectedShipment;
     private string _carrier = "FEDEX";
+    private string _trackingNumber = string.Empty;
     private string _vehicleId = string.Empty;
 
     protected override async Task OnInitializedAsync()
@@ -151,6 +150,7 @@
         _selectedShipment = shipment;
         _carrier = "FEDEX";
         _vehicleId = string.Empty;
+        _trackingNumber = string.Empty;
         _showModal = true;
     }
 
@@ -167,6 +167,11 @@
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(_carrier) || string.IsNullOrWhiteSpace(_trackingNumber))
+        {
+            ToastService.ShowError(L["OutboundDispatch.TrackingRequired"].Value);
+            return;
+        }
         _isSubmitting = true;
 
         try
@@ -174,7 +179,8 @@
             await OutboundClient.DispatchShipmentAsync(_selectedShipment.Id, new DispatchShipmentRequestDto
             {
                 CommandId = Guid.NewGuid(),
-                Carrier = _carrier,
+                Carrier = _carrier.Trim(),
+                ManualTrackingNumber = _trackingNumber.Trim(),
                 VehicleId = string.IsNullOrWhiteSpace(_vehicleId) ? null : _vehicleId.Trim()
             });
 

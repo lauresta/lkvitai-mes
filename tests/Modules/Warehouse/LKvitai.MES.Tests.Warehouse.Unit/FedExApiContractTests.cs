@@ -56,6 +56,16 @@ public class FedExApiContractTests
         body.Should().Contain("\"requestedAtUtc\":");
     }
 
+    [Fact]
+    public async Task MissingEndpoint_NeverInventsTrackingNumber()
+    {
+        var factory = new Mock<IHttpClientFactory>(MockBehavior.Strict);
+        var sut = new FedExApiService(new ConfigurationBuilder().Build(), factory.Object, Mock.Of<ILogger<FedExApiService>>());
+        var result = await sut.GenerateTrackingNumberAsync(Guid.NewGuid(), "FEDEX");
+        result.IsSuccess.Should().BeFalse();
+        factory.VerifyNoOtherCalls();
+    }
+
     private sealed class StubHttpClientFactory : IHttpClientFactory
     {
         private readonly HttpClient _client;
