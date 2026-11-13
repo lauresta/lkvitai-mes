@@ -402,6 +402,7 @@ services:
       ConnectionStrings__LKvitaiDb: "${LKVITAI_MSACCESS_DB_CONNECTION}"
       CikadaUsers__BaseUrl: "http://lkvitai-mes-warehouse-api:8080"
       Finance__AllowedLegacyLogins__0: 'TERMINAL\d.bykovas'
+      Finance__AllowedLegacyLogins__1: 'TERMINAL\v.stropus'
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
