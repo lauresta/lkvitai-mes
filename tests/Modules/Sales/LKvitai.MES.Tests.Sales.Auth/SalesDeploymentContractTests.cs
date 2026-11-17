@@ -11,8 +11,10 @@ public sealed class SalesDeploymentContractTests
         var compose = File.ReadAllText(Path.Combine(RepositoryRoot(), "docker-compose.test.yml"));
         var api = Service(compose, "sales-api", "sales-webui");
         Assert.Equal("true", Value(api, "Sales__OrderEntry__Enabled"));
-        Assert.Equal(Guid.Parse("31FC1889-3D3E-4422-A4E3-362899649FF5"),
-            Guid.Parse(Value(api, "Sales__OrderEntry__ExpectedDatabaseGuid")));
+        // The owner-approved database GUID stays the default; after a RESTORE onto a new server
+        // it is replaced only through vars.LKVITAI_LEGACY_DB_GUID in the 'test' environment.
+        Assert.Equal("${LKVITAI_LEGACY_DB_GUID:-31FC1889-3D3E-4422-A4E3-362899649FF5}",
+            Value(api, "Sales__OrderEntry__ExpectedDatabaseGuid"));
         Assert.Equal(new[] { 2136330188, 2136330191, 551738835, 768439496 },
             Values(api, "Sales__OrderEntry__AllowedSeriesIds"));
         Assert.Equal("false", Value(api, "Sales__OrderEntry__CancellationEnabled"));
