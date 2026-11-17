@@ -149,7 +149,9 @@ services:
       # Restore the owner-approved v25 contract in every automatic deploy.
       # This SQL database is shared production data: writes remain Testavimas-only.
       Sales__OrderEntry__Enabled: "true"
-      Sales__OrderEntry__ExpectedDatabaseGuid: "31FC1889-3D3E-4422-A4E3-362899649FF5"
+      # database_guid changes on every RESTORE (e.g. the move to SQL Server on Ubuntu, 192.168.0.32).
+      # Set vars.LKVITAI_LEGACY_DB_GUID in the 'test' environment after the restore; empty = old server's GUID.
+      Sales__OrderEntry__ExpectedDatabaseGuid: "${LKVITAI_LEGACY_DB_GUID:-31FC1889-3D3E-4422-A4E3-362899649FF5}"
       Sales__OrderEntry__AllowedSeriesIds__0: "2136330188"
       Sales__OrderEntry__AllowedSeriesIds__1: "2136330191"
       Sales__OrderEntry__AllowedSeriesIds__2: "551738835"
@@ -403,6 +405,9 @@ services:
       CikadaUsers__BaseUrl: "http://lkvitai-mes-warehouse-api:8080"
       Finance__AllowedLegacyLogins__0: 'TERMINAL\d.bykovas'
       Finance__AllowedLegacyLogins__1: 'TERMINAL\v.stropus'
+      # SQL logins without the Windows prefix on the new SQL Server (Ubuntu, no Windows auth)
+      Finance__AllowedLegacyLogins__2: 'd.bykovas'
+      Finance__AllowedLegacyLogins__3: 'v.stropus'
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
