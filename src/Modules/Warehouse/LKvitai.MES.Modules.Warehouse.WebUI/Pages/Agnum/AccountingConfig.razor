@@ -106,7 +106,7 @@ else if (_tab == "rules")
                         {
                             <select class="form-select form-select-sm" @bind="r.VatCode">
                                 <option value="">-</option>
-                                @foreach (var v in _vatCodes)
+                                @foreach (var v in _vatCodes.Where(v => !string.IsNullOrWhiteSpace(v.Code)))
                                 {
                                     <option value="@v.Code">@v.Code</option>
                                 }
@@ -164,7 +164,7 @@ else if (_tab == "costs")
     </div>
     <button class="btn btn-outline-primary" type="button" @onclick="AddCostType">@L["Purchase.AddCostType"]</button>
 }
-else
+else if (_tab == "audit")
 {
     <div class="table-responsive">
         <table class="table table-sm">

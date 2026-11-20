@@ -23,11 +23,11 @@ public sealed class MonthEndController : ControllerBase
 
     [HttpGet("{year:int}/{month:int}/report")]
     public async Task<IActionResult> ReportAsync(int year, int month, CancellationToken ct)
-        => Valid(year, month) ? Ok(await _service.GetReportAsync(year, month, ct)) : BadRequest(new { detail = "Invalid month." });
+        => Valid(year, month) ? Ok(await _service.GetReportAsync(year, month, ct)) : Problem(detail: "Invalid month.", statusCode: StatusCodes.Status400BadRequest);
 
     [HttpGet("{year:int}/{month:int}/state")]
     public async Task<IActionResult> StateAsync(int year, int month, CancellationToken ct)
-        => Valid(year, month) ? Ok(await _service.StateAsync(year, month, ct)) : BadRequest(new { detail = "Invalid month." });
+        => Valid(year, month) ? Ok(await _service.StateAsync(year, month, ct)) : Problem(detail: "Invalid month.", statusCode: StatusCodes.Status400BadRequest);
 
     [HttpPost("{year:int}/{month:int}/close")]
     public Task<IActionResult> CloseAsync(int year, int month, CancellationToken ct)

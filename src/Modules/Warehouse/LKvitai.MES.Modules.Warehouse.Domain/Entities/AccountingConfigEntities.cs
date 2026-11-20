@@ -19,6 +19,7 @@ public sealed class StockAccountProfile
 /// VAT treatment of a purchase. Minimal W3 definition; the purchase document stage (W2) owns the
 /// full model and is expected to reuse these names (stored as strings).
 /// </summary>
+[System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
 public enum VatTreatment
 {
     Domestic = 0,
@@ -52,6 +53,7 @@ public sealed class AccountingConfigAuditEntry
 }
 
 /// <summary>Blueprint 4.11. Set at sync from VAT code prefix and country; manually editable.</summary>
+[System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
 public enum SupplierKind
 {
     Domestic = 0,

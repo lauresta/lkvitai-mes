@@ -7,7 +7,11 @@
     <div class="alert alert-danger" data-testid="sending-error">@_error</div>
 }
 
-@if (_settings is null)
+@if (_settings is null && _error is not null)
+{
+    // the error banner above already says why the settings are missing
+}
+else if (_settings is null)
 {
     <div class="text-muted">@L["Agnum.Queue.Loading"]</div>
 }
