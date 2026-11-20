@@ -98,6 +98,28 @@
                           Margin="Margin.Dense"
                           @bind-Value="_model.PrimaryBarcode" />
 
+            <MudTextField T="string"
+                          Label="@L["Intrastat.Item.CommodityCode"]"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          MaxLength="8"
+                          HelperText="@L["Intrastat.Item.CommodityCodeHelp"]"
+                          @bind-Value="_model.CommodityCode" />
+
+            <LkDecimalField T="decimal?"
+                             Label="@L["Intrastat.Item.NetWeightKg"]"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0.0001m"
+                             @bind-Value="_model.NetWeightKg" />
+
+            <MudTextField T="string"
+                          Label="@L["Intrastat.Item.OriginCountry"]"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          MaxLength="2"
+                          @bind-Value="_model.OriginCountry" />
+
             <LkDecimalField T="decimal?"
                              Label="@L["Common.Weight"]"
                              Variant="Variant.Outlined"
@@ -243,6 +265,9 @@
             _model.ProductConfigId = Item.ProductConfigId;
             _model.ItemType = Item.ItemType;
             _model.CostType = Item.CostType;
+            _model.CommodityCode = Item.CommodityCode;
+            _model.NetWeightKg = Item.NetWeightKg;
+            _model.OriginCountry = Item.OriginCountry;
             _model.Tags.Clear();
             _model.Tags.AddRange(Item.Tags.Select(NormalizeTag).Where(x => !string.IsNullOrWhiteSpace(x)));
             return;
@@ -281,6 +306,16 @@
         if (string.IsNullOrWhiteSpace(_model.BaseUoM))
         {
             return "Base UoM is required.";
+        }
+
+        if (!string.IsNullOrWhiteSpace(_model.CommodityCode) && !(_model.CommodityCode.Trim().Length == 8 && _model.CommodityCode.Trim().All(char.IsAsciiDigit)))
+        {
+            return L["Intrastat.Item.CommodityCodeInvalid"].Value;
+        }
+
+        if (_model.NetWeightKg is <= 0)
+        {
+            return L["Intrastat.Item.NetWeightInvalid"].Value;
         }
 
         if (_model.Weight is <= 0)
@@ -435,6 +470,9 @@
         public string? ProductConfigId { get; set; }
         public string ItemType { get; set; } = "Stock";
         public string? CostType { get; set; }
+        public string? CommodityCode { get; set; }
+        public decimal? NetWeightKg { get; set; }
+        public string? OriginCountry { get; set; }
         public List<string> Tags { get; } = [];
 
         public CreateOrUpdateItemRequest ToRequest(bool isEdit) => new()
@@ -454,6 +492,9 @@
             PrimaryBarcode = Normalize(PrimaryBarcode),
             ProductConfigId = Normalize(ProductConfigId),
             Tags = Tags.ToArray(),
+            CommodityCode = Normalize(CommodityCode),
+            NetWeightKg = NetWeightKg,
+            OriginCountry = Normalize(OriginCountry)?.ToUpperInvariant(),
             ItemType = string.IsNullOrWhiteSpace(ItemType) ? "Stock" : ItemType.Trim(),
             CostType = string.Equals(ItemType, "Service", StringComparison.OrdinalIgnoreCase)
                 ? Normalize(CostType)

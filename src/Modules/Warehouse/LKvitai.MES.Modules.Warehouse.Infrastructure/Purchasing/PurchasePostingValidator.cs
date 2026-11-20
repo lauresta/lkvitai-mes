@@ -51,6 +51,9 @@ public static class PurchasePostingValidator
         => shipment.AdditionalCosts.OrderBy(c => c.Id).Select(c => new PurchaseCostInput(
             c.Id, c.Amount, !types.TryGetValue(c.CostType, out var t) || t.IncludedInCost)).ToList();
 
+    public static bool IsCommodityCode(string? code)
+        => code is { Length: 8 } && code.All(char.IsAsciiDigit);
+
     public static List<PostingProblem> Validate(PurchasePostingInput input)
     {
         var s = input.Shipment;
@@ -115,6 +118,16 @@ public static class PurchasePostingValidator
                 if (ratio > MaxRateJump)
                     problems.Add(new("RateSanity", $"The rate differs from the last saved rate more than {MaxRateJump}x."));
             }
+        }
+
+        // Blueprint 4.9: an EU acquisition needs the Intrastat header and the goods data.
+        if (EffectiveVatTreatment(s, input.Supplier) == VatTreatment.EuAcquisition)
+        {
+            if (string.IsNullOrWhiteSpace(s.DeliveryTerms) || string.IsNullOrWhiteSpace(s.TransportMode)
+                || string.IsNullOrWhiteSpace(s.DispatchCountry) || string.IsNullOrWhiteSpace(s.TransactionNature))
+                problems.Add(new("IntrastatHeaderRequired", "Intrastat fields (delivery terms, transport mode, dispatch country, transaction nature) are required for an EU acquisition."));
+            if (stockLines.Any(l => l.Item is null || !IsCommodityCode(l.Item.CommodityCode) || l.Item.NetWeightKg is not > 0m))
+                problems.Add(new("IntrastatItemDataMissing", "Every stock item of an EU acquisition needs an 8-digit commodity code and a net weight."));
         }
 
         // Check 5 and 6: one stock account, a configured posting rule.

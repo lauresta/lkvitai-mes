@@ -534,7 +534,8 @@ public sealed class ReceivingController : ControllerBase
             shipment.NetEur, shipment.VatEur, shipment.GrossEur,
             shipment.VatTreatment?.ToString(),
             shipment.Supplier is null ? null : Infrastructure.Purchasing.PurchasePostingValidator.DefaultVatTreatment(shipment.Supplier.Kind)?.ToString(),
-            shipment.AccountingRoute, shipment.PostingStatus, shipment.PostedAt, shipment.PostedBy, canManual, problems);
+            shipment.AccountingRoute, shipment.PostingStatus, shipment.PostedAt, shipment.PostedBy, canManual, problems,
+            shipment.DeliveryTerms, shipment.TransportMode, shipment.DispatchCountry, shipment.TransactionNature);
     }
 
     /// <summary>Blueprint 4.2 "Post": runs every blocking check, then writes the true-up and locks the document.</summary>
@@ -989,6 +990,9 @@ public sealed class ReceivingController : ControllerBase
         return (rows, null);
     }
 
+    private static string? NormalizeUpper(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToUpperInvariant();
+
     private static string NormalizeCurrency(string? currency)
         => string.IsNullOrWhiteSpace(currency) ? "EUR" : currency.Trim().ToUpperInvariant();
 
@@ -1029,6 +1033,10 @@ public sealed class ReceivingController : ControllerBase
         shipment.GrossAmount = request.NetAmount is null ? null : request.NetAmount + (request.VatAmount ?? 0m);
         shipment.VatTreatment = treatment;
         shipment.AccountingRoute = route;
+        shipment.DeliveryTerms = NormalizeUpper(request.DeliveryTerms);
+        shipment.TransportMode = NormalizeUpper(request.TransportMode);
+        shipment.DispatchCountry = NormalizeUpper(request.DispatchCountry);
+        shipment.TransactionNature = NormalizeUpper(request.TransactionNature) ?? "11";
         return null;
     }
 
@@ -1165,7 +1173,11 @@ public sealed class ReceivingController : ControllerBase
         decimal? NetAmount = null,
         decimal? VatAmount = null,
         string? VatTreatment = null,
-        string? AccountingRoute = null);
+        string? AccountingRoute = null,
+        string? DeliveryTerms = null,
+        string? TransportMode = null,
+        string? DispatchCountry = null,
+        string? TransactionNature = null);
 
     public sealed record CreateInboundShipmentLineRequest(
         int ItemId,
@@ -1259,7 +1271,11 @@ public sealed class ReceivingController : ControllerBase
         DateTimeOffset? PostedAt,
         string? PostedBy,
         bool CanSetManualRate,
-        IReadOnlyList<PostingProblemDto> Problems);
+        IReadOnlyList<PostingProblemDto> Problems,
+        string? DeliveryTerms = null,
+        string? TransportMode = null,
+        string? DispatchCountry = null,
+        string? TransactionNature = null);
 
     public sealed record PostShipmentRequest(decimal? ManualRateUnitsPerEur, string? ManualRateReason);
 

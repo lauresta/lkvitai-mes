@@ -113,6 +113,11 @@
                                 <div>@(purchase.VatTreatment ?? purchase.DefaultVatTreatment ?? "-")</div>
                                 <div class="small text-muted mt-2">@L["Purchase.AccountingRoute"]</div>
                                 <div>@(purchase.AccountingRoute == "ManualInAgnum" ? L["Purchase.Route.ManualInAgnum"] : L["Purchase.Route.Auto"])</div>
+                                @if ((purchase.VatTreatment ?? purchase.DefaultVatTreatment) == "EuAcquisition")
+                                {
+                                    <div class="small text-muted mt-2">@L["Intrastat.Header"]</div>
+                                    <div data-testid="intrastat-header">@purchase.TransactionNature / @(purchase.DeliveryTerms ?? "-") / @(purchase.TransportMode ?? "-") / @(purchase.DispatchCountry ?? "-")</div>
+                                }
                             </div>
                         </div>
 

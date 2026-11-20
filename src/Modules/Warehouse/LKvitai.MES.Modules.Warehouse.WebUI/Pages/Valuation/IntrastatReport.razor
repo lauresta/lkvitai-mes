@@ -1,0 +1,135 @@
+@page "/valuation/intrastat"
+@using System.Globalization
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@using LKvitai.MES.Modules.Warehouse.WebUI.Models
+@inject IntrastatClient Client
+@inject IJSRuntime JavaScript
+@inject ToastService ToastService
+
+<PageTitle>@L["Intrastat.Title"]</PageTitle>
+
+<h1>@L["Intrastat.Title"]</h1>
+<p class="text-muted">@L["Intrastat.Intro"]</p>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@(_apiError.ProblemDetails?.Detail ?? _apiError.ProblemDetails?.Title ?? _apiError.Message)"
+                 TraceId="@_apiError.TraceId"
+                 OnDismiss="() => _apiError = null" />
+}
+
+<div class="card shadow-sm mb-4 position-relative">
+    <LoadingSpinner IsLoading="_busy" />
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-4">
+                <label class="form-label" for="intrastat-month">@L["Intrastat.Month"]</label>
+                <input id="intrastat-month" type="month" class="form-control" @bind="_month" @bind:format="yyyy-MM" />
+            </div>
+            <div class="col-12 col-md-8 d-flex gap-2">
+                <button class="btn btn-primary" type="button" disabled="@_busy" @onclick="LoadAsync">@L["Intrastat.Show"]</button>
+                <button class="btn btn-outline-primary" type="button" disabled="@(_busy || _report is null)" @onclick="DownloadAsync">@L["Intrastat.DownloadCsv"]</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (_report is not null)
+{
+    @if (_report.Warnings.Count > 0)
+    {
+        <div class="alert alert-warning">
+            @string.Format(L["Intrastat.Warnings"].Value, _report.Warnings.Count)
+            <ul class="mb-0">
+                @foreach (var w in _report.Warnings)
+                {
+                    <li>@w.Replace('|', ' ')</li>
+                }
+            </ul>
+        </div>
+    }
+
+    @if (_report.Rows.Count == 0)
+    {
+        <p class="text-muted">@L["Intrastat.Empty"]</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>@L["Intrastat.CommodityCode"]</th>
+                        <th>@L["Intrastat.Country"]</th>
+                        <th class="text-end">@L["Intrastat.ValueEur"]</th>
+                        <th class="text-end">@L["Intrastat.NetMass"]</th>
+                        <th class="text-end">@L["Intrastat.Quantity"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in _report.Rows)
+                    {
+                        <tr>
+                            <td class="mono">@r.CommodityCode</td>
+                            <td>@r.Country</td>
+                            <td class="text-end mono">@r.ValueEur.ToString("N2", Inv)</td>
+                            <td class="text-end mono">@r.NetMassKg.ToString("N3", Inv)</td>
+                            <td class="text-end mono">@r.Quantity.ToString("0.####", Inv)</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr class="fw-bold">
+                        <td colspan="2">@L["Intrastat.Totals"]</td>
+                        <td class="text-end mono">@_report.TotalValueEur.ToString("N2", Inv)</td>
+                        <td class="text-end mono">@_report.TotalNetMassKg.ToString("N3", Inv)</td>
+                        <td class="text-end mono">@_report.TotalQuantity.ToString("0.####", Inv)</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    }
+}
+
+@code {
+    private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
+    private DateTime _month = new(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private IntrastatReportDto? _report;
+    private bool _busy;
+    private ApiException? _apiError;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _busy = true;
+        try
+        {
+            _apiError = null;
+            _report = await Client.GetAsync(_month.Year, _month.Month);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task DownloadAsync()
+    {
+        try
+        {
+            var bytes = await Client.GetCsvAsync(_month.Year, _month.Month);
+            await JavaScript.InvokeVoidAsync("csvExport.downloadBytes",
+                $"intrastat-arrivals-{_month:yyyy-MM}.csv", "text/csv", Convert.ToBase64String(bytes));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(ex.Message);
+        }
+    }
+}
