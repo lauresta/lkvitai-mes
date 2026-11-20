@@ -139,6 +139,11 @@ public sealed class OpeningBalancesController : ControllerBase
             return BadRequest(new { detail = "The file has validation errors; nothing was loaded." });
         }
 
+        if (await LKvitai.MES.Modules.Warehouse.Infrastructure.MonthEnd.AccountingPeriods.CheckAsync(_db, ct, DateOnly.FromDateTime(OpeningDate)) is { } periodClosed)
+        {
+            return BadRequest(new { detail = periodClosed.Text, code = periodClosed.Code });
+        }
+
         var lines = await ResolveLinesAsync(preview, ct);
         var doc = new OpeningBalanceDocument
         {

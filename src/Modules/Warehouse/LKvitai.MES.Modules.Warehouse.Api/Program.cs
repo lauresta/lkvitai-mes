@@ -113,6 +113,8 @@ builder.Services.AddScoped<LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum.Ac
 builder.Services.AddScoped<LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum.Accounting.AgnumOutboxReconciler>();
 builder.Services.AddScoped<LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum.Accounting.IPostingReverser>(
     sp => sp.GetRequiredService<LKvitai.MES.Modules.Warehouse.Api.Services.PurchaseDocumentService>());
+builder.Services.AddScoped<LKvitai.MES.Modules.Warehouse.Infrastructure.MonthEnd.IStockValueEventSource, LKvitai.MES.Modules.Warehouse.Infrastructure.MonthEnd.MartenStockValueEventSource>();
+builder.Services.AddScoped<LKvitai.MES.Modules.Warehouse.Infrastructure.MonthEnd.MonthEndService>();
 builder.Services.AddScoped<LKvitai.MES.Modules.Warehouse.Api.BackgroundJobs.AgnumOutboxRecurringJob>();
 builder.Services.AddScoped<LKvitai.MES.Modules.Warehouse.Api.BackgroundJobs.AgnumReconciliationRecurringJob>();
 builder.Services.AddHttpClient("FedExApi");

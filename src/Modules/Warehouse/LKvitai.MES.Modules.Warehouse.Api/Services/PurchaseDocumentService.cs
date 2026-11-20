@@ -8,6 +8,7 @@ using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Domain.Purchasing;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum.Accounting;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Fx;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.MonthEnd;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Purchasing;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -187,7 +188,12 @@ public sealed partial class PurchaseDocumentService : IPostingReverser
         }
 
         var input = await BuildInputAsync(shipment, manualRate, manualReason, ct);
-        var problems = PurchasePostingValidator.Validate(input);
+        var problems = PurchasePostingValidator.Validate(input).ToList();
+        if (problems.Count == 0 && await AccountingPeriods.CheckAsync(_db, ct, shipment.InvoiceDate, Today()) is { } periodClosed)
+        {
+            problems.Add(periodClosed);
+        }
+
         if (problems.Count > 0)
         {
             return new PostResult(false, problems);
@@ -326,6 +332,7 @@ public sealed partial class PurchaseDocumentService : IPostingReverser
     public async Task<List<PostingProblem>> ValidateCostDocumentAsync(AdditionalCostDocument doc, InboundShipment? basis, CancellationToken ct)
     {
         var problems = new List<PostingProblem>();
+        if (await AccountingPeriods.CheckAsync(_db, ct, doc.DocumentDate, Today()) is { } periodClosed) problems.Add(periodClosed);
         if (doc.PostingStatus == "Posted") { problems.Add(new("AlreadyPosted", "The document is already posted.")); return problems; }
         if (string.IsNullOrWhiteSpace(doc.DocumentNumber)) problems.Add(new("InvoiceNumberRequired", "Document number is required."));
         if (doc.NetAmount <= 0m) problems.Add(new("AmountsRequired", "Net amount must be greater than zero."));
@@ -497,6 +504,13 @@ public sealed partial class PurchaseDocumentService : IPostingReverser
     public async Task<List<PostingProblem>> CheckReversibleAsync(string documentType, int id, CancellationToken ct)
     {
         var problems = new List<PostingProblem>();
+        var info = await LoadUnpostInfoAsync(documentType, id, ct);
+        if (info is not null && await AccountingPeriods.CheckAsync(_db, ct, info.Date, Today()) is { } periodClosed)
+        {
+            problems.Add(periodClosed);
+            return problems;
+        }
+
         if (documentType == OutboxDocumentType.CostDocument)
         {
             var d = await _db.AdditionalCostDocuments.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
