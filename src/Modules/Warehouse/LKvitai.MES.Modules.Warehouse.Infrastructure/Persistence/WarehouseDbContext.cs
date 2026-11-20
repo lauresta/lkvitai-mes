@@ -253,6 +253,9 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.PurchasePrice).HasPrecision(18, 2);
             entity.Property(e => e.ItemType).HasConversion<string>().HasMaxLength(20).IsRequired().HasDefaultValue(ItemType.Stock);
             entity.Property(e => e.CostType).HasMaxLength(50);
+            entity.Property(e => e.CommodityCode).HasMaxLength(8);
+            entity.Property(e => e.NetWeightKg).HasPrecision(18, 4);
+            entity.Property(e => e.OriginCountry).HasMaxLength(2);
             entity.HasIndex(e => e.InternalSKU).IsUnique();
             entity.HasIndex(e => e.CategoryId).HasDatabaseName("idx_items_category_id");
             entity.HasIndex(e => e.BaseUoM);
@@ -1219,6 +1222,10 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.VatTreatment).HasConversion<string>().HasMaxLength(30);
             entity.Property(e => e.AccountingRoute).HasMaxLength(20).HasDefaultValue("Auto").IsRequired();
             entity.Property(e => e.PostingStatus).HasMaxLength(20).HasDefaultValue("NotPosted").IsRequired();
+            entity.Property(e => e.DeliveryTerms).HasMaxLength(3);
+            entity.Property(e => e.TransportMode).HasMaxLength(2);
+            entity.Property(e => e.DispatchCountry).HasMaxLength(2);
+            entity.Property(e => e.TransactionNature).HasMaxLength(2).IsRequired().HasDefaultValue("11");
             entity.Property(e => e.PostedBy).HasMaxLength(200);
             entity.HasIndex(e => e.ReferenceNumber).IsUnique();
             entity.HasOne(e => e.Supplier).WithMany().HasForeignKey(e => e.SupplierId).OnDelete(DeleteBehavior.Restrict);

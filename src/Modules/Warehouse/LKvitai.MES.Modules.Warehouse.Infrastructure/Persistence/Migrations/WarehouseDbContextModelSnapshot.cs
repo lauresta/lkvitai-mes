@@ -1757,6 +1757,14 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(3)")
                         .HasDefaultValue("EUR");
 
+                    b.Property<string>("DeliveryTerms")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<string>("DispatchCountry")
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
                     b.Property<string>("DocumentKind")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -1836,6 +1844,17 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
 
                     b.Property<int>("SupplierId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("TransactionNature")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasDefaultValue("11");
+
+                    b.Property<string>("TransportMode")
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -2046,6 +2065,10 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                     b.Property<int>("CategoryId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("CommodityCode")
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
                     b.Property<string>("CostType")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
@@ -2075,6 +2098,14 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<decimal?>("NetWeightKg")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<string>("OriginCountry")
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
 
                     b.Property<string>("PrimaryBarcode")
                         .HasMaxLength(100)
