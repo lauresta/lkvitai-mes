@@ -111,6 +111,7 @@ public static class MartenConfiguration
         RegisterEventType<CostAdjusted>(options);
         RegisterEventType<LandedCostApplied>(options);
         RegisterEventType<WrittenDown>(options);
+        RegisterEventType<StockValueChanged>(options);
     }
 
     private static void RegisterMartenDocumentAliases(StoreOptions options)

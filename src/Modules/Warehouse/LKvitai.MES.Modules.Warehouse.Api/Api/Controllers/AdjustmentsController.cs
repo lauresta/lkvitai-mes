@@ -151,11 +151,18 @@ public sealed class AdjustmentsController : ControllerBase
             Timestamp = now
         };
 
-        await using (var session = _documentStore.LightweightSession())
+        IReadOnlyList<StockValueChanged> valueEvents = [];
+        await StockValueRetry.RunAsync(async () =>
         {
+            await using var session = _documentStore.LightweightSession();
             session.Events.Append($"stock-adjustment:{adjustmentId:N}", evt);
+            valueEvents = await StockValueWriter.AppendAsync(session, _dbContext, [StockValueRequest.ForAdjustment(
+                item.InternalSKU, request.QtyDelta, location.Code,
+                new LKvitai.MES.Modules.Warehouse.Domain.Aggregates.StockValueDocument(
+                    "StockAdjustment", adjustmentId.ToString("N"), null, request.Notes ?? normalizedReasonCode))], cancellationToken);
             await session.SaveChangesAsync(cancellationToken);
-        }
+        }, cancellationToken);
+        await StockValueWriter.ProjectAsync(_dbContext, Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance, valueEvents, cancellationToken);
 
         var usageResult = await _reasonCodeService.IncrementUsageAsync(
             normalizedReasonCode,

@@ -33,46 +33,11 @@ public partial class ReceivingWorkflowIntegrationTests
         services.AddSingleton<ICurrentUserService>(new StaticCurrentUserService("QA-C8"));
         services.AddScoped<IAvailableStockQuantityResolver, MartenAvailableStockQuantityResolver>();
         services.AddSingleton<IHttpContextAccessor>(new HttpContextAccessor { HttpContext = new DefaultHttpContext() });
-        services.AddMediatR(x => x.RegisterServicesFromAssemblyContaining<InitializeValuationCommandHandler>());
+        services.AddMediatR(x => x.RegisterServicesFromAssemblyContaining<RevaluationCommandHandler>());
         var provider = services.BuildServiceProvider();
         _store = provider.GetRequiredService<IDocumentStore>();
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
         return provider;
-    }
-
-    [SkippableFact]
-    public async Task ApplicationMarten_ValuationHandlersPersistSecondAndLaterCosts()
-    {
-        DockerRequirement.EnsureEnabled();
-        await SeedBaseDataAsync(false, false);
-        await using var provider = await ApplicationValuationProviderAsync();
-        await using (var seed = _store!.LightweightSession())
-        {
-            seed.Events.Append("QA-C8-stock", new LKvitai.MES.Contracts.Events.GoodsReceivedEvent
-            { SKU = "RM-0001", WarehouseId = "WH1", DestinationLocation = "BIN", ReceivedQty = 2 });
-            await seed.SaveChangesAsync();
-        }
-        await using (var db = CreateDbContext())
-        {
-            db.Locations.Add(new() { Id = 4, Code = "BIN", Barcode = "BIN", Type = "Bin", IsVirtual = false, Status = "Active" });
-            await db.SaveChangesAsync();
-        }
-        using var scope = provider.CreateScope();
-        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-        (await mediator.Send(new InitializeValuationCommand { ItemId = 1, InitialCost = 10, Reason = "QA-C8-valuation" })).IsSuccess.Should().BeTrue();
-        var second = await mediator.Send(new AdjustValuationCostCommand { ItemId = 1, NewCost = 11, Reason = "QA-C8-valuation", ApprovedBy = "QA-C8" });
-        second.IsSuccess.Should().BeTrue(second.Error);
-        (await mediator.Send(new AdjustValuationCostCommand { ItemId = 1, NewCost = 12, Reason = "QA-C8-valuation", ApprovedBy = "QA-C8" })).IsSuccess.Should().BeTrue();
-        // Each request gets its own EF context as it does in the API.
-        using var landedScope = provider.CreateScope();
-        (await landedScope.ServiceProvider.GetRequiredService<IMediator>().Send(new ApplyLandedCostCommand { ShipmentId = Guid.NewGuid(), FreightCost = 2 })).IsSuccess.Should().BeTrue();
-        using var writeScope = provider.CreateScope();
-        (await writeScope.ServiceProvider.GetRequiredService<IMediator>().Send(new WriteDownCommand { ItemId = 1, NewValue = 12, Reason = "QA-C8-valuation", ApprovedBy = "QA-C8" })).IsSuccess.Should().BeTrue();
-        await using var query = _store.QuerySession();
-        var aggregate = await query.Events.AggregateStreamAsync<ItemValuation>(ItemValuation.StreamIdFor(1));
-        aggregate!.ItemId.Should().Be(1);
-        aggregate.CurrentCost.Should().Be(12);
-        (await query.Events.FetchStreamStateAsync(ItemValuation.StreamIdFor(1)))!.Version.Should().Be(5);
     }
 
     [SkippableFact]
@@ -98,6 +63,13 @@ public partial class ReceivingWorkflowIntegrationTests
         }
         await using var query = _store!.QuerySession();
         var aggregate = await query.Events.AggregateStreamAsync<ItemValuation>(ItemValuation.StreamIdFor(1));
-        aggregate!.CurrentCost.Should().Be(16m);
+        aggregate!.ValuedQty.Should().Be(5m);
+        aggregate.ValueEur.Should().Be(80m);
+        aggregate.UnitCost.Should().Be(16m);
+        using var revalueScope = provider.CreateScope();
+        (await revalueScope.ServiceProvider.GetRequiredService<IMediator>().Send(
+            new RevaluationCommand { ItemId = 1, NewUnitPrice = 12m, Reason = "QA-C8-valuation" })).IsSuccess.Should().BeTrue();
+        await using var after = _store!.QuerySession();
+        (await after.Events.AggregateStreamAsync<ItemValuation>(ItemValuation.StreamIdFor(1)))!.ValueEur.Should().Be(60m);
     }
 }

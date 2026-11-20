@@ -624,7 +624,7 @@
   <data name="Common.Volume" xml:space="preserve"><value>Tūris</value></data>
   <data name="Common.Warehouse" xml:space="preserve"><value>Sandėlis</value></data>
   <data name="Common.Weight" xml:space="preserve"><value>Svoris</value></data>
-  <data name="Common.WriteDown" xml:space="preserve"><value>Nurašyti</value></data>
+  <data name="Common.WriteDown" xml:space="preserve"><value>Nukainavimas</value></data>
   <data name="ComplianceDashboard.ComplianceDashboard" xml:space="preserve"><value>Atitikties prietaisų skydelis</value></data>
   <data name="ComplianceDashboard.Cron" xml:space="preserve"><value>Cron</value></data>
   <data name="ComplianceDashboard.CronUTC" xml:space="preserve"><value>Cron (UTC)</value></data>
@@ -1138,8 +1138,8 @@
   <data name="Valuation.Dashboard.RegisterOnlyNote" xml:space="preserve"><value>Atsargos be vertinimo įrašo neįtraukiamos.</value></data>
   <data name="Valuation.Dashboard.TotalOnHandValue" xml:space="preserve"><value>Įvertintų atsargų suma</value></data>
   <data name="Valuation.Dashboard.ValuationDashboard" xml:space="preserve"><value>Vertinimo prietaisų skydelis</value></data>
-  <data name="Valuation.WriteDown.NewValue" xml:space="preserve"><value>Nauja vertė</value></data>
-  <data name="Valuation.WriteDown.WriteDownInventoryValue" xml:space="preserve"><value>Užsirašykite atsargų vertę</value></data>
+  <data name="Valuation.WriteDown.NewValue" xml:space="preserve"><value>Nauja vieneto kaina (EUR)</value></data>
+  <data name="Valuation.WriteDown.WriteDownInventoryValue" xml:space="preserve"><value>Atsargų nukainavimas</value></data>
   <data name="Visualization.Warehouse3D.2D" xml:space="preserve"><value>2D</value></data>
   <data name="Visualization.Warehouse3D.3D" xml:space="preserve"><value>3D</value></data>
   <data name="Visualization.Warehouse3D.3DMouseControls" xml:space="preserve"><value>3D pelės valdikliai</value></data>

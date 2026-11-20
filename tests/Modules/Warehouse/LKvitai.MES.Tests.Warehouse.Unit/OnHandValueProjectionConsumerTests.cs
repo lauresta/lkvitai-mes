@@ -1,7 +1,6 @@
 using FluentAssertions;
-using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Contracts.Events;
-using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using MassTransit;
@@ -17,223 +16,46 @@ public class OnHandValueProjectionConsumerTests
 {
     [Fact]
     [Trait("Category", "OnHandValueProjection")]
-    public async Task ValuationInitialized_ShouldCreateProjectionRow()
+    public async Task StockValueChanged_ShouldBuildRowFromValuedQtyAndValue_AndIgnoreRedelivery()
     {
         await using var db = CreateDbContext();
         db.UnitOfMeasures.Add(new UnitOfMeasure { Code = "PCS", Name = "Pieces", Type = "Piece" });
         db.ItemCategories.Add(new ItemCategory { Id = 11, Code = "RAW", Name = "Raw Materials" });
-        db.Items.Add(new Item
-        {
-            Id = 101,
-            InternalSKU = "RM-0001",
-            Name = "Raw Material A",
-            CategoryId = 11,
-            BaseUoM = "PCS",
-            Status = "Active"
-        });
+        db.Items.Add(new Item { Id = 101, InternalSKU = "RM-0001", Name = "Raw Material A", CategoryId = 11, BaseUoM = "PCS", Status = "Active" });
         await db.SaveChangesAsync();
+        var sut = new OnHandValueProjectionConsumer(db, NullLoggerFactory.Instance.CreateLogger<OnHandValueProjectionConsumer>());
 
-        var resolver = new FakeAvailableStockQuantityResolver();
-        resolver.TotalQtyByItemId[101] = 100m;
-        var sut = new OnHandValueProjectionConsumer(db, resolver, CreateLogger<OnHandValueProjectionConsumer>());
+        var receipt = new StockValueChanged { ItemId = 101, Kind = StockValueKinds.Receipt, QtyDelta = 10m, ValueDeltaEur = 35.55m };
+        await sut.Consume(CreateContext(receipt));
+        await sut.Consume(CreateContext(receipt));
+        await sut.Consume(CreateContext(new StockValueChanged { ItemId = 101, Kind = StockValueKinds.Issue, QtyDelta = -4m, ValueDeltaEur = -14.22m }));
 
-        var message = new ValuationInitialized
-        {
-            EventId = Guid.NewGuid(),
-            ItemId = ValuationItemId.ToValuationItemId(101),
-            InitialUnitCost = 10m,
-            Source = "Manual",
-            InitializedBy = "finance",
-            InitializedAt = DateTime.UtcNow,
-            CommandId = Guid.NewGuid()
-        };
-
-        await sut.Consume(CreateContext(message));
-
+        db.ChangeTracker.Clear();
         var row = await db.OnHandValues.SingleAsync(x => x.ItemId == 101);
         row.ItemSku.Should().Be("RM-0001");
-        row.Qty.Should().Be(100m);
-        row.UnitCost.Should().Be(10m);
-        row.TotalValue.Should().Be(1000m);
+        row.CategoryName.Should().Be("Raw Materials");
+        row.Qty.Should().Be(6m);
+        row.TotalValue.Should().Be(21.33m);
+        row.UnitCost.Should().Be(3.555m);
     }
 
     [Fact]
     [Trait("Category", "OnHandValueProjection")]
-    public async Task CostAdjusted_ShouldUpdateUnitCostAndTotalValue()
+    public async Task EmptyingTheStock_ShouldKeepLastUnitCostAndZeroValue()
     {
         await using var db = CreateDbContext();
         db.UnitOfMeasures.Add(new UnitOfMeasure { Code = "PCS", Name = "Pieces", Type = "Piece" });
-        db.ItemCategories.Add(new ItemCategory { Id = 12, Code = "FG", Name = "Finished Goods" });
-        db.Items.Add(new Item
-        {
-            Id = 102,
-            InternalSKU = "FG-0001",
-            Name = "Finished Good A",
-            CategoryId = 12,
-            BaseUoM = "PCS",
-            Status = "Active"
-        });
-        db.OnHandValues.Add(new OnHandValue
-        {
-            Id = ValuationItemId.ToValuationItemId(102),
-            ItemId = 102,
-            ItemSku = "FG-0001",
-            ItemName = "Finished Good A",
-            Qty = 50m,
-            UnitCost = 20m,
-            TotalValue = 1000m,
-            LastUpdated = DateTimeOffset.UtcNow.AddMinutes(-10)
-        });
+        db.Items.Add(new Item { Id = 5, InternalSKU = "S", Name = "S", BaseUoM = "PCS", Status = "Active" });
         await db.SaveChangesAsync();
+        var sut = new OnHandValueProjectionConsumer(db, NullLoggerFactory.Instance.CreateLogger<OnHandValueProjectionConsumer>());
 
-        var resolver = new FakeAvailableStockQuantityResolver();
-        resolver.TotalQtyByItemId[102] = 50m;
-        var sut = new OnHandValueProjectionConsumer(db, resolver, CreateLogger<OnHandValueProjectionConsumer>());
+        await sut.Consume(CreateContext(new StockValueChanged { ItemId = 5, Kind = StockValueKinds.Receipt, QtyDelta = 2m, ValueDeltaEur = 7m }));
+        await sut.Consume(CreateContext(new StockValueChanged { ItemId = 5, Kind = StockValueKinds.Issue, QtyDelta = -2m, ValueDeltaEur = -7m }));
 
-        var message = new CostAdjusted
-        {
-            EventId = Guid.NewGuid(),
-            ItemId = ValuationItemId.ToValuationItemId(102),
-            OldUnitCost = 20m,
-            NewUnitCost = 25m,
-            Reason = "Market revaluation",
-            AdjustedBy = "manager",
-            AdjustedAt = DateTime.UtcNow,
-            CommandId = Guid.NewGuid()
-        };
-
-        await sut.Consume(CreateContext(message));
-
-        var row = await db.OnHandValues.SingleAsync(x => x.ItemId == 102);
-        row.UnitCost.Should().Be(25m);
-        row.TotalValue.Should().Be(1250m);
-    }
-
-    [Fact]
-    [Trait("Category", "OnHandValueProjection")]
-    public async Task StockMoved_ShouldRecalculateQtyAndTotalValue()
-    {
-        await using var db = CreateDbContext();
-        db.OnHandValues.Add(new OnHandValue
-        {
-            Id = ValuationItemId.ToValuationItemId(103),
-            ItemId = 103,
-            ItemSku = "RM-0003",
-            ItemName = "Raw Material C",
-            Qty = 30m,
-            UnitCost = 12m,
-            TotalValue = 360m,
-            LastUpdated = DateTimeOffset.UtcNow.AddMinutes(-5)
-        });
-        await db.SaveChangesAsync();
-
-        var resolver = new FakeAvailableStockQuantityResolver();
-        resolver.TotalQtyByItemId[103] = 70m;
-        var sut = new OnHandValueProjectionConsumer(db, resolver, CreateLogger<OnHandValueProjectionConsumer>());
-
-        var message = new StockMovedEvent
-        {
-            EventId = Guid.NewGuid(),
-            MovementId = Guid.NewGuid(),
-            SKU = "RM-0003",
-            Quantity = 40m,
-            FromLocation = "BIN-A",
-            ToLocation = "BIN-B",
-            MovementType = "Transfer",
-            OperatorId = Guid.NewGuid()
-        };
-
-        await sut.Consume(CreateContext(message));
-
-        var row = await db.OnHandValues.SingleAsync(x => x.ItemId == 103);
-        row.Qty.Should().Be(70m);
-        row.TotalValue.Should().Be(840m);
-    }
-
-    [Fact]
-    [Trait("Category", "OnHandValueProjection")]
-    public async Task DuplicateValuationEvent_ShouldBeIgnoredByCheckpoint()
-    {
-        await using var db = CreateDbContext();
-        db.UnitOfMeasures.Add(new UnitOfMeasure { Code = "PCS", Name = "Pieces", Type = "Piece" });
-        db.ItemCategories.Add(new ItemCategory { Id = 14, Code = "RAW2", Name = "Raw Materials 2" });
-        db.Items.Add(new Item
-        {
-            Id = 104,
-            InternalSKU = "RM-0004",
-            Name = "Raw Material D",
-            CategoryId = 14,
-            BaseUoM = "PCS",
-            Status = "Active"
-        });
-        await db.SaveChangesAsync();
-
-        var resolver = new FakeAvailableStockQuantityResolver();
-        resolver.TotalQtyByItemId[104] = 5m;
-        var sut = new OnHandValueProjectionConsumer(db, resolver, CreateLogger<OnHandValueProjectionConsumer>());
-
-        var message = new ValuationInitialized
-        {
-            EventId = Guid.NewGuid(),
-            ItemId = ValuationItemId.ToValuationItemId(104),
-            InitialUnitCost = 2m,
-            Source = "Manual",
-            InitializedBy = "seed",
-            InitializedAt = DateTime.UtcNow,
-            CommandId = Guid.NewGuid()
-        };
-
-        var context = CreateContext(message);
-        await sut.Consume(context);
-        await sut.Consume(context);
-
-        (await db.OnHandValues.CountAsync(x => x.ItemId == 104)).Should().Be(1);
-        (await db.EventProcessingCheckpoints
-            .CountAsync(x => x.HandlerName == nameof(OnHandValueProjectionConsumer)))
-            .Should().Be(1);
-    }
-
-    [Fact]
-    public async Task TwoReceipts_UseCommittedQuantitiesAndPersistCumulativeValuation()
-    {
-        await using var db = CreateDbContext();
-        db.ItemCategories.Add(new ItemCategory { Id = 11, Code = "RAW", Name = "Raw" });
-        db.UnitOfMeasures.Add(new UnitOfMeasure { Code = "PCS", Name = "Pieces", Type = "Piece" });
-        db.Items.Add(new Item { Id = 101, InternalSKU = "SKU", Name = "Receipt item", BaseUoM = "PCS", CategoryId = 11 });
-        await db.SaveChangesAsync();
-        var resolver = new EventQuantityResolver();
-        var sut = new OnHandValueProjectionConsumer(db, resolver, CreateLogger<OnHandValueProjectionConsumer>());
-        resolver.Events.Add(new GoodsReceivedEvent { SKU = "sku", DestinationLocation = "RECEIVING", ReceivedQty = 1m });
-        resolver.Events.Add(new StockMovedEvent { SKU = "SKU", FromLocation = "RECEIVING", ToLocation = "BIN", Quantity = 1m });
-        await sut.Consume(CreateContext(new ValuationInitialized
-        {
-            EventId = Guid.NewGuid(), ItemId = ValuationItemId.ToValuationItemId(101), InitialUnitCost = 10m
-        }));
-        (await db.OnHandValues.SingleAsync()).Qty.Should().Be(1m);
-
-        resolver.Events.Add(new GoodsReceivedEvent { SKU = "SKU", DestinationLocation = "RECEIVING", ReceivedQty = 2m });
-        resolver.Events.Add(new StockMovedEvent { SKU = "SKU", FromLocation = "RECEIVING", ToLocation = "BIN", Quantity = 2m });
-        // Legacy snapshot and transit rows are not physical stock, even with bad metadata.
-        resolver.Events.Add(new StockAdjustedEvent { SKU = "SKU", Location = "AGNUM", QtyDelta = -500m });
-        resolver.Events.Add(new StockAdjustedEvent { SKU = "SKU", Location = "IN_TRANSIT_1", QtyDelta = 20m });
-        var second = new CostAdjusted { EventId = Guid.NewGuid(), ItemId = ValuationItemId.ToValuationItemId(101), NewUnitCost = 10m };
-        await sut.Consume(CreateContext(second));
-        await sut.Consume(CreateContext(second));
-        db.ChangeTracker.Clear();
-        var persisted = await db.OnHandValues.SingleAsync();
-        persisted.Qty.Should().Be(3m);
-        persisted.TotalValue.Should().Be(30m);
-    }
-
-    private sealed class EventQuantityResolver : IAvailableStockQuantityResolver
-    {
-        public List<object> Events { get; } = [];
-        public Task<decimal> ResolveTotalQtyAsync(int itemId, string itemSku, CancellationToken cancellationToken) =>
-            Task.FromResult(LKvitai.MES.Modules.Warehouse.Infrastructure.Pricing.StockEventQuantity.Calculate(Events, itemSku,
-            [new Location { Code = "BIN" }, new Location { Code = "RECEIVING", IsVirtual = true },
-             new Location { Code = "AGNUM" }, new Location { Code = "IN_TRANSIT_1" }]));
-        public Task<IReadOnlyDictionary<string, decimal>> ResolveQtyBySkuForLocationAsync(string locationCode, CancellationToken cancellationToken) =>
-            throw new NotSupportedException();
+        var row = await db.OnHandValues.SingleAsync();
+        row.Qty.Should().Be(0m);
+        row.TotalValue.Should().Be(0m);
+        row.UnitCost.Should().Be(3.5m);
     }
 
     private static WarehouseDbContext CreateDbContext()
@@ -241,50 +63,14 @@ public class OnHandValueProjectionConsumerTests
         var options = new DbContextOptionsBuilder<WarehouseDbContext>()
             .UseInMemoryDatabase($"on-hand-projection-tests-{Guid.NewGuid():N}")
             .Options;
-
         return new WarehouseDbContext(options);
     }
 
-    private static ILogger<T> CreateLogger<T>()
-    {
-        return NullLoggerFactory.Instance.CreateLogger<T>();
-    }
-
-    private static ConsumeContext<T> CreateContext<T>(T message)
-        where T : class
+    private static ConsumeContext<T> CreateContext<T>(T message) where T : class
     {
         var context = new Mock<ConsumeContext<T>>();
         context.SetupGet(x => x.Message).Returns(message);
         context.SetupGet(x => x.CancellationToken).Returns(CancellationToken.None);
         return context.Object;
-    }
-
-    private sealed class FakeAvailableStockQuantityResolver : IAvailableStockQuantityResolver
-    {
-        public Dictionary<int, decimal> TotalQtyByItemId { get; } = new();
-        public Dictionary<string, decimal> QtyBySku { get; } = new(StringComparer.OrdinalIgnoreCase);
-        public Dictionary<string, decimal> LocationQtyBySku { get; } = new(StringComparer.OrdinalIgnoreCase);
-
-        public Task<decimal> ResolveTotalQtyAsync(int itemId, string itemSku, CancellationToken cancellationToken)
-        {
-            if (TotalQtyByItemId.TryGetValue(itemId, out var qtyById))
-            {
-                return Task.FromResult(qtyById);
-            }
-
-            if (QtyBySku.TryGetValue(itemSku, out var qtyBySku))
-            {
-                return Task.FromResult(qtyBySku);
-            }
-
-            return Task.FromResult(0m);
-        }
-
-        public Task<IReadOnlyDictionary<string, decimal>> ResolveQtyBySkuForLocationAsync(
-            string locationCode,
-            CancellationToken cancellationToken)
-        {
-            return Task.FromResult((IReadOnlyDictionary<string, decimal>)LocationQtyBySku);
-        }
     }
 }

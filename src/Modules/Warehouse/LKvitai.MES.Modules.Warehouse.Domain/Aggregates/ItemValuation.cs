@@ -3,22 +3,36 @@ using LKvitai.MES.BuildingBlocks.SharedKernel;
 
 namespace LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 
+/// <summary>Document that caused a value change.</summary>
+public sealed record StockValueDocument(
+    string? Type,
+    string? Id,
+    string? Number,
+    string? Reason,
+    int? StockAccountProfileId = null,
+    DateTime? TimestampUtc = null);
+
 /// <summary>
-/// Event-sourced valuation stream for a single inventory item.
+/// Event-sourced value ledger of one inventory item: valued quantity and value in EUR (blueprint 4.1).
+/// The unit cost is derived from the value, never stored.
 /// </summary>
 public sealed class ItemValuation
 {
     private const int Scale = 4;
 
-    /// <summary>
-    /// Marten snapshot identity — matches the event stream id.
-    /// </summary>
+    /// <summary>Marten snapshot identity - matches the event stream id.</summary>
     public string Id { get; private set; } = string.Empty;
 
     public int ItemId { get; private set; }
-    public decimal CurrentCost { get; private set; }
+    public decimal ValuedQty { get; private set; }
+    public decimal ValueEur { get; private set; }
+    /// <summary>Last known unit cost, used while <see cref="ValuedQty"/> is 0.</summary>
+    public decimal LastKnownUnitCost { get; private set; }
     public bool IsInitialized { get; private set; }
     public int Version { get; private set; }
+
+    /// <summary>Unit cost shown with 4 decimals; the last known cost when nothing is valued.</summary>
+    public decimal UnitCost => ValuedQty > 0m ? Normalize(ValueEur / ValuedQty) : LastKnownUnitCost;
 
     public static string StreamIdFor(int itemId)
     {
@@ -30,262 +44,183 @@ public sealed class ItemValuation
         return $"valuation-item-{itemId}";
     }
 
-    public ValuationInitialized Initialize(
-        int itemId,
-        decimal initialCost,
-        string reason,
-        string initializedBy,
-        Guid commandId,
-        DateTime? timestampUtc = null)
+    public static decimal Money(decimal value) => decimal.Round(value, 2, MidpointRounding.AwayFromZero);
+
+    /// <summary>Quantity enters the stock with an explicit value (Opening, Receipt, ReceiptTrueUp, PriceDifference).</summary>
+    public StockValueChanged Inflow(int itemId, string kind, decimal qty, decimal valueEur, StockValueDocument document, DateTime? businessDate = null)
     {
-        if (IsInitialized)
+        if (qty < 0m)
         {
-            throw new DomainException(DomainErrorCodes.ValidationError, "Valuation is already initialized.");
+            throw new DomainException(DomainErrorCodes.ValidationError, "Quantity must be greater than or equal to zero.");
         }
 
-        if (itemId <= 0)
+        return Change(itemId, kind, qty, valueEur, document, businessDate);
+    }
+
+    /// <summary>Quantity enters the stock at the current average (ReturnIn, AdjustmentIn).</summary>
+    public StockValueChanged InflowAtAverage(int itemId, string kind, decimal qty, StockValueDocument document, DateTime? businessDate = null)
+    {
+        if (qty <= 0m)
         {
-            throw new DomainException(DomainErrorCodes.ValidationError, "ItemId must be greater than zero.");
+            throw new DomainException(DomainErrorCodes.ValidationError, "Quantity must be greater than zero.");
         }
 
-        if (initialCost < 0m)
+        var average = ValuedQty > 0m ? ValueEur / ValuedQty : LastKnownUnitCost;
+        return Change(itemId, kind, qty, Money(qty * average), document, businessDate);
+    }
+
+    /// <summary>
+    /// Quantity leaves the stock at the current average. The last unit takes the whole remaining value;
+    /// quantity beyond the valued quantity carries no value. Returns null when nothing is valued.
+    /// </summary>
+    public StockValueChanged? Outflow(int itemId, string kind, decimal qty, StockValueDocument document, DateTime? businessDate = null)
+    {
+        if (qty <= 0m)
         {
-            throw new DomainException(DomainErrorCodes.ValidationError, "InitialCost must be greater than or equal to zero.");
+            throw new DomainException(DomainErrorCodes.ValidationError, "Quantity must be greater than zero.");
         }
 
-        if (string.IsNullOrWhiteSpace(reason))
+        if (ValuedQty <= 0m)
         {
-            throw new DomainException(DomainErrorCodes.ValidationError, "Reason is required.");
+            return null;
         }
 
-        if (string.IsNullOrWhiteSpace(initializedBy))
+        var taken = Math.Min(qty, ValuedQty);
+        var value = taken >= ValuedQty ? ValueEur : Money(taken * ValueEur / ValuedQty);
+        return Change(itemId, kind, -taken, -value, document, businessDate);
+    }
+
+    /// <summary>Markdown of the valued stock to a lower unit price (Revaluation).</summary>
+    public StockValueChanged Revalue(int itemId, decimal newUnitPrice, StockValueDocument document, DateTime? businessDate = null)
+    {
+        if (newUnitPrice < 0m)
         {
-            throw new DomainException(DomainErrorCodes.ValidationError, "InitializedBy is required.");
+            throw new DomainException(DomainErrorCodes.ValidationError, "New unit price must be greater than or equal to zero.");
         }
 
-        if (commandId == Guid.Empty)
+        if (ValuedQty <= 0m)
         {
-            throw new DomainException(DomainErrorCodes.ValidationError, "CommandId is required.");
+            throw new DomainException(DomainErrorCodes.ValidationError, "There is no valued stock to revalue.");
         }
 
-        var eventTimestamp = EnsureUtc(timestampUtc ?? DateTime.UtcNow);
-
-        return new ValuationInitialized
+        var target = Money(newUnitPrice * ValuedQty);
+        if (target >= ValueEur)
         {
-            InventoryItemId = itemId,
-            ItemId = ValuationItemId.ToValuationItemId(itemId),
-            InitialUnitCost = Normalize(initialCost),
-            Reason = reason.Trim(),
-            Source = "MANUAL",
-            InitializedBy = initializedBy.Trim(),
-            InitializedAt = eventTimestamp,
-            Timestamp = eventTimestamp,
-            CommandId = commandId
+            throw new DomainException(DomainErrorCodes.ValidationError, "Revaluation must reduce the stock value.");
+        }
+
+        return Change(itemId, StockValueKinds.Revaluation, 0m, target - ValueEur, document, businessDate);
+    }
+
+    /// <summary>Builds a validated event; throws when it would make the quantity or the value negative.</summary>
+    public StockValueChanged Change(int itemId, string kind, decimal qtyDelta, decimal valueDeltaEur, StockValueDocument document, DateTime? businessDate = null)
+    {
+        StreamIdFor(itemId);
+        if (!StockValueKinds.All.Contains(kind))
+        {
+            throw new DomainException(DomainErrorCodes.ValidationError, $"Unknown stock value kind '{kind}'.");
+        }
+
+        var value = Money(valueDeltaEur);
+        if (ValuedQty + qtyDelta < 0m)
+        {
+            throw new DomainException(DomainErrorCodes.ValidationError, "Valued quantity cannot become negative.");
+        }
+
+        if (ValueEur + value < 0m)
+        {
+            throw new DomainException(DomainErrorCodes.ValidationError, "Stock value cannot become negative.");
+        }
+
+        var timestamp = EnsureUtc(document.TimestampUtc ?? DateTime.UtcNow);
+        return new StockValueChanged
+        {
+            ItemId = itemId,
+            Kind = kind,
+            QtyDelta = qtyDelta,
+            ValueDeltaEur = value,
+            DocumentType = document.Type,
+            DocumentId = document.Id,
+            DocumentNumber = document.Number,
+            StockAccountProfileId = document.StockAccountProfileId,
+            BusinessDate = businessDate ?? StockBusinessDate.From(timestamp),
+            Reason = document.Reason,
+            Timestamp = timestamp
         };
     }
 
-    public CostAdjusted AdjustCost(
-        decimal newCost,
-        string reason,
-        string adjustedBy,
-        string? approvedBy,
-        Guid commandId,
-        DateTime? timestampUtc = null)
+    public void Apply(StockValueChanged evt)
     {
-        EnsureInitialized();
-
-        if (newCost < 0m)
+        ItemId = evt.ItemId;
+        Id = StreamIdFor(ItemId);
+        ValuedQty += evt.QtyDelta;
+        ValueEur += evt.ValueDeltaEur;
+        if (ValuedQty > 0m)
         {
-            throw new DomainException(DomainErrorCodes.ValidationError, "NewCost must be greater than or equal to zero.");
+            LastKnownUnitCost = Normalize(ValueEur / ValuedQty);
         }
 
-        if (string.IsNullOrWhiteSpace(reason))
-        {
-            throw new DomainException(DomainErrorCodes.ValidationError, "Reason is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(adjustedBy))
-        {
-            throw new DomainException(DomainErrorCodes.ValidationError, "AdjustedBy is required.");
-        }
-
-        if (commandId == Guid.Empty)
-        {
-            throw new DomainException(DomainErrorCodes.ValidationError, "CommandId is required.");
-        }
-
-        var eventTimestamp = EnsureUtc(timestampUtc ?? DateTime.UtcNow);
-
-        return new CostAdjusted
-        {
-            InventoryItemId = ItemId,
-            ItemId = ValuationItemId.ToValuationItemId(ItemId),
-            OldUnitCost = CurrentCost,
-            NewUnitCost = Normalize(newCost),
-            Reason = reason.Trim(),
-            AdjustedBy = adjustedBy.Trim(),
-            ApprovedBy = string.IsNullOrWhiteSpace(approvedBy) ? null : approvedBy.Trim(),
-            AdjustedAt = eventTimestamp,
-            Timestamp = eventTimestamp,
-            CommandId = commandId
-        };
+        IsInitialized = true;
+        Version++;
     }
 
-    public LandedCostApplied ApplyLandedCost(
-        decimal freightCost,
-        decimal dutyCost,
-        decimal insuranceCost,
-        Guid shipmentId,
-        string appliedBy,
-        Guid commandId,
-        DateTime? timestampUtc = null)
-    {
-        EnsureInitialized();
-
-        if (freightCost < 0m || dutyCost < 0m || insuranceCost < 0m)
-        {
-            throw new DomainException(DomainErrorCodes.ValidationError, "Costs must be greater than or equal to zero.");
-        }
-
-        if (string.IsNullOrWhiteSpace(appliedBy))
-        {
-            throw new DomainException(DomainErrorCodes.ValidationError, "AppliedBy is required.");
-        }
-
-        if (commandId == Guid.Empty)
-        {
-            throw new DomainException(DomainErrorCodes.ValidationError, "CommandId is required.");
-        }
-
-        var eventTimestamp = EnsureUtc(timestampUtc ?? DateTime.UtcNow);
-        var landed = Normalize(freightCost + dutyCost + insuranceCost);
-
-        return new LandedCostApplied
-        {
-            ItemId = ItemId,
-            FreightCost = Normalize(freightCost),
-            DutyCost = Normalize(dutyCost),
-            InsuranceCost = Normalize(insuranceCost),
-            TotalLandedCost = landed,
-            ShipmentId = shipmentId,
-            AppliedBy = appliedBy.Trim(),
-            Timestamp = eventTimestamp,
-            CommandId = commandId
-        };
-    }
-
-    public WrittenDown WriteDown(
-        decimal newValue,
-        string reason,
-        string? approvedBy,
-        Guid commandId,
-        DateTime? timestampUtc = null)
-    {
-        EnsureInitialized();
-
-        if (newValue < 0m)
-        {
-            throw new DomainException(DomainErrorCodes.ValidationError, "NewValue must be greater than or equal to zero.");
-        }
-
-        if (newValue >= CurrentCost)
-        {
-            throw new DomainException(DomainErrorCodes.ValidationError, "Write-down must reduce value.");
-        }
-
-        if (string.IsNullOrWhiteSpace(reason))
-        {
-            throw new DomainException(DomainErrorCodes.ValidationError, "Reason is required.");
-        }
-
-        if (commandId == Guid.Empty)
-        {
-            throw new DomainException(DomainErrorCodes.ValidationError, "CommandId is required.");
-        }
-
-        var delta = Normalize(CurrentCost - newValue);
-        if (delta > 1000m && string.IsNullOrWhiteSpace(approvedBy))
-        {
-            throw new DomainException(DomainErrorCodes.ValidationError, "Approval required for write-down > $1000.");
-        }
-
-        var eventTimestamp = EnsureUtc(timestampUtc ?? DateTime.UtcNow);
-
-        return new WrittenDown
-        {
-            ItemId = ItemId,
-            OldValue = CurrentCost,
-            NewValue = Normalize(newValue),
-            Reason = reason.Trim(),
-            ApprovedBy = string.IsNullOrWhiteSpace(approvedBy) ? string.Empty : approvedBy.Trim(),
-            Timestamp = eventTimestamp,
-            CommandId = commandId
-        };
-    }
-
+    // Legacy events stay readable; they carry no value and the code no longer creates them.
     public void Apply(ValuationInitialized evt)
     {
         ItemId = evt.InventoryItemId > 0
             ? evt.InventoryItemId
             : ValuationItemId.ToInventoryItemId(evt.ItemId);
         Id = StreamIdFor(ItemId);
-        CurrentCost = Normalize(evt.InitialUnitCost);
+        LastKnownUnitCost = Normalize(evt.InitialUnitCost);
         IsInitialized = true;
         Version++;
     }
 
     public void Apply(CostAdjusted evt)
     {
-        EnsureEventItemId(evt.InventoryItemId, evt.ItemId);
-        CurrentCost = Normalize(evt.NewUnitCost);
+        LastKnownUnitCost = Normalize(evt.NewUnitCost);
         Version++;
     }
 
     public void Apply(LandedCostApplied evt)
     {
-        EnsureEventItemId(evt.ItemId, Guid.Empty);
-        CurrentCost = Normalize(CurrentCost + evt.TotalLandedCost);
+        LastKnownUnitCost = Normalize(LastKnownUnitCost + evt.TotalLandedCost);
         Version++;
     }
 
     public void Apply(WrittenDown evt)
     {
-        EnsureEventItemId(evt.ItemId, Guid.Empty);
-        CurrentCost = Normalize(evt.NewValue);
+        LastKnownUnitCost = Normalize(evt.NewValue);
         Version++;
     }
 
-    private void EnsureInitialized()
-    {
-        if (!IsInitialized)
-        {
-            throw new DomainException(DomainErrorCodes.ValidationError, "Valuation is not initialized.");
-        }
-    }
-
-    private void EnsureEventItemId(int eventItemId, Guid legacyItemId)
-    {
-        var resolvedItemId = eventItemId;
-        if (resolvedItemId <= 0 && legacyItemId != Guid.Empty)
-        {
-            resolvedItemId = ValuationItemId.ToInventoryItemId(legacyItemId);
-        }
-
-        if (resolvedItemId <= 0 || resolvedItemId != ItemId)
-        {
-            throw new DomainException(DomainErrorCodes.ValidationError, "Event item id does not match aggregate item id.");
-        }
-    }
-
     private static decimal Normalize(decimal value)
-    {
-        return decimal.Round(value, Scale, MidpointRounding.AwayFromZero);
-    }
+        => decimal.Round(value, Scale, MidpointRounding.AwayFromZero);
 
     private static DateTime EnsureUtc(DateTime value)
+        => value.Kind == DateTimeKind.Utc ? value : DateTime.SpecifyKind(value, DateTimeKind.Utc);
+}
+
+/// <summary>Business date of a value event: the calendar date in Europe/Vilnius.</summary>
+public static class StockBusinessDate
+{
+    private static readonly TimeZoneInfo Vilnius = Resolve();
+
+    public static DateTime From(DateTime utc)
     {
-        return value.Kind == DateTimeKind.Utc
-            ? value
-            : DateTime.SpecifyKind(value, DateTimeKind.Utc);
+        var u = utc.Kind == DateTimeKind.Utc ? utc : DateTime.SpecifyKind(utc, DateTimeKind.Utc);
+        return DateTime.SpecifyKind(TimeZoneInfo.ConvertTimeFromUtc(u, Vilnius).Date, DateTimeKind.Unspecified);
+    }
+
+    private static TimeZoneInfo Resolve()
+    {
+        foreach (var id in new[] { "Europe/Vilnius", "FLE Standard Time" })
+        {
+            try { return TimeZoneInfo.FindSystemTimeZoneById(id); }
+            catch (TimeZoneNotFoundException) { }
+            catch (InvalidTimeZoneException) { }
+        }
+
+        return TimeZoneInfo.Utc;
     }
 }

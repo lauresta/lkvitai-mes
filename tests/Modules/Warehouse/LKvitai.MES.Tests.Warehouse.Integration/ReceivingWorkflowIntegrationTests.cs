@@ -4,6 +4,7 @@ using FluentAssertions;
 using LKvitai.MES.Modules.Warehouse.Api.Controllers;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Application.Commands;
+using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.BuildingBlocks.SharedKernel;
 using LKvitai.MES.Contracts.Events;
@@ -186,12 +187,12 @@ public partial class ReceivingWorkflowIntegrationTests : IAsyncLifetime
 
         receiveResult.Should().BeOfType<OkObjectResult>();
 
-        // totalAdditionalCost = service line's expected value (1 * 50 = 50), folded entirely
-        // onto the sole Stock line since it's the only line in the denominator:
-        // landedUnitCost = 10 (invoice) + 50 / 10 (qty) = 15.
-        var initializeCommand = mediator.LastCommand.Should().BeOfType<InitializeValuationCommand>().Subject;
-        initializeCommand.ItemId.Should().Be(1);
-        initializeCommand.InitialCost.Should().Be(15m);
+        // The receipt is valued at quantity x price (10 x 10 = 100 EUR) in the same transaction; additional
+        // costs are folded in by the purchase document true-up (W2), not at receipt time.
+        await using var query = _store!.QuerySession();
+        var valuation = await query.Events.AggregateStreamAsync<ItemValuation>(ItemValuation.StreamIdFor(1));
+        valuation!.ValuedQty.Should().Be(10m);
+        valuation.ValueEur.Should().Be(100m);
     }
 
     [SkippableFact]

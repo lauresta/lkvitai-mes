@@ -54,20 +54,10 @@ public sealed class ValuationClient
             cancellationToken);
     }
 
-    public Task AdjustCostAsync(
-        AdjustValuationCostRequestDto request,
+    public Task RevaluationAsync(
+        RevaluationRequestDto request,
         CancellationToken cancellationToken = default)
-        => PostAsync("/api/warehouse/v1/valuation/adjust-cost", request, cancellationToken);
-
-    public Task ApplyLandedCostAsync(
-        ApplyLandedCostRequestDto request,
-        CancellationToken cancellationToken = default)
-        => PostAsync("/api/warehouse/v1/valuation/apply-landed-cost", request, cancellationToken);
-
-    public Task WriteDownAsync(
-        WriteDownRequestDto request,
-        CancellationToken cancellationToken = default)
-        => PostAsync("/api/warehouse/v1/valuation/write-down", request, cancellationToken);
+        => PostAsync("/api/warehouse/v1/valuation/revaluation", request, cancellationToken);
 
     private Task<T> GetAsync<T>(string relativeUrl, CancellationToken cancellationToken)
         => SendAndReadAsync<T>(() =>

@@ -819,48 +819,24 @@ public partial class ProjectionRebuildService : IProjectionRebuildService, IOnHa
             .OrderBy(e => e.Sequence)
             .ToListAsync(ct);
 
-        var unitCostByItemId = new Dictionary<int, decimal>();
-        var valuationUpdatedAtByItemId = new Dictionary<int, DateTime>();
+        // OnHandValue is built from StockValueChanged only (valued quantity and value in EUR).
+        var state = new Dictionary<int, (decimal Qty, decimal Value, decimal LastUnitCost, DateTime UpdatedAt)>();
         var processedEvents = 0;
-
         foreach (var rawEvent in allEvents)
         {
-            switch (rawEvent.Data)
+            if (rawEvent.Data is not StockValueChanged changed || changed.ItemId <= 0)
             {
-                case ValuationInitialized initialized when Domain.Aggregates.ValuationItemId.TryToInventoryItemId(initialized.ItemId, out var initializedItemId):
-                    unitCostByItemId[initializedItemId] = decimal.Round(initialized.InitialUnitCost, 4, MidpointRounding.AwayFromZero);
-                    valuationUpdatedAtByItemId[initializedItemId] = DateTime.SpecifyKind(initialized.Timestamp, DateTimeKind.Utc);
-                    processedEvents++;
-                    break;
-                case CostAdjusted adjusted when Domain.Aggregates.ValuationItemId.TryToInventoryItemId(adjusted.ItemId, out var adjustedItemId):
-                    unitCostByItemId[adjustedItemId] = decimal.Round(adjusted.NewUnitCost, 4, MidpointRounding.AwayFromZero);
-                    valuationUpdatedAtByItemId[adjustedItemId] = DateTime.SpecifyKind(adjusted.Timestamp, DateTimeKind.Utc);
-                    processedEvents++;
-                    break;
+                continue;
             }
-        }
 
-        var availableRows = await querySession.Query<AvailableStockView>()
-            .ToListAsync(ct);
-        var stockUpdatedAtByItemId = availableRows
-            .Where(x => x.ItemId.HasValue)
-            .GroupBy(x => x.ItemId!.Value)
-            .ToDictionary(g => g.Key, g => g.Max(x => DateTime.SpecifyKind(x.LastUpdated, DateTimeKind.Utc)));
-        var stockUpdatedAtBySku = availableRows
-            .Where(x => !string.IsNullOrWhiteSpace(x.SKU))
-            .GroupBy(x => x.SKU, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(
-                g => g.Key,
-                g => g.Max(x => DateTime.SpecifyKind(x.LastUpdated, DateTimeKind.Utc)),
-                StringComparer.OrdinalIgnoreCase);
-
-        var locations = new List<Domain.Entities.Location>();
-        await using (var locationsCmd = writeConnection.CreateCommand())
-        {
-            locationsCmd.CommandText = "SELECT \"Code\", \"IsVirtual\" FROM public.locations";
-            await using var locationsReader = await locationsCmd.ExecuteReaderAsync(ct);
-            while (await locationsReader.ReadAsync(ct))
-                locations.Add(new Domain.Entities.Location { Code = locationsReader.GetString(0), IsVirtual = locationsReader.GetBoolean(1) });
+            state.TryGetValue(changed.ItemId, out var current);
+            var qty = current.Qty + changed.QtyDelta;
+            var value = current.Value + changed.ValueDeltaEur;
+            var lastUnitCost = qty > 0m
+                ? decimal.Round(value / qty, 4, MidpointRounding.AwayFromZero)
+                : current.LastUnitCost;
+            state[changed.ItemId] = (qty, value, lastUnitCost, DateTime.SpecifyKind(changed.Timestamp, DateTimeKind.Utc));
+            processedEvents++;
         }
 
         await using var itemsCmd = writeConnection.CreateCommand();
@@ -886,22 +862,12 @@ public partial class ProjectionRebuildService : IProjectionRebuildService, IOnHa
         var inserted = 0;
         foreach (var item in rows)
         {
-            if (!unitCostByItemId.TryGetValue(item.ItemId, out var unitCost))
+            if (!state.TryGetValue(item.ItemId, out var valued))
             {
                 continue;
             }
 
-            var qty = Pricing.StockEventQuantity.Calculate(allEvents.Select(x => x.Data), item.Sku, locations);
-
-            var totalValue = decimal.Round(qty * unitCost, 4, MidpointRounding.AwayFromZero);
             var id = Domain.Aggregates.ValuationItemId.ToValuationItemId(item.ItemId);
-            var updatedAt = ResolveUpdatedAt(
-                item.ItemId,
-                item.Sku,
-                valuationUpdatedAtByItemId,
-                stockUpdatedAtByItemId,
-                stockUpdatedAtBySku);
-
             await using var insertCmd = writeConnection.CreateCommand();
             insertCmd.CommandText = $@"
                 INSERT INTO {shadowTable}
@@ -920,50 +886,20 @@ public partial class ProjectionRebuildService : IProjectionRebuildService, IOnHa
             insertCmd.Parameters.AddWithValue("itemName", item.ItemName);
             insertCmd.Parameters.AddWithValue("categoryId", item.CategoryId.HasValue ? item.CategoryId.Value : DBNull.Value);
             insertCmd.Parameters.AddWithValue("categoryName", item.CategoryName ?? (object)DBNull.Value);
-            insertCmd.Parameters.AddWithValue("qty", qty);
-            insertCmd.Parameters.AddWithValue("unitCost", unitCost);
-            insertCmd.Parameters.AddWithValue("totalValue", totalValue);
-            insertCmd.Parameters.AddWithValue("lastUpdated", updatedAt);
+            insertCmd.Parameters.AddWithValue("qty", valued.Qty);
+            insertCmd.Parameters.AddWithValue("unitCost", valued.LastUnitCost);
+            insertCmd.Parameters.AddWithValue("totalValue", valued.Value);
+            insertCmd.Parameters.AddWithValue("lastUpdated", valued.UpdatedAt);
             await insertCmd.ExecuteNonQueryAsync(ct);
             inserted++;
         }
 
         _logger.LogInformation(
-            "OnHandValue: replayed {EventCount} valuation events and inserted {RecordCount} rows",
+            "OnHandValue: replayed {EventCount} value events and inserted {RecordCount} rows",
             processedEvents,
             inserted);
 
         return processedEvents;
-    }
-
-    private static DateTime ResolveUpdatedAt(
-        int itemId,
-        string sku,
-        IReadOnlyDictionary<int, DateTime> valuationUpdatedAtByItemId,
-        IReadOnlyDictionary<int, DateTime> stockUpdatedAtByItemId,
-        IReadOnlyDictionary<string, DateTime> stockUpdatedAtBySku)
-    {
-        valuationUpdatedAtByItemId.TryGetValue(itemId, out var valuationUpdatedAt);
-        stockUpdatedAtByItemId.TryGetValue(itemId, out var stockUpdatedAtByItem);
-        stockUpdatedAtBySku.TryGetValue(sku, out var stockUpdatedAtBySkuValue);
-
-        var updatedAt = valuationUpdatedAt;
-        if (stockUpdatedAtByItem > updatedAt)
-        {
-            updatedAt = stockUpdatedAtByItem;
-        }
-
-        if (stockUpdatedAtBySkuValue > updatedAt)
-        {
-            updatedAt = stockUpdatedAtBySkuValue;
-        }
-
-        if (updatedAt == default)
-        {
-            updatedAt = DateTime.UnixEpoch;
-        }
-
-        return DateTime.SpecifyKind(updatedAt, DateTimeKind.Utc);
     }
 
     // ═══════════════════════════════════════════════════════════════════

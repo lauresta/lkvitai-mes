@@ -1,4 +1,5 @@
 using FluentAssertions;
+using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 using Xunit;
 
@@ -7,45 +8,23 @@ namespace LKvitai.MES.Tests.Warehouse.Integration;
 public class ValuationLifecycleIntegrationTests
 {
     [Fact]
-    public void ItemValuation_Lifecycle_ShouldApplyAllSprint7EventsInOrder()
+    public void ItemValuation_Lifecycle_ShouldApplyValueEventsInOrder()
     {
+        var doc = new StockValueDocument("Test", "1", "T-1", "lifecycle");
         var aggregate = new ItemValuation();
 
-        var initialized = aggregate.Initialize(
-            itemId: 120,
-            initialCost: 10m,
-            reason: "Initial purchase",
-            initializedBy: "accountant@example.com",
-            commandId: Guid.NewGuid());
-        aggregate.Apply(initialized);
+        aggregate.Apply(aggregate.Inflow(120, StockValueKinds.Receipt, 10m, 100m, doc));
+        aggregate.Apply(aggregate.Inflow(120, StockValueKinds.Receipt, 10m, 120m, doc));
+        aggregate.ValueEur.Should().Be(220m);
+        aggregate.UnitCost.Should().Be(11m);
 
-        var adjusted = aggregate.AdjustCost(
-            newCost: 12m,
-            reason: "Supplier increase",
-            adjustedBy: "accountant@example.com",
-            approvedBy: "manager@example.com",
-            commandId: Guid.NewGuid());
-        aggregate.Apply(adjusted);
+        aggregate.Apply(aggregate.Outflow(120, StockValueKinds.Issue, 5m, doc)!);
+        aggregate.ValueEur.Should().Be(165m);
 
-        var landed = aggregate.ApplyLandedCost(
-            freightCost: 0.25m,
-            dutyCost: 0.1m,
-            insuranceCost: 0.05m,
-            shipmentId: Guid.NewGuid(),
-            appliedBy: "accountant@example.com",
-            commandId: Guid.NewGuid());
-        aggregate.Apply(landed);
-
-        var writeDown = aggregate.WriteDown(
-            newValue: 11m,
-            reason: "Damage adjustment",
-            approvedBy: "manager@example.com",
-            commandId: Guid.NewGuid());
-        aggregate.Apply(writeDown);
-
-        aggregate.ItemId.Should().Be(120);
-        aggregate.IsInitialized.Should().BeTrue();
-        aggregate.CurrentCost.Should().Be(11m);
+        aggregate.Apply(aggregate.Revalue(120, 5m, doc));
+        aggregate.ValueEur.Should().Be(75m);
+        aggregate.UnitCost.Should().Be(5m);
         aggregate.Version.Should().Be(4);
+        aggregate.ItemId.Should().Be(120);
     }
 }

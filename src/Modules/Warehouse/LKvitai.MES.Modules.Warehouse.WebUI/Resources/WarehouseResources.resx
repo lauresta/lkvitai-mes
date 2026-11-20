@@ -624,7 +624,7 @@
   <data name="Common.Volume" xml:space="preserve"><value>Volume</value></data>
   <data name="Common.Warehouse" xml:space="preserve"><value>Warehouse</value></data>
   <data name="Common.Weight" xml:space="preserve"><value>Weight</value></data>
-  <data name="Common.WriteDown" xml:space="preserve"><value>Write Down</value></data>
+  <data name="Common.WriteDown" xml:space="preserve"><value>Revaluation</value></data>
   <data name="ComplianceDashboard.ComplianceDashboard" xml:space="preserve"><value>Compliance Dashboard</value></data>
   <data name="ComplianceDashboard.Cron" xml:space="preserve"><value>Cron</value></data>
   <data name="ComplianceDashboard.CronUTC" xml:space="preserve"><value>Cron (UTC)</value></data>
@@ -1138,8 +1138,8 @@
   <data name="Valuation.Dashboard.RegisterOnlyNote" xml:space="preserve"><value>Stock without a valuation record is excluded.</value></data>
   <data name="Valuation.Dashboard.TotalOnHandValue" xml:space="preserve"><value>Valued stock total</value></data>
   <data name="Valuation.Dashboard.ValuationDashboard" xml:space="preserve"><value>Valuation Dashboard</value></data>
-  <data name="Valuation.WriteDown.NewValue" xml:space="preserve"><value>New Value</value></data>
-  <data name="Valuation.WriteDown.WriteDownInventoryValue" xml:space="preserve"><value>Write Down Inventory Value</value></data>
+  <data name="Valuation.WriteDown.NewValue" xml:space="preserve"><value>New unit price (EUR)</value></data>
+  <data name="Valuation.WriteDown.WriteDownInventoryValue" xml:space="preserve"><value>Revaluation of stock</value></data>
   <data name="Visualization.Warehouse3D.2D" xml:space="preserve"><value>2D</value></data>
   <data name="Visualization.Warehouse3D.3D" xml:space="preserve"><value>3D</value></data>
   <data name="Visualization.Warehouse3D.3DMouseControls" xml:space="preserve"><value>3D mouse controls</value></data>
