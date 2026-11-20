@@ -114,7 +114,7 @@ public sealed class OpeningBalancesController : ControllerBase
     public async Task<IActionResult> PreviewAsync(IFormFile? file, CancellationToken ct)
     {
         var bytes = await ReadAsync(file, ct);
-        return bytes is null ? BadRequest(new { detail = "A CSV file is required." }) : Ok(await BuildPreviewAsync(bytes, ct));
+        return bytes is null ? Problem(detail: "A CSV file is required.", statusCode: StatusCodes.Status400BadRequest) : Ok(await BuildPreviewAsync(bytes, ct));
     }
 
     [HttpPost("confirm")]
@@ -124,7 +124,7 @@ public sealed class OpeningBalancesController : ControllerBase
         var bytes = await ReadAsync(file, ct);
         if (bytes is null)
         {
-            return BadRequest(new { detail = "A CSV file is required." });
+            return Problem(detail: "A CSV file is required.", statusCode: StatusCodes.Status400BadRequest);
         }
 
         var preview = await BuildPreviewAsync(bytes, ct);
@@ -136,12 +136,12 @@ public sealed class OpeningBalancesController : ControllerBase
 
         if (preview.FileError is not null || preview.ErrorRows > 0 || preview.Rows.Count == 0)
         {
-            return BadRequest(new { detail = "The file has validation errors; nothing was loaded." });
+            return Problem(detail: "The file has validation errors; nothing was loaded.", statusCode: StatusCodes.Status400BadRequest);
         }
 
         if (await LKvitai.MES.Modules.Warehouse.Infrastructure.MonthEnd.AccountingPeriods.CheckAsync(_db, ct, DateOnly.FromDateTime(OpeningDate)) is { } periodClosed)
         {
-            return BadRequest(new { detail = periodClosed.Text, code = periodClosed.Code });
+            return Problem(detail: periodClosed.Text, statusCode: StatusCodes.Status400BadRequest, title: periodClosed.Code);
         }
 
         var lines = await ResolveLinesAsync(preview, ct);

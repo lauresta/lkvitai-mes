@@ -45,6 +45,7 @@ public sealed class LbFxRateProvider : IFxRateProvider
     private readonly ILogger<LbFxRateProvider> _logger;
     private readonly Func<DateOnly> _today;
 
+    [Microsoft.Extensions.DependencyInjection.ActivatorUtilitiesConstructor]
     public LbFxRateProvider(HttpClient http, WarehouseDbContext db, ILogger<LbFxRateProvider> logger)
         : this(http, db, logger, () => DateOnly.FromDateTime(Domain.Aggregates.StockBusinessDate.From(DateTime.UtcNow)))
     {

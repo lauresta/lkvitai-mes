@@ -26,7 +26,7 @@ public sealed class IntrastatController : ControllerBase
     public async Task<IActionResult> ArrivalsAsync([FromQuery] int year, [FromQuery] int month, CancellationToken ct)
     {
         if (year is < 2000 or > 2100 || month is < 1 or > 12)
-            return BadRequest(new { detail = "year and month are required." });
+            return Problem(detail: "year and month are required.", statusCode: StatusCodes.Status400BadRequest);
         var report = await BuildAsync(year, month, ct);
         return Ok(report);
     }
@@ -35,7 +35,7 @@ public sealed class IntrastatController : ControllerBase
     public async Task<IActionResult> ArrivalsCsvAsync([FromQuery] int year, [FromQuery] int month, CancellationToken ct)
     {
         if (year is < 2000 or > 2100 || month is < 1 or > 12)
-            return BadRequest(new { detail = "year and month are required." });
+            return Problem(detail: "year and month are required.", statusCode: StatusCodes.Status400BadRequest);
         var report = await BuildAsync(year, month, ct);
         var bytes = new System.Text.UTF8Encoding(true).GetPreamble()
             .Concat(System.Text.Encoding.UTF8.GetBytes(IntrastatReport.ToCsv(report.Rows))).ToArray();
