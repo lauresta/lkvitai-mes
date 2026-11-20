@@ -1955,4 +1955,31 @@
   <data name="OpeningBalances.Err.DuplicateRow" xml:space="preserve"><value>Pasikartoja prekė ir vieta</value></data>
   <data name="OpeningBalances.Err.MissingSku" xml:space="preserve"><value>Nėra SKU</value></data>
   <data name="OpeningBalances.Err.MissingLocation" xml:space="preserve"><value>Nėra vietos</value></data>
+  <data name="Nav.Intrastat" xml:space="preserve"><value>Intrastat gabenimai</value></data>
+  <data name="Intrastat.Title" xml:space="preserve"><value>Intrastat: įvežimas iš ES</value></data>
+  <data name="Intrastat.Intro" xml:space="preserve"><value>Mėnesio įsigijimai iš ES pagal sąskaitos datą, sugrupuoti pagal prekės kodą ir išsiuntimo šalį. Kiekis nurodytas pagrindiniu prekės matavimo vienetu.</value></data>
+  <data name="Intrastat.Month" xml:space="preserve"><value>Mėnuo</value></data>
+  <data name="Intrastat.Show" xml:space="preserve"><value>Rodyti</value></data>
+  <data name="Intrastat.DownloadCsv" xml:space="preserve"><value>Atsisiųsti CSV</value></data>
+  <data name="Intrastat.Warnings" xml:space="preserve"><value>Praleistos eilutės: {0}. Trūksta prekės kodo, išsiuntimo šalies arba vertės.</value></data>
+  <data name="Intrastat.Empty" xml:space="preserve"><value>Šį mėnesį ES įsigijimų nėra.</value></data>
+  <data name="Intrastat.CommodityCode" xml:space="preserve"><value>Prekės kodas</value></data>
+  <data name="Intrastat.Country" xml:space="preserve"><value>Išsiuntimo šalis</value></data>
+  <data name="Intrastat.ValueEur" xml:space="preserve"><value>Vertė, EUR</value></data>
+  <data name="Intrastat.NetMass" xml:space="preserve"><value>Neto masė, kg</value></data>
+  <data name="Intrastat.Quantity" xml:space="preserve"><value>Kiekis</value></data>
+  <data name="Intrastat.Totals" xml:space="preserve"><value>Iš viso</value></data>
+  <data name="Intrastat.Header" xml:space="preserve"><value>Intrastat (pobūdis / sąlygos / transportas / šalis)</value></data>
+  <data name="Intrastat.DeliveryTerms" xml:space="preserve"><value>Pristatymo sąlygos</value></data>
+  <data name="Intrastat.TransportMode" xml:space="preserve"><value>Transporto rūšis</value></data>
+  <data name="Intrastat.DispatchCountry" xml:space="preserve"><value>Išsiuntimo šalis</value></data>
+  <data name="Intrastat.TransactionNature" xml:space="preserve"><value>Sandorio pobūdis</value></data>
+  <data name="Intrastat.Item.CommodityCode" xml:space="preserve"><value>Prekės kodas (KN)</value></data>
+  <data name="Intrastat.Item.CommodityCodeHelp" xml:space="preserve"><value>8 skaitmenys; reikalingas pirkimams iš ES</value></data>
+  <data name="Intrastat.Item.NetWeightKg" xml:space="preserve"><value>Neto masė vienetui, kg</value></data>
+  <data name="Intrastat.Item.OriginCountry" xml:space="preserve"><value>Kilmės šalis (ISO, 2 raidės)</value></data>
+  <data name="Intrastat.Item.CommodityCodeInvalid" xml:space="preserve"><value>Prekės kodą turi sudaryti 8 skaitmenys.</value></data>
+  <data name="Intrastat.Item.NetWeightInvalid" xml:space="preserve"><value>Neto masė turi būti didesnė už nulį.</value></data>
+  <data name="Purchase.Problem.IntrastatHeaderRequired" xml:space="preserve"><value>ES įsigijimui privalomi Intrastat laukai (pristatymo sąlygos, transporto rūšis, išsiuntimo šalis, sandorio pobūdis).</value></data>
+  <data name="Purchase.Problem.IntrastatItemDataMissing" xml:space="preserve"><value>Kiekviena ES įsigijimo prekė turi turėti 8 skaitmenų prekės kodą ir neto masę.</value></data>
 </root>

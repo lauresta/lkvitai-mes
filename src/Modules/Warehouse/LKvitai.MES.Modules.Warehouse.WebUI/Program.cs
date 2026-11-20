@@ -58,6 +58,7 @@ builder.Services.AddScoped<ReceivingClient>();
 builder.Services.AddScoped<TransfersClient>();
 builder.Services.AddScoped<ValuationClient>();
 builder.Services.AddScoped<OpeningBalancesClient>();
+builder.Services.AddScoped<IntrastatClient>();
 builder.Services.AddScoped<AgnumClient>();
 builder.Services.AddScoped<AgnumAccountingClient>();
 builder.Services.AddHttpClient("WarehouseUserAdminApi", (sp, client)=>
