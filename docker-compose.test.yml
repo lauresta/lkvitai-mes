@@ -40,6 +40,7 @@ services:
       Agnum__PriceSync__Enabled: "${Agnum__PriceSync__Enabled:-false}"
       Agnum__Warehouses__sandelys__ApiKey: "${Agnum__Warehouses__sandelys__ApiKey}"
       Agnum__Warehouses__pardavimai__ApiKey: "${Agnum__Warehouses__pardavimai__ApiKey}"
+      Agnum__Api__ReferenceApiKey: "${Agnum__Api__ReferenceApiKey:-${Agnum__Warehouses__sandelys__ApiKey}}"
     volumes:
       - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
       - ${CLIP_MODEL_DIR:-/opt/lkvitai-mes/models}:/models:ro
