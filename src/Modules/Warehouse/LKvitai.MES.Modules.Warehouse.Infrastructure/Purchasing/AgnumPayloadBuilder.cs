@@ -10,7 +10,8 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Purchasing;
 public sealed record PostingPayloadInput(
     Guid Key, int Revision, string DocumentNumber, DateOnly DocumentDate, long ClientId, long SndId, long SchemeId,
     string Currency, decimal UnitsPerEur, decimal Net, decimal Vat, string? VatCode,
-    string StockAccount, IReadOnlyList<(string Account, decimal Amount)> Expenses, int PaymentTermDays = 0);
+    string StockAccount, IReadOnlyList<(string Account, decimal Amount)> Expenses, int PaymentTermDays = 0,
+    AgnumIntrastat? Intrastat = null, string Kind = "invoice", string? RefDocNo = null, DateOnly? RefDocDate = null);
 
 public sealed record BuiltPayload(string Json, string Hash, AgnumPurchasePostingRequest Request);
 
@@ -39,7 +40,7 @@ public static class AgnumPayloadBuilder
         {
             Key = input.Key.ToString("D"),
             Revision = input.Revision,
-            Kind = "invoice",
+            Kind = input.Kind,
             DocNo = input.DocumentNumber,
             DocDate = input.DocumentDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             ClientId = input.ClientId,
@@ -52,7 +53,10 @@ public static class AgnumPayloadBuilder
             Gross = decimal.Round(input.Net + input.Vat, 2),
             VatCode = input.VatCode ?? string.Empty,
             Postings = postings,
-            PaymentTermDays = input.PaymentTermDays
+            PaymentTermDays = input.PaymentTermDays,
+            Intrastat = input.Intrastat,
+            RefDocNo = string.IsNullOrWhiteSpace(input.RefDocNo) ? null : input.RefDocNo.Trim(),
+            RefDocDate = string.IsNullOrWhiteSpace(input.RefDocNo) || input.RefDocDate is null ? null : input.RefDocDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
         };
 
         var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(request, Json)))).ToLowerInvariant();

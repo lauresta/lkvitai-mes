@@ -89,6 +89,8 @@ public class WarehouseDbContext : DbContext
     public DbSet<AdditionalCostType> AdditionalCostTypes => Set<AdditionalCostType>();
     public DbSet<FxRate> FxRates => Set<FxRate>();
     public DbSet<AdditionalCostDocument> AdditionalCostDocuments => Set<AdditionalCostDocument>();
+    public DbSet<SupplierCreditDocument> SupplierCreditDocuments => Set<SupplierCreditDocument>();
+    public DbSet<SupplierCreditLine> SupplierCreditLines => Set<SupplierCreditLine>();
     public DbSet<AdjustmentReasonCode> AdjustmentReasonCodes => Set<AdjustmentReasonCode>();
     public DbSet<ApprovalRule> ApprovalRules => Set<ApprovalRule>();
     public DbSet<LocalUserAccount> LocalUserAccounts => Set<LocalUserAccount>();
@@ -254,6 +256,9 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.PurchasePrice).HasPrecision(18, 2);
             entity.Property(e => e.ItemType).HasConversion<string>().HasMaxLength(20).IsRequired().HasDefaultValue(ItemType.Stock);
             entity.Property(e => e.CostType).HasMaxLength(50);
+            entity.Property(e => e.CommodityCode).HasMaxLength(8);
+            entity.Property(e => e.NetWeightKg).HasPrecision(18, 4);
+            entity.Property(e => e.OriginCountry).HasMaxLength(2);
             entity.HasIndex(e => e.InternalSKU).IsUnique();
             entity.HasIndex(e => e.CategoryId).HasDatabaseName("idx_items_category_id");
             entity.HasIndex(e => e.BaseUoM);
@@ -1261,6 +1266,10 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.VatTreatment).HasConversion<string>().HasMaxLength(30);
             entity.Property(e => e.AccountingRoute).HasMaxLength(20).HasDefaultValue("Auto").IsRequired();
             entity.Property(e => e.PostingStatus).HasMaxLength(20).HasDefaultValue("NotPosted").IsRequired();
+            entity.Property(e => e.DeliveryTerms).HasMaxLength(3);
+            entity.Property(e => e.TransportMode).HasMaxLength(2);
+            entity.Property(e => e.DispatchCountry).HasMaxLength(2);
+            entity.Property(e => e.TransactionNature).HasMaxLength(2).IsRequired().HasDefaultValue("11");
             entity.Property(e => e.PostedBy).HasMaxLength(200);
             entity.Property(e => e.ManualReason).HasMaxLength(500);
             entity.Property(e => e.PostingSnapshotJson).HasColumnType("jsonb");
@@ -1375,6 +1384,49 @@ public class WarehouseDbContext : DbContext
             entity.HasIndex(e => e.BasisShipmentId);
             entity.HasOne<Supplier>().WithMany().HasForeignKey(e => e.SupplierId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<InboundShipment>().WithMany().HasForeignKey(e => e.BasisShipmentId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<SupplierCreditDocument>(entity =>
+        {
+            entity.ToTable("supplier_credit_documents");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.DocumentKind).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.CreditNumber).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.OriginalInvoiceNumber).HasMaxLength(100);
+            entity.Property(e => e.Currency).HasMaxLength(3).IsRequired();
+            entity.Property(e => e.NetAmount).HasPrecision(18, 2);
+            entity.Property(e => e.VatAmount).HasPrecision(18, 2);
+            entity.Property(e => e.GrossAmount).HasPrecision(18, 2);
+            entity.Property(e => e.NetEur).HasPrecision(18, 2);
+            entity.Property(e => e.VatEur).HasPrecision(18, 2);
+            entity.Property(e => e.GrossEur).HasPrecision(18, 2);
+            entity.Property(e => e.AgnumNetEur).HasPrecision(18, 2);
+            entity.Property(e => e.AgnumVatEur).HasPrecision(18, 2);
+            entity.Property(e => e.AgnumGrossEur).HasPrecision(18, 2);
+            entity.Property(e => e.RateUnitsPerEur).HasPrecision(18, 8);
+            entity.Property(e => e.RateSource).HasMaxLength(30);
+            entity.Property(e => e.VatTreatment).HasConversion<string>().HasMaxLength(30);
+            entity.Property(e => e.AccountingRoute).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Notes).HasMaxLength(500);
+            entity.Property(e => e.PostingStatus).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.PostedBy).HasMaxLength(200);
+            entity.Property(e => e.CreatedBy).HasMaxLength(200).IsRequired();
+            entity.HasIndex(e => e.OriginalShipmentId);
+            entity.HasOne<Supplier>().WithMany().HasForeignKey(e => e.SupplierId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<InboundShipment>().WithMany().HasForeignKey(e => e.OriginalShipmentId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasMany(e => e.Lines).WithOne(l => l.Credit).HasForeignKey(l => l.CreditId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SupplierCreditLine>(entity =>
+        {
+            entity.ToTable("supplier_credit_lines");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ReturnQty).HasPrecision(18, 4);
+            entity.Property(e => e.FromLocation).HasMaxLength(100);
+            entity.Property(e => e.NetAmount).HasPrecision(18, 2);
+            entity.Property(e => e.NetEur).HasPrecision(18, 2);
+            entity.HasOne(e => e.OriginalLine).WithMany().HasForeignKey(e => e.OriginalLineId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<AdjustmentReasonCode>(entity =>

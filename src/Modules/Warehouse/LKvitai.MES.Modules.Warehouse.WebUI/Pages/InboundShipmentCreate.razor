@@ -119,6 +119,33 @@
                     </div>
                 </div>
             }
+            @if (IsEuAcquisition)
+            {
+                <div class="lk-form-field">
+                    <span class="lk-form-field__label">@L["Intrastat.DeliveryTerms"]</span>
+                    <div class="lk-form-field__control">
+                        <MudTextField T="string" Variant="Variant.Text" MaxLength="3" @bind-Value="_deliveryTerms" Placeholder="DAP" />
+                    </div>
+                </div>
+                <div class="lk-form-field">
+                    <span class="lk-form-field__label">@L["Intrastat.TransportMode"]</span>
+                    <div class="lk-form-field__control">
+                        <MudTextField T="string" Variant="Variant.Text" MaxLength="2" @bind-Value="_transportMode" Placeholder="30" />
+                    </div>
+                </div>
+                <div class="lk-form-field">
+                    <span class="lk-form-field__label">@L["Intrastat.DispatchCountry"]</span>
+                    <div class="lk-form-field__control">
+                        <MudTextField T="string" Variant="Variant.Text" MaxLength="2" @bind-Value="_dispatchCountry" Placeholder="PL" />
+                    </div>
+                </div>
+                <div class="lk-form-field">
+                    <span class="lk-form-field__label">@L["Intrastat.TransactionNature"]</span>
+                    <div class="lk-form-field__control">
+                        <MudTextField T="string" Variant="Variant.Text" MaxLength="2" @bind-Value="_transactionNature" />
+                    </div>
+                </div>
+            }
         </div>
 
         <div class="ish-create__section-head">
@@ -277,6 +304,12 @@
     private string? _vatTreatment;
     private string _accountingRoute = "Auto";
     private string? _manualReason;
+    private string? _deliveryTerms;
+    private string? _transportMode;
+    private string? _dispatchCountry;
+    private string? _transactionNature = "11";
+    private string? _defaultVatTreatment;
+    private bool IsEuAcquisition => (_vatTreatment ?? _defaultVatTreatment) == "EuAcquisition";
 
     private IEnumerable<string> CostTypePresets => _costTypes.Select(x => x.Code);
     private string DefaultCostCode => _costTypes.FirstOrDefault(x => x.Code == "Other")?.Code ?? _costTypes.FirstOrDefault()?.Code ?? "Other";
@@ -377,6 +410,11 @@
             _vatTreatment = shipment.Purchase?.VatTreatment;
             _accountingRoute = shipment.Purchase?.AccountingRoute ?? "Auto";
             _manualReason = shipment.Purchase?.ManualReason;
+            _defaultVatTreatment = shipment.Purchase?.DefaultVatTreatment;
+            _deliveryTerms = shipment.Purchase?.DeliveryTerms;
+            _transportMode = shipment.Purchase?.TransportMode;
+            _dispatchCountry = shipment.Purchase?.DispatchCountry;
+            _transactionNature = shipment.Purchase?.TransactionNature ?? "11";
 
             // The detail response carries the supplier's display name but not its Code
             // (needed by the Supplier autocomplete's ToStringFunc), so look the full
@@ -618,7 +656,11 @@
             VatAmount = _vatAmount,
             VatTreatment = _vatTreatment,
             AccountingRoute = _accountingRoute,
-            ManualReason = _accountingRoute == "ManualInAgnum" ? _manualReason : null
+            ManualReason = _accountingRoute == "ManualInAgnum" ? _manualReason : null,
+            DeliveryTerms = IsEuAcquisition ? _deliveryTerms : null,
+            TransportMode = IsEuAcquisition ? _transportMode : null,
+            DispatchCountry = IsEuAcquisition ? _dispatchCountry : null,
+            TransactionNature = IsEuAcquisition ? _transactionNature : null
         };
 
         _isSubmitting = true;

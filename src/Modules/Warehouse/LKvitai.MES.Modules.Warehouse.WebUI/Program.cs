@@ -58,6 +58,8 @@ builder.Services.AddScoped<ReceivingClient>();
 builder.Services.AddScoped<TransfersClient>();
 builder.Services.AddScoped<ValuationClient>();
 builder.Services.AddScoped<OpeningBalancesClient>();
+builder.Services.AddScoped<SupplierCreditsClient>();
+builder.Services.AddScoped<IntrastatClient>();
 builder.Services.AddScoped<AgnumClient>();
 builder.Services.AddScoped<AgnumAccountingClient>();
 builder.Services.AddScoped<AgnumOutboxClient>();

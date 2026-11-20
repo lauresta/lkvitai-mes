@@ -2043,4 +2043,57 @@
   <data name="CostDocs.Created" xml:space="preserve"><value>Cost invoice created</value></data>
   <data name="CostDocs.Status" xml:space="preserve"><value>Posting</value></data>
   <data name="CostDocs.Empty" xml:space="preserve"><value>No cost invoices yet.</value></data>
+  <data name="Credit.Title" xml:space="preserve"><value>Supplier credit / return</value></data>
+  <data name="Credit.New" xml:space="preserve"><value>New credit note / return</value></data>
+  <data name="Credit.CreateButton" xml:space="preserve"><value>Credit note / return</value></data>
+  <data name="Credit.Related" xml:space="preserve"><value>Related credit notes and returns</value></data>
+  <data name="Credit.OriginalDocument" xml:space="preserve"><value>Original document</value></data>
+  <data name="Credit.BackToOriginal" xml:space="preserve"><value>Back to original</value></data>
+  <data name="Credit.Kind" xml:space="preserve"><value>Kind</value></data>
+  <data name="Credit.Kind.CreditNote" xml:space="preserve"><value>Credit note (price only)</value></data>
+  <data name="Credit.Kind.SupplierReturn" xml:space="preserve"><value>Supplier return (goods back)</value></data>
+  <data name="Credit.Number" xml:space="preserve"><value>Credit note number</value></data>
+  <data name="Credit.Date" xml:space="preserve"><value>Credit note date</value></data>
+  <data name="Credit.Received" xml:space="preserve"><value>Received</value></data>
+  <data name="Credit.AlreadyReturned" xml:space="preserve"><value>Already returned</value></data>
+  <data name="Credit.ReturnQty" xml:space="preserve"><value>Return qty</value></data>
+  <data name="Credit.FromLocation" xml:space="preserve"><value>Return from location</value></data>
+  <data name="Credit.Amount" xml:space="preserve"><value>Credit amount</value></data>
+  <data name="Credit.AgnumAmount" xml:space="preserve"><value>Amount sent to Agnum</value></data>
+  <data name="Credit.NegativeNote" xml:space="preserve"><value>Amounts are entered positive and go to Agnum with a minus sign.</value></data>
+  <data name="Credit.Problem.OriginalNotPosted" xml:space="preserve"><value>The original purchase document must be posted first.</value></data>
+  <data name="Credit.Problem.ReturnQtyRequired" xml:space="preserve"><value>A supplier return needs a returned quantity.</value></data>
+  <data name="Credit.Problem.ReturnQtyNotAllowed" xml:space="preserve"><value>A price-only credit note cannot return goods; choose supplier return.</value></data>
+  <data name="Credit.Problem.ReturnQtyExceeded" xml:space="preserve"><value>The returned quantity is more than was received.</value></data>
+  <data name="Credit.Problem.ReturnLocationRequired" xml:space="preserve"><value>Choose an existing location the goods are returned from.</value></data>
+  <data name="Credit.Problem.InsufficientStock" xml:space="preserve"><value>There is not enough stock at the return location.</value></data>
+  <data name="Credit.Problem.CreditExceedsOriginal" xml:space="preserve"><value>The credits would exceed the net amount of the original document.</value></data>
+  <data name="Credit.Problem.LineNotInOriginal" xml:space="preserve"><value>A line does not belong to the original document.</value></data>
+  <data name="Nav.Intrastat" xml:space="preserve"><value>Intrastat arrivals</value></data>
+  <data name="Intrastat.Title" xml:space="preserve"><value>Intrastat arrivals</value></data>
+  <data name="Intrastat.Intro" xml:space="preserve"><value>EU acquisitions of the month by invoice date, grouped by commodity code and dispatch country. Quantity is in the base unit of the item.</value></data>
+  <data name="Intrastat.Month" xml:space="preserve"><value>Month</value></data>
+  <data name="Intrastat.Show" xml:space="preserve"><value>Show</value></data>
+  <data name="Intrastat.DownloadCsv" xml:space="preserve"><value>Download CSV</value></data>
+  <data name="Intrastat.Warnings" xml:space="preserve"><value>{0} lines are left out: commodity code, dispatch country or value is missing.</value></data>
+  <data name="Intrastat.Empty" xml:space="preserve"><value>No EU acquisitions in this month.</value></data>
+  <data name="Intrastat.CommodityCode" xml:space="preserve"><value>Commodity code</value></data>
+  <data name="Intrastat.Country" xml:space="preserve"><value>Dispatch country</value></data>
+  <data name="Intrastat.ValueEur" xml:space="preserve"><value>Value, EUR</value></data>
+  <data name="Intrastat.NetMass" xml:space="preserve"><value>Net mass, kg</value></data>
+  <data name="Intrastat.Quantity" xml:space="preserve"><value>Quantity</value></data>
+  <data name="Intrastat.Totals" xml:space="preserve"><value>Total</value></data>
+  <data name="Intrastat.Header" xml:space="preserve"><value>Intrastat (nature / terms / transport / country)</value></data>
+  <data name="Intrastat.DeliveryTerms" xml:space="preserve"><value>Delivery terms</value></data>
+  <data name="Intrastat.TransportMode" xml:space="preserve"><value>Transport mode</value></data>
+  <data name="Intrastat.DispatchCountry" xml:space="preserve"><value>Country of dispatch</value></data>
+  <data name="Intrastat.TransactionNature" xml:space="preserve"><value>Transaction nature</value></data>
+  <data name="Intrastat.Item.CommodityCode" xml:space="preserve"><value>Commodity code (CN)</value></data>
+  <data name="Intrastat.Item.CommodityCodeHelp" xml:space="preserve"><value>8 digits; needed for EU purchases</value></data>
+  <data name="Intrastat.Item.NetWeightKg" xml:space="preserve"><value>Net weight per unit, kg</value></data>
+  <data name="Intrastat.Item.OriginCountry" xml:space="preserve"><value>Country of origin (ISO, 2 letters)</value></data>
+  <data name="Intrastat.Item.CommodityCodeInvalid" xml:space="preserve"><value>Commodity code must be 8 digits.</value></data>
+  <data name="Intrastat.Item.NetWeightInvalid" xml:space="preserve"><value>Net weight must be greater than zero.</value></data>
+  <data name="Purchase.Problem.IntrastatHeaderRequired" xml:space="preserve"><value>Intrastat fields (delivery terms, transport mode, dispatch country, transaction nature) are required for an EU acquisition.</value></data>
+  <data name="Purchase.Problem.IntrastatItemDataMissing" xml:space="preserve"><value>Every stock item of an EU acquisition needs an 8-digit commodity code and a net weight.</value></data>
 </root>

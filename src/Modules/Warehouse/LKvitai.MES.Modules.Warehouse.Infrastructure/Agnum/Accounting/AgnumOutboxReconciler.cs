@@ -121,12 +121,13 @@ public sealed class AgnumOutboxReconciler
         var req = JsonSerializer.Deserialize<AgnumPurchasePostingRequest>(row.PayloadJson);
         if (!string.Equals(found.Hash, row.PayloadHash, StringComparison.OrdinalIgnoreCase)) diff.Add("content hash differs");
         if (req is null) return diff;
-        if (found.Net != req.Net) diff.Add($"net {found.Net} instead of {req.Net}");
-        if (found.Vat != req.Vat) diff.Add($"vat {found.Vat} instead of {req.Vat}");
-        if (found.Gross != req.Gross) diff.Add($"gross {found.Gross} instead of {req.Gross}");
+        var sign = req.Kind == "credit" ? -1m : 1m;
+        if (found.Net != sign * req.Net) diff.Add($"net {found.Net} instead of {sign * req.Net}");
+        if (found.Vat != sign * req.Vat) diff.Add($"vat {found.Vat} instead of {sign * req.Vat}");
+        if (found.Gross != sign * req.Gross) diff.Add($"gross {found.Gross} instead of {sign * req.Gross}");
         foreach (var p in req.Postings)
         {
-            if (found.Postings?.Any(x => x.Debit == p.DebitAccount && x.Amount == p.Amount && x.AmountEur == p.AmountEur) != true)
+            if (found.Postings?.Any(x => x.Debit == p.DebitAccount && x.Amount == sign * p.Amount && x.AmountEur == sign * p.AmountEur) != true)
                 diff.Add($"posting D{p.DebitAccount} {p.Amount}/{p.AmountEur} EUR is missing");
         }
 

@@ -23,7 +23,7 @@ public sealed record PostResult(bool NotFound, IReadOnlyList<PostingProblem> Pro
 }
 
 /// <summary>Blueprint 4.2 - 4.4: rate resolution, posting checks, posting of purchase and cost documents.</summary>
-public sealed class PurchaseDocumentService : IPostingReverser
+public sealed partial class PurchaseDocumentService : IPostingReverser
 {
     private readonly WarehouseDbContext _db;
     private readonly IFxRateProvider _fx;
@@ -276,9 +276,23 @@ public sealed class PurchaseDocumentService : IPostingReverser
         var payload = AgnumPayloadBuilder.Build(new PostingPayloadInput(
             shipment.AgnumKey!.Value, shipment.PostingRevision, shipment.InvoiceNumber!, shipment.InvoiceDate!.Value,
             input.Supplier.AgnumClientId!.Value, profile.AgnumSndId, rule.SchemeId, shipment.Currency, shipment.RateUnitsPerEur!.Value,
-            shipment.NetAmount!.Value, shipment.VatAmount!.Value, rule.VatCode, profile.StockAccount, expenses));
+            shipment.NetAmount!.Value, shipment.VatAmount!.Value, rule.VatCode, profile.StockAccount, expenses,
+            Intrastat: IntrastatHeader(shipment)));
         _db.AgnumOutbox.Add(NewRow(payload, OutboxDocumentType.Shipment, shipment.Id, shipment.SupplierId, shipment.InvoiceNumber!,
             shipment.InvoiceDate!.Value, shipment.Currency, shipment.GrossAmount ?? 0m, user));
+    }
+
+    /// <summary>Intrastat header for the posting request; only an EU acquisition carries it.</summary>
+    public static AgnumIntrastat? IntrastatHeader(InboundShipment shipment)
+    {
+        if (shipment.VatTreatment != VatTreatment.EuAcquisition) return null;
+        string? Clean(string? v) => string.IsNullOrWhiteSpace(v) ? null : v.Trim();
+        var header = new AgnumIntrastat
+        {
+            Nature = Clean(shipment.TransactionNature), DeliveryTerms = Clean(shipment.DeliveryTerms),
+            Transport = Clean(shipment.TransportMode), Country = Clean(shipment.DispatchCountry)
+        };
+        return header.Nature is null && header.DeliveryTerms is null && header.Transport is null && header.Country is null ? null : header;
     }
 
     private static AgnumDocumentOutbox NewRow(BuiltPayload payload, string type, int id, int supplierId, string number,

@@ -24,6 +24,7 @@ public static class OutboxDocumentType
 {
     public const string Shipment = "InboundShipment";
     public const string CostDocument = "AdditionalCostDocument";
+    public const string SupplierCredit = "SupplierCreditDocument";
 }
 
 /// <summary>Blueprint 4.7 "agnum_document_outbox": one row per posting or annulment, written in the posting transaction.</summary>

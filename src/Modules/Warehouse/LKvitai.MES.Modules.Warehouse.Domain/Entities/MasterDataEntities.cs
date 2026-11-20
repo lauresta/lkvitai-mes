@@ -44,6 +44,13 @@ public sealed class Item : AuditableEntity
     /// </summary>
     public string? CostType { get; set; }
 
+    /// <summary>Intrastat (blueprint 4.9): 8-digit CN commodity code.</summary>
+    public string? CommodityCode { get; set; }
+    /// <summary>Intrastat: net mass in kg of one base unit.</summary>
+    public decimal? NetWeightKg { get; set; }
+    /// <summary>Intrastat: ISO 3166 alpha-2 country of origin.</summary>
+    public string? OriginCountry { get; set; }
+
     public ItemCategory? Category { get; set; }
     public UnitOfMeasure? BaseUnit { get; set; }
     public ICollection<ItemUoMConversion> UomConversions { get; set; } = new List<ItemUoMConversion>();
@@ -1376,6 +1383,12 @@ public sealed class InboundShipment : AuditableEntity
     public string? ManualReason { get; set; }
     /// <summary>Values captured at posting; used to restore the document and the stock value on un-post.</summary>
     public string? PostingSnapshotJson { get; set; }
+
+    /// <summary>Intrastat header fields (blueprint 4.2); required for EuAcquisition. Nature defaults to 11.</summary>
+    public string? DeliveryTerms { get; set; }
+    public string? TransportMode { get; set; }
+    public string? DispatchCountry { get; set; }
+    public string TransactionNature { get; set; } = "11";
 
     public Supplier? Supplier { get; set; }
     public ICollection<InboundShipmentLine> Lines { get; set; } = new List<InboundShipmentLine>();

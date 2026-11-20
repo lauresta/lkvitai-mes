@@ -24,7 +24,10 @@ public sealed class AgnumPurchasePostingRequest
     [JsonPropertyName("gross")] public decimal Gross { get; set; }
     [JsonPropertyName("vat_code")] public string VatCode { get; set; } = string.Empty;
     [JsonPropertyName("postings")] public List<AgnumPostingLine> Postings { get; set; } = new();
+    [JsonPropertyName("ref_doc_no"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? RefDocNo { get; set; }
+    [JsonPropertyName("ref_doc_date"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? RefDocDate { get; set; }
     [JsonPropertyName("payment_term_days")] public int PaymentTermDays { get; set; }
+    [JsonPropertyName("intrastat"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public AgnumIntrastat? Intrastat { get; set; }
     [JsonPropertyName("payload_hash"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? PayloadHash { get; set; }
 }
 
@@ -165,4 +168,13 @@ public sealed class AgnumPostingHttpException : Exception
 {
     public int Status { get; }
     public AgnumPostingHttpException(int status, string message) : base(message) => Status = status;
+}
+
+/// <summary>Intrastat header of an EU acquisition (service field names nature, delivery_terms, transport, country).</summary>
+public sealed class AgnumIntrastat
+{
+    [JsonPropertyName("nature")] public string? Nature { get; set; }
+    [JsonPropertyName("delivery_terms")] public string? DeliveryTerms { get; set; }
+    [JsonPropertyName("transport")] public string? Transport { get; set; }
+    [JsonPropertyName("country")] public string? Country { get; set; }
 }

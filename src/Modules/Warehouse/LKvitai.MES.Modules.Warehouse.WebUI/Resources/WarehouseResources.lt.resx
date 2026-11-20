@@ -2043,4 +2043,57 @@
   <data name="CostDocs.Created" xml:space="preserve"><value>Išlaidų sąskaita sukurta</value></data>
   <data name="CostDocs.Status" xml:space="preserve"><value>Patvirtinimas</value></data>
   <data name="CostDocs.Empty" xml:space="preserve"><value>Išlaidų sąskaitų dar nėra.</value></data>
+  <data name="Credit.Title" xml:space="preserve"><value>Tiekėjo kreditinė sąskaita / grąžinimas</value></data>
+  <data name="Credit.New" xml:space="preserve"><value>Nauja kreditinė sąskaita / grąžinimas</value></data>
+  <data name="Credit.CreateButton" xml:space="preserve"><value>Kreditinė sąskaita / grąžinimas</value></data>
+  <data name="Credit.Related" xml:space="preserve"><value>Susijusios kreditinės sąskaitos ir grąžinimai</value></data>
+  <data name="Credit.OriginalDocument" xml:space="preserve"><value>Pirminis dokumentas</value></data>
+  <data name="Credit.BackToOriginal" xml:space="preserve"><value>Atgal į pirminį dokumentą</value></data>
+  <data name="Credit.Kind" xml:space="preserve"><value>Rūšis</value></data>
+  <data name="Credit.Kind.CreditNote" xml:space="preserve"><value>Kreditinė sąskaita (tik kaina)</value></data>
+  <data name="Credit.Kind.SupplierReturn" xml:space="preserve"><value>Grąžinimas tiekėjui (prekės grįžta)</value></data>
+  <data name="Credit.Number" xml:space="preserve"><value>Kreditinės sąskaitos numeris</value></data>
+  <data name="Credit.Date" xml:space="preserve"><value>Kreditinės sąskaitos data</value></data>
+  <data name="Credit.Received" xml:space="preserve"><value>Priimta</value></data>
+  <data name="Credit.AlreadyReturned" xml:space="preserve"><value>Jau grąžinta</value></data>
+  <data name="Credit.ReturnQty" xml:space="preserve"><value>Grąžinamas kiekis</value></data>
+  <data name="Credit.FromLocation" xml:space="preserve"><value>Grąžinama iš vietos</value></data>
+  <data name="Credit.Amount" xml:space="preserve"><value>Kredito suma</value></data>
+  <data name="Credit.AgnumAmount" xml:space="preserve"><value>Į Agnum siunčiama suma</value></data>
+  <data name="Credit.NegativeNote" xml:space="preserve"><value>Sumos įvedamos teigiamos, į Agnum eina su minuso ženklu.</value></data>
+  <data name="Credit.Problem.OriginalNotPosted" xml:space="preserve"><value>Pirmiausia turi būti užregistruotas pirminis pirkimo dokumentas.</value></data>
+  <data name="Credit.Problem.ReturnQtyRequired" xml:space="preserve"><value>Grąžinimui tiekėjui reikia nurodyti grąžinamą kiekį.</value></data>
+  <data name="Credit.Problem.ReturnQtyNotAllowed" xml:space="preserve"><value>Kreditinė sąskaita tik dėl kainos negali grąžinti prekių; pasirinkite grąžinimą tiekėjui.</value></data>
+  <data name="Credit.Problem.ReturnQtyExceeded" xml:space="preserve"><value>Grąžinamas kiekis didesnis nei priimtas.</value></data>
+  <data name="Credit.Problem.ReturnLocationRequired" xml:space="preserve"><value>Pasirinkite esamą vietą, iš kurios grąžinamos prekės.</value></data>
+  <data name="Credit.Problem.InsufficientStock" xml:space="preserve"><value>Grąžinimo vietoje nepakanka atsargų.</value></data>
+  <data name="Credit.Problem.CreditExceedsOriginal" xml:space="preserve"><value>Kreditai viršytų pirminio dokumento sumą be PVM.</value></data>
+  <data name="Credit.Problem.LineNotInOriginal" xml:space="preserve"><value>Eilutė nepriklauso pirminiam dokumentui.</value></data>
+  <data name="Nav.Intrastat" xml:space="preserve"><value>Intrastat gabenimai</value></data>
+  <data name="Intrastat.Title" xml:space="preserve"><value>Intrastat: įvežimas iš ES</value></data>
+  <data name="Intrastat.Intro" xml:space="preserve"><value>Mėnesio įsigijimai iš ES pagal sąskaitos datą, sugrupuoti pagal prekės kodą ir išsiuntimo šalį. Kiekis nurodytas pagrindiniu prekės matavimo vienetu.</value></data>
+  <data name="Intrastat.Month" xml:space="preserve"><value>Mėnuo</value></data>
+  <data name="Intrastat.Show" xml:space="preserve"><value>Rodyti</value></data>
+  <data name="Intrastat.DownloadCsv" xml:space="preserve"><value>Atsisiųsti CSV</value></data>
+  <data name="Intrastat.Warnings" xml:space="preserve"><value>Praleistos eilutės: {0}. Trūksta prekės kodo, išsiuntimo šalies arba vertės.</value></data>
+  <data name="Intrastat.Empty" xml:space="preserve"><value>Šį mėnesį ES įsigijimų nėra.</value></data>
+  <data name="Intrastat.CommodityCode" xml:space="preserve"><value>Prekės kodas</value></data>
+  <data name="Intrastat.Country" xml:space="preserve"><value>Išsiuntimo šalis</value></data>
+  <data name="Intrastat.ValueEur" xml:space="preserve"><value>Vertė, EUR</value></data>
+  <data name="Intrastat.NetMass" xml:space="preserve"><value>Neto masė, kg</value></data>
+  <data name="Intrastat.Quantity" xml:space="preserve"><value>Kiekis</value></data>
+  <data name="Intrastat.Totals" xml:space="preserve"><value>Iš viso</value></data>
+  <data name="Intrastat.Header" xml:space="preserve"><value>Intrastat (pobūdis / sąlygos / transportas / šalis)</value></data>
+  <data name="Intrastat.DeliveryTerms" xml:space="preserve"><value>Pristatymo sąlygos</value></data>
+  <data name="Intrastat.TransportMode" xml:space="preserve"><value>Transporto rūšis</value></data>
+  <data name="Intrastat.DispatchCountry" xml:space="preserve"><value>Išsiuntimo šalis</value></data>
+  <data name="Intrastat.TransactionNature" xml:space="preserve"><value>Sandorio pobūdis</value></data>
+  <data name="Intrastat.Item.CommodityCode" xml:space="preserve"><value>Prekės kodas (KN)</value></data>
+  <data name="Intrastat.Item.CommodityCodeHelp" xml:space="preserve"><value>8 skaitmenys; reikalingas pirkimams iš ES</value></data>
+  <data name="Intrastat.Item.NetWeightKg" xml:space="preserve"><value>Neto masė vienetui, kg</value></data>
+  <data name="Intrastat.Item.OriginCountry" xml:space="preserve"><value>Kilmės šalis (ISO, 2 raidės)</value></data>
+  <data name="Intrastat.Item.CommodityCodeInvalid" xml:space="preserve"><value>Prekės kodą turi sudaryti 8 skaitmenys.</value></data>
+  <data name="Intrastat.Item.NetWeightInvalid" xml:space="preserve"><value>Neto masė turi būti didesnė už nulį.</value></data>
+  <data name="Purchase.Problem.IntrastatHeaderRequired" xml:space="preserve"><value>ES įsigijimui privalomi Intrastat laukai (pristatymo sąlygos, transporto rūšis, išsiuntimo šalis, sandorio pobūdis).</value></data>
+  <data name="Purchase.Problem.IntrastatItemDataMissing" xml:space="preserve"><value>Kiekviena ES įsigijimo prekė turi turėti 8 skaitmenų prekės kodą ir neto masę.</value></data>
 </root>

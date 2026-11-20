@@ -15,6 +15,13 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
             migrationBuilder.AddColumn<Guid>(
                 name: "AgnumKey",
                 schema: "public",
+                table: "supplier_credit_documents",
+                type: "uuid",
+                nullable: true);
+
+            migrationBuilder.AddColumn<Guid>(
+                name: "AgnumKey",
+                schema: "public",
                 table: "inbound_shipments",
                 type: "uuid",
                 nullable: true);
@@ -180,6 +187,11 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
             migrationBuilder.DropTable(
                 name: "agnum_sending_settings",
                 schema: "public");
+
+            migrationBuilder.DropColumn(
+                name: "AgnumKey",
+                schema: "public",
+                table: "supplier_credit_documents");
 
             migrationBuilder.DropColumn(
                 name: "AgnumKey",

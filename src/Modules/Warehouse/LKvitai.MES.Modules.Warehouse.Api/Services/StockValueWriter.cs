@@ -19,6 +19,13 @@ public sealed record StockValueRequest(
     /// <summary>Purchase posting true-up: ValueEur is the difference, Qty the received quantity.</summary>
     public bool IsTrueUp { get; init; }
 
+    /// <summary>Supplier credit (blueprint 4.8): Qty is the returned quantity, ValueEur the credit amount, ReceivedQty the original received quantity.</summary>
+    public bool IsSupplierCredit { get; init; }
+    public decimal ReceivedQty { get; init; }
+
+    public static StockValueRequest ForSupplierCredit(string sku, decimal returnQty, decimal creditEur, decimal receivedQty, StockValueDocument document)
+        => new(sku, StockValueKinds.SupplierReturn, returnQty, false, creditEur, document) { IsSupplierCredit = true, ReceivedQty = receivedQty };
+
     /// <summary>
     /// Value request for a quantity movement between two location codes; null when the movement does not cross
     /// the stock boundary (it then does not change value).
@@ -150,6 +157,11 @@ public static class StockValueWriter
         if (request.IsTrueUp)
         {
             return aggregate.TrueUp(itemId, request.Qty, request.ValueEur ?? 0m, request.Document);
+        }
+
+        if (request.IsSupplierCredit)
+        {
+            return aggregate.SupplierCredit(itemId, request.Qty, request.ValueEur ?? 0m, request.ReceivedQty, request.Document, request.BusinessDate);
         }
 
         var evt = Build(aggregate, itemId, request);

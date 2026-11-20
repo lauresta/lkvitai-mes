@@ -116,7 +116,10 @@ public sealed class ItemsController : ControllerBase
                 null,
                 null,
                 i.ItemType.ToString(),
-                i.CostType))
+                i.CostType,
+                i.CommodityCode,
+                i.NetWeightKg,
+                i.OriginCountry))
             .ToListAsync(cancellationToken);
 
         if (items.Count > 0)
@@ -202,7 +205,10 @@ public sealed class ItemsController : ControllerBase
             ItemType = itemType,
             CostType = itemType == ItemType.Service && !string.IsNullOrWhiteSpace(request.CostType)
                 ? request.CostType.Trim()
-                : null
+                : null,
+            CommodityCode = NormalizeCode(request.CommodityCode),
+            NetWeightKg = request.NetWeightKg,
+            OriginCountry = NormalizeCode(request.OriginCountry)?.ToUpperInvariant()
         };
 
         _dbContext.Items.Add(item);
@@ -274,7 +280,10 @@ public sealed class ItemsController : ControllerBase
             primaryPhoto?.Id,
             photos,
             item.ItemType.ToString(),
-            item.CostType);
+            item.CostType,
+            item.CommodityCode,
+            item.NetWeightKg,
+            item.OriginCountry);
 
         await Cache.SetAsync(cacheKey, dto, TimeSpan.FromHours(1), cancellationToken);
         return Ok(dto);
@@ -344,6 +353,9 @@ public sealed class ItemsController : ControllerBase
         item.CostType = itemType == ItemType.Service && !string.IsNullOrWhiteSpace(request.CostType)
             ? request.CostType.Trim()
             : null;
+        item.CommodityCode = NormalizeCode(request.CommodityCode);
+        item.NetWeightKg = request.NetWeightKg;
+        item.OriginCountry = NormalizeCode(request.OriginCountry)?.ToUpperInvariant();
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         await Cache.RemoveAsync($"item:{id}", cancellationToken);
@@ -854,6 +866,8 @@ public sealed class ItemsController : ControllerBase
     private static string NormalizeTag(string? value)
         => value?.Trim().TrimStart('#').Trim() ?? string.Empty;
 
+    private static string? NormalizeCode(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
     private static bool TryParseItemType(string? value, out ItemType itemType)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -923,7 +937,10 @@ public sealed class ItemsController : ControllerBase
         decimal? BasePrice = null,
         decimal? PurchasePrice = null,
         string? ItemType = null,
-        string? CostType = null);
+        string? CostType = null,
+        string? CommodityCode = null,
+        decimal? NetWeightKg = null,
+        string? OriginCountry = null);
 
     public sealed record UpdateItemRequestDto(
         string Name,
@@ -941,7 +958,10 @@ public sealed class ItemsController : ControllerBase
         decimal? BasePrice = null,
         decimal? PurchasePrice = null,
         string? ItemType = null,
-        string? CostType = null);
+        string? CostType = null,
+        string? CommodityCode = null,
+        decimal? NetWeightKg = null,
+        string? OriginCountry = null);
 
     public sealed record ItemCreatedDto(int Id, string InternalSKU, string Name, DateTimeOffset CreatedAt);
     public sealed record ItemUpdatedDto(int Id, string InternalSKU, string Name, string Status, DateTimeOffset? UpdatedAt);
@@ -968,7 +988,10 @@ public sealed class ItemsController : ControllerBase
         string? PrimaryThumbnailUrl,
         Guid? PrimaryPhotoId,
         string ItemType,
-        string? CostType);
+        string? CostType,
+        string? CommodityCode = null,
+        decimal? NetWeightKg = null,
+        string? OriginCountry = null);
 
     public sealed record ItemDetailDto(
         int Id,
@@ -993,7 +1016,10 @@ public sealed class ItemsController : ControllerBase
         Guid? PrimaryPhotoId,
         IReadOnlyList<ItemPhotoDto> Photos,
         string ItemType,
-        string? CostType);
+        string? CostType,
+        string? CommodityCode = null,
+        decimal? NetWeightKg = null,
+        string? OriginCountry = null);
 
     public sealed record AddBarcodeRequest(string Barcode, string BarcodeType, bool IsPrimary);
     public sealed record ItemBarcodeDto(int Id, string Barcode, string BarcodeType, bool IsPrimary);
