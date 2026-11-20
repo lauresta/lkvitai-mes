@@ -1,0 +1,129 @@
+@inject AgnumOutboxClient Client
+@inject ToastService ToastService
+@inject NavigationManager Navigation
+
+@if (_error is not null)
+{
+    <div class="alert alert-danger" data-testid="sending-error">@_error</div>
+}
+
+@if (_settings is null)
+{
+    <div class="text-muted">@L["Agnum.Queue.Loading"]</div>
+}
+else
+{
+    <div class="row g-3" data-testid="sending-settings">
+        <div class="col-lg-6">
+            <div class="card border">
+                <div class="card-body">
+                    <h5>@L["Agnum.Sending.Title"]</h5>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="sending-enabled" @bind="_enabled" data-testid="sending-enabled" />
+                        <label class="form-check-label" for="sending-enabled">@L["Agnum.Sending.Enabled"]</label>
+                    </div>
+                    <label class="form-label" for="sending-start">@L["Agnum.Sending.StartDate"]</label>
+                    <input class="form-control mb-1" type="date" id="sending-start" @bind="_startDate" data-testid="sending-start-date" />
+                    <div class="small text-muted mb-3">@L["Agnum.Sending.StartDateHint"]</div>
+                    <label class="form-label">@L["Agnum.Sending.ServiceUrl"]</label>
+                    <input class="form-control mb-3" readonly value="@(_settings.ServiceUrl ?? "-")" data-testid="sending-url" />
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="btn btn-primary" type="button" disabled="@_busy" @onclick="SaveAsync" data-testid="sending-save">@L["Common.Save"]</button>
+                        <button class="btn btn-outline-secondary" type="button" disabled="@_busy" @onclick="CheckAsync" data-testid="sending-check">@L["Agnum.Sending.CheckConnection"]</button>
+                    </div>
+                    @if (_connection is not null)
+                    {
+                        <div class="mt-3 lk-state @(_connection.Ok ? "lk-state--success" : "lk-state--error")" data-testid="sending-connection">
+                            @(_connection.Ok ? L["Agnum.Sending.ConnectionOk", _connection.Warehouses] : L["Agnum.Sending.ConnectionFailed", _connection.Message ?? ""])
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card border">
+                <div class="card-body">
+                    <h5>@L["Agnum.Sending.State"]</h5>
+                    <table class="table table-sm mb-3">
+                        <tbody>
+                            <tr><td>@L["Agnum.Sending.Switch"]</td><td><span class="chip @(_settings.Enabled ? "chip--ok" : "chip--locked")">@(_settings.Enabled ? L["Agnum.Sending.On"] : L["Agnum.Sending.Off"])</span></td></tr>
+                            <tr><td>@L["Agnum.Sending.Waiting"]</td><td class="is-num" data-testid="sending-waiting">@_settings.Waiting</td></tr>
+                            <tr><td>@L["Agnum.Sending.NeedsReview"]</td><td class="is-num" data-testid="sending-review">@_settings.NeedsReview</td></tr>
+                            <tr><td>@L["Agnum.Sending.Oldest"]</td><td>@(_settings.OldestOpenAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</td></tr>
+                            <tr><td>@L["Agnum.Sending.LastReconciliation"]</td><td>@(_settings.LastReconciledAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</td></tr>
+                            <tr><td>@L["Agnum.Sending.Findings"]</td><td class="is-num">@_settings.LastReconciliationFindings</td></tr>
+                        </tbody>
+                    </table>
+                    @if (!string.IsNullOrWhiteSpace(_settings.LastReconciliationError))
+                    {
+                        <div class="lk-state lk-state--warn mb-2">@_settings.LastReconciliationError</div>
+                    }
+                    <a class="btn btn-outline-primary" href="/agnum/outbox" data-testid="sending-open-queue">@L["Agnum.Sending.OpenQueue"]</a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private SendingSettingsDto? _settings;
+    private ConnectionResultDto? _connection;
+    private bool _enabled;
+    private DateTime? _startDate;
+    private bool _busy;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _settings = await Client.GetSettingsAsync();
+            _enabled = _settings.Enabled;
+            _startDate = _settings.StartDate?.ToDateTime(TimeOnly.MinValue);
+        }
+        catch (ApiException ex)
+        {
+            _error = ex.ProblemDetails?.Detail ?? ex.UserMessage;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            await Client.SaveSettingsAsync(new SendingSettingsRequest(_enabled, _startDate is null ? null : DateOnly.FromDateTime(_startDate.Value)));
+            ToastService.ShowSuccess(L["Agnum.Sending.Saved"].Value);
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _error = ex.ProblemDetails?.Detail ?? ex.UserMessage;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task CheckAsync()
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            _connection = await Client.CheckConnectionAsync();
+        }
+        catch (ApiException ex)
+        {
+            _error = ex.ProblemDetails?.Detail ?? ex.UserMessage;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

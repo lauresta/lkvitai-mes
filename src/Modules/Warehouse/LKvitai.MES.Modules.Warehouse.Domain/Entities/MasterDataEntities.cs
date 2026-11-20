@@ -1370,6 +1370,12 @@ public sealed class InboundShipment : AuditableEntity
     public DateTimeOffset? PostedAt { get; set; }
     public string? PostedBy { get; set; }
     public int PostingRevision { get; set; }
+    /// <summary>Blueprint 4.7: fixed identifier of the Agnum posting of this document; created at the first posting.</summary>
+    public Guid? AgnumKey { get; set; }
+    /// <summary>Blueprint 4.8: required when <see cref="AccountingRoute"/> is ManualInAgnum.</summary>
+    public string? ManualReason { get; set; }
+    /// <summary>Values captured at posting; used to restore the document and the stock value on un-post.</summary>
+    public string? PostingSnapshotJson { get; set; }
 
     public Supplier? Supplier { get; set; }
     public ICollection<InboundShipmentLine> Lines { get; set; } = new List<InboundShipmentLine>();

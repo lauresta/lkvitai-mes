@@ -68,6 +68,9 @@ public static class PurchasePostingValidator
         if (s.NetAmount is null || s.VatAmount is null)
             problems.Add(new("AmountsRequired", "Net and VAT amounts from the invoice are required."));
 
+        if (s.AccountingRoute == "ManualInAgnum" && string.IsNullOrWhiteSpace(s.ManualReason))
+            problems.Add(new("ManualReasonRequired", "A reason is required when the document is entered in Agnum manually."));
+
         if (s.AccountingRoute == "Auto")
         {
             var check = AgnumSupplierSyncService.CheckPostable(input.Supplier);

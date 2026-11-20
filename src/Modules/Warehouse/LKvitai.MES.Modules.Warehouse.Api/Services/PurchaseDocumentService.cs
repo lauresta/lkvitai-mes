@@ -23,19 +23,21 @@ public sealed record PostResult(bool NotFound, IReadOnlyList<PostingProblem> Pro
 }
 
 /// <summary>Blueprint 4.2 - 4.4: rate resolution, posting checks, posting of purchase and cost documents.</summary>
-public sealed class PurchaseDocumentService
+public sealed class PurchaseDocumentService : IPostingReverser
 {
     private readonly WarehouseDbContext _db;
     private readonly IFxRateProvider _fx;
     private readonly IDocumentStore _store;
     private readonly IBalanceGuardLockFactory _locks;
     private readonly IWarehouseCodeProvider _warehouse;
+    private readonly AgnumOutboxService _outbox;
     private readonly ILogger<PurchaseDocumentService> _logger;
 
     public PurchaseDocumentService(
         WarehouseDbContext db, IFxRateProvider fx, IDocumentStore store, IBalanceGuardLockFactory locks,
-        IWarehouseCodeProvider warehouse, ILogger<PurchaseDocumentService> logger)
+        IWarehouseCodeProvider warehouse, AgnumOutboxService outbox, ILogger<PurchaseDocumentService> logger)
     {
+        _outbox = outbox;
         _db = db;
         _fx = fx;
         _store = store;
@@ -192,7 +194,16 @@ public sealed class PurchaseDocumentService
         }
 
         var profileId = input.ItemProfiles.Values.FirstOrDefault();
+        var snapshot = PostingSnapshot.Capture(shipment);
         var requests = Apply(shipment, input, user, profileId);
+        snapshot.Values = requests.Select(r => new SnapshotValue(r.Sku, r.Qty, r.ValueEur ?? 0m)).ToList();
+        shipment.PostingSnapshotJson = snapshot.ToJson();
+        shipment.AgnumKey ??= Guid.NewGuid();
+        if (shipment.AccountingRoute == "Auto")
+        {
+            await QueuePostingAsync(shipment, input, profileId!.Value, user, ct);
+        }
+
         await PersistAsync(requests, ct);
         return new PostResult(false, []);
     }
@@ -253,6 +264,32 @@ public sealed class PurchaseDocumentService
         return requests;
     }
 
+    /// <summary>Blueprint 4.7: the outbox row is added to the context here and committed with the posting transaction.</summary>
+    private async Task QueuePostingAsync(InboundShipment shipment, PurchasePostingInput input, int profileId, string user, CancellationToken ct)
+    {
+        var profile = await _db.StockAccountProfiles.AsNoTracking().FirstAsync(p => p.Id == profileId, ct);
+        var rule = await _db.AgnumPostingRules.AsNoTracking()
+            .FirstAsync(r => r.StockAccountProfileId == profileId && r.VatTreatment == shipment.VatTreatment!.Value, ct);
+        var expenses = shipment.AdditionalCosts
+            .Where(c => input.CostTypes.TryGetValue(c.CostType, out var t) && !t.IncludedInCost && !string.IsNullOrWhiteSpace(t.ExpenseAccount))
+            .Select(c => (input.CostTypes[c.CostType].ExpenseAccount!, c.Amount)).ToList();
+        var payload = AgnumPayloadBuilder.Build(new PostingPayloadInput(
+            shipment.AgnumKey!.Value, shipment.PostingRevision, shipment.InvoiceNumber!, shipment.InvoiceDate!.Value,
+            input.Supplier.AgnumClientId!.Value, profile.AgnumSndId, rule.SchemeId, shipment.Currency, shipment.RateUnitsPerEur!.Value,
+            shipment.NetAmount!.Value, shipment.VatAmount!.Value, rule.VatCode, profile.StockAccount, expenses));
+        _db.AgnumOutbox.Add(NewRow(payload, OutboxDocumentType.Shipment, shipment.Id, shipment.SupplierId, shipment.InvoiceNumber!,
+            shipment.InvoiceDate!.Value, shipment.Currency, shipment.GrossAmount ?? 0m, user));
+    }
+
+    private static AgnumDocumentOutbox NewRow(BuiltPayload payload, string type, int id, int supplierId, string number,
+        DateOnly date, string currency, decimal gross, string user) => new()
+    {
+        Key = Guid.Parse(payload.Request.Key), Revision = payload.Request.Revision, DocumentType = type, DocumentId = id,
+        SupplierId = supplierId, DocumentNumber = number, DocumentDate = date, Currency = currency, GrossAmount = gross,
+        Operation = OutboxOperation.Post, PayloadJson = payload.Json, PayloadHash = payload.Hash, Status = OutboxStatus.Pending,
+        NextAttemptAt = DateTimeOffset.UtcNow, CreatedAt = DateTimeOffset.UtcNow, CreatedBy = user
+    };
+
     private async Task PersistAsync(IReadOnlyList<StockValueRequest> requests, CancellationToken ct)
     {
         IReadOnlyList<StockValueChanged> written = [];
@@ -289,6 +326,18 @@ public sealed class PurchaseDocumentService
         var type = await _db.AdditionalCostTypes.AsNoTracking().FirstOrDefaultAsync(t => t.Code == doc.CostTypeCode && t.IsActive, ct);
         if (type is null) problems.Add(new("CostTypeInvalid", $"Additional cost type '{doc.CostTypeCode}' is not available."));
         if (basis is null || basis.PostingStatus != "Posted") problems.Add(new("BasisNotPosted", "The basis shipment must be posted first."));
+        if (doc.AccountingRoute == "ManualInAgnum" && string.IsNullOrWhiteSpace(doc.ManualReason))
+            problems.Add(new("ManualReasonRequired", "A reason is required when the document is entered in Agnum manually."));
+        if (doc.AccountingRoute == "Auto" && basis is not null && basis.PostingStatus == "Posted")
+        {
+            var basisProfile = (await ResolveItemProfilesAsync(
+                basis.Lines.Where(l => l.Item?.ItemType != ItemType.Service).Select(l => l.ItemId).Distinct().ToList(), ct)).Values.FirstOrDefault();
+            if (basisProfile is null || !await _db.AgnumPostingRules.AnyAsync(r => r.StockAccountProfileId == basisProfile && r.VatTreatment == doc.VatTreatment, ct))
+                problems.Add(new("PostingRuleMissing", $"No Agnum posting rule for the stock account of the basis shipment and {doc.VatTreatment}."));
+            if (type is { IncludedInCost: false, ExpenseAccount: null or "" })
+                problems.Add(new("CostTypeInvalid", $"Additional cost type '{doc.CostTypeCode}' has no expense account."));
+        }
+
 
         var normalized = PurchaseMath.NormalizeInvoiceNumber(doc.DocumentNumber);
         var year = doc.DocumentDate.Year;
@@ -328,6 +377,7 @@ public sealed class PurchaseDocumentService
 
         var requests = new List<StockValueRequest>();
         var type = await _db.AdditionalCostTypes.AsNoTracking().FirstAsync(t => t.Code == doc.CostTypeCode, ct);
+        var snapshot = PostingSnapshot.Capture(doc, basis!.Lines);
         if (type.IncludedInCost && basis is not null)
         {
             var stock = basis.Lines.Where(l => l.Item?.ItemType != ItemType.Service && l.FinalValueEur is not null).OrderBy(l => l.Id).ToList();
@@ -350,7 +400,158 @@ public sealed class PurchaseDocumentService
         doc.PostingStatus = "Posted";
         doc.PostedAt = DateTimeOffset.UtcNow;
         doc.PostedBy = user;
+        doc.PostingRevision++;
+        doc.AgnumKey ??= Guid.NewGuid();
+        snapshot.Values = requests.Select(r => new SnapshotValue(r.Sku, r.Qty, r.ValueEur ?? 0m)).ToList();
+        doc.PostingSnapshotJson = snapshot.ToJson();
+        if (doc.AccountingRoute == "Auto")
+        {
+            await QueueCostDocumentAsync(doc, basis!, type, user, ct);
+        }
+
         await PersistAsync(requests, ct);
         return new PostResult(false, []);
+    }
+
+    private async Task QueueCostDocumentAsync(AdditionalCostDocument doc, InboundShipment basis, AdditionalCostType type, string user, CancellationToken ct)
+    {
+        var supplier = await _db.Suppliers.AsNoTracking().FirstAsync(s => s.Id == doc.SupplierId, ct);
+        var profileId = (await ResolveItemProfilesAsync(
+            basis.Lines.Where(l => l.Item?.ItemType != ItemType.Service).Select(l => l.ItemId).Distinct().ToList(), ct)).Values.First()!.Value;
+        var profile = await _db.StockAccountProfiles.AsNoTracking().FirstAsync(p => p.Id == profileId, ct);
+        var rule = await _db.AgnumPostingRules.AsNoTracking()
+            .FirstAsync(r => r.StockAccountProfileId == profileId && r.VatTreatment == doc.VatTreatment, ct);
+        IReadOnlyList<(string, decimal)> expenses = type.IncludedInCost ? [] : [(type.ExpenseAccount!, doc.NetAmount)];
+        var payload = AgnumPayloadBuilder.Build(new PostingPayloadInput(
+            doc.AgnumKey!.Value, doc.PostingRevision, doc.DocumentNumber, doc.DocumentDate, supplier.AgnumClientId!.Value,
+            profile.AgnumSndId, rule.SchemeId, doc.Currency, doc.RateUnitsPerEur!.Value, doc.NetAmount, doc.VatAmount, rule.VatCode,
+            profile.StockAccount, expenses));
+        _db.AgnumOutbox.Add(NewRow(payload, OutboxDocumentType.CostDocument, doc.Id, doc.SupplierId, doc.DocumentNumber,
+            doc.DocumentDate, doc.Currency, doc.GrossAmount, user));
+    }
+
+    // ---- Blueprint 4.8: un-post ----
+
+    public sealed record UnpostResult(bool NotFound, string Outcome, IReadOnlyList<PostingProblem> Problems)
+    {
+        public const string Reversed = "Reversed";
+        public const string Queued = "AnnulQueued";
+        public const string AlreadyQueued = "AlreadyQueued";
+        public const string Blocked = "Blocked";
+    }
+
+    /// <summary>
+    /// Un-post request of the accountant. Unsent and manual documents are reversed at once; a document that may be
+    /// in Agnum gets an Annul row and is reversed by the sender after the service deleted it.
+    /// </summary>
+    public async Task<UnpostResult> UnpostAsync(string documentType, int id, string user, CancellationToken ct)
+    {
+        var info = await LoadUnpostInfoAsync(documentType, id, ct);
+        if (info is null) return new UnpostResult(true, UnpostResult.Blocked, []);
+        var problems = await CheckReversibleAsync(documentType, id, ct);
+        if (problems.Count > 0) return new UnpostResult(false, UnpostResult.Blocked, problems);
+
+        var plan = await _outbox.PlanUnpostAsync(documentType, id, info.SupplierId, info.Route, info.Key, info.Revision,
+            info.Number, info.Date, info.Currency, info.Gross, user, ct);
+        switch (plan)
+        {
+            case UnpostPlan.ReverseNow:
+                await ReverseAsync(documentType, id, user, ct);
+                return new UnpostResult(false, UnpostResult.Reversed, []);
+            case UnpostPlan.AnnulQueued:
+                return new UnpostResult(false, UnpostResult.Queued, []);
+            default:
+                return new UnpostResult(false, UnpostResult.AlreadyQueued, []);
+        }
+    }
+
+    private sealed record UnpostInfo(int SupplierId, string Route, Guid? Key, int Revision, string? Number, DateOnly Date, string Currency, decimal Gross, bool Posted);
+
+    private async Task<UnpostInfo?> LoadUnpostInfoAsync(string documentType, int id, CancellationToken ct)
+    {
+        if (documentType == OutboxDocumentType.CostDocument)
+        {
+            var d = await _db.AdditionalCostDocuments.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
+            return d is null ? null : new(d.SupplierId, d.AccountingRoute, d.AgnumKey, d.PostingRevision, d.DocumentNumber, d.DocumentDate, d.Currency, d.GrossAmount, d.PostingStatus == "Posted");
+        }
+
+        var s = await _db.InboundShipments.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
+        return s is null ? null : new(s.SupplierId, s.AccountingRoute, s.AgnumKey, s.PostingRevision, s.InvoiceNumber, s.InvoiceDate ?? Today(), s.Currency, s.GrossAmount ?? 0m, s.PostingStatus == "Posted");
+    }
+
+    /// <summary>Checks that must hold before a posting can be taken back.</summary>
+    public async Task<List<PostingProblem>> CheckReversibleAsync(string documentType, int id, CancellationToken ct)
+    {
+        var problems = new List<PostingProblem>();
+        if (documentType == OutboxDocumentType.CostDocument)
+        {
+            var d = await _db.AdditionalCostDocuments.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
+            if (d is null || d.PostingStatus != "Posted") { problems.Add(new("NotPosted", "The document is not posted.")); return problems; }
+            var snapshot = PostingSnapshot.FromJson(d.PostingSnapshotJson);
+            if (snapshot is null) { problems.Add(new("UnpostNotAvailable", "The document was posted before un-posting existed; no values were saved.")); return problems; }
+            var basisLines = await _db.InboundShipmentLines.AsNoTracking().Where(l => l.ShipmentId == d.BasisShipmentId).ToListAsync(ct);
+            if (snapshot.ReceiptChangesSincePosting(basisLines).Count > 0)
+                problems.Add(new("ReceiptsAfterPosting", "Goods were received after posting; un-posting would misstate the stock value."));
+            return problems;
+        }
+
+        var s = await _db.InboundShipments.AsNoTracking().Include(x => x.Lines).FirstOrDefaultAsync(x => x.Id == id, ct);
+        if (s is null || s.PostingStatus != "Posted") { problems.Add(new("NotPosted", "The document is not posted.")); return problems; }
+        var snap = PostingSnapshot.FromJson(s.PostingSnapshotJson);
+        if (snap is null) { problems.Add(new("UnpostNotAvailable", "The document was posted before un-posting existed; no values were saved.")); return problems; }
+        if (await _db.AdditionalCostDocuments.AnyAsync(x => x.BasisShipmentId == id && x.PostingStatus == "Posted", ct))
+            problems.Add(new("CostDocumentsPosted", "Un-post the additional cost documents of this shipment first."));
+        if (snap.ReceiptChangesSincePosting(s.Lines).Count > 0)
+            problems.Add(new("ReceiptsAfterPosting", "Goods were received after posting; un-posting would misstate the stock value."));
+        return problems;
+    }
+
+    /// <summary>
+    /// Takes a posting back: NotPosted, header and line values as before posting, stock value reversed by opposite
+    /// true-ups, outbox rows of this revision withdrawn. Idempotent: a document that is not posted is left alone.
+    /// </summary>
+    public async Task ReverseAsync(string documentType, int documentId, string user, CancellationToken ct)
+    {
+        var basisId = documentId;
+        if (documentType == OutboxDocumentType.CostDocument)
+        {
+            basisId = await _db.AdditionalCostDocuments.AsNoTracking().Where(d => d.Id == documentId)
+                .Select(d => d.BasisShipmentId).FirstOrDefaultAsync(ct);
+            if (basisId == 0) return;
+        }
+
+        await using var guard = await _locks.CreateAsync(ct);
+        await guard.AcquireAsync([StockLockKey.ForLocation(_warehouse.Code, "INBOUND", basisId.ToString(CultureInfo.InvariantCulture))], ct);
+
+        Guid? key;
+        int revision;
+        PostingSnapshot snapshot;
+        string number;
+        if (documentType == OutboxDocumentType.CostDocument)
+        {
+            var doc = await _db.AdditionalCostDocuments.FirstOrDefaultAsync(d => d.Id == documentId, ct);
+            if (doc is null || doc.PostingStatus != "Posted") return;
+            var problems = await CheckReversibleAsync(documentType, documentId, ct);
+            if (problems.Count > 0) throw new InvalidOperationException(problems[0].Text);
+            snapshot = PostingSnapshot.FromJson(doc.PostingSnapshotJson)!;
+            var basis = await LoadAsync(doc.BasisShipmentId, ct);
+            key = doc.AgnumKey; revision = doc.PostingRevision; number = doc.DocumentNumber;
+            snapshot.Restore(doc, basis!.Lines);
+        }
+        else
+        {
+            var shipment = await LoadAsync(documentId, ct);
+            if (shipment is null || shipment.PostingStatus != "Posted") return;
+            var problems = await CheckReversibleAsync(documentType, documentId, ct);
+            if (problems.Count > 0) throw new InvalidOperationException(problems[0].Text);
+            snapshot = PostingSnapshot.FromJson(shipment.PostingSnapshotJson)!;
+            key = shipment.AgnumKey; revision = shipment.PostingRevision; number = shipment.ReferenceNumber;
+            snapshot.Restore(shipment);
+        }
+
+        var reason = new StockValueDocument(documentType, documentId.ToString(CultureInfo.InvariantCulture), number, $"Un-post by {user}");
+        var requests = snapshot.Values.Select(v => StockValueRequest.ForTrueUp(v.Sku, v.Qty, -v.DiffEur, reason)).ToList();
+        if (key is not null) await _outbox.WithdrawPostRowsAsync(key.Value, revision, ct);
+        await PersistAsync(requests, ct);
     }
 }

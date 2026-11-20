@@ -110,6 +110,15 @@
                     </MudSelect>
                 </div>
             </div>
+            @if (_accountingRoute == "ManualInAgnum")
+            {
+                <div class="lk-form-field">
+                    <span class="lk-form-field__label">@L["Purchase.ManualReason"]</span>
+                    <div class="lk-form-field__control">
+                        <MudTextField T="string" Variant="Variant.Text" @bind-Value="_manualReason" Immediate="true" />
+                    </div>
+                </div>
+            }
         </div>
 
         <div class="ish-create__section-head">
@@ -267,6 +276,7 @@
     private decimal? _vatAmount;
     private string? _vatTreatment;
     private string _accountingRoute = "Auto";
+    private string? _manualReason;
 
     private IEnumerable<string> CostTypePresets => _costTypes.Select(x => x.Code);
     private string DefaultCostCode => _costTypes.FirstOrDefault(x => x.Code == "Other")?.Code ?? _costTypes.FirstOrDefault()?.Code ?? "Other";
@@ -366,6 +376,7 @@
             _vatAmount = shipment.Purchase?.VatAmount;
             _vatTreatment = shipment.Purchase?.VatTreatment;
             _accountingRoute = shipment.Purchase?.AccountingRoute ?? "Auto";
+            _manualReason = shipment.Purchase?.ManualReason;
 
             // The detail response carries the supplier's display name but not its Code
             // (needed by the Supplier autocomplete's ToStringFunc), so look the full
@@ -606,7 +617,8 @@
             NetAmount = _netAmount,
             VatAmount = _vatAmount,
             VatTreatment = _vatTreatment,
-            AccountingRoute = _accountingRoute
+            AccountingRoute = _accountingRoute,
+            ManualReason = _accountingRoute == "ManualInAgnum" ? _manualReason : null
         };
 
         _isSubmitting = true;

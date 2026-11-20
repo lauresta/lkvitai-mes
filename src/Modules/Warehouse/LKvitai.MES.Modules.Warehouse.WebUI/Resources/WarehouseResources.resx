@@ -1955,4 +1955,92 @@
   <data name="OpeningBalances.Err.DuplicateRow" xml:space="preserve"><value>Duplicate item and location</value></data>
   <data name="OpeningBalances.Err.MissingSku" xml:space="preserve"><value>SKU is missing</value></data>
   <data name="OpeningBalances.Err.MissingLocation" xml:space="preserve"><value>Location is missing</value></data>
+  <data name="Nav.AgnumOutbox" xml:space="preserve"><value>Agnum sending queue</value></data>
+  <data name="Nav.AdditionalCosts" xml:space="preserve"><value>Additional cost invoices</value></data>
+  <data name="Purchase.ManualReason" xml:space="preserve"><value>Reason for entering in Agnum manually</value></data>
+  <data name="Purchase.Problem.ManualReasonRequired" xml:space="preserve"><value>A reason is required when the document is entered in Agnum manually.</value></data>
+  <data name="Purchase.Problem.NotPosted" xml:space="preserve"><value>The document is not posted.</value></data>
+  <data name="Purchase.Problem.UnpostNotAvailable" xml:space="preserve"><value>The document was posted before un-posting existed; its values were not saved.</value></data>
+  <data name="Purchase.Problem.CostDocumentsPosted" xml:space="preserve"><value>Un-post the additional cost invoices of this shipment first.</value></data>
+  <data name="Purchase.Problem.ReceiptsAfterPosting" xml:space="preserve"><value>Goods were received after posting; un-posting would misstate the stock value.</value></data>
+  <data name="Agnum.Sending.Tab" xml:space="preserve"><value>Sending</value></data>
+  <data name="Agnum.Sending.Title" xml:space="preserve"><value>Sending to Agnum</value></data>
+  <data name="Agnum.Sending.Enabled" xml:space="preserve"><value>Send posted documents to Agnum</value></data>
+  <data name="Agnum.Sending.StartDate" xml:space="preserve"><value>Start date</value></data>
+  <data name="Agnum.Sending.StartDateHint" xml:space="preserve"><value>Documents dated before this day are never sent.</value></data>
+  <data name="Agnum.Sending.ServiceUrl" xml:space="preserve"><value>Agnum service address</value></data>
+  <data name="Agnum.Sending.CheckConnection" xml:space="preserve"><value>Check connection</value></data>
+  <data name="Agnum.Sending.ConnectionOk" xml:space="preserve"><value>Connected. Warehouses in Agnum: {0}.</value></data>
+  <data name="Agnum.Sending.ConnectionFailed" xml:space="preserve"><value>No connection: {0}</value></data>
+  <data name="Agnum.Sending.State" xml:space="preserve"><value>Queue state</value></data>
+  <data name="Agnum.Sending.Switch" xml:space="preserve"><value>Sending</value></data>
+  <data name="Agnum.Sending.On" xml:space="preserve"><value>On</value></data>
+  <data name="Agnum.Sending.Off" xml:space="preserve"><value>Off</value></data>
+  <data name="Agnum.Sending.Waiting" xml:space="preserve"><value>Documents not yet in Agnum</value></data>
+  <data name="Agnum.Sending.NeedsReview" xml:space="preserve"><value>Need a decision</value></data>
+  <data name="Agnum.Sending.Oldest" xml:space="preserve"><value>Oldest waiting since</value></data>
+  <data name="Agnum.Sending.LastReconciliation" xml:space="preserve"><value>Last reconciliation</value></data>
+  <data name="Agnum.Sending.Findings" xml:space="preserve"><value>Differences found</value></data>
+  <data name="Agnum.Sending.OpenQueue" xml:space="preserve"><value>Open the queue</value></data>
+  <data name="Agnum.Sending.Saved" xml:space="preserve"><value>Saved</value></data>
+  <data name="Agnum.Queue.Loading" xml:space="preserve"><value>Loading...</value></data>
+  <data name="Agnum.Queue.Title" xml:space="preserve"><value>Agnum sending queue</value></data>
+  <data name="Agnum.Queue.Filter" xml:space="preserve"><value>Show</value></data>
+  <data name="Agnum.Queue.FilterOpen" xml:space="preserve"><value>Not yet delivered</value></data>
+  <data name="Agnum.Queue.FilterAll" xml:space="preserve"><value>All</value></data>
+  <data name="Agnum.Queue.Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Agnum.Queue.RunNow" xml:space="preserve"><value>Send now</value></data>
+  <data name="Agnum.Queue.Document" xml:space="preserve"><value>Document</value></data>
+  <data name="Agnum.Queue.Supplier" xml:space="preserve"><value>Supplier</value></data>
+  <data name="Agnum.Queue.Date" xml:space="preserve"><value>Date</value></data>
+  <data name="Agnum.Queue.Gross" xml:space="preserve"><value>Gross</value></data>
+  <data name="Agnum.Queue.Operation" xml:space="preserve"><value>Operation</value></data>
+  <data name="Agnum.Queue.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Agnum.Queue.Attempts" xml:space="preserve"><value>Attempts</value></data>
+  <data name="Agnum.Queue.Error" xml:space="preserve"><value>Error</value></data>
+  <data name="Agnum.Queue.Empty" xml:space="preserve"><value>Nothing in the queue.</value></data>
+  <data name="Agnum.Queue.TypeShipment" xml:space="preserve"><value>Purchase document</value></data>
+  <data name="Agnum.Queue.TypeCost" xml:space="preserve"><value>Additional cost invoice</value></data>
+  <data name="Agnum.Queue.OpPost" xml:space="preserve"><value>Post</value></data>
+  <data name="Agnum.Queue.OpAnnul" xml:space="preserve"><value>Annul</value></data>
+  <data name="Agnum.Queue.Held" xml:space="preserve"><value>Held: sending is off or the date is before the start date</value></data>
+  <data name="Agnum.Queue.Retry" xml:space="preserve"><value>Retry</value></data>
+  <data name="Agnum.Queue.MarkManual" xml:space="preserve"><value>Mark manual</value></data>
+  <data name="Agnum.Queue.Unpost" xml:space="preserve"><value>Un-post</value></data>
+  <data name="Agnum.Queue.UnpostConfirm" xml:space="preserve"><value>The document returns to NotPosted and its stock value to the value before posting. If it is in Agnum, it is deleted there first.</value></data>
+  <data name="Agnum.Queue.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Agnum.Queue.Reconciliation" xml:space="preserve"><value>Nightly reconciliation</value></data>
+  <data name="Agnum.Queue.NoFindings" xml:space="preserve"><value>No differences.</value></data>
+  <data name="Agnum.Queue.FindingKind" xml:space="preserve"><value>Difference</value></data>
+  <data name="Agnum.Queue.Retried" xml:space="preserve"><value>Returned to the queue</value></data>
+  <data name="Agnum.Queue.MarkedManual" xml:space="preserve"><value>Marked as entered manually</value></data>
+  <data name="Agnum.Queue.UnpostedNow" xml:space="preserve"><value>The document was un-posted</value></data>
+  <data name="Agnum.Queue.UnpostQueued" xml:space="preserve"><value>Annulment queued; the document returns to NotPosted when Agnum confirms</value></data>
+  <data name="Agnum.Queue.StateLabel" xml:space="preserve"><value>Agnum:</value></data>
+  <data name="Agnum.Queue.AttemptsN" xml:space="preserve"><value>attempts: {0}</value></data>
+  <data name="Agnum.Queue.Status.Pending" xml:space="preserve"><value>Waiting</value></data>
+  <data name="Agnum.Queue.Status.Sending" xml:space="preserve"><value>Sending</value></data>
+  <data name="Agnum.Queue.Status.Sent" xml:space="preserve"><value>Sent</value></data>
+  <data name="Agnum.Queue.Status.Unknown" xml:space="preserve"><value>Unknown, will check</value></data>
+  <data name="Agnum.Queue.Status.NeedsReview" xml:space="preserve"><value>Needs review</value></data>
+  <data name="Agnum.Queue.Status.Annulled" xml:space="preserve"><value>Annulled</value></data>
+  <data name="Agnum.Queue.Finding.MissingInAgnum" xml:space="preserve"><value>Missing in Agnum</value></data>
+  <data name="Agnum.Queue.Finding.Mismatch" xml:space="preserve"><value>Differs</value></data>
+  <data name="Agnum.Queue.Finding.UnexpectedInAgnum" xml:space="preserve"><value>Unexpected in Agnum</value></data>
+  <data name="Agnum.Queue.Finding.ForeignDocument" xml:space="preserve"><value>Entered in Agnum outside Warehouse</value></data>
+  <data name="Agnum.Queue.Finding.ManualNotFound" xml:space="preserve"><value>Manual document not found</value></data>
+  <data name="CostDocs.Title" xml:space="preserve"><value>Additional cost invoices</value></data>
+  <data name="CostDocs.Intro" xml:space="preserve"><value>An invoice of another company (carrier, broker) for the cost of a posted purchase document.</value></data>
+  <data name="CostDocs.New" xml:space="preserve"><value>New cost invoice</value></data>
+  <data name="CostDocs.Supplier" xml:space="preserve"><value>Supplier</value></data>
+  <data name="CostDocs.Number" xml:space="preserve"><value>Invoice number</value></data>
+  <data name="CostDocs.Date" xml:space="preserve"><value>Invoice date</value></data>
+  <data name="CostDocs.Basis" xml:space="preserve"><value>Purchase document</value></data>
+  <data name="CostDocs.CostType" xml:space="preserve"><value>Cost type</value></data>
+  <data name="CostDocs.InCost" xml:space="preserve"><value>in cost</value></data>
+  <data name="CostDocs.Expense" xml:space="preserve"><value>expense</value></data>
+  <data name="CostDocs.Create" xml:space="preserve"><value>Create</value></data>
+  <data name="CostDocs.Created" xml:space="preserve"><value>Cost invoice created</value></data>
+  <data name="CostDocs.Status" xml:space="preserve"><value>Posting</value></data>
+  <data name="CostDocs.Empty" xml:space="preserve"><value>No cost invoices yet.</value></data>
 </root>

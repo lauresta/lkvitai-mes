@@ -48,6 +48,9 @@ public class WarehouseDbContext : DbContext
     public DbSet<StockAccountProfile> StockAccountProfiles => Set<StockAccountProfile>();
     public DbSet<AgnumPostingRule> AgnumPostingRules => Set<AgnumPostingRule>();
     public DbSet<AccountingConfigAuditEntry> AccountingConfigAudit => Set<AccountingConfigAuditEntry>();
+    public DbSet<AgnumDocumentOutbox> AgnumOutbox => Set<AgnumDocumentOutbox>();
+    public DbSet<AgnumSendingSettings> AgnumSendingSettings => Set<AgnumSendingSettings>();
+    public DbSet<AgnumReconciliationFinding> AgnumReconciliationFindings => Set<AgnumReconciliationFinding>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<SalesOrder> SalesOrders => Set<SalesOrder>();
     public DbSet<SalesOrderLine> SalesOrderLines => Set<SalesOrderLine>();
@@ -485,6 +488,47 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.VatCode).HasMaxLength(20);
             entity.HasIndex(e => new { e.StockAccountProfileId, e.VatTreatment }).IsUnique();
             entity.HasOne<StockAccountProfile>().WithMany().HasForeignKey(e => e.StockAccountProfileId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AgnumDocumentOutbox>(entity =>
+        {
+            entity.ToTable("agnum_document_outbox");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.DocumentType).HasMaxLength(40).IsRequired();
+            entity.Property(e => e.DocumentNumber).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Currency).HasMaxLength(3).IsRequired();
+            entity.Property(e => e.GrossAmount).HasPrecision(18, 2);
+            entity.Property(e => e.Operation).HasMaxLength(10).IsRequired();
+            entity.Property(e => e.PayloadJson).HasColumnType("jsonb");
+            entity.Property(e => e.PayloadHash).HasMaxLength(64).IsRequired();
+            entity.Property(e => e.Status).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.LastError).HasMaxLength(2000);
+            entity.Property(e => e.AppliedPostingsJson).HasColumnType("jsonb");
+            entity.Property(e => e.CreatedBy).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Version).IsConcurrencyToken();
+            entity.HasIndex(e => new { e.Status, e.NextAttemptAt });
+            entity.HasIndex(e => new { e.DocumentType, e.DocumentId });
+            entity.HasIndex(e => new { e.SupplierId, e.Id });
+            entity.HasIndex(e => new { e.Key, e.Revision, e.Operation }).IsUnique();
+        });
+
+        modelBuilder.Entity<AgnumSendingSettings>(entity =>
+        {
+            entity.ToTable("agnum_sending_settings");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.UpdatedBy).HasMaxLength(200);
+            entity.Property(e => e.LastReconciliationError).HasMaxLength(2000);
+        });
+
+        modelBuilder.Entity<AgnumReconciliationFinding>(entity =>
+        {
+            entity.ToTable("agnum_reconciliation_findings");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Kind).HasMaxLength(30).IsRequired();
+            entity.Property(e => e.DocumentType).HasMaxLength(40);
+            entity.Property(e => e.DocumentNumber).HasMaxLength(100);
+            entity.Property(e => e.Details).HasMaxLength(2000).IsRequired();
         });
 
         modelBuilder.Entity<AccountingConfigAuditEntry>(entity =>
@@ -1218,6 +1262,8 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.AccountingRoute).HasMaxLength(20).HasDefaultValue("Auto").IsRequired();
             entity.Property(e => e.PostingStatus).HasMaxLength(20).HasDefaultValue("NotPosted").IsRequired();
             entity.Property(e => e.PostedBy).HasMaxLength(200);
+            entity.Property(e => e.ManualReason).HasMaxLength(500);
+            entity.Property(e => e.PostingSnapshotJson).HasColumnType("jsonb");
             entity.HasIndex(e => e.ReferenceNumber).IsUnique();
             entity.HasOne(e => e.Supplier).WithMany().HasForeignKey(e => e.SupplierId).OnDelete(DeleteBehavior.Restrict);
             entity.ToTable(t =>
@@ -1323,6 +1369,8 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.CostTypeCode).HasMaxLength(50).IsRequired();
             entity.Property(e => e.PostingStatus).HasMaxLength(20).IsRequired();
             entity.Property(e => e.PostedBy).HasMaxLength(200);
+            entity.Property(e => e.ManualReason).HasMaxLength(500);
+            entity.Property(e => e.PostingSnapshotJson).HasColumnType("jsonb");
             entity.Property(e => e.CreatedBy).HasMaxLength(200).IsRequired();
             entity.HasIndex(e => e.BasisShipmentId);
             entity.HasOne<Supplier>().WithMany().HasForeignKey(e => e.SupplierId).OnDelete(DeleteBehavior.Restrict);

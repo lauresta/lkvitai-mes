@@ -17,7 +17,13 @@
     <li class="nav-item"><button class="nav-link @(_tab == "rules" ? "active" : "")" type="button" @onclick='() => _tab = "rules"'>Postings</button></li>
     <li class="nav-item"><button class="nav-link @(_tab == "costs" ? "active" : "")" type="button" @onclick='() => _tab = "costs"'>@L["Purchase.ExtraCosts"]</button></li>
     <li class="nav-item"><button class="nav-link @(_tab == "audit" ? "active" : "")" type="button" @onclick='() => _tab = "audit"'>Change log</button></li>
+    <li class="nav-item"><button class="nav-link @(_tab == "sending" ? "active" : "")" type="button" data-testid="tab-sending" @onclick='() => _tab = "sending"'>@L["Agnum.Sending.Tab"]</button></li>
 </ul>
+
+@if (_tab == "sending")
+{
+    <SendingSettingsPanel />
+}
 
 @if (_tab == "profiles")
 {

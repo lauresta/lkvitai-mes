@@ -528,13 +528,18 @@ public sealed class ReceivingController : ControllerBase
 
         var authorization = HttpContext.RequestServices.GetRequiredService<Microsoft.AspNetCore.Authorization.IAuthorizationService>();
         var canManual = (await authorization.AuthorizeAsync(User, WarehousePolicies.InventoryAccountantOrManager)).Succeeded;
+        var queue = shipment.PostingStatus == "Posted" && shipment.AccountingRoute == "Auto"
+            ? await _dbContext.AgnumOutbox.AsNoTracking().Where(r => r.DocumentType == "InboundShipment" && r.DocumentId == shipment.Id)
+                .OrderByDescending(r => r.Id).FirstOrDefaultAsync(ct)
+            : null;
         return new PurchaseDocumentDto(
             shipment.Currency, shipment.NetAmount, shipment.VatAmount, shipment.GrossAmount,
             shipment.RateUnitsPerEur, shipment.RateDate, shipment.RateSource, shipment.RateReason,
             shipment.NetEur, shipment.VatEur, shipment.GrossEur,
             shipment.VatTreatment?.ToString(),
             shipment.Supplier is null ? null : Infrastructure.Purchasing.PurchasePostingValidator.DefaultVatTreatment(shipment.Supplier.Kind)?.ToString(),
-            shipment.AccountingRoute, shipment.PostingStatus, shipment.PostedAt, shipment.PostedBy, canManual, problems);
+            shipment.AccountingRoute, shipment.PostingStatus, shipment.PostedAt, shipment.PostedBy, canManual,
+            shipment.ManualReason, queue?.Status, queue?.Operation, queue?.LastError, queue?.Attempts ?? 0, problems);
     }
 
     /// <summary>Blueprint 4.2 "Post": runs every blocking check, then writes the true-up and locks the document.</summary>
@@ -1029,6 +1034,7 @@ public sealed class ReceivingController : ControllerBase
         shipment.GrossAmount = request.NetAmount is null ? null : request.NetAmount + (request.VatAmount ?? 0m);
         shipment.VatTreatment = treatment;
         shipment.AccountingRoute = route;
+        shipment.ManualReason = route == "ManualInAgnum" ? request.ManualReason?.Trim() : null;
         return null;
     }
 
@@ -1165,7 +1171,8 @@ public sealed class ReceivingController : ControllerBase
         decimal? NetAmount = null,
         decimal? VatAmount = null,
         string? VatTreatment = null,
-        string? AccountingRoute = null);
+        string? AccountingRoute = null,
+        string? ManualReason = null);
 
     public sealed record CreateInboundShipmentLineRequest(
         int ItemId,
@@ -1259,6 +1266,11 @@ public sealed class ReceivingController : ControllerBase
         DateTimeOffset? PostedAt,
         string? PostedBy,
         bool CanSetManualRate,
+        string? ManualReason,
+        string? QueueStatus,
+        string? QueueOperation,
+        string? QueueError,
+        int QueueAttempts,
         IReadOnlyList<PostingProblemDto> Problems);
 
     public sealed record PostShipmentRequest(decimal? ManualRateUnitsPerEur, string? ManualRateReason);

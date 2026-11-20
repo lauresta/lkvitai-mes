@@ -1,0 +1,252 @@
+@page "/additional-costs"
+@inject AgnumOutboxClient Client
+@inject ToastService ToastService
+
+<PageTitle>@L["CostDocs.Title"]</PageTitle>
+
+<h1>@L["CostDocs.Title"]</h1>
+<p class="text-muted">@L["CostDocs.Intro"]</p>
+
+@if (_error is not null)
+{
+    <div class="alert alert-danger" data-testid="costdocs-error">@_error</div>
+}
+@if (_problems.Count > 0)
+{
+    <ul class="text-danger" data-testid="costdocs-problems">
+        @foreach (var p in _problems)
+        {
+            <li>@p</li>
+        }
+    </ul>
+}
+
+<div class="card border mb-4" data-testid="costdocs-form">
+    <div class="card-body">
+        <h5>@L["CostDocs.New"]</h5>
+        <div class="row g-2">
+            <div class="col-md-4">
+                <label class="form-label">@L["CostDocs.Supplier"]</label>
+                <select class="form-select" @bind="_supplierId" data-testid="costdocs-supplier">
+                    <option value="0">-</option>
+                    @foreach (var s in _lookups.Suppliers) { <option value="@s.Id">@s.Label</option> }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">@L["CostDocs.Number"]</label>
+                <input class="form-control" @bind="_number" data-testid="costdocs-number" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">@L["CostDocs.Date"]</label>
+                <input class="form-control" type="date" @bind="_date" data-testid="costdocs-date" />
+            </div>
+            <div class="col-md-1">
+                <label class="form-label">@L["Purchase.Currency"]</label>
+                <input class="form-control" maxlength="3" @bind="_currency" data-testid="costdocs-currency" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">@L["Purchase.VatTreatment"]</label>
+                <select class="form-select" @bind="_treatment">
+                    <option value="Domestic">@L["Purchase.VatTreatment.Domestic"]</option>
+                    <option value="EuAcquisition">@L["Purchase.VatTreatment.EuAcquisition"]</option>
+                    <option value="Import">@L["Purchase.VatTreatment.Import"]</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">@L["Purchase.NetAmount"]</label>
+                <input class="form-control" type="number" step="0.01" @bind="_net" data-testid="costdocs-net" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">@L["Purchase.VatAmount"]</label>
+                <input class="form-control" type="number" step="0.01" @bind="_vat" data-testid="costdocs-vat" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">@L["CostDocs.Basis"]</label>
+                <select class="form-select" @bind="_basisId" data-testid="costdocs-basis">
+                    <option value="0">-</option>
+                    @foreach (var s in _lookups.Shipments) { <option value="@s.Id">@s.Label</option> }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">@L["CostDocs.CostType"]</label>
+                <select class="form-select" @bind="_costType" data-testid="costdocs-type">
+                    <option value="">-</option>
+                    @foreach (var t in _types) { <option value="@t.Code">@t.Name (@(t.IncludedInCost ? L["CostDocs.InCost"] : L["CostDocs.Expense"]))</option> }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">@L["Purchase.AccountingRoute"]</label>
+                <select class="form-select" @bind="_route" data-testid="costdocs-route">
+                    <option value="Auto">@L["Purchase.Route.Auto"]</option>
+                    <option value="ManualInAgnum">@L["Purchase.Route.ManualInAgnum"]</option>
+                </select>
+            </div>
+            @if (_route == "ManualInAgnum")
+            {
+                <div class="col-md-4">
+                    <label class="form-label">@L["Purchase.ManualReason"]</label>
+                    <input class="form-control" @bind="_manualReason" data-testid="costdocs-reason" />
+                </div>
+            }
+        </div>
+        <div class="mt-3">
+            <button class="btn btn-primary" type="button" disabled="@_busy" @onclick="CreateAsync" data-testid="costdocs-create">@L["CostDocs.Create"]</button>
+        </div>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-sm align-middle" data-testid="costdocs-table">
+        <thead>
+            <tr>
+                <th>@L["CostDocs.Number"]</th>
+                <th>@L["CostDocs.Supplier"]</th>
+                <th>@L["CostDocs.Date"]</th>
+                <th class="text-end">@L["Purchase.NetAmount"]</th>
+                <th class="text-end">@L["Purchase.GrossAmount"]</th>
+                <th>@L["CostDocs.CostType"]</th>
+                <th>@L["CostDocs.Basis"]</th>
+                <th>@L["CostDocs.Status"]</th>
+                <th>@L["Agnum.Queue.Status"]</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (_docs.Count == 0)
+            {
+                <tr><td colspan="10" class="text-muted">@L["CostDocs.Empty"]</td></tr>
+            }
+            @foreach (var d in _docs)
+            {
+                var posted = d.PostingStatus == "Posted";
+                <tr data-testid="costdocs-row">
+                    <td>@d.DocumentNumber</td>
+                    <td>@(d.SupplierName ?? "#" + d.SupplierId)</td>
+                    <td class="is-num">@d.DocumentDate.ToString("yyyy-MM-dd")</td>
+                    <td class="text-end is-money is-num">@Money.Format(d.NetAmount) @d.Currency</td>
+                    <td class="text-end is-money is-num">@Money.Format(d.GrossAmount) @d.Currency</td>
+                    <td>@d.CostTypeCode</td>
+                    <td><a href="/inbound/shipments/@d.BasisShipmentId">#@d.BasisShipmentId</a></td>
+                    <td><span class="chip @(posted ? "chip--ok" : "chip--locked")">@(posted ? L["Purchase.Posted"] : L["Purchase.NotPosted"])</span></td>
+                    <td>
+                        @if (d.AccountingRoute == "ManualInAgnum")
+                        {
+                            <span class="chip chip--reserved" title="@d.ManualReason">@L["Purchase.Route.ManualInAgnum"]</span>
+                        }
+                        else if (d.QueueStatus is not null)
+                        {
+                            <span class="chip @QueueChip(d.QueueStatus)">@L["Agnum.Queue.Status." + d.QueueStatus]</span>
+                            @if (!string.IsNullOrWhiteSpace(d.QueueError)) { <div class="small text-danger">@d.QueueError</div> }
+                        }
+                    </td>
+                    <td class="text-nowrap">
+                        @if (!posted)
+                        {
+                            <button class="btn btn-sm btn-primary" type="button" disabled="@_busy" @onclick="() => PostAsync(d)" data-testid="costdocs-post">@L["Purchase.Post"]</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-sm btn-outline-danger" type="button" disabled="@_busy" @onclick="() => UnpostAsync(d)" data-testid="costdocs-unpost">@L["Agnum.Queue.Unpost"]</button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private List<CostDocumentRowDto> _docs = new();
+    private List<CostTypeOptionDto> _types = new();
+    private CostLookupsDto _lookups = new(new(), new());
+    private string? _error;
+    private List<string> _problems = new();
+    private bool _busy;
+
+    private int _supplierId;
+    private int _basisId;
+    private string _number = string.Empty;
+    private DateTime _date = DateTime.Today;
+    private string _currency = "EUR";
+    private decimal _net;
+    private decimal _vat;
+    private string _treatment = "Domestic";
+    private string _route = "Auto";
+    private string _costType = string.Empty;
+    private string? _manualReason;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RunAsync(async () =>
+        {
+            _types = await Client.GetCostTypesAsync();
+            _lookups = await Client.GetCostLookupsAsync();
+            await LoadAsync();
+        });
+    }
+
+    private async Task LoadAsync() => _docs = await Client.GetCostDocumentsAsync();
+
+    private Task CreateAsync() => RunAsync(async () =>
+    {
+        await Client.CreateCostDocumentAsync(new CostDocumentCreateDto(
+            _supplierId, _number, DateOnly.FromDateTime(_date), _currency, _net, _vat, _treatment, _route, _basisId, _costType,
+            _route == "ManualInAgnum" ? _manualReason : null));
+        ToastService.ShowSuccess(L["CostDocs.Created"].Value);
+        _number = string.Empty;
+        _net = 0m;
+        _vat = 0m;
+        await LoadAsync();
+    });
+
+    private Task PostAsync(CostDocumentRowDto d) => RunAsync(async () =>
+    {
+        await Client.PostCostDocumentAsync(d.Id);
+        ToastService.ShowSuccess(L["Purchase.PostedToast"].Value);
+        await LoadAsync();
+    });
+
+    private Task UnpostAsync(CostDocumentRowDto d) => RunAsync(async () =>
+    {
+        var result = await Client.UnpostAsync("AdditionalCostDocument", d.Id);
+        ToastService.ShowSuccess(result.Outcome == "Reversed" ? L["Agnum.Queue.UnpostedNow"].Value : L["Agnum.Queue.UnpostQueued"].Value);
+        await LoadAsync();
+    });
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        _error = null;
+        _problems = new();
+        try
+        {
+            await action();
+        }
+        catch (ApiException ex) when (ex.StatusCode == 422 && ex.ProblemDetails?.Detail is { } detail && detail.Contains('|'))
+        {
+            _problems = detail.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(line =>
+            {
+                var parts = line.Split('|', 2);
+                var localized = L["Purchase.Problem." + parts[0]];
+                return !localized.ResourceNotFound ? localized.Value : parts.Length == 2 ? parts[1] : line;
+            }).ToList();
+        }
+        catch (ApiException ex)
+        {
+            _error = ex.ProblemDetails?.Detail ?? ex.UserMessage;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private static string QueueChip(string status) => status switch
+    {
+        "Sent" => "chip--ok",
+        "Pending" or "Sending" => "chip--reserved",
+        "Unknown" => "chip--low",
+        "NeedsReview" => "chip--out",
+        _ => "chip--locked"
+    };
+}
