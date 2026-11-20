@@ -13,7 +13,8 @@ public sealed record StockValueRequest(
     decimal Qty,
     bool IsInflow,
     decimal? ValueEur,
-    StockValueDocument Document)
+    StockValueDocument Document,
+    DateTime? BusinessDate = null)
 {
     /// <summary>Purchase posting true-up: ValueEur is the difference, Qty the received quantity.</summary>
     public bool IsTrueUp { get; init; }
@@ -160,11 +161,11 @@ public static class StockValueWriter
         if (request.IsInflow)
         {
             return request.ValueEur.HasValue
-                ? aggregate.Inflow(itemId, request.Kind, request.Qty, request.ValueEur.Value, request.Document)
-                : aggregate.InflowAtAverage(itemId, request.Kind, request.Qty, request.Document);
+                ? aggregate.Inflow(itemId, request.Kind, request.Qty, request.ValueEur.Value, request.Document, request.BusinessDate)
+                : aggregate.InflowAtAverage(itemId, request.Kind, request.Qty, request.Document, request.BusinessDate);
         }
 
-        return aggregate.Outflow(itemId, request.Kind, request.Qty, request.Document);
+        return aggregate.Outflow(itemId, request.Kind, request.Qty, request.Document, request.BusinessDate);
     }
 
     /// <summary>Updates the OnHandValue read model after the transaction committed; a failure is logged, never thrown.</summary>

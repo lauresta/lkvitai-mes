@@ -1916,4 +1916,43 @@
   <data name="Purchase.Problem.VatTreatmentRequired" xml:space="preserve"><value>Choose the VAT treatment.</value></data>
   <data name="Purchase.Problem.PostingRuleMissing" xml:space="preserve"><value>No Agnum posting rule is set for this stock account and VAT treatment.</value></data>
   <data name="Purchase.Problem.BasisNotPosted" xml:space="preserve"><value>The basis shipment must be posted first.</value></data>
+  <data name="Nav.OpeningBalances" xml:space="preserve"><value>Opening balances</value></data>
+  <data name="OpeningBalances.Title" xml:space="preserve"><value>Opening balances</value></data>
+  <data name="OpeningBalances.Intro" xml:space="preserve"><value>Load stock quantities and values as of 2026-12-31 from a CSV file. Opening balances are never sent to Agnum. Loading the same file again changes nothing.</value></data>
+  <data name="OpeningBalances.File" xml:space="preserve"><value>CSV file</value></data>
+  <data name="OpeningBalances.Format" xml:space="preserve"><value>Columns: sku, location, qty, value_eur (comma or semicolon separated).</value></data>
+  <data name="OpeningBalances.Preview" xml:space="preserve"><value>Preview</value></data>
+  <data name="OpeningBalances.Confirm" xml:space="preserve"><value>Confirm and load</value></data>
+  <data name="OpeningBalances.Totals" xml:space="preserve"><value>Totals per stock account</value></data>
+  <data name="OpeningBalances.Account" xml:space="preserve"><value>Stock account</value></data>
+  <data name="OpeningBalances.Rows" xml:space="preserve"><value>Rows</value></data>
+  <data name="OpeningBalances.ValueEur" xml:space="preserve"><value>Value, EUR</value></data>
+  <data name="OpeningBalances.AgnumBalance" xml:space="preserve"><value>Agnum balance on 31.12</value></data>
+  <data name="OpeningBalances.Difference" xml:space="preserve"><value>Difference</value></data>
+  <data name="OpeningBalances.Total" xml:space="preserve"><value>Total</value></data>
+  <data name="OpeningBalances.RowsHeading" xml:space="preserve"><value>Rows</value></data>
+  <data name="OpeningBalances.Item" xml:space="preserve"><value>Item</value></data>
+  <data name="OpeningBalances.Errors" xml:space="preserve"><value>Errors</value></data>
+  <data name="OpeningBalances.Loaded" xml:space="preserve"><value>Loaded opening documents</value></data>
+  <data name="OpeningBalances.Loaded.Success" xml:space="preserve"><value>Opening balance {0} loaded.</value></data>
+  <data name="OpeningBalances.NoDocuments" xml:space="preserve"><value>No opening documents have been loaded yet.</value></data>
+  <data name="OpeningBalances.Number" xml:space="preserve"><value>Document</value></data>
+  <data name="OpeningBalances.FileName" xml:space="preserve"><value>File</value></data>
+  <data name="OpeningBalances.Date" xml:space="preserve"><value>Date</value></data>
+  <data name="OpeningBalances.CreatedBy" xml:space="preserve"><value>Loaded by</value></data>
+  <data name="OpeningBalances.CreatedAt" xml:space="preserve"><value>Loaded at</value></data>
+  <data name="OpeningBalances.AlreadyLoaded" xml:space="preserve"><value>This file is already loaded as {0}; nothing was changed.</value></data>
+  <data name="OpeningBalances.ErrorsFound" xml:space="preserve"><value>{0} row(s) have errors. Fix the file and upload it again.</value></data>
+  <data name="OpeningBalances.FileErr.EmptyFile" xml:space="preserve"><value>The file is empty.</value></data>
+  <data name="OpeningBalances.FileErr.MissingColumns" xml:space="preserve"><value>The header must contain the columns sku, location, qty, value_eur.</value></data>
+  <data name="OpeningBalances.Err.UnknownItem" xml:space="preserve"><value>Unknown item</value></data>
+  <data name="OpeningBalances.Err.UnknownLocation" xml:space="preserve"><value>Unknown location</value></data>
+  <data name="OpeningBalances.Err.ExternalLocation" xml:space="preserve"><value>Location is outside the stock</value></data>
+  <data name="OpeningBalances.Err.NegativeQty" xml:space="preserve"><value>Negative quantity</value></data>
+  <data name="OpeningBalances.Err.NegativeValue" xml:space="preserve"><value>Negative value</value></data>
+  <data name="OpeningBalances.Err.ZeroQty" xml:space="preserve"><value>Quantity must be greater than zero</value></data>
+  <data name="OpeningBalances.Err.InvalidNumber" xml:space="preserve"><value>Not a valid number</value></data>
+  <data name="OpeningBalances.Err.DuplicateRow" xml:space="preserve"><value>Duplicate item and location</value></data>
+  <data name="OpeningBalances.Err.MissingSku" xml:space="preserve"><value>SKU is missing</value></data>
+  <data name="OpeningBalances.Err.MissingLocation" xml:space="preserve"><value>Location is missing</value></data>
 </root>
