@@ -528,13 +528,18 @@ public sealed class ReceivingController : ControllerBase
 
         var authorization = HttpContext.RequestServices.GetRequiredService<Microsoft.AspNetCore.Authorization.IAuthorizationService>();
         var canManual = (await authorization.AuthorizeAsync(User, WarehousePolicies.InventoryAccountantOrManager)).Succeeded;
+        var queue = shipment.PostingStatus == "Posted" && shipment.AccountingRoute == "Auto"
+            ? await _dbContext.AgnumOutbox.AsNoTracking().Where(r => r.DocumentType == "InboundShipment" && r.DocumentId == shipment.Id)
+                .OrderByDescending(r => r.Id).FirstOrDefaultAsync(ct)
+            : null;
         return new PurchaseDocumentDto(
             shipment.Currency, shipment.NetAmount, shipment.VatAmount, shipment.GrossAmount,
             shipment.RateUnitsPerEur, shipment.RateDate, shipment.RateSource, shipment.RateReason,
             shipment.NetEur, shipment.VatEur, shipment.GrossEur,
             shipment.VatTreatment?.ToString(),
             shipment.Supplier is null ? null : Infrastructure.Purchasing.PurchasePostingValidator.DefaultVatTreatment(shipment.Supplier.Kind)?.ToString(),
-            shipment.AccountingRoute, shipment.PostingStatus, shipment.PostedAt, shipment.PostedBy, canManual, problems,
+            shipment.AccountingRoute, shipment.PostingStatus, shipment.PostedAt, shipment.PostedBy, canManual,
+            shipment.ManualReason, queue?.Status, queue?.Operation, queue?.LastError, queue?.Attempts ?? 0, problems,
             shipment.DeliveryTerms, shipment.TransportMode, shipment.DispatchCountry, shipment.TransactionNature);
     }
 
@@ -1033,6 +1038,7 @@ public sealed class ReceivingController : ControllerBase
         shipment.GrossAmount = request.NetAmount is null ? null : request.NetAmount + (request.VatAmount ?? 0m);
         shipment.VatTreatment = treatment;
         shipment.AccountingRoute = route;
+        shipment.ManualReason = route == "ManualInAgnum" ? request.ManualReason?.Trim() : null;
         shipment.DeliveryTerms = NormalizeUpper(request.DeliveryTerms);
         shipment.TransportMode = NormalizeUpper(request.TransportMode);
         shipment.DispatchCountry = NormalizeUpper(request.DispatchCountry);
@@ -1174,6 +1180,7 @@ public sealed class ReceivingController : ControllerBase
         decimal? VatAmount = null,
         string? VatTreatment = null,
         string? AccountingRoute = null,
+        string? ManualReason = null,
         string? DeliveryTerms = null,
         string? TransportMode = null,
         string? DispatchCountry = null,
@@ -1271,6 +1278,11 @@ public sealed class ReceivingController : ControllerBase
         DateTimeOffset? PostedAt,
         string? PostedBy,
         bool CanSetManualRate,
+        string? ManualReason,
+        string? QueueStatus,
+        string? QueueOperation,
+        string? QueueError,
+        int QueueAttempts,
         IReadOnlyList<PostingProblemDto> Problems,
         string? DeliveryTerms = null,
         string? TransportMode = null,

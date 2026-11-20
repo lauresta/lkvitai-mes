@@ -3,6 +3,7 @@
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
 @inject ItemPricesClient ItemPricesClient
+@inject AgnumOutboxClient OutboxClient
 @inject SupplierCreditsClient CreditsClient
 
 <PageTitle>@L["InboundShipmentDetail.InboundShipmentDetailCikadaMES"]</PageTitle>
@@ -79,6 +80,31 @@
                         {
                             <div class="small text-muted mb-2">@L["Purchase.PostedBy", purchase.PostedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-", purchase.PostedBy ?? "-"]</div>
                             <div class="lk-state lk-state--ok mb-2">@L["Purchase.DocumentLocked"]</div>
+                            @if (purchase.AccountingRoute == "ManualInAgnum")
+                            {
+                                <div class="small mb-2" data-testid="queue-manual-note"><span class="chip chip--reserved">@L["Purchase.Route.ManualInAgnum"]</span> @purchase.ManualReason</div>
+                            }
+                            else if (purchase.QueueStatus is not null)
+                            {
+                                <div class="mb-2" data-testid="queue-state">
+                                    <span class="small text-muted">@L["Agnum.Queue.StateLabel"]</span>
+                                    <span class="chip @QueueChip(purchase.QueueStatus)">@L["Agnum.Queue.Status." + purchase.QueueStatus]</span>
+                                    @if (purchase.QueueOperation == "Annul") { <span class="small text-muted">(@L["Agnum.Queue.OpAnnul"])</span> }
+                                    @if (purchase.QueueAttempts > 0) { <span class="small text-muted">@L["Agnum.Queue.AttemptsN", purchase.QueueAttempts]</span> }
+                                    @if (!string.IsNullOrWhiteSpace(purchase.QueueError)) { <div class="small text-danger">@purchase.QueueError</div> }
+                                    <a class="small ms-2" href="/agnum/outbox">@L["Agnum.Queue.Title"]</a>
+                                </div>
+                            }
+                            @if (purchase.CanSetManualRate && purchase.QueueOperation != "Annul")
+                            {
+                                <button class="btn btn-sm btn-outline-danger mb-2" type="button" disabled="@_isSubmitting" @onclick="UnpostAsync" data-testid="unpost-document">@L["Agnum.Queue.Unpost"]</button>
+                                @if (_postProblems is { Count: > 0 })
+                                {
+                                    <ul class="text-danger" data-testid="unpost-problems">
+                                        @foreach (var problem in _postProblems) { <li>@ProblemText(problem)</li> }
+                                    </ul>
+                                }
+                            }
                         }
                         <div class="row g-3">
                             <div class="col-md-3">
@@ -403,6 +429,49 @@
     private decimal? _manualRate;
     private string? _manualRateReason;
     private IReadOnlyList<PostingProblemDto>? _postProblems;
+
+    private static string QueueChip(string status) => status switch
+    {
+        "Sent" => "chip--ok",
+        "Pending" or "Sending" => "chip--reserved",
+        "Unknown" => "chip--low",
+        "NeedsReview" => "chip--out",
+        _ => "chip--locked"
+    };
+
+    private async Task UnpostAsync()
+    {
+        if (_shipment is null)
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+        _apiError = null;
+        _postProblems = null;
+        try
+        {
+            var result = await OutboxClient.UnpostAsync("InboundShipment", _shipment.Id);
+            ToastService.ShowSuccess(result.Outcome == "Reversed" ? L["Agnum.Queue.UnpostedNow"].Value : L["Agnum.Queue.UnpostQueued"].Value);
+            _shipment = await ReceivingClient.GetShipmentByIdAsync(_shipment.Id);
+        }
+        catch (ApiException ex) when (ex.StatusCode == 422 && ex.ProblemDetails?.Detail is { } detail && detail.Contains('|'))
+        {
+            _postProblems = detail.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Split('|', 2))
+                .Select(p => new PostingProblemDto { Code = p[0], Text = p.Length > 1 ? p[1] : p[0] })
+                .ToList();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
 
     private string ProblemText(PostingProblemDto problem)
     {

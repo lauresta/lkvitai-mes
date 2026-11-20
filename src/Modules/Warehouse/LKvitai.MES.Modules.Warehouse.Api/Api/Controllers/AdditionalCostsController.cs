@@ -30,12 +30,29 @@ public sealed class AdditionalCostsController : ControllerBase
     public sealed record CostDocumentRequest(
         int SupplierId, string DocumentNumber, DateOnly DocumentDate, string? Currency,
         decimal NetAmount, decimal VatAmount, string? VatTreatment, string? AccountingRoute,
-        int BasisShipmentId, string CostTypeCode);
+        int BasisShipmentId, string CostTypeCode, string? ManualReason = null);
 
     public sealed record CostDocumentDto(
         int Id, int SupplierId, string DocumentNumber, DateOnly DocumentDate, string Currency,
         decimal NetAmount, decimal VatAmount, decimal GrossAmount, decimal? NetEur, decimal? RateUnitsPerEur,
-        string VatTreatment, string AccountingRoute, int BasisShipmentId, string CostTypeCode, string PostingStatus);
+        string VatTreatment, string AccountingRoute, int BasisShipmentId, string CostTypeCode, string PostingStatus,
+        string? ManualReason, string? QueueStatus, string? QueueError, string? SupplierName);
+
+    public sealed record LookupItem(int Id, string Label);
+    public sealed record CostLookups(IReadOnlyList<LookupItem> Suppliers, IReadOnlyList<LookupItem> Shipments);
+
+    /// <summary>Pick-lists of the cost document screen: suppliers and posted shipments a cost can refer to.</summary>
+    [HttpGet("lookups")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> GetLookups(CancellationToken ct)
+    {
+        var suppliers = await _db.Suppliers.AsNoTracking().OrderBy(s => s.Name).Take(2000)
+            .Select(s => new LookupItem(s.Id, s.Code + " - " + s.Name)).ToListAsync(ct);
+        var shipments = await _db.InboundShipments.AsNoTracking().Where(s => s.PostingStatus == "Posted")
+            .OrderByDescending(s => s.Id).Take(500)
+            .Select(s => new LookupItem(s.Id, s.ReferenceNumber + " / " + (s.InvoiceNumber ?? ""))).ToListAsync(ct);
+        return Ok(new CostLookups(suppliers, shipments));
+    }
 
     [HttpGet("types")]
     [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
@@ -49,7 +66,13 @@ public sealed class AdditionalCostsController : ControllerBase
     {
         var query = _db.AdditionalCostDocuments.AsNoTracking();
         if (basisShipmentId is not null) query = query.Where(d => d.BasisShipmentId == basisShipmentId);
-        return Ok((await query.OrderBy(d => d.Id).ToListAsync(ct)).Select(ToDto).ToList());
+        var docs = await query.OrderByDescending(d => d.Id).Take(500).ToListAsync(ct);
+        var ids = docs.Select(d => d.Id).ToList();
+        var queue = (await _db.AgnumOutbox.AsNoTracking().Where(r => r.DocumentType == "AdditionalCostDocument" && ids.Contains(r.DocumentId)).ToListAsync(ct))
+            .GroupBy(r => r.DocumentId).ToDictionary(g => g.Key, g => g.OrderByDescending(r => r.Id).First());
+        var supplierIds = docs.Select(d => d.SupplierId).Distinct().ToList();
+        var names = await _db.Suppliers.AsNoTracking().Where(s => supplierIds.Contains(s.Id)).ToDictionaryAsync(s => s.Id, s => s.Name, ct);
+        return Ok(docs.Select(d => ToDto(d, queue.GetValueOrDefault(d.Id), names.GetValueOrDefault(d.SupplierId))).ToList());
     }
 
     [HttpPost("documents")]
@@ -78,6 +101,7 @@ public sealed class AdditionalCostsController : ControllerBase
             GrossAmount = r.NetAmount + r.VatAmount,
             VatTreatment = treatment,
             AccountingRoute = route,
+            ManualReason = route == "ManualInAgnum" ? r.ManualReason?.Trim() : null,
             BasisShipmentId = r.BasisShipmentId,
             CostTypeCode = r.CostTypeCode,
             CreatedBy = _user.GetCurrentUserId()
@@ -103,7 +127,8 @@ public sealed class AdditionalCostsController : ControllerBase
         return Ok(ToDto(await _db.AdditionalCostDocuments.AsNoTracking().FirstAsync(d => d.Id == id, ct)));
     }
 
-    private static CostDocumentDto ToDto(AdditionalCostDocument d) => new(
+    private static CostDocumentDto ToDto(AdditionalCostDocument d, AgnumDocumentOutbox? queue = null, string? supplier = null) => new(
         d.Id, d.SupplierId, d.DocumentNumber, d.DocumentDate, d.Currency, d.NetAmount, d.VatAmount, d.GrossAmount,
-        d.NetEur, d.RateUnitsPerEur, d.VatTreatment.ToString(), d.AccountingRoute, d.BasisShipmentId, d.CostTypeCode, d.PostingStatus);
+        d.NetEur, d.RateUnitsPerEur, d.VatTreatment.ToString(), d.AccountingRoute, d.BasisShipmentId, d.CostTypeCode, d.PostingStatus,
+        d.ManualReason, queue?.Status, queue?.LastError, supplier);
 }

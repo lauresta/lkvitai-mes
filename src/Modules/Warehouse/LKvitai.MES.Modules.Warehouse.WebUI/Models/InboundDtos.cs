@@ -100,6 +100,7 @@ public record CreateInboundShipmentRequestDto
     public decimal? VatAmount { get; init; }
     public string? VatTreatment { get; init; }
     public string? AccountingRoute { get; init; }
+    public string? ManualReason { get; init; }
     public string? DeliveryTerms { get; init; }
     public string? TransportMode { get; init; }
     public string? DispatchCountry { get; init; }
@@ -205,6 +206,11 @@ public record PurchaseDocumentDto
     public DateTimeOffset? PostedAt { get; init; }
     public string? PostedBy { get; init; }
     public bool CanSetManualRate { get; init; }
+    public string? ManualReason { get; init; }
+    public string? QueueStatus { get; init; }
+    public string? QueueOperation { get; init; }
+    public string? QueueError { get; init; }
+    public int QueueAttempts { get; init; }
     public IReadOnlyList<PostingProblemDto> Problems { get; init; } = Array.Empty<PostingProblemDto>();
     public string? DeliveryTerms { get; init; }
     public string? TransportMode { get; init; }

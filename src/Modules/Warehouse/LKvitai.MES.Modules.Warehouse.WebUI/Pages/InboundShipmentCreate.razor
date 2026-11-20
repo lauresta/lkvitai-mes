@@ -110,6 +110,15 @@
                     </MudSelect>
                 </div>
             </div>
+            @if (_accountingRoute == "ManualInAgnum")
+            {
+                <div class="lk-form-field">
+                    <span class="lk-form-field__label">@L["Purchase.ManualReason"]</span>
+                    <div class="lk-form-field__control">
+                        <MudTextField T="string" Variant="Variant.Text" @bind-Value="_manualReason" Immediate="true" />
+                    </div>
+                </div>
+            }
             @if (IsEuAcquisition)
             {
                 <div class="lk-form-field">
@@ -294,6 +303,7 @@
     private decimal? _vatAmount;
     private string? _vatTreatment;
     private string _accountingRoute = "Auto";
+    private string? _manualReason;
     private string? _deliveryTerms;
     private string? _transportMode;
     private string? _dispatchCountry;
@@ -399,6 +409,7 @@
             _vatAmount = shipment.Purchase?.VatAmount;
             _vatTreatment = shipment.Purchase?.VatTreatment;
             _accountingRoute = shipment.Purchase?.AccountingRoute ?? "Auto";
+            _manualReason = shipment.Purchase?.ManualReason;
             _defaultVatTreatment = shipment.Purchase?.DefaultVatTreatment;
             _deliveryTerms = shipment.Purchase?.DeliveryTerms;
             _transportMode = shipment.Purchase?.TransportMode;
@@ -645,6 +656,7 @@
             VatAmount = _vatAmount,
             VatTreatment = _vatTreatment,
             AccountingRoute = _accountingRoute,
+            ManualReason = _accountingRoute == "ManualInAgnum" ? _manualReason : null,
             DeliveryTerms = IsEuAcquisition ? _deliveryTerms : null,
             TransportMode = IsEuAcquisition ? _transportMode : null,
             DispatchCountry = IsEuAcquisition ? _dispatchCountry : null,

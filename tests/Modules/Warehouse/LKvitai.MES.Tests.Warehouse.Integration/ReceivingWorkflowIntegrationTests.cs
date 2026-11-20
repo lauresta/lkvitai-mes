@@ -516,7 +516,7 @@ public partial class ReceivingWorkflowIntegrationTests : IAsyncLifetime
     }
 
     private PurchaseDocumentService PurchaseService(WarehouseDbContext db)
-        => new(db, new EurFxRateProvider(), _store!, BalanceLocks(), WarehouseCodeProvider.For("WH1"), NullLogger<PurchaseDocumentService>.Instance);
+        => new(db, new EurFxRateProvider(), _store!, BalanceLocks(), WarehouseCodeProvider.For("WH1"), new LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum.Accounting.AgnumOutboxService(db), NullLogger<PurchaseDocumentService>.Instance);
 
     private PostgresBalanceGuardLockFactory BalanceLocks() => new(new ConfigurationBuilder()
         .AddInMemoryCollection(new Dictionary<string,string?> { ["ConnectionStrings:WarehouseDb"] = _postgres!.GetConnectionString() }).Build());

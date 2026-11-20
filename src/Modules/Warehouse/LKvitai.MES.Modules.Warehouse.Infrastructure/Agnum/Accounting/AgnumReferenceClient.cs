@@ -5,27 +5,30 @@ using LKvitai.MES.Modules.Warehouse.Integration.Agnum;
 
 namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum.Accounting;
 
-public sealed record AgnumSchemeRow(
-    [property: JsonPropertyName("no")] int No,
-    [property: JsonPropertyName("name")] string? Name,
-    [property: JsonPropertyName("debit")] string? Debit,
-    [property: JsonPropertyName("credit")] string? Credit);
+public sealed record AgnumSchemeRow(int No, string? Name, string? Debit, string? Credit);
 
-public sealed record AgnumScheme(
-    [property: JsonPropertyName("id_sch")] int IdSch,
-    [property: JsonPropertyName("name")] string? Name,
-    [property: JsonPropertyName("rows")] IReadOnlyList<AgnumSchemeRow>? Rows);
+public sealed record AgnumScheme(int IdSch, string? Name, IReadOnlyList<AgnumSchemeRow>? Rows);
 
-public sealed record AgnumWarehouseRef(
-    [property: JsonPropertyName("id_snd")] int IdSnd,
-    [property: JsonPropertyName("code")] string? Code,
+public sealed record AgnumWarehouseRef(int IdSnd, string? Code, string? Name);
+
+public sealed record AgnumAccountRef(string Code, string? Name);
+
+public sealed record AgnumVatCodeRef(string Code);
+
+// Wire shapes of agnum-api-deploy docs/PURCHASE_POSTING_SPEC.md section 8.
+internal sealed record WireSchemeRow(
+    [property: JsonPropertyName("nr")] int Nr, [property: JsonPropertyName("name")] string? Name,
+    [property: JsonPropertyName("debit")] string? Debit, [property: JsonPropertyName("credit")] string? Credit);
+
+internal sealed record WireScheme(
+    [property: JsonPropertyName("id")] int Id, [property: JsonPropertyName("name")] string? Name,
+    [property: JsonPropertyName("rows")] List<WireSchemeRow>? Rows);
+
+internal sealed record WireWarehouse(
+    [property: JsonPropertyName("id")] int Id, [property: JsonPropertyName("code")] string? Code,
     [property: JsonPropertyName("name")] string? Name);
 
-public sealed record AgnumAccountRef(
-    [property: JsonPropertyName("code")] string Code,
-    [property: JsonPropertyName("name")] string? Name);
-
-public sealed record AgnumVatCodeRef([property: JsonPropertyName("pvm_kod")] string Code);
+internal sealed record WireAccount([property: JsonPropertyName("id")] long Id, [property: JsonPropertyName("account")] string? Account);
 
 /// <summary>Read routes of the Agnum service (blueprint 5.2) plus the clients list used by the supplier sync.</summary>
 public interface IAgnumReferenceClient
@@ -53,19 +56,22 @@ public sealed class AgnumReferenceClient : IAgnumReferenceClient
     public AgnumReferenceClient(HttpClient http) => _http = http;
 
     public Task<IReadOnlyList<AgnumScheme>> GetSchemesAsync(CancellationToken ct = default)
-        => GetListAsync<AgnumScheme>("api/reference/schemes", ct);
+        => MapAsync<WireScheme, AgnumScheme>("api/reference/schemes", s => new AgnumScheme(s.Id, s.Name, (s.Rows ?? new()).Select(r => new AgnumSchemeRow(r.Nr, r.Name, r.Debit, r.Credit)).ToList()), ct);
 
     public Task<IReadOnlyList<AgnumWarehouseRef>> GetWarehousesAsync(CancellationToken ct = default)
-        => GetListAsync<AgnumWarehouseRef>("api/reference/warehouses", ct);
+        => MapAsync<WireWarehouse, AgnumWarehouseRef>("api/reference/warehouses", w => new AgnumWarehouseRef(w.Id, w.Code, w.Name), ct);
 
     public Task<IReadOnlyList<AgnumAccountRef>> GetAccountsAsync(CancellationToken ct = default)
-        => GetListAsync<AgnumAccountRef>("api/reference/accounts", ct);
+        => MapAsync<WireAccount, AgnumAccountRef>("api/reference/accounts", a => new AgnumAccountRef(a.Account ?? string.Empty, null), ct);
 
     public Task<IReadOnlyList<AgnumVatCodeRef>> GetVatCodesAsync(CancellationToken ct = default)
-        => GetListAsync<AgnumVatCodeRef>("api/reference/vat-codes", ct);
+        => MapAsync<string, AgnumVatCodeRef>("api/reference/vat-codes", v => new AgnumVatCodeRef(v ?? string.Empty), ct);
 
     public Task<IReadOnlyList<AgnumClientDto>> GetClientsAsync(CancellationToken ct = default)
         => GetListAsync<AgnumClientDto>(ClientsQuery, ct);
+
+    private async Task<IReadOnlyList<TOut>> MapAsync<TWire, TOut>(string uri, Func<TWire, TOut> map, CancellationToken ct)
+        => (await GetListAsync<TWire>(uri, ct)).Select(map).ToList();
 
     private async Task<IReadOnlyList<T>> GetListAsync<T>(string uri, CancellationToken ct)
     {

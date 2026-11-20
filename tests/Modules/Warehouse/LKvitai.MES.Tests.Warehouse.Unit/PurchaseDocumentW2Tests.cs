@@ -187,6 +187,7 @@ public sealed class PurchaseDocumentW2Tests
             .Should().Contain(p => p.Code == "SupplierNotPostable");
         var manual = Shipment();
         manual.AccountingRoute = "ManualInAgnum";
+        manual.ManualReason = "several VAT rates on one invoice";
         PurchasePostingValidator.Validate(Input(manual, new Supplier { AgnumClientId = null })).Should().BeEmpty();
 
         PurchasePostingValidator.Validate(Input(Shipment(), taken: true)).Should().Contain(p => p.Code == "InvoiceNumberTaken");

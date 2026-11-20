@@ -276,10 +276,10 @@ public sealed class AgnumAccountingW3Tests
             Respond = path => path switch
             {
                 "/api/reference/schemes" => (HttpStatusCode.OK,
-                    """[{"id_sch":12,"name":"Purchase","rows":[{"no":1,"name":"Stock","debit":"20110","credit":"4430"}]}]"""),
-                "/api/reference/warehouses" => (HttpStatusCode.OK, """[{"id_snd":3,"code":"W","name":"Main"}]"""),
-                "/api/reference/accounts" => (HttpStatusCode.OK, """[{"code":"20110","name":"Stock"}]"""),
-                "/api/reference/vat-codes" => (HttpStatusCode.OK, """[{"pvm_kod":"PVM1"}]"""),
+                    """[{"id":12,"name":"Purchase","rows":[{"nr":1,"name":"Stock","debit":"20110","credit":"4430"}]}]"""),
+                "/api/reference/warehouses" => (HttpStatusCode.OK, """[{"id":3,"code":"W","name":"Main"}]"""),
+                "/api/reference/accounts" => (HttpStatusCode.OK, """[{"id":1,"account":"20110"}]"""),
+                "/api/reference/vat-codes" => (HttpStatusCode.OK, """["PVM1"]"""),
                 _ => (HttpStatusCode.NotFound, "")
             }
         };

@@ -1377,6 +1377,12 @@ public sealed class InboundShipment : AuditableEntity
     public DateTimeOffset? PostedAt { get; set; }
     public string? PostedBy { get; set; }
     public int PostingRevision { get; set; }
+    /// <summary>Blueprint 4.7: fixed identifier of the Agnum posting of this document; created at the first posting.</summary>
+    public Guid? AgnumKey { get; set; }
+    /// <summary>Blueprint 4.8: required when <see cref="AccountingRoute"/> is ManualInAgnum.</summary>
+    public string? ManualReason { get; set; }
+    /// <summary>Values captured at posting; used to restore the document and the stock value on un-post.</summary>
+    public string? PostingSnapshotJson { get; set; }
 
     /// <summary>Intrastat header fields (blueprint 4.2); required for EuAcquisition. Nature defaults to 11.</summary>
     public string? DeliveryTerms { get; set; }

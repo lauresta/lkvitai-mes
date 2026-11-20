@@ -64,9 +64,10 @@ public sealed partial class PurchaseDocumentService
         }
 
         _db.SupplierCreditDocuments.Add(credit);
+        // Saved first so the queue row can refer to the credit id; posting re-validates under the lock.
+        await _db.SaveChangesAsync(ct);
         if (!postNow)
         {
-            await _db.SaveChangesAsync(ct);
             return (credit, [], false);
         }
 
@@ -117,6 +118,10 @@ public sealed partial class PurchaseDocumentService
         var rate = await ResolveRateAsync(credit.Currency, credit.CreditDate, null, null, ct);
         var profileIds = await ResolveItemProfilesAsync(credit.Lines.Select(l => l.ItemId).Distinct().ToList(), ct);
         var requests = ApplyCredit(credit, rate, user, profileIds.Values.FirstOrDefault());
+        if (credit.AccountingRoute == "Auto")
+        {
+            await QueueCreditPostingAsync(credit, original, profileIds.Values.FirstOrDefault(), user, ct);
+        }
 
         var movements = credit.Lines.Where(l => l.ReturnQty > 0m && l.Item is not null)
             .Select(l => (Stream: StockLedgerStreamId.For(_warehouse.Code, l.FromLocation!.Trim(), l.Item!.InternalSKU),
@@ -199,6 +204,37 @@ public sealed partial class PurchaseDocumentService
         credit.PostedBy = user;
         credit.PostingRevision++;
         return requests;
+    }
+
+    /// <summary>Blueprint 4.8: a posted credit goes to Agnum as kind "credit" (positive sums, stored negative there) with the original number and date.</summary>
+    private async Task QueueCreditPostingAsync(SupplierCreditDocument credit, InboundShipment original, int? profileId, string user, CancellationToken ct)
+    {
+        if (profileId is null)
+        {
+            throw new InvalidOperationException("The credit has no stock account profile; it cannot be queued for Agnum.");
+        }
+
+        var supplier = await _db.Suppliers.AsNoTracking().FirstAsync(s => s.Id == credit.SupplierId, ct);
+        var treatment = credit.VatTreatment ?? PurchasePostingValidator.EffectiveVatTreatment(original, supplier)
+            ?? throw new InvalidOperationException("VAT treatment is required.");
+        var profile = await _db.StockAccountProfiles.AsNoTracking().FirstAsync(p => p.Id == profileId.Value, ct);
+        var rule = await _db.AgnumPostingRules.AsNoTracking()
+            .FirstAsync(r => r.StockAccountProfileId == profileId.Value && r.VatTreatment == treatment, ct);
+        credit.AgnumKey ??= Guid.NewGuid();
+        _db.AgnumOutbox.Add(CreditOutboxRow(credit, supplier.AgnumClientId!.Value, profile.AgnumSndId, rule.SchemeId, rule.VatCode, profile.StockAccount, user));
+    }
+
+    /// <summary>The outbox row of a posted credit: positive sums with kind credit (Agnum stores them negative), the queue shows the gross negative.</summary>
+    public static AgnumDocumentOutbox CreditOutboxRow(SupplierCreditDocument credit, long clientId, long sndId, long schemeId,
+        string? vatCode, string stockAccount, string user)
+    {
+        var payload = AgnumPayloadBuilder.Build(new PostingPayloadInput(
+            credit.AgnumKey!.Value, credit.PostingRevision, credit.CreditNumber, credit.CreditDate,
+            clientId, sndId, schemeId, credit.Currency, credit.RateUnitsPerEur!.Value,
+            credit.NetAmount, credit.VatAmount, vatCode, stockAccount, [],
+            Kind: "credit", RefDocNo: credit.OriginalInvoiceNumber, RefDocDate: credit.OriginalInvoiceDate));
+        return NewRow(payload, OutboxDocumentType.SupplierCredit, credit.Id, credit.SupplierId, credit.CreditNumber,
+            credit.CreditDate, credit.Currency, -credit.GrossAmount, user);
     }
 
     public async Task<List<PostingProblem>> ValidateCreditAsync(SupplierCreditDocument credit, InboundShipment? original, CancellationToken ct)

@@ -62,6 +62,7 @@ builder.Services.AddScoped<SupplierCreditsClient>();
 builder.Services.AddScoped<IntrastatClient>();
 builder.Services.AddScoped<AgnumClient>();
 builder.Services.AddScoped<AgnumAccountingClient>();
+builder.Services.AddScoped<AgnumOutboxClient>();
 builder.Services.AddHttpClient("WarehouseUserAdminApi", (sp, client)=>
 {
     client.BaseAddress=new Uri(sp.GetRequiredService<IConfiguration>()["WarehouseApi:BaseUrl"] ?? "https://localhost:5001");

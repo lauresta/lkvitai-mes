@@ -62,6 +62,10 @@ public sealed class AdditionalCostDocument
     public string PostingStatus { get; set; } = "NotPosted";
     public DateTimeOffset? PostedAt { get; set; }
     public string? PostedBy { get; set; }
+    public int PostingRevision { get; set; }
+    public Guid? AgnumKey { get; set; }
+    public string? ManualReason { get; set; }
+    public string? PostingSnapshotJson { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public string CreatedBy { get; set; } = string.Empty;
 }
@@ -107,6 +111,8 @@ public sealed class SupplierCreditDocument
     public DateTimeOffset? PostedAt { get; set; }
     public string? PostedBy { get; set; }
     public int PostingRevision { get; set; }
+    /// <summary>Idempotency key of the Agnum posting (blueprint 4.7); set when the credit is queued.</summary>
+    public Guid? AgnumKey { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public string CreatedBy { get; set; } = string.Empty;
 

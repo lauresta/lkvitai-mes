@@ -1,0 +1,245 @@
+@page "/agnum/outbox"
+@inject AgnumOutboxClient Client
+@inject ToastService ToastService
+
+<PageTitle>@L["Agnum.Queue.Title"]</PageTitle>
+
+<h1>@L["Agnum.Queue.Title"]</h1>
+
+@if (_error is not null)
+{
+    <div class="alert alert-danger" data-testid="queue-error">@_error</div>
+}
+
+<div class="d-flex flex-wrap align-items-end gap-2 mb-3">
+    <div>
+        <label class="form-label" for="queue-filter">@L["Agnum.Queue.Filter"]</label>
+        <select id="queue-filter" class="form-select" @bind="_filter" @bind:after="LoadAsync" data-testid="queue-filter">
+            <option value="open">@L["Agnum.Queue.FilterOpen"]</option>
+            <option value="">@L["Agnum.Queue.FilterAll"]</option>
+            @foreach (var s in Statuses)
+            {
+                <option value="@s">@StatusText(s)</option>
+            }
+        </select>
+    </div>
+    <button class="btn btn-outline-secondary" type="button" @onclick="LoadAsync" data-testid="queue-refresh">@L["Agnum.Queue.Refresh"]</button>
+    <button class="btn btn-outline-primary" type="button" disabled="@_busy" @onclick="RunNowAsync" data-testid="queue-run">@L["Agnum.Queue.RunNow"]</button>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-sm align-middle" data-testid="queue-table">
+        <thead>
+            <tr>
+                <th>@L["Agnum.Queue.Document"]</th>
+                <th>@L["Agnum.Queue.Supplier"]</th>
+                <th>@L["Agnum.Queue.Date"]</th>
+                <th class="text-end">@L["Agnum.Queue.Gross"]</th>
+                <th>@L["Agnum.Queue.Operation"]</th>
+                <th>@L["Agnum.Queue.Status"]</th>
+                <th class="text-end">@L["Agnum.Queue.Attempts"]</th>
+                <th>@L["Agnum.Queue.Error"]</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (_rows.Count == 0)
+            {
+                <tr><td colspan="9" class="text-muted">@L["Agnum.Queue.Empty"]</td></tr>
+            }
+            @foreach (var r in _rows)
+            {
+                <tr data-testid="queue-row">
+                    <td>
+                        <a href="@DocumentLink(r)">@(string.IsNullOrWhiteSpace(r.DocumentNumber) ? "#" + r.DocumentId : r.DocumentNumber)</a>
+                        <div class="small text-muted">@(r.DocumentType == "InboundShipment" ? L["Agnum.Queue.TypeShipment"] : L["Agnum.Queue.TypeCost"])</div>
+                    </td>
+                    <td>@(r.SupplierName ?? "#" + r.SupplierId)</td>
+                    <td class="is-num">@r.DocumentDate.ToString("yyyy-MM-dd")</td>
+                    <td class="text-end is-money is-num">@Money.Format(r.GrossAmount) @r.Currency</td>
+                    <td>@(r.Operation == "Annul" ? L["Agnum.Queue.OpAnnul"] : L["Agnum.Queue.OpPost"])</td>
+                    <td>
+                        <span class="chip @StatusChip(r.Status)" data-testid="queue-status">@StatusText(r.Status)</span>
+                        @if (r.Held)
+                        {
+                            <div class="small text-muted">@L["Agnum.Queue.Held"]</div>
+                        }
+                    </td>
+                    <td class="text-end is-num">@r.Attempts</td>
+                    <td class="small">@r.LastError</td>
+                    <td class="text-nowrap">
+                        @if (r.Status is "NeedsReview" or "Unknown" or "Pending")
+                        {
+                            <button class="btn btn-sm btn-outline-primary" type="button" disabled="@_busy" @onclick="() => RetryAsync(r)" data-testid="queue-retry">@L["Agnum.Queue.Retry"]</button>
+                        }
+                        @if (r.Operation == "Post" && r.Status is "NeedsReview" or "Unknown" or "Pending")
+                        {
+                            <button class="btn btn-sm btn-outline-secondary" type="button" disabled="@_busy" @onclick='() => StartAction(r, "manual")' data-testid="queue-manual">@L["Agnum.Queue.MarkManual"]</button>
+                        }
+                        @if (r.Operation == "Post" && r.Status is "Sent" or "NeedsReview" or "Unknown" or "Pending")
+                        {
+                            <button class="btn btn-sm btn-outline-danger" type="button" disabled="@_busy" @onclick='() => StartAction(r, "unpost")' data-testid="queue-unpost">@L["Agnum.Queue.Unpost"]</button>
+                        }
+                    </td>
+                </tr>
+                @if (_actionRow == r.Id)
+                {
+                    <tr class="table-light">
+                        <td colspan="9">
+                            @if (_action == "manual")
+                            {
+                                <div class="d-flex flex-wrap gap-2 align-items-end">
+                                    <div class="flex-grow-1">
+                                        <label class="form-label">@L["Purchase.ManualReason"]</label>
+                                        <input class="form-control" @bind="_reason" data-testid="queue-manual-reason" />
+                                    </div>
+                                    <button class="btn btn-primary" type="button" disabled="@_busy" @onclick="() => MarkManualAsync(r)" data-testid="queue-manual-confirm">@L["Agnum.Queue.MarkManual"]</button>
+                                    <button class="btn btn-link" type="button" @onclick="CancelAction">@L["Agnum.Queue.Cancel"]</button>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="d-flex flex-wrap gap-2 align-items-center">
+                                    <span>@L["Agnum.Queue.UnpostConfirm"]</span>
+                                    <button class="btn btn-danger" type="button" disabled="@_busy" @onclick="() => UnpostAsync(r)" data-testid="queue-unpost-confirm">@L["Agnum.Queue.Unpost"]</button>
+                                    <button class="btn btn-link" type="button" @onclick="CancelAction">@L["Agnum.Queue.Cancel"]</button>
+                                </div>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+<h2 class="h5 mt-4">@L["Agnum.Queue.Reconciliation"]</h2>
+@if (_findings.Count == 0)
+{
+    <div class="text-muted" data-testid="queue-no-findings">@L["Agnum.Queue.NoFindings"]</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm" data-testid="queue-findings">
+            <thead><tr><th>@L["Agnum.Queue.FindingKind"]</th><th>@L["Agnum.Queue.Document"]</th><th>@L["Agnum.Queue.Error"]</th></tr></thead>
+            <tbody>
+                @foreach (var f in _findings)
+                {
+                    <tr>
+                        <td><span class="chip chip--low">@FindingText(f.Kind)</span></td>
+                        <td>@f.DocumentNumber</td>
+                        <td class="small">@f.Details</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private static readonly string[] Statuses = { "Pending", "Sending", "Sent", "Unknown", "NeedsReview", "Annulled" };
+
+    private List<OutboxRowDto> _rows = new();
+    private List<ReconciliationFindingDto> _findings = new();
+    private string _filter = "open";
+    private string? _error;
+    private bool _busy;
+    private long? _actionRow;
+    private string? _action;
+    private string? _reason;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await RunAsync(async () =>
+        {
+            _rows = await Client.GetRowsAsync(_filter is "open" or "" ? null : _filter, _filter == "open");
+            _findings = await Client.GetFindingsAsync();
+        });
+    }
+
+    private Task RetryAsync(OutboxRowDto r) => RunAsync(async () =>
+    {
+        await Client.RetryAsync(r.Id);
+        ToastService.ShowSuccess(L["Agnum.Queue.Retried"].Value);
+        await LoadAsync();
+    });
+
+    private Task RunNowAsync() => RunAsync(async () =>
+    {
+        await Client.RunNowAsync();
+        await LoadAsync();
+    });
+
+    private void StartAction(OutboxRowDto r, string action)
+    {
+        _actionRow = r.Id;
+        _action = action;
+        _reason = null;
+    }
+
+    private void CancelAction() => _actionRow = null;
+
+    private Task MarkManualAsync(OutboxRowDto r) => RunAsync(async () =>
+    {
+        await Client.MarkManualAsync(r.Id, _reason ?? string.Empty);
+        _actionRow = null;
+        ToastService.ShowSuccess(L["Agnum.Queue.MarkedManual"].Value);
+        await LoadAsync();
+    });
+
+    private Task UnpostAsync(OutboxRowDto r) => RunAsync(async () =>
+    {
+        var result = await Client.UnpostAsync(r.DocumentType, r.DocumentId);
+        _actionRow = null;
+        ToastService.ShowSuccess(result.Outcome == "Reversed" ? L["Agnum.Queue.UnpostedNow"].Value : L["Agnum.Queue.UnpostQueued"].Value);
+        await LoadAsync();
+    });
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            await action();
+        }
+        catch (ApiException ex)
+        {
+            _error = ProblemText(ex);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private string ProblemText(ApiException ex)
+    {
+        var detail = ex.ProblemDetails?.Detail;
+        if (string.IsNullOrWhiteSpace(detail)) return ex.UserMessage;
+        return string.Join(" ", detail.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(line =>
+        {
+            var parts = line.Split('|', 2);
+            var localized = L["Purchase.Problem." + parts[0]];
+            return parts.Length == 2 && !localized.ResourceNotFound ? localized.Value : parts.Length == 2 ? parts[1] : line;
+        }));
+    }
+
+    private static string DocumentLink(OutboxRowDto r)
+        => r.DocumentType == "InboundShipment" ? $"/inbound/shipments/{r.DocumentId}" : "/additional-costs";
+
+    private string StatusText(string status) => L["Agnum.Queue.Status." + status].Value;
+    private string FindingText(string kind) => L["Agnum.Queue.Finding." + kind].Value;
+
+    private static string StatusChip(string status) => status switch
+    {
+        "Sent" => "chip--ok",
+        "Pending" or "Sending" => "chip--reserved",
+        "Unknown" => "chip--low",
+        "NeedsReview" => "chip--out",
+        _ => "chip--locked"
+    };
+}

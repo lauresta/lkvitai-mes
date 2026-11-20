@@ -1955,6 +1955,94 @@
   <data name="OpeningBalances.Err.DuplicateRow" xml:space="preserve"><value>Pasikartoja prekė ir vieta</value></data>
   <data name="OpeningBalances.Err.MissingSku" xml:space="preserve"><value>Nėra SKU</value></data>
   <data name="OpeningBalances.Err.MissingLocation" xml:space="preserve"><value>Nėra vietos</value></data>
+  <data name="Nav.AgnumOutbox" xml:space="preserve"><value>Agnum siuntimo eilė</value></data>
+  <data name="Nav.AdditionalCosts" xml:space="preserve"><value>Papildomų išlaidų sąskaitos</value></data>
+  <data name="Purchase.ManualReason" xml:space="preserve"><value>Priežastis, kodėl įvedama Agnum rankiniu būdu</value></data>
+  <data name="Purchase.Problem.ManualReasonRequired" xml:space="preserve"><value>Kai dokumentas Agnum įvedamas rankiniu būdu, priežastis privaloma.</value></data>
+  <data name="Purchase.Problem.NotPosted" xml:space="preserve"><value>Dokumentas nepatvirtintas.</value></data>
+  <data name="Purchase.Problem.UnpostNotAvailable" xml:space="preserve"><value>Dokumentas patvirtintas prieš atsirandant atšaukimui; jo reikšmės neišsaugotos.</value></data>
+  <data name="Purchase.Problem.CostDocumentsPosted" xml:space="preserve"><value>Pirmiausia atšaukite šio gabenimo papildomų išlaidų sąskaitas.</value></data>
+  <data name="Purchase.Problem.ReceiptsAfterPosting" xml:space="preserve"><value>Po patvirtinimo buvo priimta prekių; atšaukimas iškreiptų atsargų vertę.</value></data>
+  <data name="Agnum.Sending.Tab" xml:space="preserve"><value>Siuntimas</value></data>
+  <data name="Agnum.Sending.Title" xml:space="preserve"><value>Siuntimas į Agnum</value></data>
+  <data name="Agnum.Sending.Enabled" xml:space="preserve"><value>Siųsti patvirtintus dokumentus į Agnum</value></data>
+  <data name="Agnum.Sending.StartDate" xml:space="preserve"><value>Pradžios data</value></data>
+  <data name="Agnum.Sending.StartDateHint" xml:space="preserve"><value>Anksčiau nei ši diena datuoti dokumentai niekada nesiunčiami.</value></data>
+  <data name="Agnum.Sending.ServiceUrl" xml:space="preserve"><value>Agnum paslaugos adresas</value></data>
+  <data name="Agnum.Sending.CheckConnection" xml:space="preserve"><value>Tikrinti ryšį</value></data>
+  <data name="Agnum.Sending.ConnectionOk" xml:space="preserve"><value>Ryšys veikia. Sandėlių Agnum: {0}.</value></data>
+  <data name="Agnum.Sending.ConnectionFailed" xml:space="preserve"><value>Ryšio nėra: {0}</value></data>
+  <data name="Agnum.Sending.State" xml:space="preserve"><value>Eilės būsena</value></data>
+  <data name="Agnum.Sending.Switch" xml:space="preserve"><value>Siuntimas</value></data>
+  <data name="Agnum.Sending.On" xml:space="preserve"><value>Įjungtas</value></data>
+  <data name="Agnum.Sending.Off" xml:space="preserve"><value>Išjungtas</value></data>
+  <data name="Agnum.Sending.Waiting" xml:space="preserve"><value>Dokumentų, dar nepasiekusių Agnum</value></data>
+  <data name="Agnum.Sending.NeedsReview" xml:space="preserve"><value>Laukia sprendimo</value></data>
+  <data name="Agnum.Sending.Oldest" xml:space="preserve"><value>Seniausias laukia nuo</value></data>
+  <data name="Agnum.Sending.LastReconciliation" xml:space="preserve"><value>Paskutinė suderinimo patikra</value></data>
+  <data name="Agnum.Sending.Findings" xml:space="preserve"><value>Rasta neatitikimų</value></data>
+  <data name="Agnum.Sending.OpenQueue" xml:space="preserve"><value>Atidaryti eilę</value></data>
+  <data name="Agnum.Sending.Saved" xml:space="preserve"><value>Išsaugota</value></data>
+  <data name="Agnum.Queue.Loading" xml:space="preserve"><value>Kraunama...</value></data>
+  <data name="Agnum.Queue.Title" xml:space="preserve"><value>Agnum siuntimo eilė</value></data>
+  <data name="Agnum.Queue.Filter" xml:space="preserve"><value>Rodyti</value></data>
+  <data name="Agnum.Queue.FilterOpen" xml:space="preserve"><value>Dar nepristatyti</value></data>
+  <data name="Agnum.Queue.FilterAll" xml:space="preserve"><value>Visi</value></data>
+  <data name="Agnum.Queue.Refresh" xml:space="preserve"><value>Atnaujinti</value></data>
+  <data name="Agnum.Queue.RunNow" xml:space="preserve"><value>Siųsti dabar</value></data>
+  <data name="Agnum.Queue.Document" xml:space="preserve"><value>Dokumentas</value></data>
+  <data name="Agnum.Queue.Supplier" xml:space="preserve"><value>Tiekėjas</value></data>
+  <data name="Agnum.Queue.Date" xml:space="preserve"><value>Data</value></data>
+  <data name="Agnum.Queue.Gross" xml:space="preserve"><value>Suma su PVM</value></data>
+  <data name="Agnum.Queue.Operation" xml:space="preserve"><value>Operacija</value></data>
+  <data name="Agnum.Queue.Status" xml:space="preserve"><value>Būsena</value></data>
+  <data name="Agnum.Queue.Attempts" xml:space="preserve"><value>Bandymai</value></data>
+  <data name="Agnum.Queue.Error" xml:space="preserve"><value>Klaida</value></data>
+  <data name="Agnum.Queue.Empty" xml:space="preserve"><value>Eilė tuščia.</value></data>
+  <data name="Agnum.Queue.TypeShipment" xml:space="preserve"><value>Pirkimo dokumentas</value></data>
+  <data name="Agnum.Queue.TypeCost" xml:space="preserve"><value>Papildomų išlaidų sąskaita</value></data>
+  <data name="Agnum.Queue.OpPost" xml:space="preserve"><value>Įrašyti</value></data>
+  <data name="Agnum.Queue.OpAnnul" xml:space="preserve"><value>Atšaukti</value></data>
+  <data name="Agnum.Queue.Held" xml:space="preserve"><value>Sulaikyta: siuntimas išjungtas arba data ankstesnė už pradžios datą</value></data>
+  <data name="Agnum.Queue.Retry" xml:space="preserve"><value>Kartoti</value></data>
+  <data name="Agnum.Queue.MarkManual" xml:space="preserve"><value>Pažymėti rankiniu</value></data>
+  <data name="Agnum.Queue.Unpost" xml:space="preserve"><value>Atšaukti patvirtinimą</value></data>
+  <data name="Agnum.Queue.UnpostConfirm" xml:space="preserve"><value>Dokumentas grįš į nepatvirtintą, o atsargų vertė - į buvusią prieš patvirtinimą. Jei jis yra Agnum, pirmiausia bus ištrintas ten.</value></data>
+  <data name="Agnum.Queue.Cancel" xml:space="preserve"><value>Atšaukti veiksmą</value></data>
+  <data name="Agnum.Queue.Reconciliation" xml:space="preserve"><value>Naktinė suderinimo patikra</value></data>
+  <data name="Agnum.Queue.NoFindings" xml:space="preserve"><value>Neatitikimų nėra.</value></data>
+  <data name="Agnum.Queue.FindingKind" xml:space="preserve"><value>Neatitikimas</value></data>
+  <data name="Agnum.Queue.Retried" xml:space="preserve"><value>Grąžinta į eilę</value></data>
+  <data name="Agnum.Queue.MarkedManual" xml:space="preserve"><value>Pažymėta kaip įvesta rankiniu būdu</value></data>
+  <data name="Agnum.Queue.UnpostedNow" xml:space="preserve"><value>Dokumento patvirtinimas atšauktas</value></data>
+  <data name="Agnum.Queue.UnpostQueued" xml:space="preserve"><value>Atšaukimas įtrauktas į eilę; dokumentas taps nepatvirtintu, kai Agnum patvirtins</value></data>
+  <data name="Agnum.Queue.StateLabel" xml:space="preserve"><value>Agnum:</value></data>
+  <data name="Agnum.Queue.AttemptsN" xml:space="preserve"><value>bandymų: {0}</value></data>
+  <data name="Agnum.Queue.Status.Pending" xml:space="preserve"><value>Laukia</value></data>
+  <data name="Agnum.Queue.Status.Sending" xml:space="preserve"><value>Siunčiama</value></data>
+  <data name="Agnum.Queue.Status.Sent" xml:space="preserve"><value>Išsiųsta</value></data>
+  <data name="Agnum.Queue.Status.Unknown" xml:space="preserve"><value>Nežinoma, bus tikrinama</value></data>
+  <data name="Agnum.Queue.Status.NeedsReview" xml:space="preserve"><value>Reikia sprendimo</value></data>
+  <data name="Agnum.Queue.Status.Annulled" xml:space="preserve"><value>Atšaukta</value></data>
+  <data name="Agnum.Queue.Finding.MissingInAgnum" xml:space="preserve"><value>Nėra Agnum</value></data>
+  <data name="Agnum.Queue.Finding.Mismatch" xml:space="preserve"><value>Nesutampa</value></data>
+  <data name="Agnum.Queue.Finding.UnexpectedInAgnum" xml:space="preserve"><value>Netikėtas dokumentas Agnum</value></data>
+  <data name="Agnum.Queue.Finding.ForeignDocument" xml:space="preserve"><value>Įvestas Agnum ne per sandėlį</value></data>
+  <data name="Agnum.Queue.Finding.ManualNotFound" xml:space="preserve"><value>Rankinis dokumentas nerastas</value></data>
+  <data name="CostDocs.Title" xml:space="preserve"><value>Papildomų išlaidų sąskaitos</value></data>
+  <data name="CostDocs.Intro" xml:space="preserve"><value>Kitos įmonės (vežėjo, tarpininko) sąskaita už patvirtinto pirkimo dokumento išlaidas.</value></data>
+  <data name="CostDocs.New" xml:space="preserve"><value>Nauja išlaidų sąskaita</value></data>
+  <data name="CostDocs.Supplier" xml:space="preserve"><value>Tiekėjas</value></data>
+  <data name="CostDocs.Number" xml:space="preserve"><value>Sąskaitos numeris</value></data>
+  <data name="CostDocs.Date" xml:space="preserve"><value>Sąskaitos data</value></data>
+  <data name="CostDocs.Basis" xml:space="preserve"><value>Pirkimo dokumentas</value></data>
+  <data name="CostDocs.CostType" xml:space="preserve"><value>Išlaidų rūšis</value></data>
+  <data name="CostDocs.InCost" xml:space="preserve"><value>į savikainą</value></data>
+  <data name="CostDocs.Expense" xml:space="preserve"><value>į sąnaudas</value></data>
+  <data name="CostDocs.Create" xml:space="preserve"><value>Sukurti</value></data>
+  <data name="CostDocs.Created" xml:space="preserve"><value>Išlaidų sąskaita sukurta</value></data>
+  <data name="CostDocs.Status" xml:space="preserve"><value>Patvirtinimas</value></data>
+  <data name="CostDocs.Empty" xml:space="preserve"><value>Išlaidų sąskaitų dar nėra.</value></data>
   <data name="Credit.Title" xml:space="preserve"><value>Tiekėjo kreditinė sąskaita / grąžinimas</value></data>
   <data name="Credit.New" xml:space="preserve"><value>Nauja kreditinė sąskaita / grąžinimas</value></data>
   <data name="Credit.CreateButton" xml:space="preserve"><value>Kreditinė sąskaita / grąžinimas</value></data>

@@ -98,6 +98,23 @@ builder.Services.AddHttpClient<LKvitai.MES.Modules.Warehouse.Infrastructure.Fx.I
     client.Timeout = TimeSpan.FromSeconds(15);
 });
 builder.Services.AddScoped<LKvitai.MES.Modules.Warehouse.Api.Services.PurchaseDocumentService>();
+builder.Services.AddHttpClient<LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum.Accounting.IAgnumPostingClient, LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum.Accounting.AgnumPostingClient>(client =>
+{
+    client.BaseAddress = new Uri(agnumApiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(agnumApiTimeoutSeconds);
+    // The write routes need SAVE_PURCHASE_POSTING and the read routes READ_PURCHASE_POSTING; fall back to the reference key when one key has all rights.
+    var postingKey = builder.Configuration.GetValue<string>("Agnum:Posting:ApiKey")
+        ?? builder.Configuration.GetValue<string>("Agnum:Api:ReferenceApiKey");
+    if (!string.IsNullOrWhiteSpace(postingKey)) client.DefaultRequestHeaders.Add("X-API-KEY", postingKey);
+});
+Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAddSingleton<TimeProvider>(builder.Services, TimeProvider.System);
+builder.Services.AddScoped<LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum.Accounting.AgnumOutboxService>();
+builder.Services.AddScoped<LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum.Accounting.AgnumOutboxSender>();
+builder.Services.AddScoped<LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum.Accounting.AgnumOutboxReconciler>();
+builder.Services.AddScoped<LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum.Accounting.IPostingReverser>(
+    sp => sp.GetRequiredService<LKvitai.MES.Modules.Warehouse.Api.Services.PurchaseDocumentService>());
+builder.Services.AddScoped<LKvitai.MES.Modules.Warehouse.Api.BackgroundJobs.AgnumOutboxRecurringJob>();
+builder.Services.AddScoped<LKvitai.MES.Modules.Warehouse.Api.BackgroundJobs.AgnumReconciliationRecurringJob>();
 builder.Services.AddHttpClient("FedExApi");
 builder.Services.AddHttpClient("OAuthProvider");
 builder.Services.AddHttpClient("PagerDuty");
@@ -514,6 +531,24 @@ RecurringJob.AddOrUpdate<AgnumSupplierSyncRecurringJob>(
     AgnumSupplierSyncRecurringJob.JobId,
     job => job.ExecuteAsync(CancellationToken.None),
     "30 5 * * *",
+    new RecurringJobOptions
+    {
+        TimeZone = TimeZoneInfo.Utc
+    });
+
+RecurringJob.AddOrUpdate<LKvitai.MES.Modules.Warehouse.Api.BackgroundJobs.AgnumOutboxRecurringJob>(
+    LKvitai.MES.Modules.Warehouse.Api.BackgroundJobs.AgnumOutboxRecurringJob.JobId,
+    job => job.ExecuteAsync(CancellationToken.None),
+    "* * * * *",
+    new RecurringJobOptions
+    {
+        TimeZone = TimeZoneInfo.Utc
+    });
+
+RecurringJob.AddOrUpdate<LKvitai.MES.Modules.Warehouse.Api.BackgroundJobs.AgnumReconciliationRecurringJob>(
+    LKvitai.MES.Modules.Warehouse.Api.BackgroundJobs.AgnumReconciliationRecurringJob.JobId,
+    job => job.ExecuteAsync(CancellationToken.None),
+    "30 0 * * *",
     new RecurringJobOptions
     {
         TimeZone = TimeZoneInfo.Utc
