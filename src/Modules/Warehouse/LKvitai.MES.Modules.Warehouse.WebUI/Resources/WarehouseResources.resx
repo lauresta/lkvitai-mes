@@ -1293,6 +1293,7 @@
   <data name="Nav.AdminSettings" xml:space="preserve"><value>Admin Settings</value></data>
   <data name="Nav.AgnumBalances" xml:space="preserve"><value>Agnum Balances</value></data>
   <data name="Nav.AgnumConfig" xml:space="preserve"><value>Agnum Config</value></data>
+  <data name="Nav.AgnumAccounting" xml:space="preserve"><value>Agnum Accounting</value></data>
   <data name="Nav.AgnumReconcile" xml:space="preserve"><value>Agnum Reconcile</value></data>
   <data name="Nav.Allocations" xml:space="preserve"><value>Allocations</value></data>
   <data name="Nav.ApprovalRules" xml:space="preserve"><value>Approval Rules</value></data>

@@ -1,6 +1,7 @@
 @page "/admin/suppliers"
 @using System.Diagnostics
 @inject MasterDataAdminClient AdminClient
+@inject AgnumAccountingClient AgnumAccounting
 @inject ToastService ToastService
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
@@ -81,6 +82,9 @@
                            OnClick="@(() => OpenMappings(null))"
                            UserAttributes="@SuppliersMappingsAttributes">
                     @L["AdminSuppliers.Mappings"]
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="SyncFromAgnumAsync" Disabled="_syncing">
+                    Refresh from Agnum
                 </MudButton>
             </div>
         </div>
@@ -198,6 +202,27 @@
 </div>
 
 @code {
+    private bool _syncing;
+
+    private async Task SyncFromAgnumAsync()
+    {
+        _syncing = true;
+        try
+        {
+            var r = await AgnumAccounting.SyncSuppliersAsync();
+            ToastService.ShowSuccess($"Agnum sync: {r.Created} new, {r.Updated} updated, {r.MarkedMissing} missing in Agnum, {r.CodeConflicts} code conflicts.");
+            await RefreshAsync();
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(ex.UserMessage);
+        }
+        finally
+        {
+            _syncing = false;
+        }
+    }
+
     private MudDataGrid<AdminSupplierDto>? _grid;
     private readonly List<string> _countries = [];
 
