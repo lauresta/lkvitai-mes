@@ -56,7 +56,7 @@
                     </td>
                     <td>@(r.SupplierName ?? "#" + r.SupplierId)</td>
                     <td class="is-num">@r.DocumentDate.ToString("yyyy-MM-dd")</td>
-                    <td class="text-end is-money is-num">@Money.Format(r.GrossAmount) @r.Currency</td>
+                    <td class="text-end is-money is-num">@Money.Number(r.GrossAmount, r.Currency)</td>
                     <td>@(r.Operation == "Annul" ? L["Agnum.Queue.OpAnnul"] : L["Agnum.Queue.OpPost"])</td>
                     <td>
                         <span class="chip @StatusChip(r.Status)" data-testid="queue-status">@StatusText(r.Status)</span>

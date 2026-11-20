@@ -1476,6 +1476,31 @@ td.is-num strong { font-weight: 700; }
   box-shadow: 0 0 0 3px rgba(47, 143, 139, 0.12);
 }
 
+/* MudSelect (Variant.Text): the framed box belongs to the whole .mud-input, not to the inner readonly
+   input slot - otherwise the chosen text renders in its own bordered box misaligned inside the field. */
+.lk .mud-select .mud-input-control .mud-input-slot {
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.lk .mud-select .mud-input.mud-input-underline {
+  min-height: 32px;
+  align-items: center;
+  padding: 0 4px 0 8px;
+  border: 1px solid var(--n-200);
+  border-radius: var(--r-sm);
+  background: var(--n-0);
+  font-size: 12.5px;
+}
+
+.lk .mud-select .mud-input-control.mud-focused .mud-input.mud-input-underline {
+  border-color: var(--accent-500);
+  box-shadow: 0 0 0 3px rgba(47, 143, 139, 0.12);
+}
+
 .lk .mud-input-label {
   color: var(--n-700);
   font-size: 11px;

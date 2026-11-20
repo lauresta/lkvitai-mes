@@ -58,7 +58,7 @@ public sealed class AgnumOutboxController : ControllerBase
             var warehouses = await _reference.GetWarehousesAsync(ct);
             return Ok(new ConnectionResult(true, null, warehouses.Count));
         }
-        catch (Exception ex) when (ex is Integration.Agnum.AgnumApiUnavailableException or HttpRequestException)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return Ok(new ConnectionResult(false, ex.Message, 0));
         }

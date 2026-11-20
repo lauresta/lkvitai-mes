@@ -563,7 +563,7 @@ public sealed class ReceivingController : ControllerBase
             manualReason = request.ManualRateReason;
         }
 
-        var result = await _purchase.PostAsync(id, manualRate, manualReason, _currentUserService.GetCurrentUserId(), cancellationToken);
+        var result = await _purchase.PostAsync(id, manualRate, manualReason, (User.Identity?.Name ?? _currentUserService.GetCurrentUserId()), cancellationToken);
         if (result.NotFound)
         {
             return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Shipment '{id}' does not exist."));

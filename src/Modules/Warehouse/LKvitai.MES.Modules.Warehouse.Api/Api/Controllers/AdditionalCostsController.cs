@@ -104,7 +104,7 @@ public sealed class AdditionalCostsController : ControllerBase
             ManualReason = route == "ManualInAgnum" ? r.ManualReason?.Trim() : null,
             BasisShipmentId = r.BasisShipmentId,
             CostTypeCode = r.CostTypeCode,
-            CreatedBy = _user.GetCurrentUserId()
+            CreatedBy = (User.Identity?.Name ?? _user.GetCurrentUserId())
         };
         _db.AdditionalCostDocuments.Add(doc);
         await _db.SaveChangesAsync(ct);
@@ -115,7 +115,7 @@ public sealed class AdditionalCostsController : ControllerBase
     [Authorize(Policy = WarehousePolicies.QcOrManager)]
     public async Task<IActionResult> PostDocument(int id, CancellationToken ct)
     {
-        var result = await _purchase.PostCostDocumentAsync(id, _user.GetCurrentUserId(), ct);
+        var result = await _purchase.PostCostDocumentAsync(id, (User.Identity?.Name ?? _user.GetCurrentUserId()), ct);
         if (result.NotFound) return NotFound();
         if (!result.Posted)
             return UnprocessableEntity(new ProblemDetails

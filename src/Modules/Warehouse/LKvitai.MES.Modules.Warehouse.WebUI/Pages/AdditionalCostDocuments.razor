@@ -123,10 +123,10 @@
                     <td>@d.DocumentNumber</td>
                     <td>@(d.SupplierName ?? "#" + d.SupplierId)</td>
                     <td class="is-num">@d.DocumentDate.ToString("yyyy-MM-dd")</td>
-                    <td class="text-end is-money is-num">@Money.Format(d.NetAmount) @d.Currency</td>
-                    <td class="text-end is-money is-num">@Money.Format(d.GrossAmount) @d.Currency</td>
+                    <td class="text-end is-money is-num">@Money.Number(d.NetAmount, d.Currency)</td>
+                    <td class="text-end is-money is-num">@Money.Number(d.GrossAmount, d.Currency)</td>
                     <td>@d.CostTypeCode</td>
-                    <td><a href="/inbound/shipments/@d.BasisShipmentId">#@d.BasisShipmentId</a></td>
+                    <td><a href="/warehouse/inbound/shipments/@d.BasisShipmentId">#@d.BasisShipmentId</a></td>
                     <td><span class="chip @(posted ? "chip--ok" : "chip--locked")">@(posted ? L["Purchase.Posted"] : L["Purchase.NotPosted"])</span></td>
                     <td>
                         @if (d.AccountingRoute == "ManualInAgnum")
