@@ -6,6 +6,7 @@ using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Domain.Purchasing;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum.Accounting;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Fx;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.MonthEnd;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Purchasing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -240,6 +241,7 @@ public sealed partial class PurchaseDocumentService
     public async Task<List<PostingProblem>> ValidateCreditAsync(SupplierCreditDocument credit, InboundShipment? original, CancellationToken ct)
     {
         var problems = new List<PostingProblem>();
+        if (await AccountingPeriods.CheckAsync(_db, ct, credit.CreditDate, Today()) is { } periodClosed) problems.Add(periodClosed);
         if (credit.PostingStatus == "Posted")
         {
             problems.Add(new("AlreadyPosted", "The document is already posted."));

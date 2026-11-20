@@ -1,0 +1,308 @@
+@page "/valuation/month-end"
+@using System.Globalization
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@using LKvitai.MES.Modules.Warehouse.WebUI.Models
+@inject MonthEndClient Client
+@inject IJSRuntime JavaScript
+@inject ToastService ToastService
+
+<PageTitle>@L["MonthEnd.Title"]</PageTitle>
+
+<style>
+    @@media print {
+        .no-print { display: none !important; }
+        .print-only { display: block !important; }
+    }
+    .print-only { display: none; }
+</style>
+
+<h1 class="@Hide(false)">@L["MonthEnd.Title"]</h1>
+<p class="text-muted @Hide(false)">@L["MonthEnd.Intro"]</p>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@(_apiError.ProblemDetails?.Detail ?? _apiError.ProblemDetails?.Title ?? _apiError.Message)"
+                 TraceId="@_apiError.TraceId" OnDismiss="() => _apiError = null" />
+}
+
+<div class="card shadow-sm mb-4 position-relative @Hide(false)">
+    <LoadingSpinner IsLoading="_busy" />
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="monthend-month">@L["MonthEnd.Month"]</label>
+                <input id="monthend-month" type="month" class="form-control" @bind="_month" @bind:format="yyyy-MM" />
+            </div>
+            <div class="col-12 col-md-2">
+                <button class="btn btn-primary" type="button" disabled="@_busy" @onclick="LoadAsync">@L["MonthEnd.Show"]</button>
+            </div>
+            @if (_state is not null)
+            {
+                <div class="col-12 col-md-7">
+                    <span class="badge @(_closed ? "bg-success" : "bg-secondary") me-2">@(_closed ? L["MonthEnd.StateClosed"] : L["MonthEnd.StateOpen"])</span>
+                    @if (_closed)
+                    {
+                        <span>@string.Format(L["MonthEnd.ClosedBy"].Value, _state.ClosedBy, _state.ClosedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm"))</span>
+                    }
+                    else if (_state.ReopenedAt is not null)
+                    {
+                        <span class="text-muted">@string.Format(L["MonthEnd.ReopenedBy"].Value, _state.ReopenedBy, _state.ReopenedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm"), _state.ReopenReason)</span>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (_state is not null)
+        {
+            <hr />
+            @if (!_closed)
+            {
+                @if (_state.Blockers.Count > 0)
+                {
+                    <div class="alert alert-warning">
+                        <strong>@L["MonthEnd.Blocked"]</strong>
+                        <ul class="mb-0">
+                            @foreach (var b in _state.Blockers)
+                            {
+                                <li>@b</li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <button class="btn btn-success" type="button" disabled="@(_busy || _state.Blockers.Count > 0)" @onclick="CloseAsync">@L["MonthEnd.Close"]</button>
+            }
+            else
+            {
+                <div class="row g-2 align-items-end">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label" for="monthend-reason">@L["MonthEnd.ReopenReason"]</label>
+                        <input id="monthend-reason" class="form-control" @bind="_reason" maxlength="400" />
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-outline-danger" type="button" disabled="@(_busy || string.IsNullOrWhiteSpace(_reason))" @onclick="ReopenAsync">@L["MonthEnd.Reopen"]</button>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@if (_report is not null)
+{
+    <section class="mb-4 @Hide(false)">
+        <h2 class="h4">@L["MonthEnd.Statement"]</h2>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>@L["MonthEnd.Account"]</th>
+                        <th class="text-end">@L["MonthEnd.Opening"]</th>
+                        <th class="text-end">@L["MonthEnd.OpeningEntries"]</th>
+                        <th class="text-end">@L["MonthEnd.Receipts"]</th>
+                        <th class="text-end">@L["MonthEnd.TrueUps"]</th>
+                        <th class="text-end">@L["MonthEnd.Returns"]</th>
+                        <th class="text-end">@L["MonthEnd.Issues"]</th>
+                        <th class="text-end">@L["MonthEnd.Scrap"]</th>
+                        <th class="text-end">@L["MonthEnd.SupplierReturns"]</th>
+                        <th class="text-end">@L["MonthEnd.Adjustments"]</th>
+                        <th class="text-end">@L["MonthEnd.Revaluation"]</th>
+                        <th class="text-end">@L["MonthEnd.Closing"]</th>
+                        <th class="text-end">@L["MonthEnd.PriceDifference"]</th>
+                        <th class="text-end">@L["MonthEnd.Residual"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in _report.Statement)
+                    {
+                        @StatementRow(r, r.StockAccount + (string.IsNullOrEmpty(r.Name) ? "" : " " + r.Name))
+                    }
+                </tbody>
+                <tfoot>
+                    @StatementRow(_report.Totals, L["MonthEnd.Totals"].Value)
+                </tfoot>
+            </table>
+        </div>
+        <p class="text-muted small">@L["MonthEnd.StatementNote"]</p>
+    </section>
+
+    <section class="mb-4 @Hide(false)">
+        <h2 class="h4">@L["MonthEnd.Bridge"]</h2>
+        <p class="text-muted">@L["MonthEnd.BridgeIntro"]</p>
+        @if (_report.Bridge.Count == 0)
+        {
+            <p class="text-muted">@L["MonthEnd.BridgeEmpty"]</p>
+        }
+
+        @foreach (var b in _report.Bridge)
+        {
+            <div class="card mb-3">
+                <div class="card-header fw-bold">@b.StockAccount @b.Name</div>
+                <div class="card-body">
+                    <table class="table table-sm w-auto mb-3">
+                        <tbody>
+                            <tr><td>@L["MonthEnd.AgnumTurnover"]</td><td class="text-end mono">@Eur(b.AgnumDebitTurnover)</td></tr>
+                            <tr><td>@L["MonthEnd.WarehouseTurnover"]</td><td class="text-end mono">@Eur(b.WarehouseTurnover)</td></tr>
+                            <tr><td>@L["MonthEnd.ExplainedDifference"]</td><td class="text-end mono">@Eur(b.Explained)</td></tr>
+                            <tr class="fw-bold @(b.Unexplained == 0m ? "text-success" : "text-danger")"><td>@L["MonthEnd.Unexplained"]</td><td class="text-end mono">@Eur(b.Unexplained)</td></tr>
+                        </tbody>
+                    </table>
+                    @DocumentList(L["MonthEnd.AgnumMore"].Value, b.AgnumMore)
+                    @DocumentList(L["MonthEnd.WarehouseMore"].Value, b.WarehouseMore)
+                </div>
+            </div>
+        }
+    </section>
+}
+
+@if (_report is not null)
+{
+    <section class="mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="h4">@L["MonthEnd.Acts"] @_month.ToString("yyyy-MM")</h2>
+            <button class="btn btn-outline-primary no-print" type="button" @onclick="PrintActsAsync">@L["MonthEnd.PrintActs"]</button>
+        </div>
+        @if (_report.Acts.Count == 0)
+        {
+            <p class="text-muted">@L["MonthEnd.ActsEmpty"]</p>
+        }
+        else
+        {
+            <h3 class="h6">@L["MonthEnd.ActsByReason"]</h3>
+            <table class="table table-sm">
+                <thead><tr><th>@L["MonthEnd.Act"]</th><th>@L["MonthEnd.Reason"]</th><th class="text-end">@L["MonthEnd.Lines"]</th><th class="text-end">@L["MonthEnd.Qty"]</th><th class="text-end">EUR</th></tr></thead>
+                <tbody>
+                    @foreach (var g in _report.ActGroups)
+                    {
+                        <tr><td>@ActName(g.Act)</td><td>@g.Reason</td><td class="text-end">@g.Lines</td><td class="text-end mono">@g.Qty.ToString("0.####", Inv)</td><td class="text-end mono">@Eur(g.ValueEur)</td></tr>
+                    }
+                </tbody>
+            </table>
+            <h3 class="h6">@L["MonthEnd.ActLines"]</h3>
+            <table class="table table-sm">
+                <thead><tr><th>@L["MonthEnd.Act"]</th><th>@L["MonthEnd.Date"]</th><th>@L["MonthEnd.Document"]</th><th>SKU</th><th>@L["MonthEnd.Reason"]</th><th class="text-end">@L["MonthEnd.Qty"]</th><th class="text-end">EUR</th></tr></thead>
+                <tbody>
+                    @foreach (var a in _report.Acts)
+                    {
+                        <tr><td>@ActName(a.Act)</td><td>@a.Date.ToString("yyyy-MM-dd")</td><td>@a.DocumentNumber</td><td class="mono">@a.Sku</td><td>@a.Reason</td><td class="text-end mono">@a.Qty.ToString("0.####", Inv)</td><td class="text-end mono">@Eur(a.ValueEur)</td></tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+}
+
+@code {
+    private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
+    private DateTime _month = new(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private MonthEndReportDto? _report;
+    private PeriodStateDto? _state;
+    private bool _busy;
+    private bool _printActs;
+    private string _reason = string.Empty;
+    private ApiException? _apiError;
+
+    private bool _closed => _state?.Status == "Closed";
+
+    private string Hide(bool _) => _printActs ? "no-print" : string.Empty;
+
+    private static string Eur(decimal v) => v.ToString("N2", Inv);
+
+    private string ActName(string act) => L["MonthEnd.Act." + act].Value;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _month = _month.AddMonths(-1);
+        await LoadAsync();
+    }
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        try
+        {
+            _apiError = null;
+            await action();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
+        catch (MonthEndActionException ex)
+        {
+            ToastService.ShowError(ex.Blockers.Count == 0 ? ex.Message : ex.Message + " " + string.Join(" ", ex.Blockers));
+            await ReloadAsync();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private Task LoadAsync() => RunAsync(ReloadAsync);
+
+    private async Task ReloadAsync()
+    {
+        _report = await Client.GetReportAsync(_month.Year, _month.Month);
+        _state = await Client.GetStateAsync(_month.Year, _month.Month);
+    }
+
+    private Task CloseAsync() => RunAsync(async () =>
+    {
+        await Client.CloseAsync(_month.Year, _month.Month);
+        await ReloadAsync();
+    });
+
+    private Task ReopenAsync() => RunAsync(async () =>
+    {
+        await Client.ReopenAsync(_month.Year, _month.Month, _reason);
+        _reason = string.Empty;
+        await ReloadAsync();
+    });
+
+    private async Task PrintActsAsync()
+    {
+        _printActs = true;
+        StateHasChanged();
+        await Task.Delay(100);
+        await JavaScript.InvokeVoidAsync("print");
+        _printActs = false;
+    }
+
+    private Microsoft.AspNetCore.Components.RenderFragment StatementRow(MonthEndStatementRowDto r, string title) => @<tr class="@(r.Residual != 0m ? "table-danger" : "")">
+        <td>@title</td>
+        <td class="text-end mono">@Eur(r.Opening)</td>
+        <td class="text-end mono">@Eur(r.OpeningEntries)</td>
+        <td class="text-end mono">@Eur(r.Receipts)</td>
+        <td class="text-end mono">@Eur(r.TrueUps)</td>
+        <td class="text-end mono">@Eur(r.Returns)</td>
+        <td class="text-end mono">@Eur(r.Issues)</td>
+        <td class="text-end mono">@Eur(r.Scrap)</td>
+        <td class="text-end mono">@Eur(r.SupplierReturns)</td>
+        <td class="text-end mono">@Eur(r.Adjustments)</td>
+        <td class="text-end mono">@Eur(r.Revaluation)</td>
+        <td class="text-end mono fw-bold">@Eur(r.Closing)</td>
+        <td class="text-end mono text-muted">@Eur(r.PriceDifference)</td>
+        <td class="text-end mono">@Eur(r.Residual)</td>
+    </tr>;
+
+    private Microsoft.AspNetCore.Components.RenderFragment DocumentList(string title, IReadOnlyList<BridgeDocumentDto> docs) => @<div class="mb-3">
+        <h3 class="h6">@title</h3>
+        @if (docs.Count == 0)
+        {
+            <p class="text-muted small">@L["MonthEnd.NoDocuments"]</p>
+        }
+        else
+        {
+            <table class="table table-sm">
+                <thead><tr><th>@L["MonthEnd.Document"]</th><th>@L["MonthEnd.Date"]</th><th>@L["MonthEnd.Reason"]</th><th class="text-end">Agnum</th><th class="text-end">@L["MonthEnd.WarehouseColumn"]</th><th class="text-end">@L["MonthEnd.Difference"]</th></tr></thead>
+                <tbody>
+                    @foreach (var d in docs)
+                    {
+                        <tr><td>@d.Number</td><td>@(d.Date?.ToString("yyyy-MM-dd"))</td><td>@L["MonthEnd.BridgeReason." + d.Reason]</td><td class="text-end mono">@Eur(d.Agnum)</td><td class="text-end mono">@Eur(d.Warehouse)</td><td class="text-end mono">@Eur(d.Difference)</td></tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>;
+}

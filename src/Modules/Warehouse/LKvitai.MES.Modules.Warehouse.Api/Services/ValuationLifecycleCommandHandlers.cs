@@ -54,6 +54,12 @@ public sealed class RevaluationCommandHandler : IRequestHandler<RevaluationComma
             return Result.Fail(DomainErrorCodes.NotFound, $"Item {request.ItemId} not found.");
         }
 
+        if (await LKvitai.MES.Modules.Warehouse.Infrastructure.MonthEnd.AccountingPeriods.CheckAsync(
+                _dbContext, cancellationToken, DateOnly.FromDateTime(LKvitai.MES.Modules.Warehouse.Domain.Aggregates.StockBusinessDate.From(DateTime.UtcNow))) is { } periodClosed)
+        {
+            return Result.Fail(DomainErrorCodes.ValidationError, periodClosed.Text);
+        }
+
         var documentId = request.CommandId.ToString("N");
         var streamId = ItemValuation.StreamIdFor(item.Id);
         IReadOnlyList<StockValueChanged> written = [];

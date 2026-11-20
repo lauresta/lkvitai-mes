@@ -2096,4 +2096,66 @@
   <data name="Intrastat.Item.NetWeightInvalid" xml:space="preserve"><value>Neto masė turi būti didesnė už nulį.</value></data>
   <data name="Purchase.Problem.IntrastatHeaderRequired" xml:space="preserve"><value>ES įsigijimui privalomi Intrastat laukai (pristatymo sąlygos, transporto rūšis, išsiuntimo šalis, sandorio pobūdis).</value></data>
   <data name="Purchase.Problem.IntrastatItemDataMissing" xml:space="preserve"><value>Kiekviena ES įsigijimo prekė turi turėti 8 skaitmenų prekės kodą ir neto masę.</value></data>
+  <data name="Nav.MonthEnd" xml:space="preserve"><value>Mėnesio uždarymas</value></data>
+  <data name="MonthEnd.Title" xml:space="preserve"><value>Mėnesio uždarymas</value></data>
+  <data name="MonthEnd.Intro" xml:space="preserve"><value>Mėnesio atsargų vertės žiniaraštis, tiltas į Agnum ir aktai. Uždarymas užfiksuoja mėnesį.</value></data>
+  <data name="MonthEnd.Month" xml:space="preserve"><value>Mėnuo</value></data>
+  <data name="MonthEnd.Show" xml:space="preserve"><value>Rodyti</value></data>
+  <data name="MonthEnd.StateOpen" xml:space="preserve"><value>Atidarytas</value></data>
+  <data name="MonthEnd.StateClosed" xml:space="preserve"><value>Uždarytas</value></data>
+  <data name="MonthEnd.ClosedBy" xml:space="preserve"><value>Uždarė {0}, {1}</value></data>
+  <data name="MonthEnd.ReopenedBy" xml:space="preserve"><value>Paskutinį kartą atidarė {0}, {1}: {2}</value></data>
+  <data name="MonthEnd.Blocked" xml:space="preserve"><value>Mėnesio dar negalima uždaryti:</value></data>
+  <data name="MonthEnd.Close" xml:space="preserve"><value>Uždaryti mėnesį</value></data>
+  <data name="MonthEnd.Reopen" xml:space="preserve"><value>Atidaryti mėnesį iš naujo</value></data>
+  <data name="MonthEnd.ReopenReason" xml:space="preserve"><value>Atidarymo priežastis (įrašoma į audito žurnalą)</value></data>
+  <data name="MonthEnd.Statement" xml:space="preserve"><value>Atsargų vertės žiniaraštis, EUR</value></data>
+  <data name="MonthEnd.Account" xml:space="preserve"><value>Atsargų sąskaita</value></data>
+  <data name="MonthEnd.Opening" xml:space="preserve"><value>Pradžios likutis</value></data>
+  <data name="MonthEnd.OpeningEntries" xml:space="preserve"><value>Pradiniai likučiai</value></data>
+  <data name="MonthEnd.Receipts" xml:space="preserve"><value>Gauta</value></data>
+  <data name="MonthEnd.TrueUps" xml:space="preserve"><value>Patikslinimai</value></data>
+  <data name="MonthEnd.Returns" xml:space="preserve"><value>Grąžinimai</value></data>
+  <data name="MonthEnd.Issues" xml:space="preserve"><value>Išduota</value></data>
+  <data name="MonthEnd.Scrap" xml:space="preserve"><value>Brokas</value></data>
+  <data name="MonthEnd.SupplierReturns" xml:space="preserve"><value>Grąžinta tiekėjui</value></data>
+  <data name="MonthEnd.Adjustments" xml:space="preserve"><value>Korekcijos</value></data>
+  <data name="MonthEnd.Revaluation" xml:space="preserve"><value>Nukainojimas</value></data>
+  <data name="MonthEnd.Closing" xml:space="preserve"><value>Pabaigos likutis</value></data>
+  <data name="MonthEnd.PriceDifference" xml:space="preserve"><value>Kainų skirtumai (už atsargų ribų)</value></data>
+  <data name="MonthEnd.Residual" xml:space="preserve"><value>Nesutapimas</value></data>
+  <data name="MonthEnd.Totals" xml:space="preserve"><value>Iš viso</value></data>
+  <data name="MonthEnd.StatementNote" xml:space="preserve"><value>Pabaigos likutis = pradžios likutis + judėjimas. Kainų skirtumai rodomi atskirai ir į atsargų vertę neįeina.</value></data>
+  <data name="MonthEnd.Bridge" xml:space="preserve"><value>Tiltas į Agnum</value></data>
+  <data name="MonthEnd.BridgeIntro" xml:space="preserve"><value>Agnum atsargų sąskaitos debeto apyvarta lygi sandėlio gavimams plius besiskiriančių dokumentų pokyčiui. Nepaaiškinta suma turi būti nulis.</value></data>
+  <data name="MonthEnd.BridgeEmpty" xml:space="preserve"><value>Laikotarpyje pirkimo dokumentų nėra.</value></data>
+  <data name="MonthEnd.AgnumTurnover" xml:space="preserve"><value>Agnum debeto apyvarta (išsiųsti dokumentai)</value></data>
+  <data name="MonthEnd.WarehouseTurnover" xml:space="preserve"><value>Sandėlio gavimai, patikslinimai, kainų skirtumai</value></data>
+  <data name="MonthEnd.ExplainedDifference" xml:space="preserve"><value>Paaiškinta žemiau esančiais dokumentais</value></data>
+  <data name="MonthEnd.Unexplained" xml:space="preserve"><value>Nepaaiškinta</value></data>
+  <data name="MonthEnd.AgnumMore" xml:space="preserve"><value>Agnum daugiau nei sandėlyje (sąskaita yra, prekės negautos)</value></data>
+  <data name="MonthEnd.WarehouseMore" xml:space="preserve"><value>Sandėlyje daugiau nei Agnum</value></data>
+  <data name="MonthEnd.NoDocuments" xml:space="preserve"><value>Nėra.</value></data>
+  <data name="MonthEnd.Document" xml:space="preserve"><value>Dokumentas</value></data>
+  <data name="MonthEnd.Date" xml:space="preserve"><value>Data</value></data>
+  <data name="MonthEnd.Reason" xml:space="preserve"><value>Priežastis</value></data>
+  <data name="MonthEnd.WarehouseColumn" xml:space="preserve"><value>Sandėlis</value></data>
+  <data name="MonthEnd.Difference" xml:space="preserve"><value>Skirtumas</value></data>
+  <data name="MonthEnd.BridgeReason.InvoicedNotReceived" xml:space="preserve"><value>Sąskaita išrašyta mėnesį, prekės gautos vėliau</value></data>
+  <data name="MonthEnd.BridgeReason.NotSentToAgnum" xml:space="preserve"><value>Dokumentas neišsiųstas į Agnum</value></data>
+  <data name="MonthEnd.BridgeReason.ManualInAgnum" xml:space="preserve"><value>Įvesta Agnum rankiniu būdu</value></data>
+  <data name="MonthEnd.BridgeReason.NotInvoiced" xml:space="preserve"><value>Prekės gautos, sąskaita nepatvirtinta</value></data>
+  <data name="MonthEnd.BridgeReason.AmountsDiffer" xml:space="preserve"><value>Sumos skiriasi</value></data>
+  <data name="MonthEnd.Acts" xml:space="preserve"><value>Nurašymo, trūkumo ir pertekliaus aktai</value></data>
+  <data name="MonthEnd.PrintActs" xml:space="preserve"><value>Spausdinti aktus</value></data>
+  <data name="MonthEnd.ActsEmpty" xml:space="preserve"><value>Mėnesį aktų nėra.</value></data>
+  <data name="MonthEnd.ActsByReason" xml:space="preserve"><value>Sumos pagal priežastis</value></data>
+  <data name="MonthEnd.ActLines" xml:space="preserve"><value>Eilutės</value></data>
+  <data name="MonthEnd.Act" xml:space="preserve"><value>Aktas</value></data>
+  <data name="MonthEnd.Lines" xml:space="preserve"><value>Eilutės</value></data>
+  <data name="MonthEnd.Qty" xml:space="preserve"><value>Kiekis</value></data>
+  <data name="MonthEnd.Act.WriteOff" xml:space="preserve"><value>Nurašymas (brokas)</value></data>
+  <data name="MonthEnd.Act.Shortage" xml:space="preserve"><value>Trūkumas</value></data>
+  <data name="MonthEnd.Act.Surplus" xml:space="preserve"><value>Perteklius</value></data>
+  <data name="Purchase.Problem.PeriodClosed" xml:space="preserve"><value>Dokumento mėnuo uždarytas; jame negalima tvirtinti ar atšaukti dokumentų.</value></data>
 </root>

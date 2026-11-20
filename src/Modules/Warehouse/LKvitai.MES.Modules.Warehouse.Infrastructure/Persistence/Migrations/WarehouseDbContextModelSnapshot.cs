@@ -177,6 +177,51 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                     b.ToTable("accounting_config_audit", "public");
                 });
 
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.AccountingPeriod", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ClosedBy")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReopenReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset?>("ReopenedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReopenedBy")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Year", "Month")
+                        .IsUnique();
+
+                    b.ToTable("accounting_periods", "public");
+                });
+
             modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.AdditionalCostDocument", b =>
                 {
                     b.Property<int>("Id")
@@ -2997,6 +3042,35 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("lots", "public");
+                });
+
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.MonthEndSnapshot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReportJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Year", "Month")
+                        .IsUnique();
+
+                    b.ToTable("month_end_snapshots", "public");
                 });
 
             modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.OnHandValue", b =>

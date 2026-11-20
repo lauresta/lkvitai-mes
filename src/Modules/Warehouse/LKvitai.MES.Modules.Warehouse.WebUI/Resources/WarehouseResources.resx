@@ -2096,4 +2096,66 @@
   <data name="Intrastat.Item.NetWeightInvalid" xml:space="preserve"><value>Net weight must be greater than zero.</value></data>
   <data name="Purchase.Problem.IntrastatHeaderRequired" xml:space="preserve"><value>Intrastat fields (delivery terms, transport mode, dispatch country, transaction nature) are required for an EU acquisition.</value></data>
   <data name="Purchase.Problem.IntrastatItemDataMissing" xml:space="preserve"><value>Every stock item of an EU acquisition needs an 8-digit commodity code and a net weight.</value></data>
+  <data name="Nav.MonthEnd" xml:space="preserve"><value>Month end</value></data>
+  <data name="MonthEnd.Title" xml:space="preserve"><value>Month end</value></data>
+  <data name="MonthEnd.Intro" xml:space="preserve"><value>Stock value statement, bridge to Agnum and acts of a month. Closing freezes the month.</value></data>
+  <data name="MonthEnd.Month" xml:space="preserve"><value>Month</value></data>
+  <data name="MonthEnd.Show" xml:space="preserve"><value>Show</value></data>
+  <data name="MonthEnd.StateOpen" xml:space="preserve"><value>Open</value></data>
+  <data name="MonthEnd.StateClosed" xml:space="preserve"><value>Closed</value></data>
+  <data name="MonthEnd.ClosedBy" xml:space="preserve"><value>Closed by {0} at {1}</value></data>
+  <data name="MonthEnd.ReopenedBy" xml:space="preserve"><value>Last reopened by {0} at {1}: {2}</value></data>
+  <data name="MonthEnd.Blocked" xml:space="preserve"><value>The month cannot be closed yet:</value></data>
+  <data name="MonthEnd.Close" xml:space="preserve"><value>Close month</value></data>
+  <data name="MonthEnd.Reopen" xml:space="preserve"><value>Reopen month</value></data>
+  <data name="MonthEnd.ReopenReason" xml:space="preserve"><value>Reason for reopening (recorded in the audit journal)</value></data>
+  <data name="MonthEnd.Statement" xml:space="preserve"><value>Stock value statement, EUR</value></data>
+  <data name="MonthEnd.Account" xml:space="preserve"><value>Stock account</value></data>
+  <data name="MonthEnd.Opening" xml:space="preserve"><value>Opening</value></data>
+  <data name="MonthEnd.OpeningEntries" xml:space="preserve"><value>Opening balances</value></data>
+  <data name="MonthEnd.Receipts" xml:space="preserve"><value>Receipts</value></data>
+  <data name="MonthEnd.TrueUps" xml:space="preserve"><value>True-ups</value></data>
+  <data name="MonthEnd.Returns" xml:space="preserve"><value>Returns</value></data>
+  <data name="MonthEnd.Issues" xml:space="preserve"><value>Issues</value></data>
+  <data name="MonthEnd.Scrap" xml:space="preserve"><value>Scrap</value></data>
+  <data name="MonthEnd.SupplierReturns" xml:space="preserve"><value>Supplier returns</value></data>
+  <data name="MonthEnd.Adjustments" xml:space="preserve"><value>Adjustments</value></data>
+  <data name="MonthEnd.Revaluation" xml:space="preserve"><value>Revaluation</value></data>
+  <data name="MonthEnd.Closing" xml:space="preserve"><value>Closing</value></data>
+  <data name="MonthEnd.PriceDifference" xml:space="preserve"><value>Price differences (off-ledger)</value></data>
+  <data name="MonthEnd.Residual" xml:space="preserve"><value>Residual</value></data>
+  <data name="MonthEnd.Totals" xml:space="preserve"><value>Total</value></data>
+  <data name="MonthEnd.StatementNote" xml:space="preserve"><value>Closing = opening + movements. Price differences are shown separately and are not part of the stock value.</value></data>
+  <data name="MonthEnd.Bridge" xml:space="preserve"><value>Bridge to Agnum</value></data>
+  <data name="MonthEnd.BridgeIntro" xml:space="preserve"><value>Agnum debit turnover of the stock account equals Warehouse receipts plus the change of the documents that differ. The unexplained amount must be zero.</value></data>
+  <data name="MonthEnd.BridgeEmpty" xml:space="preserve"><value>No purchase documents in the period.</value></data>
+  <data name="MonthEnd.AgnumTurnover" xml:space="preserve"><value>Agnum debit turnover (documents sent)</value></data>
+  <data name="MonthEnd.WarehouseTurnover" xml:space="preserve"><value>Warehouse receipts, true-ups, price differences</value></data>
+  <data name="MonthEnd.ExplainedDifference" xml:space="preserve"><value>Explained by the documents below</value></data>
+  <data name="MonthEnd.Unexplained" xml:space="preserve"><value>Unexplained</value></data>
+  <data name="MonthEnd.AgnumMore" xml:space="preserve"><value>More in Agnum than in the warehouse (invoiced, goods not received)</value></data>
+  <data name="MonthEnd.WarehouseMore" xml:space="preserve"><value>More in the warehouse than in Agnum</value></data>
+  <data name="MonthEnd.NoDocuments" xml:space="preserve"><value>None.</value></data>
+  <data name="MonthEnd.Document" xml:space="preserve"><value>Document</value></data>
+  <data name="MonthEnd.Date" xml:space="preserve"><value>Date</value></data>
+  <data name="MonthEnd.Reason" xml:space="preserve"><value>Reason</value></data>
+  <data name="MonthEnd.WarehouseColumn" xml:space="preserve"><value>Warehouse</value></data>
+  <data name="MonthEnd.Difference" xml:space="preserve"><value>Difference</value></data>
+  <data name="MonthEnd.BridgeReason.InvoicedNotReceived" xml:space="preserve"><value>Invoice dated in the month, goods received later</value></data>
+  <data name="MonthEnd.BridgeReason.NotSentToAgnum" xml:space="preserve"><value>Document not sent to Agnum</value></data>
+  <data name="MonthEnd.BridgeReason.ManualInAgnum" xml:space="preserve"><value>Entered in Agnum manually</value></data>
+  <data name="MonthEnd.BridgeReason.NotInvoiced" xml:space="preserve"><value>Goods received, invoice not posted</value></data>
+  <data name="MonthEnd.BridgeReason.AmountsDiffer" xml:space="preserve"><value>Amounts differ</value></data>
+  <data name="MonthEnd.Acts" xml:space="preserve"><value>Write-off, shortage and surplus acts</value></data>
+  <data name="MonthEnd.PrintActs" xml:space="preserve"><value>Print acts</value></data>
+  <data name="MonthEnd.ActsEmpty" xml:space="preserve"><value>No acts in the month.</value></data>
+  <data name="MonthEnd.ActsByReason" xml:space="preserve"><value>Totals by reason</value></data>
+  <data name="MonthEnd.ActLines" xml:space="preserve"><value>Lines</value></data>
+  <data name="MonthEnd.Act" xml:space="preserve"><value>Act</value></data>
+  <data name="MonthEnd.Lines" xml:space="preserve"><value>Lines</value></data>
+  <data name="MonthEnd.Qty" xml:space="preserve"><value>Qty</value></data>
+  <data name="MonthEnd.Act.WriteOff" xml:space="preserve"><value>Write-off (scrap)</value></data>
+  <data name="MonthEnd.Act.Shortage" xml:space="preserve"><value>Shortage</value></data>
+  <data name="MonthEnd.Act.Surplus" xml:space="preserve"><value>Surplus</value></data>
+  <data name="Purchase.Problem.PeriodClosed" xml:space="preserve"><value>The month of this document is closed; nothing dated in it can be posted or un-posted.</value></data>
 </root>

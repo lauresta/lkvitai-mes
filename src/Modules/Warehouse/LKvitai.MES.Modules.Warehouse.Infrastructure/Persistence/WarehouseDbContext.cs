@@ -50,6 +50,8 @@ public class WarehouseDbContext : DbContext
     public DbSet<AccountingConfigAuditEntry> AccountingConfigAudit => Set<AccountingConfigAuditEntry>();
     public DbSet<AgnumDocumentOutbox> AgnumOutbox => Set<AgnumDocumentOutbox>();
     public DbSet<AgnumSendingSettings> AgnumSendingSettings => Set<AgnumSendingSettings>();
+    public DbSet<AccountingPeriod> AccountingPeriods => Set<AccountingPeriod>();
+    public DbSet<MonthEndSnapshot> MonthEndSnapshots => Set<MonthEndSnapshot>();
     public DbSet<AgnumReconciliationFinding> AgnumReconciliationFindings => Set<AgnumReconciliationFinding>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<SalesOrder> SalesOrders => Set<SalesOrder>();
@@ -515,6 +517,25 @@ public class WarehouseDbContext : DbContext
             entity.HasIndex(e => new { e.DocumentType, e.DocumentId });
             entity.HasIndex(e => new { e.SupplierId, e.Id });
             entity.HasIndex(e => new { e.Key, e.Revision, e.Operation }).IsUnique();
+        });
+
+        modelBuilder.Entity<AccountingPeriod>(entity =>
+        {
+            entity.ToTable("accounting_periods");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Status).HasMaxLength(10).IsRequired();
+            entity.Property(e => e.ClosedBy).HasMaxLength(200);
+            entity.Property(e => e.ReopenedBy).HasMaxLength(200);
+            entity.Property(e => e.ReopenReason).HasMaxLength(500);
+            entity.HasIndex(e => new { e.Year, e.Month }).IsUnique();
+        });
+
+        modelBuilder.Entity<MonthEndSnapshot>(entity =>
+        {
+            entity.ToTable("month_end_snapshots");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ReportJson).HasColumnType("jsonb").IsRequired();
+            entity.HasIndex(e => new { e.Year, e.Month }).IsUnique();
         });
 
         modelBuilder.Entity<AgnumSendingSettings>(entity =>
