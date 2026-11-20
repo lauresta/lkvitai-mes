@@ -1,0 +1,223 @@
+@page "/valuation/opening-balances"
+@using System.Globalization
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@using LKvitai.MES.Modules.Warehouse.WebUI.Models
+@inject OpeningBalancesClient Client
+@inject ToastService ToastService
+
+<PageTitle>@L["OpeningBalances.Title"]</PageTitle>
+
+<h1>@L["OpeningBalances.Title"]</h1>
+<p class="text-muted">@L["OpeningBalances.Intro"]</p>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@(_apiError.ProblemDetails?.Detail ?? _apiError.ProblemDetails?.Title ?? _apiError.Message)"
+                 TraceId="@_apiError.TraceId"
+                 OnDismiss="() => _apiError = null" />
+}
+
+<div class="card shadow-sm mb-4 position-relative">
+    <LoadingSpinner IsLoading="_busy" />
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-6">
+                <label class="form-label">@L["OpeningBalances.File"]</label>
+                <InputFile class="form-control" accept=".csv,text/csv" OnChange="OnFileSelectedAsync" />
+                <small class="text-muted d-block mt-1">@L["OpeningBalances.Format"]</small>
+            </div>
+            <div class="col-12 col-md-6 d-flex gap-2">
+                <button class="btn btn-outline-primary" type="button" disabled="@(_bytes is null || _busy)" @onclick="PreviewAsync">@L["OpeningBalances.Preview"]</button>
+                <button class="btn btn-primary" type="button" disabled="@(!CanConfirm || _busy)" @onclick="ConfirmAsync">@L["OpeningBalances.Confirm"]</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (_preview is not null)
+{
+    @if (_preview.FileError is not null)
+    {
+        <div class="alert alert-danger">@L["OpeningBalances.FileErr." + _preview.FileError]</div>
+    }
+    else
+    {
+        @if (_preview.AlreadyLoaded)
+        {
+            <div class="alert alert-warning">@string.Format(L["OpeningBalances.AlreadyLoaded"].Value, _preview.ExistingNumber)</div>
+        }
+        @if (_preview.ErrorRows > 0)
+        {
+            <div class="alert alert-danger">@string.Format(L["OpeningBalances.ErrorsFound"].Value, _preview.ErrorRows)</div>
+        }
+
+        <h2 class="h5">@L["OpeningBalances.Totals"] (@_preview.BusinessDate.ToString("yyyy-MM-dd"))</h2>
+        <div class="table-responsive mb-4">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>@L["OpeningBalances.Account"]</th>
+                        <th class="text-end">@L["OpeningBalances.Rows"]</th>
+                        <th class="text-end">@L["Common.Quantity"]</th>
+                        <th class="text-end">@L["OpeningBalances.ValueEur"]</th>
+                        <th style="width:14rem">@L["OpeningBalances.AgnumBalance"]</th>
+                        <th class="text-end">@L["OpeningBalances.Difference"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in _preview.Totals)
+                    {
+                        var key = t.StockAccount;
+                        <tr>
+                            <td>@(string.IsNullOrEmpty(t.StockAccount) ? "-" : t.StockAccount) @t.ProfileName</td>
+                            <td class="text-end">@t.Rows</td>
+                            <td class="text-end">@Fmt(t.Qty)</td>
+                            <td class="text-end">@Fmt(t.ValueEur)</td>
+                            <td><input class="form-control form-control-sm" value="@GetAgnum(key)" @onchange="e => SetAgnum(key, e.Value?.ToString())" /></td>
+                            <td class="text-end">@Difference(t)</td>
+                        </tr>
+                    }
+                    <tr class="fw-bold">
+                        <td>@L["OpeningBalances.Total"]</td>
+                        <td class="text-end">@_preview.Totals.Sum(x => x.Rows)</td>
+                        <td class="text-end">@Fmt(_preview.Totals.Sum(x => x.Qty))</td>
+                        <td class="text-end">@Fmt(_preview.Totals.Sum(x => x.ValueEur))</td>
+                        <td></td><td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="h5">@L["OpeningBalances.RowsHeading"]</h2>
+        <div class="table-responsive mb-4">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>#</th><th>@L["Common.SKU"]</th><th>@L["OpeningBalances.Item"]</th><th>@L["Common.Location"]</th>
+                        <th class="text-end">@L["Common.Quantity"]</th><th class="text-end">@L["OpeningBalances.ValueEur"]</th>
+                        <th>@L["OpeningBalances.Account"]</th><th>@L["OpeningBalances.Errors"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in _preview.Rows)
+                    {
+                        <tr class="@(r.Errors.Count > 0 ? "table-danger" : "")">
+                            <td>@r.RowNumber</td><td>@r.Sku</td><td>@r.ItemName</td><td>@r.Location</td>
+                            <td class="text-end">@(r.Qty is null ? "" : Fmt(r.Qty.Value))</td>
+                            <td class="text-end">@(r.ValueEur is null ? "" : Fmt(r.ValueEur.Value))</td>
+                            <td>@r.StockAccount</td>
+                            <td>@string.Join("; ", r.Errors.Select(e => L["OpeningBalances.Err." + e].Value))</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+<h2 class="h5">@L["OpeningBalances.Loaded"]</h2>
+@if (_documents.Count == 0)
+{
+    <p class="text-muted">@L["OpeningBalances.NoDocuments"]</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>@L["OpeningBalances.Number"]</th><th>@L["OpeningBalances.FileName"]</th><th>@L["OpeningBalances.Date"]</th>
+                    <th class="text-end">@L["OpeningBalances.Rows"]</th><th class="text-end">@L["Common.Quantity"]</th>
+                    <th class="text-end">@L["OpeningBalances.ValueEur"]</th><th>@L["OpeningBalances.CreatedBy"]</th><th>@L["OpeningBalances.CreatedAt"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var d in _documents)
+                {
+                    <tr>
+                        <td>@d.Number</td><td>@d.FileName</td><td>@d.BusinessDate.ToString("yyyy-MM-dd")</td>
+                        <td class="text-end">@d.Lines</td><td class="text-end">@Fmt(d.TotalQty)</td><td class="text-end">@Fmt(d.TotalValueEur)</td>
+                        <td>@d.CreatedBy</td><td>@d.CreatedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private string _fileName = string.Empty;
+    private byte[]? _bytes;
+    private OpeningBalancePreviewDto? _preview;
+    private IReadOnlyList<OpeningBalanceDocumentDto> _documents = [];
+    private readonly Dictionary<string, string> _agnum = new();
+    private bool _busy;
+    private ApiException? _apiError;
+
+    private bool CanConfirm => _preview is { FileError: null, AlreadyLoaded: false, ErrorRows: 0 } p && p.Rows.Count > 0;
+
+    protected override async Task OnInitializedAsync() => await LoadDocumentsAsync();
+
+    private static string Fmt(decimal v) => v.ToString("N2", CultureInfo.CurrentCulture);
+
+    private string GetAgnum(string key) => _agnum.TryGetValue(key, out var v) ? v : string.Empty;
+
+    private void SetAgnum(string key, string? value) => _agnum[key] = value ?? string.Empty;
+
+    private string Difference(OpeningBalanceAccountTotalDto t)
+    {
+        if (!_agnum.TryGetValue(t.StockAccount, out var raw)
+            || !decimal.TryParse(raw.Replace(',', '.'), NumberStyles.Number, CultureInfo.InvariantCulture, out var agnum))
+        {
+            return string.Empty;
+        }
+
+        return Fmt(t.ValueEur - agnum);
+    }
+
+    private async Task LoadDocumentsAsync()
+    {
+        try { _documents = await Client.ListAsync(); }
+        catch (ApiException ex) { _apiError = ex; }
+    }
+
+    private async Task OnFileSelectedAsync(InputFileChangeEventArgs args)
+    {
+        _preview = null;
+        _fileName = args.File.Name;
+        await using var stream = args.File.OpenReadStream(20_000_000);
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms);
+        _bytes = ms.ToArray();
+        await PreviewAsync();
+    }
+
+    private async Task PreviewAsync()
+    {
+        if (_bytes is null) return;
+        await RunAsync(async () => _preview = await Client.PreviewAsync(_fileName, _bytes));
+    }
+
+    private async Task ConfirmAsync()
+    {
+        if (_bytes is null) return;
+        await RunAsync(async () =>
+        {
+            var result = await Client.ConfirmAsync(_fileName, _bytes);
+            ToastService.ShowSuccess(string.Format(
+                L[result.AlreadyLoaded ? "OpeningBalances.AlreadyLoaded" : "OpeningBalances.Loaded.Success"].Value,
+                result.Number));
+            _preview = await Client.PreviewAsync(_fileName, _bytes);
+            await LoadDocumentsAsync();
+        });
+    }
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        _apiError = null;
+        try { await action(); }
+        catch (ApiException ex) { _apiError = ex; }
+        finally { _busy = false; }
+    }
+}

@@ -1866,4 +1866,43 @@
   <data name="Common.NoItemsFound" xml:space="preserve"><value>Tinkamų prekių nerasta</value></data>
   <data name="Common.InvalidNumber" xml:space="preserve"><value>Netinkamas skaičius</value></data>
   <data name="Common.NumberOutOfRange" xml:space="preserve"><value>Reikšmė už leistino intervalo</value></data>
+  <data name="Nav.OpeningBalances" xml:space="preserve"><value>Pradiniai likučiai</value></data>
+  <data name="OpeningBalances.Title" xml:space="preserve"><value>Pradiniai likučiai</value></data>
+  <data name="OpeningBalances.Intro" xml:space="preserve"><value>Įkelkite atsargų kiekius ir vertes 2026-12-31 datai iš CSV failo. Pradiniai likučiai niekada nesiunčiami į Agnum. Pakartotinis to paties failo įkėlimas nieko nekeičia.</value></data>
+  <data name="OpeningBalances.File" xml:space="preserve"><value>CSV failas</value></data>
+  <data name="OpeningBalances.Format" xml:space="preserve"><value>Stulpeliai: sku, location, qty, value_eur (atskirti kableliu arba kabliataškiu).</value></data>
+  <data name="OpeningBalances.Preview" xml:space="preserve"><value>Peržiūra</value></data>
+  <data name="OpeningBalances.Confirm" xml:space="preserve"><value>Patvirtinti ir įkelti</value></data>
+  <data name="OpeningBalances.Totals" xml:space="preserve"><value>Sumos pagal atsargų sąskaitą</value></data>
+  <data name="OpeningBalances.Account" xml:space="preserve"><value>Atsargų sąskaita</value></data>
+  <data name="OpeningBalances.Rows" xml:space="preserve"><value>Eilutės</value></data>
+  <data name="OpeningBalances.ValueEur" xml:space="preserve"><value>Vertė, EUR</value></data>
+  <data name="OpeningBalances.AgnumBalance" xml:space="preserve"><value>Agnum likutis 12-31</value></data>
+  <data name="OpeningBalances.Difference" xml:space="preserve"><value>Skirtumas</value></data>
+  <data name="OpeningBalances.Total" xml:space="preserve"><value>Iš viso</value></data>
+  <data name="OpeningBalances.RowsHeading" xml:space="preserve"><value>Eilutės</value></data>
+  <data name="OpeningBalances.Item" xml:space="preserve"><value>Prekė</value></data>
+  <data name="OpeningBalances.Errors" xml:space="preserve"><value>Klaidos</value></data>
+  <data name="OpeningBalances.Loaded" xml:space="preserve"><value>Įkelti pradinių likučių dokumentai</value></data>
+  <data name="OpeningBalances.Loaded.Success" xml:space="preserve"><value>Pradinių likučių dokumentas {0} įkeltas.</value></data>
+  <data name="OpeningBalances.NoDocuments" xml:space="preserve"><value>Pradinių likučių dokumentų dar nėra.</value></data>
+  <data name="OpeningBalances.Number" xml:space="preserve"><value>Dokumentas</value></data>
+  <data name="OpeningBalances.FileName" xml:space="preserve"><value>Failas</value></data>
+  <data name="OpeningBalances.Date" xml:space="preserve"><value>Data</value></data>
+  <data name="OpeningBalances.CreatedBy" xml:space="preserve"><value>Įkėlė</value></data>
+  <data name="OpeningBalances.CreatedAt" xml:space="preserve"><value>Įkelta</value></data>
+  <data name="OpeningBalances.AlreadyLoaded" xml:space="preserve"><value>Šis failas jau įkeltas kaip {0}; nieko nepakeista.</value></data>
+  <data name="OpeningBalances.ErrorsFound" xml:space="preserve"><value>Eilučių su klaidomis: {0}. Ištaisykite failą ir įkelkite iš naujo.</value></data>
+  <data name="OpeningBalances.FileErr.EmptyFile" xml:space="preserve"><value>Failas tuščias.</value></data>
+  <data name="OpeningBalances.FileErr.MissingColumns" xml:space="preserve"><value>Antraštėje turi būti stulpeliai sku, location, qty, value_eur.</value></data>
+  <data name="OpeningBalances.Err.UnknownItem" xml:space="preserve"><value>Nežinoma prekė</value></data>
+  <data name="OpeningBalances.Err.UnknownLocation" xml:space="preserve"><value>Nežinoma vieta</value></data>
+  <data name="OpeningBalances.Err.ExternalLocation" xml:space="preserve"><value>Vieta už sandėlio ribų</value></data>
+  <data name="OpeningBalances.Err.NegativeQty" xml:space="preserve"><value>Neigiamas kiekis</value></data>
+  <data name="OpeningBalances.Err.NegativeValue" xml:space="preserve"><value>Neigiama vertė</value></data>
+  <data name="OpeningBalances.Err.ZeroQty" xml:space="preserve"><value>Kiekis turi būti didesnis už nulį</value></data>
+  <data name="OpeningBalances.Err.InvalidNumber" xml:space="preserve"><value>Netinkamas skaičius</value></data>
+  <data name="OpeningBalances.Err.DuplicateRow" xml:space="preserve"><value>Pasikartoja prekė ir vieta</value></data>
+  <data name="OpeningBalances.Err.MissingSku" xml:space="preserve"><value>Nėra SKU</value></data>
+  <data name="OpeningBalances.Err.MissingLocation" xml:space="preserve"><value>Nėra vietos</value></data>
 </root>
