@@ -84,6 +84,14 @@ foreach (var warehouse in builder.Configuration.GetSection("Agnum:Warehouses").G
 }
 
 builder.Services.Configure<AgnumApiClientOptions>(builder.Configuration.GetSection("Agnum:Api"));
+builder.Services.Configure<LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum.Accounting.AccountingOptions>(builder.Configuration.GetSection("Agnum:Accounting"));
+builder.Services.AddHttpClient<LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum.Accounting.IAgnumReferenceClient, LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum.Accounting.AgnumReferenceClient>(client =>
+{
+    client.BaseAddress = new Uri(agnumApiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(agnumApiTimeoutSeconds);
+    var referenceKey = builder.Configuration.GetValue<string>("Agnum:Api:ReferenceApiKey");
+    if (!string.IsNullOrWhiteSpace(referenceKey)) client.DefaultRequestHeaders.Add("X-API-KEY", referenceKey);
+});
 builder.Services.AddHttpClient("FedExApi");
 builder.Services.AddHttpClient("OAuthProvider");
 builder.Services.AddHttpClient("PagerDuty");
@@ -265,6 +273,7 @@ builder.Services.AddScoped<IAgnumSecretProtector, AgnumDataProtector>();
 builder.Services.AddScoped<IAgnumExportOrchestrator, AgnumExportOrchestrator>();
 builder.Services.AddScoped<AgnumExportRecurringJob>();
 builder.Services.AddScoped<AgnumImportRecurringJob>();
+builder.Services.AddScoped<AgnumSupplierSyncRecurringJob>();
 builder.Services.AddScoped<IAgnumReconciliationReportStore, DatabaseAgnumReconciliationReportStore>();
 builder.Services.AddScoped<IAgnumReconciliationService, AgnumReconciliationService>();
 builder.Services.AddSingleton<LabelTemplateEngine>();
@@ -490,6 +499,15 @@ RecurringJob.AddOrUpdate<AgnumImportRecurringJob>(
     AgnumImportRecurringJob.JobId,
     job => job.ExecuteAsync(CancellationToken.None),
     agnumImportCron,
+    new RecurringJobOptions
+    {
+        TimeZone = TimeZoneInfo.Utc
+    });
+
+RecurringJob.AddOrUpdate<AgnumSupplierSyncRecurringJob>(
+    AgnumSupplierSyncRecurringJob.JobId,
+    job => job.ExecuteAsync(CancellationToken.None),
+    "30 5 * * *",
     new RecurringJobOptions
     {
         TimeZone = TimeZoneInfo.Utc

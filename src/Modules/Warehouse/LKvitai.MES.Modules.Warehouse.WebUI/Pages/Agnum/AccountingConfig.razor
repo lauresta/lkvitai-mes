@@ -1,0 +1,244 @@
+@page "/agnum/accounting"
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@inject AgnumAccountingClient Client
+@inject ToastService ToastService
+
+<PageTitle>Agnum accounting configuration</PageTitle>
+
+<h1>Agnum accounting configuration</h1>
+
+@if (_error is not null)
+{
+    <div class="alert alert-danger" data-testid="accounting-config-error">@_error</div>
+}
+
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><button class="nav-link @(_tab == "profiles" ? "active" : "")" type="button" @onclick='() => _tab = "profiles"'>Stock accounts</button></li>
+    <li class="nav-item"><button class="nav-link @(_tab == "rules" ? "active" : "")" type="button" @onclick='() => _tab = "rules"'>Postings</button></li>
+    <li class="nav-item"><button class="nav-link @(_tab == "audit" ? "active" : "")" type="button" @onclick='() => _tab = "audit"'>Change log</button></li>
+</ul>
+
+@if (_tab == "profiles")
+{
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead><tr><th>Name</th><th>Stock account</th><th>Agnum warehouse</th><th>Price diff.</th><th>Write-off</th><th>Markdown</th><th>Default</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var p in _profiles)
+            {
+                <tr>
+                    <td><input class="form-control form-control-sm" @bind="p.Name" /></td>
+                    <td><input class="form-control form-control-sm" @bind="p.StockAccount" /></td>
+                    <td>
+                        <select class="form-select form-select-sm" @bind="p.AgnumSndId">
+                            <option value="0">-</option>
+                            @foreach (var w in _warehouses)
+                            {
+                                <option value="@w.IdSnd">@w.IdSnd @w.Name</option>
+                            }
+                        </select>
+                    </td>
+                    <td><input class="form-control form-control-sm" @bind="p.PriceDifferenceAccount" /></td>
+                    <td><input class="form-control form-control-sm" @bind="p.WriteOffAccount" /></td>
+                    <td><input class="form-control form-control-sm" @bind="p.MarkdownAccount" /></td>
+                    <td><input type="checkbox" class="form-check-input" @bind="p.IsDefault" /></td>
+                    <td class="text-nowrap">
+                        <button class="btn btn-sm btn-primary" type="button" @onclick="() => SaveProfileAsync(p)">Save</button>
+                        @if (p.Id != 0)
+                        {
+                            <button class="btn btn-sm btn-outline-danger" type="button" @onclick="() => DeleteProfileAsync(p)">Delete</button>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    <button class="btn btn-outline-primary" type="button" @onclick="AddProfile">Add profile</button>
+}
+else if (_tab == "rules")
+{
+    @if (_profiles.Any(p => p.Id == 0))
+    {
+        <div class="alert alert-light border">Save new profiles before adding postings.</div>
+    }
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead><tr><th>Profile</th><th>VAT treatment</th><th>Agnum scheme</th><th>VAT code</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var r in _rules)
+            {
+                <tr>
+                    <td>
+                        <select class="form-select form-select-sm" @bind="r.ProfileId">
+                            @foreach (var p in _profiles.Where(p => p.Id != 0))
+                            {
+                                <option value="@p.Id">@p.Name (@p.StockAccount)</option>
+                            }
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm" @bind="r.VatTreatment">
+                            @foreach (var t in Treatments)
+                            {
+                                <option value="@t">@t</option>
+                            }
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm" @bind="r.SchemeId">
+                            <option value="0">-</option>
+                            @foreach (var s in _schemes)
+                            {
+                                <option value="@s.IdSch">@s.IdSch @s.Name</option>
+                            }
+                        </select>
+                    </td>
+                    <td>
+                        @if (r.VatTreatment == "Domestic")
+                        {
+                            <select class="form-select form-select-sm" @bind="r.VatCode">
+                                <option value="">-</option>
+                                @foreach (var v in _vatCodes)
+                                {
+                                    <option value="@v.Code">@v.Code</option>
+                                }
+                            </select>
+                        }
+                    </td>
+                    <td class="text-nowrap">
+                        <button class="btn btn-sm btn-primary" type="button" @onclick="() => SaveRuleAsync(r)">Save</button>
+                        @if (r.Id != 0)
+                        {
+                            <button class="btn btn-sm btn-outline-danger" type="button" @onclick="() => DeleteRuleAsync(r)">Delete</button>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    <button class="btn btn-outline-primary" type="button" @onclick="AddRule" disabled="@(!_profiles.Any(p => p.Id != 0))">Add posting</button>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm">
+            <thead><tr><th>When</th><th>Who</th><th>Object</th><th>Action</th><th>Before</th><th>After</th></tr></thead>
+            <tbody>
+            @foreach (var a in _audit)
+            {
+                <tr>
+                    <td class="text-nowrap">@a.ChangedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@a.ChangedBy</td>
+                    <td>@a.Entity #@a.EntityId</td>
+                    <td>@a.Action</td>
+                    <td><code>@a.BeforeJson</code></td>
+                    <td><code>@a.AfterJson</code></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private static readonly string[] Treatments = { "Domestic", "EuAcquisition", "Import" };
+
+    private sealed class ProfileRow
+    {
+        public int Id; public string Name = ""; public string StockAccount = ""; public int AgnumSndId;
+        public string? PriceDifferenceAccount; public string? WriteOffAccount; public string? MarkdownAccount; public bool IsDefault;
+    }
+
+    private sealed class RuleRow
+    {
+        public int Id; public int ProfileId; public string VatTreatment = "Domestic"; public int SchemeId; public string? VatCode;
+    }
+
+    private string _tab = "profiles";
+    private string? _error;
+    private List<ProfileRow> _profiles = new();
+    private List<RuleRow> _rules = new();
+    private List<SchemeDto> _schemes = new();
+    private List<AgnumWarehouseDto> _warehouses = new();
+    private List<AgnumVatCodeDto> _vatCodes = new();
+    private List<ConfigAuditDto> _audit = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RunAsync(LoadAsync);
+    }
+
+    private async Task LoadAsync()
+    {
+        _profiles = (await Client.GetProfilesAsync()).Select(p => new ProfileRow
+        {
+            Id = p.Id, Name = p.Name, StockAccount = p.StockAccount, AgnumSndId = p.AgnumSndId,
+            PriceDifferenceAccount = p.PriceDifferenceAccount, WriteOffAccount = p.WriteOffAccount,
+            MarkdownAccount = p.MarkdownAccount, IsDefault = p.IsDefault
+        }).ToList();
+        _rules = (await Client.GetRulesAsync()).Select(r => new RuleRow
+        {
+            Id = r.Id, ProfileId = r.StockAccountProfileId, VatTreatment = r.VatTreatment, SchemeId = r.SchemeId, VatCode = r.VatCode
+        }).ToList();
+        _audit = await Client.GetAuditAsync();
+
+        // Pick-lists come from Agnum; if it is unreachable the page stays readable but cannot be edited.
+        try
+        {
+            _schemes = await Client.GetSchemesAsync();
+            _warehouses = await Client.GetWarehousesAsync();
+            _vatCodes = await Client.GetVatCodesAsync();
+        }
+        catch (ApiException ex)
+        {
+            _error = "Agnum lists could not be loaded: " + ex.UserMessage;
+        }
+    }
+
+    private void AddProfile() => _profiles.Add(new ProfileRow { IsDefault = _profiles.Count == 0 });
+
+    private void AddRule() => _rules.Add(new RuleRow { ProfileId = _profiles.First(p => p.Id != 0).Id });
+
+    private Task SaveProfileAsync(ProfileRow p) => RunAsync(async () =>
+    {
+        await Client.SaveProfileAsync(new StockProfileDto(p.Id, p.Name, p.StockAccount, p.AgnumSndId,
+            p.PriceDifferenceAccount, p.WriteOffAccount, p.MarkdownAccount, p.IsDefault));
+        ToastService.ShowSuccess("Saved");
+        await LoadAsync();
+    });
+
+    private Task DeleteProfileAsync(ProfileRow p) => RunAsync(async () =>
+    {
+        await Client.DeleteProfileAsync(p.Id);
+        await LoadAsync();
+    });
+
+    private Task SaveRuleAsync(RuleRow r) => RunAsync(async () =>
+    {
+        await Client.SaveRuleAsync(new PostingRuleDto(r.Id, r.ProfileId, r.VatTreatment, r.SchemeId, r.VatCode));
+        ToastService.ShowSuccess("Saved");
+        await LoadAsync();
+    });
+
+    private Task DeleteRuleAsync(RuleRow r) => RunAsync(async () =>
+    {
+        await Client.DeleteRuleAsync(r.Id);
+        await LoadAsync();
+    });
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _error = null;
+        try
+        {
+            await action();
+        }
+        catch (ApiException ex)
+        {
+            // A rejected save shows which rows the scheme is missing.
+            _error = ex.UserMessage;
+        }
+    }
+}
