@@ -317,6 +317,12 @@ public sealed class ItemsController : ControllerBase
             return ValidationFailure($"Invalid itemType '{request.ItemType}'. Expected 'Stock' or 'Service'.");
         }
 
+        if (item.CategoryId != request.CategoryId &&
+            await LKvitai.MES.Modules.Warehouse.Infrastructure.Purchasing.StockValueGuard.ItemHasStockValueAsync(_dbContext, item.Id, cancellationToken))
+        {
+            return ValidationFailure(LKvitai.MES.Modules.Warehouse.Infrastructure.Purchasing.StockValueGuard.Message);
+        }
+
         var oldBasePrice = item.BasePrice;
         var oldPurchasePrice = item.PurchasePrice;
 

@@ -1866,4 +1866,54 @@
   <data name="Common.NoItemsFound" xml:space="preserve"><value>Tinkamų prekių nerasta</value></data>
   <data name="Common.InvalidNumber" xml:space="preserve"><value>Netinkamas skaičius</value></data>
   <data name="Common.NumberOutOfRange" xml:space="preserve"><value>Reikšmė už leistino intervalo</value></data>
+  <data name="Purchase.Currency" xml:space="preserve"><value>Dokumento valiuta</value></data>
+  <data name="Purchase.NetAmount" xml:space="preserve"><value>Suma be PVM</value></data>
+  <data name="Purchase.VatAmount" xml:space="preserve"><value>PVM suma</value></data>
+  <data name="Purchase.GrossAmount" xml:space="preserve"><value>Suma su PVM</value></data>
+  <data name="Purchase.VatTreatment" xml:space="preserve"><value>PVM tvarka</value></data>
+  <data name="Purchase.VatTreatment.Domestic" xml:space="preserve"><value>Pirkimas Lietuvoje</value></data>
+  <data name="Purchase.VatTreatment.EuAcquisition" xml:space="preserve"><value>Įsigijimas iš ES</value></data>
+  <data name="Purchase.VatTreatment.Import" xml:space="preserve"><value>Importas</value></data>
+  <data name="Purchase.AccountingRoute" xml:space="preserve"><value>Apskaitos būdas</value></data>
+  <data name="Purchase.Route.Auto" xml:space="preserve"><value>Siųsti į Agnum</value></data>
+  <data name="Purchase.Route.ManualInAgnum" xml:space="preserve"><value>Suvedama Agnum rankiniu būdu</value></data>
+  <data name="Purchase.CostInCost" xml:space="preserve"><value>į savikainą</value></data>
+  <data name="Purchase.CostExpense" xml:space="preserve"><value>į sąnaudas</value></data>
+  <data name="Purchase.LinesVsNet" xml:space="preserve"><value>Eilutės ir išlaidos: {0}, suma be PVM: {1} {2}</value></data>
+  <data name="Purchase.Document" xml:space="preserve"><value>Pirkimo dokumentas</value></data>
+  <data name="Purchase.Posted" xml:space="preserve"><value>Patvirtintas</value></data>
+  <data name="Purchase.NotPosted" xml:space="preserve"><value>Nepatvirtintas</value></data>
+  <data name="Purchase.PostedBy" xml:space="preserve"><value>Patvirtinta {0}, patvirtino {1}</value></data>
+  <data name="Purchase.DocumentLocked" xml:space="preserve"><value>Dokumentas patvirtintas ir užrakintas. Prekes vis dar galima priimti.</value></data>
+  <data name="Purchase.Rate" xml:space="preserve"><value>Valiutos kursas (Lietuvos bankas)</value></data>
+  <data name="Purchase.RatePreliminary" xml:space="preserve"><value>Preliminarus, kol dokumentas nepatvirtintas</value></data>
+  <data name="Purchase.ManualRate" xml:space="preserve"><value>Rankinis kursas (vnt. už 1 EUR)</value></data>
+  <data name="Purchase.ManualRateReason" xml:space="preserve"><value>Rankinio kurso priežastis</value></data>
+  <data name="Purchase.Post" xml:space="preserve"><value>Patvirtinti</value></data>
+  <data name="Purchase.PostedToast" xml:space="preserve"><value>Dokumentas patvirtintas.</value></data>
+  <data name="Purchase.NotPostedToast" xml:space="preserve"><value>Dokumentas nepatvirtintas. Žr. pranešimus aukščiau.</value></data>
+  <data name="Purchase.ExtraCosts" xml:space="preserve"><value>Papildomos išlaidos</value></data>
+  <data name="Purchase.CostCode" xml:space="preserve"><value>Kodas</value></data>
+  <data name="Purchase.CostName" xml:space="preserve"><value>Pavadinimas</value></data>
+  <data name="Purchase.IncludedInCost" xml:space="preserve"><value>Į savikainą</value></data>
+  <data name="Purchase.ExpenseAccount" xml:space="preserve"><value>Sąnaudų sąskaita</value></data>
+  <data name="Purchase.Active" xml:space="preserve"><value>Aktyvus</value></data>
+  <data name="Purchase.AddCostType" xml:space="preserve"><value>Pridėti išlaidų rūšį</value></data>
+  <data name="Purchase.Problem.AlreadyPosted" xml:space="preserve"><value>Dokumentas jau patvirtintas.</value></data>
+  <data name="Purchase.Problem.InvoiceNumberRequired" xml:space="preserve"><value>Įveskite tiekėjo sąskaitos numerį.</value></data>
+  <data name="Purchase.Problem.InvoiceDateRequired" xml:space="preserve"><value>Įveskite tiekėjo sąskaitos datą.</value></data>
+  <data name="Purchase.Problem.AmountsRequired" xml:space="preserve"><value>Įveskite sąskaitos sumas be PVM ir PVM.</value></data>
+  <data name="Purchase.Problem.SupplierNotPostable" xml:space="preserve"><value>Tiekėjo negalima siųsti į Agnum.</value></data>
+  <data name="Purchase.Problem.NoStockLines" xml:space="preserve"><value>Dokumente nėra atsargų eilučių.</value></data>
+  <data name="Purchase.Problem.CostTypeInvalid" xml:space="preserve"><value>Papildomos išlaidos rūšis neleidžiama.</value></data>
+  <data name="Purchase.Problem.LinesTotalMismatch" xml:space="preserve"><value>Eilučių ir papildomų išlaidų suma nesutampa su suma be PVM.</value></data>
+  <data name="Purchase.Problem.InvoiceNumberTaken" xml:space="preserve"><value>Šis sąskaitos numeris šiemet šiam tiekėjui jau panaudotas.</value></data>
+  <data name="Purchase.Problem.RateNotPublishedToday" xml:space="preserve"><value>Šiandienos valiutos kursas dar nepaskelbtas.</value></data>
+  <data name="Purchase.Problem.RateMissing" xml:space="preserve"><value>Dokumento datai valiutos kurso nėra.</value></data>
+  <data name="Purchase.Problem.RateReasonRequired" xml:space="preserve"><value>Rankiniam kursui reikia nurodyti priežastį.</value></data>
+  <data name="Purchase.Problem.RateSanity" xml:space="preserve"><value>Kursas nuo paskutinio išsaugoto skiriasi daugiau nei 1,5 karto.</value></data>
+  <data name="Purchase.Problem.MixedStockAccounts" xml:space="preserve"><value>Prekės priklauso skirtingoms atsargų sąskaitoms. Padalinkite priėmimą.</value></data>
+  <data name="Purchase.Problem.VatTreatmentRequired" xml:space="preserve"><value>Pasirinkite PVM tvarką.</value></data>
+  <data name="Purchase.Problem.PostingRuleMissing" xml:space="preserve"><value>Šiai atsargų sąskaitai ir PVM tvarkai nenustatyta Agnum projekcija.</value></data>
+  <data name="Purchase.Problem.BasisNotPosted" xml:space="preserve"><value>Pirmiausia turi būti patvirtintas pagrindinis priėmimas.</value></data>
 </root>

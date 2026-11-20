@@ -38,7 +38,7 @@
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <span class="badge @GetStatusBadge(_shipment.Status)">@WarehouseStatusText.Get(L, _shipment.Status)</span>
-                    @if (string.Equals(_shipment.Status, "Draft", StringComparison.OrdinalIgnoreCase))
+                    @if (!string.Equals(_shipment.Purchase?.PostingStatus, "Posted", StringComparison.OrdinalIgnoreCase))
                     {
                         <button class="btn btn-outline-primary btn-sm" @onclick="OpenEdit">@L["Common.Edit"]</button>
                     }
@@ -59,13 +59,105 @@
                 <button class="btn btn-sm btn-outline-primary" @onclick="OpenQcQueue">@L["InboundShipmentDetail.OpenQCQueue"]</button>
             </div>
 
+            @if (_shipment.Purchase is { } purchase)
+            {
+                var posted = string.Equals(purchase.PostingStatus, "Posted", StringComparison.OrdinalIgnoreCase);
+                <div class="card border mb-3" data-testid="purchase-document">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                            <h5 class="mb-0">@L["Purchase.Document"]</h5>
+                            <span class="badge @(posted ? "bg-success" : "bg-secondary")" data-testid="posting-status">
+                                @(posted ? L["Purchase.Posted"] : L["Purchase.NotPosted"])
+                            </span>
+                        </div>
+                        @if (posted)
+                        {
+                            <div class="small text-muted mb-2">@L["Purchase.PostedBy", purchase.PostedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-", purchase.PostedBy ?? "-"]</div>
+                            <div class="lk-state lk-state--ok mb-2">@L["Purchase.DocumentLocked"]</div>
+                        }
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <div class="small text-muted">@L["InboundShipmentCreate.InvoiceNumber"]</div>
+                                <div>@(_shipment.InvoiceNumber ?? "-")</div>
+                                <div class="small text-muted mt-2">@L["InboundShipmentCreate.InvoiceDate"]</div>
+                                <div>@(_shipment.InvoiceDate?.ToString("yyyy-MM-dd") ?? "-")</div>
+                                <div class="small text-muted mt-2">@L["Purchase.Currency"]</div>
+                                <div>@purchase.Currency</div>
+                            </div>
+                            <div class="col-md-5">
+                                <table class="table table-sm mb-0">
+                                    <thead><tr><th></th><th class="text-end">@purchase.Currency</th><th class="text-end">EUR</th></tr></thead>
+                                    <tbody>
+                                        <tr><td>@L["Purchase.NetAmount"]</td><td class="text-end is-money is-num">@Money.Format(purchase.NetAmount)</td><td class="text-end is-money is-num" data-testid="net-eur">@Money.Format(purchase.NetEur)</td></tr>
+                                        <tr><td>@L["Purchase.VatAmount"]</td><td class="text-end is-money is-num">@Money.Format(purchase.VatAmount)</td><td class="text-end is-money is-num">@Money.Format(purchase.VatEur)</td></tr>
+                                        <tr><td>@L["Purchase.GrossAmount"]</td><td class="text-end is-money is-num">@Money.Format(purchase.GrossAmount)</td><td class="text-end is-money is-num">@Money.Format(purchase.GrossEur)</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="small text-muted">@L["Purchase.Rate"]</div>
+                                @if (purchase.RateUnitsPerEur.HasValue)
+                                {
+                                    <div data-testid="fx-rate">1 EUR = @purchase.RateUnitsPerEur.Value.ToString("0.########", System.Globalization.CultureInfo.InvariantCulture) @purchase.Currency</div>
+                                    <div class="small text-muted">@purchase.RateDate?.ToString("yyyy-MM-dd") - @purchase.RateSource @(purchase.RateReason is null ? "" : $"({purchase.RateReason})")</div>
+                                    @if (!posted)
+                                    {
+                                        <div class="small text-muted">@L["Purchase.RatePreliminary"]</div>
+                                    }
+                                }
+                                else
+                                {
+                                    <div>-</div>
+                                }
+                                <div class="small text-muted mt-2">@L["Purchase.VatTreatment"]</div>
+                                <div>@(purchase.VatTreatment ?? purchase.DefaultVatTreatment ?? "-")</div>
+                                <div class="small text-muted mt-2">@L["Purchase.AccountingRoute"]</div>
+                                <div>@(purchase.AccountingRoute == "ManualInAgnum" ? L["Purchase.Route.ManualInAgnum"] : L["Purchase.Route.Auto"])</div>
+                            </div>
+                        </div>
+
+                        @if (!posted)
+                        {
+                            var problems = _postProblems ?? purchase.Problems;
+                            @if (problems.Count > 0)
+                            {
+                                <ul class="mt-3 mb-2 text-danger" data-testid="posting-problems">
+                                    @foreach (var problem in problems)
+                                    {
+                                        <li>@ProblemText(problem)</li>
+                                    }
+                                </ul>
+                            }
+
+                            @if (purchase.CanSetManualRate && !string.Equals(purchase.Currency, "EUR", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <div class="row g-2 mt-1">
+                                    <div class="col-md-3">
+                                        <label class="form-label">@L["Purchase.ManualRate"]</label>
+                                        <input type="number" min="0" step="0.00000001" class="form-control" @bind="_manualRate" />
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label class="form-label">@L["Purchase.ManualRateReason"]</label>
+                                        <input class="form-control" @bind="_manualRateReason" />
+                                    </div>
+                                </div>
+                            }
+
+                            <div class="mt-3">
+                                <button class="btn btn-primary" disabled="@_isSubmitting" @onclick="PostAsync" data-testid="post-document">@L["Purchase.Post"]</button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
             @if (_shipment.AdditionalCosts.Count > 0)
             {
                 <div class="alert alert-light border">
                     <strong>@L["InboundShipmentDetail.AdditionalCosts"]</strong>
                     @foreach (var cost in _shipment.AdditionalCosts)
                     {
-                        <span class="badge bg-light text-dark border me-1">@cost.CostType: @cost.Amount.ToString("0.00") @cost.Currency</span>
+                        <span class="badge bg-light text-dark border me-1">@cost.CostType: @cost.Amount.ToString("0.00") @cost.Currency@(cost.AmountEur.HasValue ? $" = {cost.AmountEur.Value:0.00} EUR" : "")</span>
                     }
                 </div>
             }
@@ -103,10 +195,6 @@
                         <div class="col-md-2">
                             <label class="form-label">@L["InboundShipmentDetail.UnitPricec63fff", SelectedLineHasPrice ? "" : "(required)"]</label>
                             <input type="number" min="0" step="0.0001" class="form-control @(SelectedLineHasPrice ? "" : "border-warning")" @bind="_unitPrice" placeholder="@SelectedLinePricePlaceholder" />
-                        </div>
-                        <div class="col-md-1">
-                            <label class="form-label">@L["Common.Ccy"]</label>
-                            <input class="form-control" maxlength="3" @bind="_currency" />
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">@L["Common.LotNumber"]</label>
@@ -276,6 +364,59 @@
         }
     }
 
+    private decimal? _manualRate;
+    private string? _manualRateReason;
+    private IReadOnlyList<PostingProblemDto>? _postProblems;
+
+    private string ProblemText(PostingProblemDto problem)
+    {
+        var localized = L["Purchase.Problem." + problem.Code];
+        if (localized.ResourceNotFound)
+        {
+            return problem.Text;
+        }
+
+        // Figures and names come from the server text.
+        return problem.Code is "LinesTotalMismatch" or "SupplierNotPostable" or "PostingRuleMissing"
+            ? $"{localized.Value} ({problem.Text})"
+            : localized.Value;
+    }
+
+    private async Task PostAsync()
+    {
+        if (_shipment is null)
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+        _apiError = null;
+        _postProblems = null;
+        try
+        {
+            _shipment = await ReceivingClient.PostShipmentAsync(
+                _shipment.Id, new PostShipmentRequestDto { ManualRateUnitsPerEur = _manualRate, ManualRateReason = _manualRateReason });
+            ToastService.ShowSuccess(L["Purchase.PostedToast"].Value);
+        }
+        catch (ApiException ex) when (ex.StatusCode == 422 && ex.ProblemDetails?.Detail is { } detail && detail.Contains('|'))
+        {
+            _postProblems = detail.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Split('|', 2))
+                .Select(p => new PostingProblemDto { Code = p[0], Text = p.Length > 1 ? p[1] : p[0] })
+                .ToList();
+            ToastService.ShowError(L["Purchase.NotPostedToast"].Value);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
     private void ResolveByBarcode()
     {
         if (_shipment is null || string.IsNullOrWhiteSpace(_scanBarcode))
@@ -354,8 +495,7 @@
                 ProductionDate = _productionDate.HasValue ? DateOnly.FromDateTime(_productionDate.Value.Date) : null,
                 ExpiryDate = _expiryDate.HasValue ? DateOnly.FromDateTime(_expiryDate.Value.Date) : null,
                 Notes = string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim(),
-                UnitPrice = _unitPrice,
-                Currency = string.IsNullOrWhiteSpace(_currency) ? null : _currency.Trim()
+                UnitPrice = _unitPrice
             };
 
             var response = await ReceivingClient.ReceiveItemsAsync(_shipment.Id, request);

@@ -36,6 +36,7 @@ public sealed class AgnumAccountingController : ControllerBase
         string? PriceDifferenceAccount, string? WriteOffAccount, string? MarkdownAccount, bool IsDefault);
 
     public sealed record RuleRequest(int StockAccountProfileId, VatTreatment VatTreatment, int SchemeId, string? VatCode);
+    public sealed record CostTypeRequest(int Id, string Code, string Name, bool IncludedInCost, string? ExpenseAccount, bool IsActive);
 
     public sealed record CategoryProfileRequest(int? ProfileId);
 
@@ -77,6 +78,18 @@ public sealed class AgnumAccountingController : ControllerBase
     [HttpPut("categories/{categoryId:int}/profile")]
     public Task<IActionResult> SetCategoryProfile(int categoryId, [FromBody] CategoryProfileRequest r, CancellationToken ct)
         => Guard(async () => { await _config.SetCategoryProfileAsync(categoryId, r.ProfileId, User, ct); return NoContent(); });
+
+    [HttpGet("cost-types")]
+    public async Task<IActionResult> GetCostTypes(CancellationToken ct)
+        => Ok(await _db.AdditionalCostTypes.AsNoTracking().OrderBy(t => t.Id).ToListAsync(ct));
+
+    [HttpPut("cost-types")]
+    public Task<IActionResult> SaveCostType([FromBody] CostTypeRequest r, CancellationToken ct)
+        => Guard(async () => Ok(await _config.SaveCostTypeAsync(new AdditionalCostType
+        {
+            Id = r.Id, Code = r.Code, Name = r.Name, IncludedInCost = r.IncludedInCost,
+            ExpenseAccount = r.ExpenseAccount, IsActive = r.IsActive
+        }, User, ct)));
 
     [HttpGet("audit")]
     public async Task<IActionResult> GetAudit([FromQuery] int take = 200, CancellationToken ct = default)

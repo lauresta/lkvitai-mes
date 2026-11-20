@@ -12,6 +12,8 @@ public sealed record SchemeRowDto(int No, string? Name, string? Debit, string? C
 public sealed record SchemeDto(int IdSch, string? Name, List<SchemeRowDto>? Rows);
 public sealed record AgnumWarehouseDto(int IdSnd, string? Code, string? Name);
 public sealed record AgnumVatCodeDto(string Code);
+public sealed record AgnumAccountDto(string Code, string? Name);
+public sealed record CostTypeConfigDto(int Id, string Code, string Name, bool IncludedInCost, string? ExpenseAccount, bool IsActive);
 
 public sealed record ConfigAuditDto(long Id, string Entity, string EntityId, string Action, string ChangedBy,
     DateTimeOffset ChangedAt, string? BeforeJson, string? AfterJson);
@@ -32,6 +34,9 @@ public sealed class AgnumAccountingClient
     public Task<List<PostingRuleDto>> GetRulesAsync(CancellationToken ct = default) => GetAsync<List<PostingRuleDto>>("rules", ct);
     public Task SaveRuleAsync(PostingRuleDto r, CancellationToken ct = default) => SendAsync(c => c.PutAsJsonAsync(Base + "rules", r, ct));
     public Task DeleteRuleAsync(int id, CancellationToken ct = default) => SendAsync(c => c.DeleteAsync(Base + $"rules/{id}", ct));
+    public Task<List<CostTypeConfigDto>> GetCostTypesAsync(CancellationToken ct = default) => GetAsync<List<CostTypeConfigDto>>("cost-types", ct);
+    public Task SaveCostTypeAsync(CostTypeConfigDto t, CancellationToken ct = default) => SendAsync(c => c.PutAsJsonAsync(Base + "cost-types", t, ct));
+    public Task<List<AgnumAccountDto>> GetAccountsAsync(CancellationToken ct = default) => GetAsync<List<AgnumAccountDto>>("reference/accounts", ct);
     public Task<List<ConfigAuditDto>> GetAuditAsync(CancellationToken ct = default) => GetAsync<List<ConfigAuditDto>>("audit", ct);
     public Task<List<SchemeDto>> GetSchemesAsync(CancellationToken ct = default) => GetAsync<List<SchemeDto>>("reference/schemes", ct);
     public Task<List<AgnumWarehouseDto>> GetWarehousesAsync(CancellationToken ct = default) => GetAsync<List<AgnumWarehouseDto>>("reference/warehouses", ct);

@@ -15,6 +15,7 @@ using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
+using LKvitai.MES.Modules.Warehouse.Domain.Purchasing;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.BuildingBlocks.SharedKernel;
 using IDocumentStore = Marten.IDocumentStore;
@@ -40,6 +41,7 @@ public sealed class ReceivingController : ControllerBase
     private readonly IMediator _mediator;
     private readonly ILogger<ReceivingController> _logger;
     private readonly IItemPriceSnapshotService _itemPriceSnapshots;
+    private readonly PurchaseDocumentService _purchase;
 
     public ReceivingController(
         IWarehouseCodeProvider warehouseCode,
@@ -48,8 +50,10 @@ public sealed class ReceivingController : ControllerBase
         ICurrentUserService currentUserService,
         IMediator mediator,
         ILogger<ReceivingController> logger,
-        IItemPriceSnapshotService itemPriceSnapshots, IBalanceGuardLockFactory balanceLocks)
+        IItemPriceSnapshotService itemPriceSnapshots, IBalanceGuardLockFactory balanceLocks,
+        PurchaseDocumentService purchase)
     {
+        _purchase = purchase;
         _warehouseCode = warehouseCode;
         _balanceLocks = balanceLocks;
         _dbContext = dbContext;
@@ -205,12 +209,16 @@ public sealed class ReceivingController : ControllerBase
                     x.UnitPrice,
                     x.Currency,
                     (x.Item?.ItemType ?? ItemType.Stock).ToString(),
-                    x.Item?.CostType))
+                    x.Item?.CostType,
+                    x.InvoiceQty ?? x.ExpectedQty,
+                    x.InvoiceUnitPrice ?? x.UnitPrice,
+                    x.FinalValueEur))
                 .ToList(),
             shipment.AdditionalCosts
                 .OrderBy(x => x.Id)
-                .Select(x => new AdditionalCostDto(x.Id, x.CostType, x.Amount, x.Currency))
-                .ToList()));
+                .Select(x => new AdditionalCostDto(x.Id, x.CostType, x.Amount, x.Currency, x.AmountEur))
+                .ToList(),
+            await BuildPurchaseDtoAsync(shipment, cancellationToken)));
     }
 
     [HttpPost]
@@ -226,7 +234,7 @@ public sealed class ReceivingController : ControllerBase
         }
 
         var (inputs, inputsError) = await LoadShipmentInputsAsync(
-            request.SupplierId, request.Lines, request.AdditionalCosts, cancellationToken);
+            request.SupplierId, request.Lines, request.AdditionalCosts, NormalizeCurrency(request.Currency), cancellationToken);
         if (inputs is null)
         {
             return inputsError ?? Failure(Result.Fail(DomainErrorCodes.InternalError, "Shipment input validation failed unexpectedly."));
@@ -244,6 +252,12 @@ public sealed class ReceivingController : ControllerBase
             InvoiceDate = request.InvoiceDate
         };
 
+        var headerError = ApplyAccountingHeader(shipment, request);
+        if (headerError is not null)
+        {
+            return headerError;
+        }
+
         foreach (var costRow in inputs.AdditionalCostRows)
         {
             shipment.AdditionalCosts.Add(costRow);
@@ -259,6 +273,7 @@ public sealed class ReceivingController : ControllerBase
 
         shipment.Status = ComputeShipmentStatus(shipment.Lines);
 
+        await _purchase.RefreshPreliminaryAsync(shipment, cancellationToken);
         _dbContext.InboundShipments.Add(shipment);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -343,19 +358,15 @@ public sealed class ReceivingController : ControllerBase
             return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Shipment '{id}' does not exist."));
         }
 
-        // Editing is only safe before any receiving has happened - once a line has a
-        // received qty, changing/removing it here would silently orphan that stock
-        // movement from what the shipment claims it received. ComputeShipmentStatus
-        // only reports "Draft" when every line's ReceivedQty is still 0.
-        if (shipment.Status != "Draft")
+        // Blueprint 4.2: header, prices and additional costs stay editable until the document is posted,
+        // also after the first receipt. A posted document is locked.
+        if (shipment.PostingStatus == "Posted")
         {
-            return UnprocessableFailure(
-                $"Shipment '{id}' has status '{shipment.Status}' and can no longer be edited - " +
-                "receiving has already started against it.");
+            return UnprocessableFailure($"Shipment '{id}' is posted and locked.");
         }
 
         var (inputs, inputsError) = await LoadShipmentInputsAsync(
-            request.SupplierId, request.Lines, request.AdditionalCosts, cancellationToken);
+            request.SupplierId, request.Lines, request.AdditionalCosts, NormalizeCurrency(request.Currency), cancellationToken);
         if (inputs is null)
         {
             return inputsError ?? Failure(Result.Fail(DomainErrorCodes.InternalError, "Shipment input validation failed unexpectedly."));
@@ -368,25 +379,58 @@ public sealed class ReceivingController : ControllerBase
         shipment.ExpectedDate = request.ExpectedDate;
         shipment.InvoiceNumber = string.IsNullOrWhiteSpace(request.InvoiceNumber) ? null : request.InvoiceNumber.Trim();
         shipment.InvoiceDate = request.InvoiceDate;
+        var headerError = ApplyAccountingHeader(shipment, request);
+        if (headerError is not null)
+        {
+            return headerError;
+        }
 
-        // No line has been received yet (guarded above), so the old rows can be fully
-        // replaced rather than diffed line-by-line.
-        _dbContext.RemoveRange(shipment.Lines);
-        shipment.Lines.Clear();
+        // Lines are matched by item. A line that already received goods cannot be removed or cut below what was received.
+        var requested = request.Lines.ToDictionary(x => x.ItemId);
+        foreach (var existing in shipment.Lines.Where(x => !requested.ContainsKey(x.ItemId)).ToList())
+        {
+            if (existing.ReceivedQty > 0m && inputs.Items.First(i => i.Id == existing.ItemId).ItemType != ItemType.Service)
+            {
+                return UnprocessableFailure($"Line {existing.Id} already received goods and cannot be removed.");
+            }
+
+            _dbContext.Remove(existing);
+            shipment.Lines.Remove(existing);
+        }
+
+        var newLines = BuildShipmentLines(request.Lines, inputs.Items);
+        foreach (var fresh in newLines)
+        {
+            var existing = shipment.Lines.FirstOrDefault(x => x.ItemId == fresh.ItemId);
+            if (existing is null)
+            {
+                shipment.Lines.Add(fresh);
+                continue;
+            }
+
+            var isService = inputs.Items.First(i => i.Id == fresh.ItemId).ItemType == ItemType.Service;
+            if (!isService && fresh.ExpectedQty < existing.ReceivedQty)
+            {
+                return UnprocessableFailure($"Line {existing.Id}: expected quantity cannot be below the received {existing.ReceivedQty:0.##}.");
+            }
+
+            existing.ExpectedQty = fresh.ExpectedQty;
+            existing.ReceivedQty = isService ? fresh.ExpectedQty : existing.ReceivedQty;
+            existing.UnitPrice = fresh.UnitPrice;
+            existing.InvoiceQty = fresh.InvoiceQty;
+            existing.InvoiceUnitPrice = fresh.InvoiceUnitPrice;
+        }
+
         _dbContext.RemoveRange(shipment.AdditionalCosts);
         shipment.AdditionalCosts.Clear();
-
         foreach (var costRow in inputs.AdditionalCostRows)
         {
             shipment.AdditionalCosts.Add(costRow);
         }
 
-        foreach (var line in BuildShipmentLines(request.Lines, inputs.Items))
-        {
-            shipment.Lines.Add(line);
-        }
-
         shipment.Status = ComputeShipmentStatus(shipment.Lines);
+        await _purchase.RefreshPreliminaryAsync(shipment, cancellationToken);
+
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -459,11 +503,72 @@ public sealed class ReceivingController : ControllerBase
         if (shipment is null) return Failure(Result.Fail(DomainErrorCodes.NotFound, "Shipment not found."));
         if (shipment.Status is "Complete" or "Cancelled") return ValidationFailure("Shipment is already closed.");
         if (!shipment.Lines.Any(x => x.ReceivedQty < x.ExpectedQty)) return ValidationFailure("Shipment has no shortage.");
+        if (shipment.PostingStatus == "Posted") return UnprocessableFailure("The document is posted; a shortage after posting is handled with a credit note.");
         shipment.Status = "Complete";
         var evt = new InboundShipmentClosedEvent { ShipmentId = id, UserId = _currentUserService.GetCurrentUserId(),
             Notes = request.Notes, Timestamp = DateTime.UtcNow };
         await PersistShipmentEventAsync(id, evt, null, cancellationToken);
         return Ok(new ShipmentUpdatedResponse(id, shipment.ReferenceNumber, shipment.Status, evt.Timestamp));
+    }
+
+    private async Task<PurchaseDocumentDto> BuildPurchaseDtoAsync(InboundShipment shipment, CancellationToken ct)
+    {
+        IReadOnlyList<PostingProblemDto> problems = [];
+        if (shipment.PostingStatus != "Posted")
+        {
+            try
+            {
+                problems = (await _purchase.DryRunAsync(shipment.Id, ct)).Select(p => new PostingProblemDto(p.Code, p.Text)).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Posting checks for shipment {ShipmentId} could not be evaluated.", shipment.Id);
+            }
+        }
+
+        var authorization = HttpContext.RequestServices.GetRequiredService<Microsoft.AspNetCore.Authorization.IAuthorizationService>();
+        var canManual = (await authorization.AuthorizeAsync(User, WarehousePolicies.InventoryAccountantOrManager)).Succeeded;
+        return new PurchaseDocumentDto(
+            shipment.Currency, shipment.NetAmount, shipment.VatAmount, shipment.GrossAmount,
+            shipment.RateUnitsPerEur, shipment.RateDate, shipment.RateSource, shipment.RateReason,
+            shipment.NetEur, shipment.VatEur, shipment.GrossEur,
+            shipment.VatTreatment?.ToString(),
+            shipment.Supplier is null ? null : Infrastructure.Purchasing.PurchasePostingValidator.DefaultVatTreatment(shipment.Supplier.Kind)?.ToString(),
+            shipment.AccountingRoute, shipment.PostingStatus, shipment.PostedAt, shipment.PostedBy, canManual, problems);
+    }
+
+    /// <summary>Blueprint 4.2 "Post": runs every blocking check, then writes the true-up and locks the document.</summary>
+    [HttpPost("{id:int}/post")]
+    [Authorize(Policy = WarehousePolicies.QcOrManager)]
+    public async Task<IActionResult> PostShipmentAsync(
+        int id, [FromBody] PostShipmentRequest? request, CancellationToken cancellationToken = default)
+    {
+        decimal? manualRate = null;
+        string? manualReason = null;
+        if (request?.ManualRateUnitsPerEur is > 0m)
+        {
+            var authorization = HttpContext.RequestServices.GetRequiredService<Microsoft.AspNetCore.Authorization.IAuthorizationService>();
+            if (!(await authorization.AuthorizeAsync(User, WarehousePolicies.InventoryAccountantOrManager)).Succeeded)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden);
+            }
+
+            manualRate = request.ManualRateUnitsPerEur;
+            manualReason = request.ManualRateReason;
+        }
+
+        var result = await _purchase.PostAsync(id, manualRate, manualReason, _currentUserService.GetCurrentUserId(), cancellationToken);
+        if (result.NotFound)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Shipment '{id}' does not exist."));
+        }
+
+        if (!result.Posted)
+        {
+            return UnprocessableFailure(string.Join("\n", result.Problems.Select(p => $"{p.Code}|{p.Text}")));
+        }
+
+        return await GetShipmentByIdAsync(id, cancellationToken);
     }
 
     public sealed record CloseShortRequest(string? Notes);
@@ -562,10 +667,6 @@ public sealed class ReceivingController : ControllerBase
         if (request.UnitPrice.HasValue)
         {
             line.UnitPrice = request.UnitPrice.Value;
-            if (!string.IsNullOrWhiteSpace(request.Currency))
-            {
-                line.Currency = request.Currency.Trim().ToUpperInvariant();
-            }
         }
 
         if (item.RequiresLotTracking && string.IsNullOrWhiteSpace(request.LotNumber))
@@ -610,6 +711,43 @@ public sealed class ReceivingController : ControllerBase
             return Failure(Result.Fail(DomainErrorCodes.InternalError, $"Virtual location '{destinationCode}' is missing."));
         }
 
+        // Blueprint 4.2: before posting a receipt is qty x receipt price x rate (preliminary rate: invoice date, else
+        // receipt date); after posting it follows the final value of the line, so the line sum stays exact.
+        var invoiceQty = line.InvoiceQty ?? line.ExpectedQty;
+        decimal receiptValueEur;
+        decimal receiptRateEurPerUnit;
+        if (shipment.PostingStatus == "Posted" && line.FinalValueEur is not null)
+        {
+            receiptRateEurPerUnit = PurchaseMath.RateEurPerUnit(shipment.RateUnitsPerEur ?? 1m);
+            receiptValueEur = PurchaseMath.ReceivedPortion(line.FinalValueEur.Value, line.ReceivedQty + request.ReceivedQty, invoiceQty)
+                              - line.BookedValueEur;
+        }
+        else
+        {
+            var rate = await _purchase.ResolveRateAsync(
+                shipment.Currency, shipment.InvoiceDate ?? PurchaseDocumentService.Today(), null, null, cancellationToken);
+            if (rate.UnitsPerEur is null)
+            {
+                return UnprocessableFailure($"There is no exchange rate for {shipment.Currency} yet; the receipt cannot be valued.");
+            }
+
+            receiptRateEurPerUnit = PurchaseMath.RateEurPerUnit(rate.UnitsPerEur.Value);
+            receiptValueEur = PurchaseMath.ToEur(request.ReceivedQty * effectiveUnitPrice.Value, receiptRateEurPerUnit);
+        }
+
+        line.BookedValueEur += receiptValueEur;
+        _dbContext.InboundShipmentReceipts.Add(new InboundShipmentReceipt
+        {
+            ShipmentId = shipment.Id,
+            LineId = line.Id,
+            Qty = request.ReceivedQty,
+            UnitPrice = effectiveUnitPrice.Value,
+            RateEurPerUnit = receiptRateEurPerUnit,
+            ValueEur = receiptValueEur,
+            ReceivedAt = DateTimeOffset.UtcNow,
+            ReceivedBy = _currentUserService.GetCurrentUserId()
+        });
+
         line.ReceivedQty += request.ReceivedQty;
 
         shipment.Status = ComputeShipmentStatus(shipment.Lines);
@@ -639,7 +777,6 @@ public sealed class ReceivingController : ControllerBase
         };
 
         // The receipt value (qty x price, EUR) is written in the same transaction as the quantity event.
-        var receiptValueEur = ItemValuation.Money(request.ReceivedQty * effectiveUnitPrice.Value);
         var receiptDocument = new StockValueDocument(
             "InboundShipment",
             shipment.Id.ToString(CultureInfo.InvariantCulture),
@@ -675,6 +812,7 @@ public sealed class ReceivingController : ControllerBase
         int supplierId,
         IReadOnlyList<CreateInboundShipmentLineRequest> lines,
         IReadOnlyList<CreateAdditionalCostRequest>? additionalCosts,
+        string currency,
         CancellationToken cancellationToken)
     {
         var (supplier, supplierError) = await LoadSupplierAsync(supplierId, cancellationToken);
@@ -689,10 +827,33 @@ public sealed class ReceivingController : ControllerBase
             return (null, itemsError);
         }
 
-        var (additionalCostRows, costError) = BuildAdditionalCostRows(additionalCosts);
+        var (additionalCostRows, costError) = BuildAdditionalCostRows(additionalCosts, currency);
         if (costError is not null)
         {
             return (null, costError);
+        }
+
+        // Blueprint 4.4: cost types come from the dictionary; "VAT" is not a cost type.
+        var codes = additionalCostRows.Select(x => x.CostType).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        if (codes.Any(x => string.Equals(x, "VAT", StringComparison.OrdinalIgnoreCase)))
+        {
+            return (null, ValidationFailure("VAT is not an additional cost type; enter it in the VAT amount."));
+        }
+
+        if (codes.Count > 0)
+        {
+            var known = await _dbContext.AdditionalCostTypes.AsNoTracking()
+                .Where(x => x.IsActive).Select(x => x.Code).ToListAsync(cancellationToken);
+            var unknown = codes.Where(c => !known.Contains(c, StringComparer.OrdinalIgnoreCase)).ToList();
+            if (unknown.Count > 0)
+            {
+                return (null, ValidationFailure($"Unknown additional cost type: {string.Join(", ", unknown)}."));
+            }
+
+            foreach (var row in additionalCostRows)
+            {
+                row.CostType = known.First(k => string.Equals(k, row.CostType, StringComparison.OrdinalIgnoreCase));
+            }
         }
 
         return (new ShipmentInputs(supplier, items, additionalCostRows), null);
@@ -756,7 +917,8 @@ public sealed class ReceivingController : ControllerBase
                 ReceivedQty = isService ? line.ExpectedQty : 0m,
                 BaseUoM = item.BaseUoM,
                 UnitPrice = line.UnitPrice,
-                Currency = string.IsNullOrWhiteSpace(line.Currency) ? null : line.Currency.Trim().ToUpperInvariant()
+                InvoiceQty = line.InvoiceQty,
+                InvoiceUnitPrice = line.InvoiceUnitPrice
             });
         }
 
@@ -801,7 +963,7 @@ public sealed class ReceivingController : ControllerBase
     /// dropped rather than persisted as noise.
     /// </summary>
     private (List<InboundShipmentAdditionalCost> Rows, ObjectResult? Error) BuildAdditionalCostRows(
-        IReadOnlyList<CreateAdditionalCostRequest>? requested)
+        IReadOnlyList<CreateAdditionalCostRequest>? requested, string currency)
     {
         var requestedCosts = requested ?? Array.Empty<CreateAdditionalCostRequest>();
         if (requestedCosts.Any(x => x.Amount < 0m))
@@ -820,11 +982,54 @@ public sealed class ReceivingController : ControllerBase
             {
                 CostType = x.CostType.Trim(),
                 Amount = x.Amount,
-                Currency = string.IsNullOrWhiteSpace(x.Currency) ? "EUR" : x.Currency.Trim().ToUpperInvariant()
+                Currency = currency
             })
             .ToList();
 
         return (rows, null);
+    }
+
+    private static string NormalizeCurrency(string? currency)
+        => string.IsNullOrWhiteSpace(currency) ? "EUR" : currency.Trim().ToUpperInvariant();
+
+    /// <summary>Blueprint 4.2 header fields; amounts are entered from the invoice, gross is net + VAT.</summary>
+    private ObjectResult? ApplyAccountingHeader(InboundShipment shipment, CreateInboundShipmentRequest request)
+    {
+        var currency = NormalizeCurrency(request.Currency);
+        if (currency.Length != 3 || !currency.All(char.IsLetter))
+        {
+            return ValidationFailure("Field 'currency' must be a 3-letter ISO code.");
+        }
+
+        if (request.NetAmount is < 0m || request.VatAmount is < 0m)
+        {
+            return ValidationFailure("Net and VAT amounts must be greater than or equal to 0.");
+        }
+
+        VatTreatment? treatment = null;
+        if (!string.IsNullOrWhiteSpace(request.VatTreatment))
+        {
+            if (!Enum.TryParse<VatTreatment>(request.VatTreatment, true, out var parsed))
+            {
+                return ValidationFailure("Field 'vatTreatment' must be Domestic, EuAcquisition or Import.");
+            }
+
+            treatment = parsed;
+        }
+
+        var route = string.IsNullOrWhiteSpace(request.AccountingRoute) ? "Auto" : request.AccountingRoute.Trim();
+        if (route is not ("Auto" or "ManualInAgnum"))
+        {
+            return ValidationFailure("Field 'accountingRoute' must be Auto or ManualInAgnum.");
+        }
+
+        shipment.Currency = currency;
+        shipment.NetAmount = request.NetAmount;
+        shipment.VatAmount = request.VatAmount;
+        shipment.GrossAmount = request.NetAmount is null ? null : request.NetAmount + (request.VatAmount ?? 0m);
+        shipment.VatTreatment = treatment;
+        shipment.AccountingRoute = route;
+        return null;
     }
 
     private static string ComputeShipmentStatus(IEnumerable<InboundShipmentLine> lines)
@@ -955,13 +1160,20 @@ public sealed class ReceivingController : ControllerBase
         string? InvoiceNumber,
         DateOnly? InvoiceDate,
         IReadOnlyList<CreateInboundShipmentLineRequest> Lines,
-        IReadOnlyList<CreateAdditionalCostRequest>? AdditionalCosts = null);
+        IReadOnlyList<CreateAdditionalCostRequest>? AdditionalCosts = null,
+        string? Currency = null,
+        decimal? NetAmount = null,
+        decimal? VatAmount = null,
+        string? VatTreatment = null,
+        string? AccountingRoute = null);
 
     public sealed record CreateInboundShipmentLineRequest(
         int ItemId,
         decimal ExpectedQty,
         decimal? UnitPrice,
-        string? Currency);
+        string? Currency,
+        decimal? InvoiceQty = null,
+        decimal? InvoiceUnitPrice = null);
 
     public sealed record CreateAdditionalCostRequest(
         string CostType,
@@ -1023,7 +1235,33 @@ public sealed class ReceivingController : ControllerBase
         DateTimeOffset CreatedAt,
         DateTimeOffset? UpdatedAt,
         IReadOnlyList<InboundShipmentLineDetailDto> Lines,
-        IReadOnlyList<AdditionalCostDto> AdditionalCosts);
+        IReadOnlyList<AdditionalCostDto> AdditionalCosts,
+        PurchaseDocumentDto? Purchase = null);
+
+    public sealed record PostingProblemDto(string Code, string Text);
+
+    public sealed record PurchaseDocumentDto(
+        string Currency,
+        decimal? NetAmount,
+        decimal? VatAmount,
+        decimal? GrossAmount,
+        decimal? RateUnitsPerEur,
+        DateOnly? RateDate,
+        string? RateSource,
+        string? RateReason,
+        decimal? NetEur,
+        decimal? VatEur,
+        decimal? GrossEur,
+        string? VatTreatment,
+        string? DefaultVatTreatment,
+        string AccountingRoute,
+        string PostingStatus,
+        DateTimeOffset? PostedAt,
+        string? PostedBy,
+        bool CanSetManualRate,
+        IReadOnlyList<PostingProblemDto> Problems);
+
+    public sealed record PostShipmentRequest(decimal? ManualRateUnitsPerEur, string? ManualRateReason);
 
     public sealed record InboundShipmentLineDetailDto(
         int LineId,
@@ -1040,13 +1278,17 @@ public sealed class ReceivingController : ControllerBase
         decimal? UnitPrice,
         string? Currency,
         string ItemType,
-        string? CostType);
+        string? CostType,
+        decimal? InvoiceQty = null,
+        decimal? InvoiceUnitPrice = null,
+        decimal? FinalValueEur = null);
 
     public sealed record AdditionalCostDto(
         int Id,
         string CostType,
         decimal Amount,
-        string Currency);
+        string Currency,
+        decimal? AmountEur = null);
 
     public sealed record PagedResponse<T>(
         IReadOnlyList<T> Items,

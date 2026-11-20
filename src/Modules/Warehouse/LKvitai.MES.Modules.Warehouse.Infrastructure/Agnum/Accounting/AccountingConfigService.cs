@@ -175,10 +175,65 @@ public sealed class AccountingConfigService
         if (profileId is not null && !await _db.StockAccountProfiles.AnyAsync(p => p.Id == profileId, ct))
             throw new AccountingConfigValidationException(new[] { "Profile not found." });
 
+        if (category.StockAccountProfileId != profileId &&
+            await Purchasing.StockValueGuard.CategoryTreeHasStockValueAsync(_db, categoryId, ct))
+            throw new AccountingConfigValidationException(new[] { Purchasing.StockValueGuard.Message });
+
         var before = new { category.Id, category.StockAccountProfileId };
         category.StockAccountProfileId = profileId;
         Audit("ItemCategoryProfile", categoryId.ToString(), "Update", user, before, new { category.Id, category.StockAccountProfileId });
         await _db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>Blueprint 4.4 / 4.6: additional cost type with the "included in cost" flag and the expense account.</summary>
+    public async Task<AdditionalCostType> SaveCostTypeAsync(AdditionalCostType input, string user, CancellationToken ct)
+    {
+        var code = input.Code?.Trim() ?? string.Empty;
+        var account = Clean(input.ExpenseAccount);
+        var problems = new List<string>();
+        if (code.Length == 0 || string.IsNullOrWhiteSpace(input.Name)) problems.Add("Code and name are required.");
+        if (string.Equals(code, "VAT", StringComparison.OrdinalIgnoreCase)) problems.Add("VAT is not an additional cost type.");
+        if (input.IncludedInCost && account is not null) problems.Add("Expense account is not allowed when the cost is included in cost.");
+        if (!input.IncludedInCost && account is null) problems.Add("Expense account is required when the cost is not included in cost.");
+        if (problems.Count > 0) throw new AccountingConfigValidationException(problems);
+
+        var type = input.Id == 0
+            ? await _db.AdditionalCostTypes.FirstOrDefaultAsync(t => t.Code == code, ct)
+            : await _db.AdditionalCostTypes.FirstOrDefaultAsync(t => t.Id == input.Id, ct)
+              ?? throw new KeyNotFoundException($"Cost type {input.Id} not found.");
+        if (input.Id == 0 && type is not null) throw new AccountingConfigValidationException(new[] { $"Cost type '{code}' already exists." });
+        if (type is not null && !string.Equals(type.Code, code, StringComparison.Ordinal) &&
+            await _db.AdditionalCostTypes.AnyAsync(t => t.Code == code && t.Id != type.Id, ct))
+            throw new AccountingConfigValidationException(new[] { $"Cost type '{code}' already exists." });
+
+        // Every posting scheme must have a row debiting the expense account (blueprint 4.6).
+        if (!input.IncludedInCost && input.IsActive)
+        {
+            var rules = await _db.AgnumPostingRules.ToListAsync(ct);
+            foreach (var group in rules.GroupBy(r => r.StockAccountProfileId))
+            {
+                var profile = await _db.StockAccountProfiles.FirstAsync(p => p.Id == group.Key, ct);
+                await ValidateRulesAsync(profile, group.ToList(), ct, new[] { account! });
+            }
+        }
+
+        var before = type is null ? null : new { type.Id, type.Code, type.Name, type.IncludedInCost, type.ExpenseAccount, type.IsActive };
+        if (type is null)
+        {
+            type = new AdditionalCostType();
+            _db.AdditionalCostTypes.Add(type);
+        }
+
+        type.Code = code;
+        type.Name = input.Name.Trim();
+        type.IncludedInCost = input.IncludedInCost;
+        type.ExpenseAccount = account;
+        type.IsActive = input.IsActive;
+        await _db.SaveChangesAsync(ct);
+        Audit("AdditionalCostType", type.Id.ToString(), before is null ? "Create" : "Update", user, before,
+            new { type.Id, type.Code, type.Name, type.IncludedInCost, type.ExpenseAccount, type.IsActive });
+        await _db.SaveChangesAsync(ct);
+        return type;
     }
 
     /// <summary>Blueprint 4.5: own profile, else the nearest ancestor's, else the default profile.</summary>
@@ -197,12 +252,12 @@ public sealed class AccountingConfigService
         return defaultProfileId;
     }
 
-    private async Task ValidateRulesAsync(StockAccountProfile profile, IReadOnlyCollection<AgnumPostingRule> rules, CancellationToken ct)
+    private async Task ValidateRulesAsync(StockAccountProfile profile, IReadOnlyCollection<AgnumPostingRule> rules, CancellationToken ct, IEnumerable<string>? extraExpenseAccounts = null)
     {
         if (rules.Count == 0) return;
 
         var schemes = (await _agnum.GetSchemesAsync(ct)).ToDictionary(s => s.IdSch);
-        var expenseAccounts = await _expenses.GetExpenseAccountsAsync(ct);
+        var expenseAccounts = (await _expenses.GetExpenseAccountsAsync(ct)).Concat(extraExpenseAccounts ?? Array.Empty<string>()).ToList();
         var problems = new List<string>();
         foreach (var rule in rules)
         {

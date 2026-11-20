@@ -135,6 +135,12 @@ public sealed class CategoriesController : ControllerBase
             return ValidationFailure($"Category '{code}' already exists.");
         }
 
+        if (entity.ParentCategoryId != request.ParentCategoryId &&
+            await LKvitai.MES.Modules.Warehouse.Infrastructure.Purchasing.StockValueGuard.CategoryTreeHasStockValueAsync(_dbContext, entity.Id, cancellationToken))
+        {
+            return ValidationFailure(LKvitai.MES.Modules.Warehouse.Infrastructure.Purchasing.StockValueGuard.Message);
+        }
+
         entity.Code = code;
         entity.Name = request.Name.Trim();
         entity.ParentCategoryId = request.ParentCategoryId;

@@ -1346,6 +1346,31 @@ public sealed class InboundShipment : AuditableEntity
     public string? InvoiceNumber { get; set; }
     public DateOnly? InvoiceDate { get; set; }
 
+    /// <summary>Blueprint 4.2: Invoice or CreditNote (credit notes belong to stage W5).</summary>
+    public string DocumentKind { get; set; } = "Invoice";
+    /// <summary>ISO code, one per document (blueprint 4.2).</summary>
+    public string Currency { get; set; } = "EUR";
+    /// <summary>Bank of Lithuania rate: units of Currency per 1 EUR (blueprint 4.3). Preliminary until posted.</summary>
+    public decimal? RateUnitsPerEur { get; set; }
+    public DateOnly? RateDate { get; set; }
+    /// <summary>BankOfLithuania, EUR or Manual.</summary>
+    public string? RateSource { get; set; }
+    public string? RateReason { get; set; }
+    public decimal? NetAmount { get; set; }
+    public decimal? VatAmount { get; set; }
+    public decimal? GrossAmount { get; set; }
+    public decimal? NetEur { get; set; }
+    public decimal? VatEur { get; set; }
+    public decimal? GrossEur { get; set; }
+    public VatTreatment? VatTreatment { get; set; }
+    /// <summary>Auto (send to Agnum) or ManualInAgnum.</summary>
+    public string AccountingRoute { get; set; } = "Auto";
+    /// <summary>NotPosted or Posted; independent of <see cref="Status"/>, which describes quantity only.</summary>
+    public string PostingStatus { get; set; } = "NotPosted";
+    public DateTimeOffset? PostedAt { get; set; }
+    public string? PostedBy { get; set; }
+    public int PostingRevision { get; set; }
+
     public Supplier? Supplier { get; set; }
     public ICollection<InboundShipmentLine> Lines { get; set; } = new List<InboundShipmentLine>();
 
@@ -1375,6 +1400,14 @@ public sealed class InboundShipmentLine
     public decimal? UnitPrice { get; set; }
     public string? Currency { get; set; }
 
+    /// <summary>Quantity and unit price on the supplier invoice (default: expected quantity and order price).</summary>
+    public decimal? InvoiceQty { get; set; }
+    public decimal? InvoiceUnitPrice { get; set; }
+    /// <summary>Final EUR value of the line, set at posting (includes the share of costs included in cost).</summary>
+    public decimal? FinalValueEur { get; set; }
+    /// <summary>EUR value booked for the received quantity so far (preliminary, then final).</summary>
+    public decimal BookedValueEur { get; set; }
+
     public InboundShipment? Shipment { get; set; }
     public Item? Item { get; set; }
 }
@@ -1391,6 +1424,7 @@ public sealed class InboundShipmentAdditionalCost
     public string CostType { get; set; } = string.Empty;
     public decimal Amount { get; set; }
     public string Currency { get; set; } = string.Empty;
+    public decimal? AmountEur { get; set; }
 
     public InboundShipment? Shipment { get; set; }
 }

@@ -50,6 +50,12 @@ public sealed class ReceivingClient
     public Task<ShipmentUpdatedResponseDto> UpdateShipmentAsync(int id, CreateInboundShipmentRequestDto request, CancellationToken cancellationToken = default)
         => PutAsync<ShipmentUpdatedResponseDto>($"/api/warehouse/v1/inbound-shipments/{id}", request, cancellationToken);
 
+    public Task<IReadOnlyList<AdditionalCostTypeDto>> GetCostTypesAsync(CancellationToken cancellationToken = default)
+        => GetAsync<IReadOnlyList<AdditionalCostTypeDto>>("/api/warehouse/v1/additional-costs/types", cancellationToken);
+
+    public Task<InboundShipmentDetailDto> PostShipmentAsync(int id, PostShipmentRequestDto request, CancellationToken cancellationToken = default)
+        => PostAsync<InboundShipmentDetailDto>($"/api/warehouse/v1/inbound-shipments/{id}/post", request, cancellationToken);
+
     public Task<ReceiveGoodsResponseDto> ReceiveItemsAsync(int shipmentId, ReceiveShipmentLineRequestDto request, CancellationToken cancellationToken = default)
         => PostAsync<ReceiveGoodsResponseDto>($"/api/warehouse/v1/inbound-shipments/{shipmentId}/receive-items", request, cancellationToken);
 

@@ -91,4 +91,9 @@ public sealed class StockValueChanged : DomainEvent
     /// <summary>Date (time 00:00, Kind unspecified) in Europe/Vilnius.</summary>
     public DateTime BusinessDate { get; set; }
     public string? Reason { get; set; }
+    /// <summary>
+    /// Amount for the price difference account that has no place in the stock (kind PriceDifference).
+    /// It is not part of <see cref="ValueDeltaEur"/>, so the ledger sum stays equal to the stock value.
+    /// </summary>
+    public decimal OffLedgerEur { get; set; }
 }

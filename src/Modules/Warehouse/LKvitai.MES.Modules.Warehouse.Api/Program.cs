@@ -92,6 +92,12 @@ builder.Services.AddHttpClient<LKvitai.MES.Modules.Warehouse.Infrastructure.Agnu
     var referenceKey = builder.Configuration.GetValue<string>("Agnum:Api:ReferenceApiKey");
     if (!string.IsNullOrWhiteSpace(referenceKey)) client.DefaultRequestHeaders.Add("X-API-KEY", referenceKey);
 });
+builder.Services.AddHttpClient<LKvitai.MES.Modules.Warehouse.Infrastructure.Fx.IFxRateProvider, LKvitai.MES.Modules.Warehouse.Infrastructure.Fx.LbFxRateProvider>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration.GetValue<string>("Fx:BaseUrl") ?? "https://www.lb.lt/webservices/FxRates/FxRates.asmx/");
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
+builder.Services.AddScoped<LKvitai.MES.Modules.Warehouse.Api.Services.PurchaseDocumentService>();
 builder.Services.AddHttpClient("FedExApi");
 builder.Services.AddHttpClient("OAuthProvider");
 builder.Services.AddHttpClient("PagerDuty");
