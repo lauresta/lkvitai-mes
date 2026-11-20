@@ -1866,6 +1866,56 @@
   <data name="Common.NoItemsFound" xml:space="preserve"><value>No matching items</value></data>
   <data name="Common.InvalidNumber" xml:space="preserve"><value>Not a valid number</value></data>
   <data name="Common.NumberOutOfRange" xml:space="preserve"><value>Value is out of the allowed range</value></data>
+  <data name="Purchase.Currency" xml:space="preserve"><value>Document currency</value></data>
+  <data name="Purchase.NetAmount" xml:space="preserve"><value>Net amount</value></data>
+  <data name="Purchase.VatAmount" xml:space="preserve"><value>VAT amount</value></data>
+  <data name="Purchase.GrossAmount" xml:space="preserve"><value>Total with VAT</value></data>
+  <data name="Purchase.VatTreatment" xml:space="preserve"><value>VAT treatment</value></data>
+  <data name="Purchase.VatTreatment.Domestic" xml:space="preserve"><value>Domestic purchase</value></data>
+  <data name="Purchase.VatTreatment.EuAcquisition" xml:space="preserve"><value>EU acquisition</value></data>
+  <data name="Purchase.VatTreatment.Import" xml:space="preserve"><value>Import</value></data>
+  <data name="Purchase.AccountingRoute" xml:space="preserve"><value>Accounting route</value></data>
+  <data name="Purchase.Route.Auto" xml:space="preserve"><value>Send to Agnum</value></data>
+  <data name="Purchase.Route.ManualInAgnum" xml:space="preserve"><value>Entered manually in Agnum</value></data>
+  <data name="Purchase.CostInCost" xml:space="preserve"><value>in cost</value></data>
+  <data name="Purchase.CostExpense" xml:space="preserve"><value>expense</value></data>
+  <data name="Purchase.LinesVsNet" xml:space="preserve"><value>Lines and costs: {0}, net amount: {1} {2}</value></data>
+  <data name="Purchase.Document" xml:space="preserve"><value>Purchase document</value></data>
+  <data name="Purchase.Posted" xml:space="preserve"><value>Posted</value></data>
+  <data name="Purchase.NotPosted" xml:space="preserve"><value>Not posted</value></data>
+  <data name="Purchase.PostedBy" xml:space="preserve"><value>Posted {0} by {1}</value></data>
+  <data name="Purchase.DocumentLocked" xml:space="preserve"><value>The document is posted and locked. Goods can still be received.</value></data>
+  <data name="Purchase.Rate" xml:space="preserve"><value>Exchange rate (Bank of Lithuania)</value></data>
+  <data name="Purchase.RatePreliminary" xml:space="preserve"><value>Preliminary until the document is posted</value></data>
+  <data name="Purchase.ManualRate" xml:space="preserve"><value>Manual rate (units per EUR)</value></data>
+  <data name="Purchase.ManualRateReason" xml:space="preserve"><value>Reason for the manual rate</value></data>
+  <data name="Purchase.Post" xml:space="preserve"><value>Post</value></data>
+  <data name="Purchase.PostedToast" xml:space="preserve"><value>Document posted.</value></data>
+  <data name="Purchase.NotPostedToast" xml:space="preserve"><value>The document was not posted. See the messages above.</value></data>
+  <data name="Purchase.ExtraCosts" xml:space="preserve"><value>Extra costs</value></data>
+  <data name="Purchase.CostCode" xml:space="preserve"><value>Code</value></data>
+  <data name="Purchase.CostName" xml:space="preserve"><value>Name</value></data>
+  <data name="Purchase.IncludedInCost" xml:space="preserve"><value>Included in cost</value></data>
+  <data name="Purchase.ExpenseAccount" xml:space="preserve"><value>Expense account</value></data>
+  <data name="Purchase.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Purchase.AddCostType" xml:space="preserve"><value>Add cost type</value></data>
+  <data name="Purchase.Problem.AlreadyPosted" xml:space="preserve"><value>The document is already posted.</value></data>
+  <data name="Purchase.Problem.InvoiceNumberRequired" xml:space="preserve"><value>Enter the supplier invoice number.</value></data>
+  <data name="Purchase.Problem.InvoiceDateRequired" xml:space="preserve"><value>Enter the supplier invoice date.</value></data>
+  <data name="Purchase.Problem.AmountsRequired" xml:space="preserve"><value>Enter the net and VAT amounts from the invoice.</value></data>
+  <data name="Purchase.Problem.SupplierNotPostable" xml:space="preserve"><value>The supplier cannot be posted to Agnum.</value></data>
+  <data name="Purchase.Problem.NoStockLines" xml:space="preserve"><value>The document has no stock lines.</value></data>
+  <data name="Purchase.Problem.CostTypeInvalid" xml:space="preserve"><value>An additional cost type is not available.</value></data>
+  <data name="Purchase.Problem.LinesTotalMismatch" xml:space="preserve"><value>Lines and additional costs do not add up to the net amount.</value></data>
+  <data name="Purchase.Problem.InvoiceNumberTaken" xml:space="preserve"><value>This invoice number is already used for this supplier in this year.</value></data>
+  <data name="Purchase.Problem.RateNotPublishedToday" xml:space="preserve"><value>The exchange rate for today is not published yet.</value></data>
+  <data name="Purchase.Problem.RateMissing" xml:space="preserve"><value>There is no exchange rate for the document date.</value></data>
+  <data name="Purchase.Problem.RateReasonRequired" xml:space="preserve"><value>A manual rate needs a reason.</value></data>
+  <data name="Purchase.Problem.RateSanity" xml:space="preserve"><value>The rate differs from the last saved rate by more than 1.5 times.</value></data>
+  <data name="Purchase.Problem.MixedStockAccounts" xml:space="preserve"><value>The items belong to different stock accounts. Split the shipment.</value></data>
+  <data name="Purchase.Problem.VatTreatmentRequired" xml:space="preserve"><value>Choose the VAT treatment.</value></data>
+  <data name="Purchase.Problem.PostingRuleMissing" xml:space="preserve"><value>No Agnum posting rule is set for this stock account and VAT treatment.</value></data>
+  <data name="Purchase.Problem.BasisNotPosted" xml:space="preserve"><value>The basis shipment must be posted first.</value></data>
   <data name="Nav.OpeningBalances" xml:space="preserve"><value>Opening balances</value></data>
   <data name="OpeningBalances.Title" xml:space="preserve"><value>Opening balances</value></data>
   <data name="OpeningBalances.Intro" xml:space="preserve"><value>Load stock quantities and values as of 2026-12-31 from a CSV file. Opening balances are never sent to Agnum. Loading the same file again changes nothing.</value></data>

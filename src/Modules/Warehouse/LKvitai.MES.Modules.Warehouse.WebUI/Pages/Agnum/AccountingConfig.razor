@@ -15,6 +15,7 @@
 <ul class="nav nav-tabs mb-3">
     <li class="nav-item"><button class="nav-link @(_tab == "profiles" ? "active" : "")" type="button" @onclick='() => _tab = "profiles"'>Stock accounts</button></li>
     <li class="nav-item"><button class="nav-link @(_tab == "rules" ? "active" : "")" type="button" @onclick='() => _tab = "rules"'>Postings</button></li>
+    <li class="nav-item"><button class="nav-link @(_tab == "costs" ? "active" : "")" type="button" @onclick='() => _tab = "costs"'>@L["Purchase.ExtraCosts"]</button></li>
     <li class="nav-item"><button class="nav-link @(_tab == "audit" ? "active" : "")" type="button" @onclick='() => _tab = "audit"'>Change log</button></li>
 </ul>
 
@@ -120,6 +121,43 @@ else if (_tab == "rules")
     </div>
     <button class="btn btn-outline-primary" type="button" @onclick="AddRule" disabled="@(!_profiles.Any(p => p.Id != 0))">Add posting</button>
 }
+else if (_tab == "costs")
+{
+    <div class="table-responsive">
+        <table class="table table-sm align-middle" data-testid="cost-types">
+            <thead><tr><th>@L["Purchase.CostCode"]</th><th>@L["Purchase.CostName"]</th><th>@L["Purchase.IncludedInCost"]</th><th>@L["Purchase.ExpenseAccount"]</th><th>@L["Purchase.Active"]</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var t in _costTypes)
+            {
+                <tr>
+                    <td><input class="form-control form-control-sm" @bind="t.Code" disabled="@(t.Id != 0)" /></td>
+                    <td><input class="form-control form-control-sm" @bind="t.Name" /></td>
+                    <td><input type="checkbox" class="form-check-input" @bind="t.IncludedInCost" /></td>
+                    <td>
+                        @if (t.IncludedInCost)
+                        {
+                            <span class="text-muted">-</span>
+                        }
+                        else
+                        {
+                            <select class="form-select form-select-sm" @bind="t.ExpenseAccount">
+                                <option value="">-</option>
+                                @foreach (var a in _accounts)
+                                {
+                                    <option value="@a.Code">@a.Code @a.Name</option>
+                                }
+                            </select>
+                        }
+                    </td>
+                    <td><input type="checkbox" class="form-check-input" @bind="t.IsActive" /></td>
+                    <td><button class="btn btn-sm btn-primary" type="button" @onclick="() => SaveCostTypeAsync(t)">@L["Common.Save"]</button></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    <button class="btn btn-outline-primary" type="button" @onclick="AddCostType">@L["Purchase.AddCostType"]</button>
+}
 else
 {
     <div class="table-responsive">
@@ -164,6 +202,13 @@ else
     private List<AgnumWarehouseDto> _warehouses = new();
     private List<AgnumVatCodeDto> _vatCodes = new();
     private List<ConfigAuditDto> _audit = new();
+    private sealed class CostTypeRow
+    {
+        public int Id; public string Code = ""; public string Name = ""; public bool IncludedInCost = true; public string? ExpenseAccount; public bool IsActive = true;
+    }
+
+    private List<CostTypeRow> _costTypes = new();
+    private List<AgnumAccountDto> _accounts = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -183,6 +228,10 @@ else
             Id = r.Id, ProfileId = r.StockAccountProfileId, VatTreatment = r.VatTreatment, SchemeId = r.SchemeId, VatCode = r.VatCode
         }).ToList();
         _audit = await Client.GetAuditAsync();
+        _costTypes = (await Client.GetCostTypesAsync()).Select(t => new CostTypeRow
+        {
+            Id = t.Id, Code = t.Code, Name = t.Name, IncludedInCost = t.IncludedInCost, ExpenseAccount = t.ExpenseAccount, IsActive = t.IsActive
+        }).ToList();
 
         // Pick-lists come from Agnum; if it is unreachable the page stays readable but cannot be edited.
         try
@@ -190,12 +239,23 @@ else
             _schemes = await Client.GetSchemesAsync();
             _warehouses = await Client.GetWarehousesAsync();
             _vatCodes = await Client.GetVatCodesAsync();
+            _accounts = await Client.GetAccountsAsync();
         }
         catch (ApiException ex)
         {
             _error = "Agnum lists could not be loaded: " + ex.UserMessage;
         }
     }
+
+    private void AddCostType() => _costTypes.Add(new CostTypeRow());
+
+    private Task SaveCostTypeAsync(CostTypeRow t) => RunAsync(async () =>
+    {
+        await Client.SaveCostTypeAsync(new CostTypeConfigDto(
+            t.Id, t.Code, t.Name, t.IncludedInCost, t.IncludedInCost ? null : t.ExpenseAccount, t.IsActive));
+        ToastService.ShowSuccess("Saved");
+        await LoadAsync();
+    });
 
     private void AddProfile() => _profiles.Add(new ProfileRow { IsDefault = _profiles.Count == 0 });
 

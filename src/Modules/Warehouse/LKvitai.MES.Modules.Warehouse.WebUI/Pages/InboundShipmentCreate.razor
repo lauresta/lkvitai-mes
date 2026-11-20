@@ -67,6 +67,49 @@
                     <MudDatePicker Variant="Variant.Text" DateFormat="yyyy-MM-dd" @bind-Date="_invoiceDate" />
                 </div>
             </div>
+            <div class="lk-form-field">
+                <span class="lk-form-field__label">@L["Purchase.Currency"]</span>
+                <div class="lk-form-field__control">
+                    <MudTextField T="string" Variant="Variant.Text" MaxLength="3" @bind-Value="_currency" />
+                </div>
+            </div>
+            <div class="lk-form-field">
+                <span class="lk-form-field__label">@L["Purchase.NetAmount"]</span>
+                <div class="lk-form-field__control">
+                    <LkDecimalField T="decimal?" Variant="Variant.Text" Min="0m" Format="0.00" @bind-Value="_netAmount" />
+                </div>
+            </div>
+            <div class="lk-form-field">
+                <span class="lk-form-field__label">@L["Purchase.VatAmount"]</span>
+                <div class="lk-form-field__control">
+                    <LkDecimalField T="decimal?" Variant="Variant.Text" Min="0m" Format="0.00" @bind-Value="_vatAmount" />
+                </div>
+            </div>
+            <div class="lk-form-field">
+                <span class="lk-form-field__label">@L["Purchase.GrossAmount"]</span>
+                <div class="lk-form-field__control">
+                    <span class="mono">@FormatMoney(_netAmount.HasValue ? _netAmount + (_vatAmount ?? 0m) : null) @_currency</span>
+                </div>
+            </div>
+            <div class="lk-form-field">
+                <span class="lk-form-field__label">@L["Purchase.VatTreatment"]</span>
+                <div class="lk-form-field__control">
+                    <MudSelect T="string" Variant="Variant.Text" @bind-Value="_vatTreatment" Clearable="true">
+                        <MudSelectItem T="string" Value="@("Domestic")">@L["Purchase.VatTreatment.Domestic"]</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("EuAcquisition")">@L["Purchase.VatTreatment.EuAcquisition"]</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("Import")">@L["Purchase.VatTreatment.Import"]</MudSelectItem>
+                    </MudSelect>
+                </div>
+            </div>
+            <div class="lk-form-field">
+                <span class="lk-form-field__label">@L["Purchase.AccountingRoute"]</span>
+                <div class="lk-form-field__control">
+                    <MudSelect T="string" Variant="Variant.Text" @bind-Value="_accountingRoute">
+                        <MudSelectItem T="string" Value="@("Auto")">@L["Purchase.Route.Auto"]</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("ManualInAgnum")">@L["Purchase.Route.ManualInAgnum"]</MudSelectItem>
+                    </MudSelect>
+                </div>
+            </div>
         </div>
 
         <div class="ish-create__section-head">
@@ -82,7 +125,6 @@
                 <MudTh>@L["Common.Item"]</MudTh>
                 <MudTh>@L["Common.Qty"]</MudTh>
                 <MudTh>@L["InboundShipmentCreate.InvoiceUnitPrice"]</MudTh>
-                <MudTh>@L["Common.Ccy"]</MudTh>
                 <MudTh>@L["InboundShipmentCreate.ActualUnitPrice"]</MudTh>
                 <MudTh></MudTh>
             </HeaderContent>
@@ -115,11 +157,6 @@
                 <MudTd DataLabel="@L["InboundShipmentCreate.InvoiceUnitPrice"]" Style="width: 130px;">
                     <div class="lk-field--inline">
                         <LkDecimalField T="decimal?" Variant="Variant.Text" Min="0m" Format="0.####" @bind-Value="context.UnitPrice" />
-                    </div>
-                </MudTd>
-                <MudTd DataLabel="@L["Common.Ccy"]" Style="width: 76px;">
-                    <div class="lk-field--inline">
-                        <MudTextField T="string" Variant="Variant.Text" MaxLength="3" @bind-Value="context.Currency" />
                     </div>
                 </MudTd>
                 <MudTd DataLabel="@L["InboundShipmentCreate.ActualUnitPrice"]" Style="width: 120px;" Class="is-num">
@@ -158,28 +195,22 @@
             <HeaderContent>
                 <MudTh>@L["Common.Type"]</MudTh>
                 <MudTh>@L["Common.Amount"]</MudTh>
-                <MudTh>@L["Common.Ccy"]</MudTh>
                 <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="@L["Common.Type"]" Style="min-width: 180px;">
                     <div class="lk-field--inline">
-                        <MudAutocomplete T="string"
-                                          Variant="Variant.Text"
-                                          @bind-Value="context.CostType"
-                                          SearchFunc="SearchCostTypesAsync"
-                                          CoerceText="true"
-                                          CoerceValue="true" />
+                        <MudSelect T="string" Variant="Variant.Text" @bind-Value="context.CostType">
+                            @foreach (var type in _costTypes)
+                            {
+                                <MudSelectItem T="string" Value="@type.Code">@type.Code (@(type.IncludedInCost ? L["Purchase.CostInCost"] : L["Purchase.CostExpense"]))</MudSelectItem>
+                            }
+                        </MudSelect>
                     </div>
                 </MudTd>
                 <MudTd DataLabel="@L["Common.Amount"]" Style="width: 140px;">
                     <div class="lk-field--inline">
-                        <LkDecimalField T="decimal" Variant="Variant.Text" Min="0m" Format="0.00" Adornment="Adornment.End" AdornmentText="€" @bind-Value="context.Amount" />
-                    </div>
-                </MudTd>
-                <MudTd DataLabel="@L["Common.Ccy"]" Style="width: 76px;">
-                    <div class="lk-field--inline">
-                        <MudTextField T="string" Variant="Variant.Text" MaxLength="3" @bind-Value="context.Currency" />
+                        <LkDecimalField T="decimal" Variant="Variant.Text" Min="0m" Format="0.00" Adornment="Adornment.End" AdornmentText="@_currency" @bind-Value="context.Amount" />
                     </div>
                 </MudTd>
                 <MudTd Style="width: 40px;">
@@ -215,6 +246,14 @@
             </div>
         </div>
 
+        @if (_netAmount.HasValue)
+        {
+            var linesAndCosts = (TotalInvoiceValue ?? 0m) + _additionalCosts.Sum(x => x.Amount);
+            <div class="lk-state @(linesAndCosts == _netAmount.Value ? "lk-state--ok" : "lk-state--warn")">
+                @L["Purchase.LinesVsNet", FormatMoney(linesAndCosts), FormatMoney(_netAmount), _currency]
+            </div>
+        }
+
         <div class="ish-create__footer">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitAsync" Disabled="@_isSubmitting">@(IsEditMode ? L["Common.SaveChanges"] : L["InboundShipmentCreate.CreateShipment"])</MudButton>
         </div>
@@ -222,7 +261,15 @@
 </MudPaper>
 
 @code {
-    private static readonly string[] CostTypePresets = ["Freight", "Duty", "Insurance", "VAT", "Other"];
+    private List<AdditionalCostTypeDto> _costTypes = [];
+    private string _currency = "EUR";
+    private decimal? _netAmount;
+    private decimal? _vatAmount;
+    private string? _vatTreatment;
+    private string _accountingRoute = "Auto";
+
+    private IEnumerable<string> CostTypePresets => _costTypes.Select(x => x.Code);
+    private string DefaultCostCode => _costTypes.FirstOrDefault(x => x.Code == "Other")?.Code ?? _costTypes.FirstOrDefault()?.Code ?? "Other";
 
     // Lithuanian formatting: comma decimal separator, matches the convention already
     // used for money elsewhere in the app (see Dashboard.razor's lt-LT price formatting).
@@ -256,12 +303,11 @@
         else
         {
             _lines.Add(new InboundLineModel());
+            await LoadLookupDataAsync();
             foreach (var costType in CostTypePresets.Where(x => x != "Other"))
             {
                 _additionalCosts.Add(new AdditionalCostModel { CostType = costType });
             }
-
-            await LoadLookupDataAsync();
         }
     }
 
@@ -275,6 +321,7 @@
             // Warm the supplier/item autocompletes are server-searched on demand; nothing to
             // preload here beyond validating the API is reachable.
             await MasterDataAdminClient.GetSuppliersAsync(null, 1, 1);
+            _costTypes = (await ReceivingClient.GetCostTypesAsync()).ToList();
         }
         catch (ApiException ex)
         {
@@ -299,9 +346,10 @@
 
         try
         {
+            _costTypes = (await ReceivingClient.GetCostTypesAsync()).ToList();
             var shipment = await ReceivingClient.GetShipmentByIdAsync(shipmentId);
 
-            if (!string.Equals(shipment.Status, "Draft", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(shipment.Purchase?.PostingStatus, "Posted", StringComparison.OrdinalIgnoreCase))
             {
                 ToastService.ShowError(
                     L["InboundShipmentCreate.CannotEditAfterReceiving", shipment.Id, WarehouseStatusText.Get(L, shipment.Status)].Value);
@@ -313,6 +361,11 @@
             _expectedDate = shipment.ExpectedDate?.ToDateTime(TimeOnly.MinValue);
             _invoiceNumber = shipment.InvoiceNumber;
             _invoiceDate = shipment.InvoiceDate?.ToDateTime(TimeOnly.MinValue);
+            _currency = shipment.Purchase?.Currency ?? "EUR";
+            _netAmount = shipment.Purchase?.NetAmount;
+            _vatAmount = shipment.Purchase?.VatAmount;
+            _vatTreatment = shipment.Purchase?.VatTreatment;
+            _accountingRoute = shipment.Purchase?.AccountingRoute ?? "Auto";
 
             // The detail response carries the supplier's display name but not its Code
             // (needed by the Supplier autocomplete's ToStringFunc), so look the full
@@ -339,8 +392,7 @@
                         CostType = line.CostType
                     },
                     ExpectedQty = line.ExpectedQty,
-                    UnitPrice = line.UnitPrice,
-                    Currency = line.Currency ?? "EUR"
+                    UnitPrice = line.InvoiceUnitPrice ?? line.UnitPrice
                 });
             }
 
@@ -355,8 +407,7 @@
                 _additionalCosts.Add(new AdditionalCostModel
                 {
                     CostType = cost.CostType,
-                    Amount = cost.Amount,
-                    Currency = cost.Currency
+                    Amount = cost.Amount
                 });
             }
 
@@ -407,18 +458,6 @@
         }
     }
 
-    private static Task<IEnumerable<string>> SearchCostTypesAsync(string value)
-    {
-        IEnumerable<string> results = string.IsNullOrWhiteSpace(value)
-            ? CostTypePresets
-            : CostTypePresets
-                .Where(x => x.Contains(value, StringComparison.OrdinalIgnoreCase))
-                .Append(value.Trim())
-                .Distinct(StringComparer.OrdinalIgnoreCase);
-
-        return Task.FromResult(results);
-    }
-
     private void OnLineItemChanged(InboundLineModel line, AdminItemDto? item)
     {
         line.Item = item;
@@ -444,7 +483,7 @@
         RefreshDuplicateCostTypeWarning();
     }
 
-    private void AddAdditionalCost() => _additionalCosts.Add(new AdditionalCostModel { CostType = "Other" });
+    private void AddAdditionalCost() => _additionalCosts.Add(new AdditionalCostModel { CostType = DefaultCostCode });
 
     private void RemoveAdditionalCost(AdditionalCostModel cost)
     {
@@ -562,7 +601,12 @@
             InvoiceNumber = string.IsNullOrWhiteSpace(_invoiceNumber) ? null : _invoiceNumber.Trim(),
             InvoiceDate = _invoiceDate.HasValue ? DateOnly.FromDateTime(_invoiceDate.Value.Date) : null,
             Lines = lines,
-            AdditionalCosts = BuildAdditionalCostRequests()
+            AdditionalCosts = BuildAdditionalCostRequests(),
+            Currency = string.IsNullOrWhiteSpace(_currency) ? "EUR" : _currency.Trim().ToUpperInvariant(),
+            NetAmount = _netAmount,
+            VatAmount = _vatAmount,
+            VatTreatment = _vatTreatment,
+            AccountingRoute = _accountingRoute
         };
 
         _isSubmitting = true;
@@ -603,7 +647,7 @@
                 ItemId = x.Item!.Id,
                 ExpectedQty = x.ExpectedQty,
                 UnitPrice = x.UnitPrice,
-                Currency = string.IsNullOrWhiteSpace(x.Currency) ? null : x.Currency.Trim()
+                InvoiceUnitPrice = x.UnitPrice
             })
             .ToList();
     }
@@ -615,8 +659,7 @@
             .Select(x => new CreateAdditionalCostRequestDto
             {
                 CostType = string.IsNullOrWhiteSpace(x.CostType) ? "Other" : x.CostType.Trim(),
-                Amount = x.Amount,
-                Currency = string.IsNullOrWhiteSpace(x.Currency) ? null : x.Currency.Trim()
+                Amount = x.Amount
             })
             .ToList();
     }
@@ -650,13 +693,11 @@
         public AdminItemDto? Item { get; set; }
         public decimal ExpectedQty { get; set; } = 1m;
         public decimal? UnitPrice { get; set; }
-        public string? Currency { get; set; } = "EUR";
     }
 
     private sealed class AdditionalCostModel
     {
         public string CostType { get; set; } = "Other";
         public decimal Amount { get; set; }
-        public string? Currency { get; set; } = "EUR";
     }
 }

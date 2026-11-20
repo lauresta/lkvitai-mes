@@ -35,6 +35,9 @@ public record InboundShipmentLineDetailDto
     public string? Currency { get; init; }
     public string ItemType { get; init; } = "Stock";
     public string? CostType { get; init; }
+    public decimal? InvoiceQty { get; init; }
+    public decimal? InvoiceUnitPrice { get; init; }
+    public decimal? FinalValueEur { get; init; }
 
     public bool IsService => string.Equals(ItemType, "Service", StringComparison.OrdinalIgnoreCase);
 }
@@ -45,6 +48,7 @@ public record AdditionalCostDto
     public string CostType { get; init; } = string.Empty;
     public decimal Amount { get; init; }
     public string Currency { get; init; } = string.Empty;
+    public decimal? AmountEur { get; init; }
 }
 
 public record InboundShipmentDetailDto
@@ -61,6 +65,7 @@ public record InboundShipmentDetailDto
     public DateTimeOffset? UpdatedAt { get; init; }
     public IReadOnlyList<InboundShipmentLineDetailDto> Lines { get; init; } = Array.Empty<InboundShipmentLineDetailDto>();
     public IReadOnlyList<AdditionalCostDto> AdditionalCosts { get; init; } = Array.Empty<AdditionalCostDto>();
+    public PurchaseDocumentDto? Purchase { get; init; }
 }
 
 public record CreateInboundShipmentLineRequestDto
@@ -68,6 +73,8 @@ public record CreateInboundShipmentLineRequestDto
     public int ItemId { get; init; }
     public decimal ExpectedQty { get; init; }
     public decimal? UnitPrice { get; init; }
+    public decimal? InvoiceQty { get; init; }
+    public decimal? InvoiceUnitPrice { get; init; }
     public string? Currency { get; init; }
 }
 
@@ -88,6 +95,11 @@ public record CreateInboundShipmentRequestDto
     public DateOnly? InvoiceDate { get; init; }
     public IReadOnlyList<CreateInboundShipmentLineRequestDto> Lines { get; init; } = Array.Empty<CreateInboundShipmentLineRequestDto>();
     public IReadOnlyList<CreateAdditionalCostRequestDto> AdditionalCosts { get; init; } = Array.Empty<CreateAdditionalCostRequestDto>();
+    public string? Currency { get; init; }
+    public decimal? NetAmount { get; init; }
+    public decimal? VatAmount { get; init; }
+    public string? VatTreatment { get; init; }
+    public string? AccountingRoute { get; init; }
 }
 
 public record ShipmentCreatedResponseDto
@@ -161,4 +173,47 @@ public record QcActionResponseDto
     public decimal Qty { get; init; }
     public string DestinationLocationCode { get; init; } = string.Empty;
     public DateTime Timestamp { get; init; }
+}
+
+public record PostingProblemDto
+{
+    public string Code { get; init; } = string.Empty;
+    public string Text { get; init; } = string.Empty;
+}
+
+public record PurchaseDocumentDto
+{
+    public string Currency { get; init; } = "EUR";
+    public decimal? NetAmount { get; init; }
+    public decimal? VatAmount { get; init; }
+    public decimal? GrossAmount { get; init; }
+    public decimal? RateUnitsPerEur { get; init; }
+    public DateOnly? RateDate { get; init; }
+    public string? RateSource { get; init; }
+    public string? RateReason { get; init; }
+    public decimal? NetEur { get; init; }
+    public decimal? VatEur { get; init; }
+    public decimal? GrossEur { get; init; }
+    public string? VatTreatment { get; init; }
+    public string? DefaultVatTreatment { get; init; }
+    public string AccountingRoute { get; init; } = "Auto";
+    public string PostingStatus { get; init; } = "NotPosted";
+    public DateTimeOffset? PostedAt { get; init; }
+    public string? PostedBy { get; init; }
+    public bool CanSetManualRate { get; init; }
+    public IReadOnlyList<PostingProblemDto> Problems { get; init; } = Array.Empty<PostingProblemDto>();
+}
+
+public record AdditionalCostTypeDto
+{
+    public string Code { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public bool IncludedInCost { get; init; }
+    public string? ExpenseAccount { get; init; }
+}
+
+public record PostShipmentRequestDto
+{
+    public decimal? ManualRateUnitsPerEur { get; init; }
+    public string? ManualRateReason { get; init; }
 }

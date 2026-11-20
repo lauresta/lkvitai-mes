@@ -16,6 +16,9 @@ public sealed record StockValueRequest(
     StockValueDocument Document,
     DateTime? BusinessDate = null)
 {
+    /// <summary>Purchase posting true-up: ValueEur is the difference, Qty the received quantity.</summary>
+    public bool IsTrueUp { get; init; }
+
     /// <summary>
     /// Value request for a quantity movement between two location codes; null when the movement does not cross
     /// the stock boundary (it then does not change value).
@@ -67,6 +70,9 @@ public sealed record StockValueRequest(
             : new StockValueRequest(sku, StockValueKinds.AdjustmentOut, -qtyDelta, false, null, document);
     }
 
+    public static StockValueRequest ForTrueUp(string sku, decimal receivedQty, decimal differenceEur, StockValueDocument document)
+        => new(sku, StockValueKinds.ReceiptTrueUp, receivedQty, true, differenceEur, document) { IsTrueUp = true };
+
     /// <summary>Receipt with the value of the received goods in EUR.</summary>
     public static StockValueRequest ForReceipt(string sku, decimal qty, decimal valueEur, StockValueDocument document)
         => new(sku, StockValueKinds.Receipt, qty, true, valueEur, document);
@@ -112,14 +118,11 @@ public static class StockValueWriter
             var events = new List<StockValueChanged>();
             foreach (var request in group)
             {
-                var evt = Build(aggregate, group.Key, request);
-                if (evt is null)
+                foreach (var evt in BuildMany(aggregate, group.Key, request))
                 {
-                    continue;
+                    aggregate.Apply(evt);
+                    events.Add(evt);
                 }
-
-                aggregate.Apply(evt);
-                events.Add(evt);
             }
 
             if (events.Count == 0)
@@ -140,6 +143,17 @@ public static class StockValueWriter
         }
 
         return written;
+    }
+
+    public static IReadOnlyList<StockValueChanged> BuildMany(ItemValuation aggregate, int itemId, StockValueRequest request)
+    {
+        if (request.IsTrueUp)
+        {
+            return aggregate.TrueUp(itemId, request.Qty, request.ValueEur ?? 0m, request.Document);
+        }
+
+        var evt = Build(aggregate, itemId, request);
+        return evt is null ? [] : [evt];
     }
 
     public static StockValueChanged? Build(ItemValuation aggregate, int itemId, StockValueRequest request)

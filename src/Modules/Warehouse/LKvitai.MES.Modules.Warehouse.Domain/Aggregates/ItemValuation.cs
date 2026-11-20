@@ -112,8 +112,43 @@ public sealed class ItemValuation
         return Change(itemId, StockValueKinds.Revaluation, 0m, target - ValueEur, document, businessDate);
     }
 
+    /// <summary>
+    /// Posting of a purchase document (blueprint 4.2): the difference between the final and the preliminary value of
+    /// <paramref name="receivedQty"/> received units. The share that is still on stock, min(valued, received) / received,
+    /// becomes ReceiptTrueUp; the rest has no place in the stock and becomes PriceDifference (off ledger).
+    /// </summary>
+    public IReadOnlyList<StockValueChanged> TrueUp(int itemId, decimal receivedQty, decimal differenceEur, StockValueDocument document, DateTime? businessDate = null)
+    {
+        var diff = Money(differenceEur);
+        if (diff == 0m || receivedQty <= 0m)
+        {
+            return [];
+        }
+
+        var onStock = Math.Min(ValuedQty, receivedQty);
+        var inStock = Money(diff * onStock / receivedQty);
+        if (ValueEur + inStock < 0m)
+        {
+            inStock = -ValueEur;
+        }
+
+        var rest = diff - inStock;
+        var list = new List<StockValueChanged>();
+        if (inStock != 0m)
+        {
+            list.Add(Change(itemId, StockValueKinds.ReceiptTrueUp, 0m, inStock, document, businessDate));
+        }
+
+        if (rest != 0m)
+        {
+            list.Add(Change(itemId, StockValueKinds.PriceDifference, 0m, 0m, document, businessDate, rest));
+        }
+
+        return list;
+    }
+
     /// <summary>Builds a validated event; throws when it would make the quantity or the value negative.</summary>
-    public StockValueChanged Change(int itemId, string kind, decimal qtyDelta, decimal valueDeltaEur, StockValueDocument document, DateTime? businessDate = null)
+    public StockValueChanged Change(int itemId, string kind, decimal qtyDelta, decimal valueDeltaEur, StockValueDocument document, DateTime? businessDate = null, decimal offLedgerEur = 0m)
     {
         StreamIdFor(itemId);
         if (!StockValueKinds.All.Contains(kind))
@@ -145,6 +180,7 @@ public sealed class ItemValuation
             StockAccountProfileId = document.StockAccountProfileId,
             BusinessDate = businessDate ?? StockBusinessDate.From(timestamp),
             Reason = document.Reason,
+            OffLedgerEur = Money(offLedgerEur),
             Timestamp = timestamp
         };
     }

@@ -428,7 +428,8 @@ public partial class ReceivingWorkflowIntegrationTests : IAsyncLifetime
     {
         mediator = new NoOpMediator();
         return new ReceivingController(WarehouseCodeProvider.For("WH1"), db, _store!, new StaticCurrentUserService("tester"), mediator,
-            NullLogger<ReceivingController>.Instance, new ItemPriceSnapshotService(db), BalanceLocks())
+            NullLogger<ReceivingController>.Instance, new ItemPriceSnapshotService(db), BalanceLocks(),
+            PurchaseService(db))
         {
             ControllerContext = new ControllerContext
             {
@@ -513,6 +514,9 @@ public partial class ReceivingWorkflowIntegrationTests : IAsyncLifetime
         await daemon.StartAllAsync();
         await daemon.WaitForNonStaleData(TimeSpan.FromSeconds(15));
     }
+
+    private PurchaseDocumentService PurchaseService(WarehouseDbContext db)
+        => new(db, new EurFxRateProvider(), _store!, BalanceLocks(), WarehouseCodeProvider.For("WH1"), NullLogger<PurchaseDocumentService>.Instance);
 
     private PostgresBalanceGuardLockFactory BalanceLocks() => new(new ConfigurationBuilder()
         .AddInMemoryCollection(new Dictionary<string,string?> { ["ConnectionStrings:WarehouseDb"] = _postgres!.GetConnectionString() }).Build());
