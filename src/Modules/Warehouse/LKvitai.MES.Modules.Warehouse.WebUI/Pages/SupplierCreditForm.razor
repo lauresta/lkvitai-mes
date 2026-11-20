@@ -25,13 +25,13 @@
                     <div class="text-muted">@(_credit.DocumentKind == "SupplierReturn" ? L["Credit.Kind.SupplierReturn"] : L["Credit.Kind.CreditNote"]) - @_credit.CreditDate.ToString("yyyy-MM-dd")</div>
                     <div class="small text-muted">
                         @L["Credit.OriginalDocument"]:
-                        <a href="/inbound/shipments/@_credit.OriginalShipmentId" data-testid="credit-original-link">ISH-@_credit.OriginalShipmentId</a>
+                        <a href="/warehouse/inbound/shipments/@_credit.OriginalShipmentId" data-testid="credit-original-link">ISH-@_credit.OriginalShipmentId</a>
                         (@(_credit.OriginalInvoiceNumber ?? "-"), @(_credit.OriginalInvoiceDate?.ToString("yyyy-MM-dd") ?? "-"))
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <span class="badge @(posted ? "bg-success" : "bg-secondary")" data-testid="credit-status">@(posted ? L["Purchase.Posted"] : L["Purchase.NotPosted"])</span>
-                    <a class="btn btn-outline-secondary btn-sm" href="/inbound/shipments/@_credit.OriginalShipmentId">@L["Credit.BackToOriginal"]</a>
+                    <a class="btn btn-outline-secondary btn-sm" href="/warehouse/inbound/shipments/@_credit.OriginalShipmentId">@L["Credit.BackToOriginal"]</a>
                 </div>
             </div>
             @if (posted)
@@ -47,7 +47,7 @@
                             <td>@line.ItemSku - @line.ItemName</td>
                             <td class="text-end is-num">@line.ReturnQty.ToString("0.####")</td>
                             <td>@(line.FromLocation ?? "-")</td>
-                            <td class="text-end is-money is-num">@Money.Format(line.NetAmount)</td>
+                            <td class="text-end is-money is-num">@Money.Number(line.NetAmount, _credit.Currency)</td>
                             <td class="text-end is-money is-num">@Money.Format(line.NetEur)</td>
                         </tr>
                     }
@@ -55,12 +55,12 @@
             </table>
             <table class="table table-sm w-auto">
                 <tbody>
-                    <tr><td>@L["Purchase.NetAmount"]</td><td class="text-end is-money is-num">@Money.Format(_credit.NetAmount)</td></tr>
-                    <tr><td>@L["Purchase.VatAmount"]</td><td class="text-end is-money is-num">@Money.Format(_credit.VatAmount)</td></tr>
-                    <tr><td>@L["Purchase.GrossAmount"]</td><td class="text-end is-money is-num">@Money.Format(_credit.GrossAmount)</td></tr>
+                    <tr><td>@L["Purchase.NetAmount"]</td><td class="text-end is-money is-num">@Money.Number(_credit.NetAmount, _credit.Currency)</td></tr>
+                    <tr><td>@L["Purchase.VatAmount"]</td><td class="text-end is-money is-num">@Money.Number(_credit.VatAmount, _credit.Currency)</td></tr>
+                    <tr><td>@L["Purchase.GrossAmount"]</td><td class="text-end is-money is-num">@Money.Number(_credit.GrossAmount, _credit.Currency)</td></tr>
                     @if (posted)
                     {
-                        <tr><td>@L["Credit.AgnumAmount"]</td><td class="text-end is-money is-num" data-testid="credit-agnum-net">@Money.Format(_credit.AgnumNetEur) EUR</td></tr>
+                        <tr><td>@L["Credit.AgnumAmount"]</td><td class="text-end is-money is-num" data-testid="credit-agnum-net">@Money.Number(_credit.AgnumNetEur, "EUR")</td></tr>
                     }
                 </tbody>
             </table>
@@ -81,7 +81,7 @@
                 <h4 class="mb-1">@L["Credit.New"]</h4>
                 <div class="small text-muted">
                     @L["Credit.OriginalDocument"]:
-                    <a href="/inbound/shipments/@_prefill.OriginalShipmentId" data-testid="credit-original-link">ISH-@_prefill.OriginalShipmentId</a>
+                    <a href="/warehouse/inbound/shipments/@_prefill.OriginalShipmentId" data-testid="credit-original-link">ISH-@_prefill.OriginalShipmentId</a>
                     - @_prefill.ReferenceNumber, @_prefill.SupplierName, @(_prefill.InvoiceNumber ?? "-") @(_prefill.InvoiceDate?.ToString("yyyy-MM-dd")) (@_prefill.Currency)
                 </div>
             </div>
@@ -143,9 +143,9 @@
             </table>
             <table class="table table-sm w-auto">
                 <tbody>
-                    <tr><td>@L["Purchase.NetAmount"]</td><td class="text-end is-money is-num" data-testid="credit-net">@Money.Format(Net)</td></tr>
-                    <tr><td>@L["Purchase.VatAmount"]</td><td class="text-end is-money is-num">@Money.Format(_vat)</td></tr>
-                    <tr><td>@L["Purchase.GrossAmount"]</td><td class="text-end is-money is-num">@Money.Format(Net + _vat)</td></tr>
+                    <tr><td>@L["Purchase.NetAmount"]</td><td class="text-end is-money is-num" data-testid="credit-net">@Money.Number(Net, _prefill.Currency)</td></tr>
+                    <tr><td>@L["Purchase.VatAmount"]</td><td class="text-end is-money is-num">@Money.Number(_vat, _prefill.Currency)</td></tr>
+                    <tr><td>@L["Purchase.GrossAmount"]</td><td class="text-end is-money is-num">@Money.Number(Net + _vat, _prefill.Currency)</td></tr>
                 </tbody>
             </table>
             <div class="small text-muted mb-2">@L["Credit.NegativeNote"]</div>
@@ -156,7 +156,7 @@
                 </ul>
             }
             <button class="btn btn-primary" disabled="@_isSubmitting" @onclick="CreateAndPostAsync" data-testid="credit-post">@L["Purchase.Post"]</button>
-            <a class="btn btn-outline-secondary ms-2" href="/inbound/shipments/@_prefill.OriginalShipmentId">@L["Common.Cancel"]</a>
+            <a class="btn btn-outline-secondary ms-2" href="/warehouse/inbound/shipments/@_prefill.OriginalShipmentId">@L["Common.Cancel"]</a>
         }
     </div>
 </div>
@@ -247,7 +247,7 @@
                 }).ToList()
             });
             ToastService.ShowSuccess(L["Purchase.PostedToast"].Value);
-            NavigationManager.NavigateTo($"/inbound/credits/{created.Id}");
+            NavigationManager.NavigateTo($"/warehouse/inbound/credits/{created.Id}");
         }
         catch (ApiException ex) when (ex.StatusCode == 422 && ex.ProblemDetails?.Detail is { } detail && detail.Contains('|'))
         {

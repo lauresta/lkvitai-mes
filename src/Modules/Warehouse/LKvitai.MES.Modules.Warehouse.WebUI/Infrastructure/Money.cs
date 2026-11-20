@@ -21,6 +21,14 @@ public static class Money
             ? decimal.Round(value.Value, 2, MidpointRounding.AwayFromZero).ToString("#,##0.00", DisplayCulture) + " €"
             : "–";
 
+    public static string Number(decimal? value)
+        => value.HasValue
+            ? decimal.Round(value.Value, 2, MidpointRounding.AwayFromZero).ToString("#,##0.00", DisplayCulture)
+            : "–";
+
+    public static string Number(decimal? value, string? currency)
+        => value.HasValue ? Number(value) + (string.IsNullOrWhiteSpace(currency) ? "" : " " + currency) : "–";
+
     public static string FormatUnit(decimal? value)
         => value.HasValue
             ? decimal.Round(value.Value, 4, MidpointRounding.AwayFromZero).ToString("#,##0.00##", DisplayCulture) + " €"

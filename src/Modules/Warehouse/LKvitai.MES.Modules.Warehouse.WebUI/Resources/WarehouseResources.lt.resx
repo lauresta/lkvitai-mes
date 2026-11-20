@@ -1970,6 +1970,11 @@
   <data name="Agnum.Sending.StartDateHint" xml:space="preserve"><value>Anksčiau nei ši diena datuoti dokumentai niekada nesiunčiami.</value></data>
   <data name="Agnum.Sending.ServiceUrl" xml:space="preserve"><value>Agnum paslaugos adresas</value></data>
   <data name="Agnum.Sending.CheckConnection" xml:space="preserve"><value>Tikrinti ryšį</value></data>
+  <data name="Agnum.Config.Saved" xml:space="preserve"><value>Išsaugota</value></data>
+  <data name="Agnum.Config.SchemeFilter" xml:space="preserve"><value>Filtruoti Agnum schemas (numeris ar pavadinimas)</value></data>
+  <data name="Agnum.Config.SchemesForStock" xml:space="preserve"><value>Debetuoja šią atsargų sąskaitą</value></data>
+  <data name="Agnum.Config.SchemesAll" xml:space="preserve"><value>Kitos schemos</value></data>
+  <data name="Agnum.Sending.Checking" xml:space="preserve"><value>Tikrinamas ryšys...</value></data>
   <data name="Agnum.Sending.ConnectionOk" xml:space="preserve"><value>Ryšys veikia. Sandėlių Agnum: {0}.</value></data>
   <data name="Agnum.Sending.ConnectionFailed" xml:space="preserve"><value>Ryšio nėra: {0}</value></data>
   <data name="Agnum.Sending.State" xml:space="preserve"><value>Eilės būsena</value></data>

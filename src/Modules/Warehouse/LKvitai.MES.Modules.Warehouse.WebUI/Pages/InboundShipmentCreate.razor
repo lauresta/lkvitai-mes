@@ -88,7 +88,7 @@
             <div class="lk-form-field">
                 <span class="lk-form-field__label">@L["Purchase.GrossAmount"]</span>
                 <div class="lk-form-field__control">
-                    <span class="mono">@FormatMoney(_netAmount.HasValue ? _netAmount + (_vatAmount ?? 0m) : null) @_currency</span>
+                    <span class="mono">@Money.Number(_netAmount.HasValue ? _netAmount + (_vatAmount ?? 0m) : null, _currency)</span>
                 </div>
             </div>
             <div class="lk-form-field">
@@ -202,7 +202,7 @@
                     }
                     else
                     {
-                        <span class="mono">@Money.FormatUnit(ComputeActualUnitPrice(context))</span>
+                        <span class="mono">@Money.Number(ComputeActualUnitPrice(context), _currency)</span>
                     }
                 </MudTd>
                 <MudTd Style="width: 40px;">
@@ -262,23 +262,23 @@
             </div>
             <div class="ish-create__totals-item">
                 <span class="ish-create__totals-label">@L["InboundShipmentCreate.TotalInvoiceValue"]</span>
-                <span class="ish-create__totals-value">@FormatMoney(TotalInvoiceValue)</span>
+                <span class="ish-create__totals-value">@Money.Number(TotalInvoiceValue, _currency)</span>
             </div>
             <div class="ish-create__totals-item">
                 <span class="ish-create__totals-label">@L["InboundShipmentCreate.TotalAdditionalCosts"]</span>
-                <span class="ish-create__totals-value">@FormatMoney(TotalAdditionalCostPool)</span>
+                <span class="ish-create__totals-value">@Money.Number(TotalAdditionalCostPool, _currency)</span>
             </div>
             <div class="ish-create__totals-item">
                 <span class="ish-create__totals-label">@L["InboundShipmentCreate.TotalActualValue"]</span>
-                <span class="ish-create__totals-value">@FormatMoney(TotalActualValue)</span>
+                <span class="ish-create__totals-value">@Money.Number(TotalActualValue, _currency)</span>
             </div>
             <div class="ish-create__totals-item">
                 <span class="ish-create__totals-label">@L["InboundShipmentCreate.AvgInvoicePrice"]</span>
-                <span class="ish-create__totals-value">@Money.FormatUnit(AverageInvoiceUnitPrice)</span>
+                <span class="ish-create__totals-value">@Money.Number(AverageInvoiceUnitPrice, _currency)</span>
             </div>
             <div class="ish-create__totals-item">
                 <span class="ish-create__totals-label">@L["InboundShipmentCreate.AvgActualPrice"]</span>
-                <span class="ish-create__totals-value">@Money.FormatUnit(AverageActualUnitPrice)</span>
+                <span class="ish-create__totals-value">@Money.Number(AverageActualUnitPrice, _currency)</span>
             </div>
         </div>
 
@@ -286,7 +286,7 @@
         {
             var linesAndCosts = (TotalInvoiceValue ?? 0m) + _additionalCosts.Sum(x => x.Amount);
             <div class="lk-state @(linesAndCosts == _netAmount.Value ? "lk-state--ok" : "lk-state--warn")">
-                @L["Purchase.LinesVsNet", FormatMoney(linesAndCosts), FormatMoney(_netAmount), _currency]
+                @L["Purchase.LinesVsNet", Money.Number(linesAndCosts), Money.Number(_netAmount), _currency]
             </div>
         }
 

@@ -120,7 +120,7 @@ public sealed class SupplierCreditsController : ControllerBase
             }).ToList()
         };
 
-        var (created, problems, notFound) = await _purchase.CreateCreditAsync(credit, r.Post, _user.GetCurrentUserId(), ct);
+        var (created, problems, notFound) = await _purchase.CreateCreditAsync(credit, r.Post, (User.Identity?.Name ?? _user.GetCurrentUserId()), ct);
         if (notFound) return NotFound();
         if (problems.Count > 0) return Unprocessable(problems);
         return Ok(ToDto(await Reload(created!.Id, ct), []));
@@ -130,7 +130,7 @@ public sealed class SupplierCreditsController : ControllerBase
     [Authorize(Policy = WarehousePolicies.QcOrManager)]
     public async Task<IActionResult> Post(int id, CancellationToken ct)
     {
-        var result = await _purchase.PostCreditAsync(id, _user.GetCurrentUserId(), ct);
+        var result = await _purchase.PostCreditAsync(id, (User.Identity?.Name ?? _user.GetCurrentUserId()), ct);
         if (result.NotFound) return NotFound();
         if (!result.Posted) return Unprocessable(result.Problems);
         return Ok(ToDto(await Reload(id, ct), []));

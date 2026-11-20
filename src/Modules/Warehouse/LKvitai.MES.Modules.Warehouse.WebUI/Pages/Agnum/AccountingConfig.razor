@@ -14,7 +14,7 @@
 
 <ul class="nav nav-tabs mb-3">
     <li class="nav-item"><button class="nav-link @(_tab == "profiles" ? "active" : "")" type="button" @onclick='() => _tab = "profiles"'>Stock accounts</button></li>
-    <li class="nav-item"><button class="nav-link @(_tab == "rules" ? "active" : "")" type="button" @onclick='() => _tab = "rules"'>Postings</button></li>
+    <li class="nav-item"><button class="nav-link @(_tab == "rules" ? "active" : "")" type="button" @onclick='() => { _tab = "rules"; _ruleSaved = false; }'>Postings</button></li>
     <li class="nav-item"><button class="nav-link @(_tab == "costs" ? "active" : "")" type="button" @onclick='() => _tab = "costs"'>@L["Purchase.ExtraCosts"]</button></li>
     <li class="nav-item"><button class="nav-link @(_tab == "audit" ? "active" : "")" type="button" @onclick='() => _tab = "audit"'>Change log</button></li>
     <li class="nav-item"><button class="nav-link @(_tab == "sending" ? "active" : "")" type="button" data-testid="tab-sending" @onclick='() => _tab = "sending"'>@L["Agnum.Sending.Tab"]</button></li>
@@ -69,6 +69,13 @@ else if (_tab == "rules")
     {
         <div class="alert alert-light border">Save new profiles before adding postings.</div>
     }
+    @if (_ruleSaved)
+    {
+        <div class="alert alert-success py-2" data-testid="rule-saved">@L["Agnum.Config.Saved"]</div>
+    }
+    <div class="mb-2">
+        <input class="form-control form-control-sm" style="max-width:24rem" placeholder="@L["Agnum.Config.SchemeFilter"]" @bind="_schemeFilter" @bind:event="oninput" data-testid="scheme-filter" />
+    </div>
     <div class="table-responsive">
         <table class="table table-sm align-middle">
             <thead><tr><th>Profile</th><th>VAT treatment</th><th>Agnum scheme</th><th>VAT code</th><th></th></tr></thead>
@@ -88,17 +95,29 @@ else if (_tab == "rules")
                         <select class="form-select form-select-sm" @bind="r.VatTreatment">
                             @foreach (var t in Treatments)
                             {
-                                <option value="@t">@t</option>
+                                <option value="@t">@L["Purchase.VatTreatment." + t]</option>
                             }
                         </select>
                     </td>
                     <td>
                         <select class="form-select form-select-sm" @bind="r.SchemeId">
                             <option value="0">-</option>
-                            @foreach (var s in _schemes)
+                            @{ var (matching, others) = SchemesFor(r); }
+                            @if (matching.Count > 0)
                             {
-                                <option value="@s.IdSch">@s.IdSch @s.Name</option>
+                                <optgroup label="@L["Agnum.Config.SchemesForStock"]">
+                                    @foreach (var s in matching)
+                                    {
+                                        <option value="@s.IdSch">@s.IdSch @s.Name</option>
+                                    }
+                                </optgroup>
                             }
+                            <optgroup label="@L["Agnum.Config.SchemesAll"]">
+                                @foreach (var s in others)
+                                {
+                                    <option value="@s.IdSch">@s.IdSch @s.Name</option>
+                                }
+                            </optgroup>
                         </select>
                     </td>
                     <td>
@@ -201,6 +220,28 @@ else if (_tab == "audit")
     }
 
     private string _tab = "profiles";
+    private string _schemeFilter = "";
+    private bool _ruleSaved;
+
+    // Schemes with a row debiting the profile's stock account first; the text filter narrows both lists
+    // but never hides the scheme already chosen on the row.
+    private (List<SchemeDto> Matching, List<SchemeDto> Others) SchemesFor(RuleRow r)
+    {
+        var stock = _profiles.FirstOrDefault(p => p.Id == r.ProfileId)?.StockAccount?.Trim();
+        var filter = _schemeFilter?.Trim() ?? "";
+        var visible = _schemes.Where(s => s.IdSch == r.SchemeId
+            || filter.Length == 0
+            || s.IdSch.ToString().Contains(filter, StringComparison.OrdinalIgnoreCase)
+            || (s.Name ?? "").Contains(filter, StringComparison.OrdinalIgnoreCase));
+        var matching = new List<SchemeDto>();
+        var others = new List<SchemeDto>();
+        foreach (var s in visible)
+        {
+            var debits = !string.IsNullOrEmpty(stock) && s.Rows?.Any(x => string.Equals(x.Debit?.Trim(), stock, StringComparison.Ordinal)) == true;
+            (debits ? matching : others).Add(s);
+        }
+        return (matching, others);
+    }
     private string? _error;
     private List<ProfileRow> _profiles = new();
     private List<RuleRow> _rules = new();
@@ -283,9 +324,11 @@ else if (_tab == "audit")
 
     private Task SaveRuleAsync(RuleRow r) => RunAsync(async () =>
     {
+        _ruleSaved = false;
         await Client.SaveRuleAsync(new PostingRuleDto(r.Id, r.ProfileId, r.VatTreatment, r.SchemeId, r.VatCode));
         ToastService.ShowSuccess("Saved");
         await LoadAsync();
+        _ruleSaved = true;
     });
 
     private Task DeleteRuleAsync(RuleRow r) => RunAsync(async () =>
