@@ -1955,4 +1955,30 @@
   <data name="OpeningBalances.Err.DuplicateRow" xml:space="preserve"><value>Pasikartoja prekė ir vieta</value></data>
   <data name="OpeningBalances.Err.MissingSku" xml:space="preserve"><value>Nėra SKU</value></data>
   <data name="OpeningBalances.Err.MissingLocation" xml:space="preserve"><value>Nėra vietos</value></data>
+  <data name="Credit.Title" xml:space="preserve"><value>Tiekėjo kreditinė sąskaita / grąžinimas</value></data>
+  <data name="Credit.New" xml:space="preserve"><value>Nauja kreditinė sąskaita / grąžinimas</value></data>
+  <data name="Credit.CreateButton" xml:space="preserve"><value>Kreditinė sąskaita / grąžinimas</value></data>
+  <data name="Credit.Related" xml:space="preserve"><value>Susijusios kreditinės sąskaitos ir grąžinimai</value></data>
+  <data name="Credit.OriginalDocument" xml:space="preserve"><value>Pirminis dokumentas</value></data>
+  <data name="Credit.BackToOriginal" xml:space="preserve"><value>Atgal į pirminį dokumentą</value></data>
+  <data name="Credit.Kind" xml:space="preserve"><value>Rūšis</value></data>
+  <data name="Credit.Kind.CreditNote" xml:space="preserve"><value>Kreditinė sąskaita (tik kaina)</value></data>
+  <data name="Credit.Kind.SupplierReturn" xml:space="preserve"><value>Grąžinimas tiekėjui (prekės grįžta)</value></data>
+  <data name="Credit.Number" xml:space="preserve"><value>Kreditinės sąskaitos numeris</value></data>
+  <data name="Credit.Date" xml:space="preserve"><value>Kreditinės sąskaitos data</value></data>
+  <data name="Credit.Received" xml:space="preserve"><value>Priimta</value></data>
+  <data name="Credit.AlreadyReturned" xml:space="preserve"><value>Jau grąžinta</value></data>
+  <data name="Credit.ReturnQty" xml:space="preserve"><value>Grąžinamas kiekis</value></data>
+  <data name="Credit.FromLocation" xml:space="preserve"><value>Grąžinama iš vietos</value></data>
+  <data name="Credit.Amount" xml:space="preserve"><value>Kredito suma</value></data>
+  <data name="Credit.AgnumAmount" xml:space="preserve"><value>Į Agnum siunčiama suma</value></data>
+  <data name="Credit.NegativeNote" xml:space="preserve"><value>Sumos įvedamos teigiamos, į Agnum eina su minuso ženklu.</value></data>
+  <data name="Credit.Problem.OriginalNotPosted" xml:space="preserve"><value>Pirmiausia turi būti užregistruotas pirminis pirkimo dokumentas.</value></data>
+  <data name="Credit.Problem.ReturnQtyRequired" xml:space="preserve"><value>Grąžinimui tiekėjui reikia nurodyti grąžinamą kiekį.</value></data>
+  <data name="Credit.Problem.ReturnQtyNotAllowed" xml:space="preserve"><value>Kreditinė sąskaita tik dėl kainos negali grąžinti prekių; pasirinkite grąžinimą tiekėjui.</value></data>
+  <data name="Credit.Problem.ReturnQtyExceeded" xml:space="preserve"><value>Grąžinamas kiekis didesnis nei priimtas.</value></data>
+  <data name="Credit.Problem.ReturnLocationRequired" xml:space="preserve"><value>Pasirinkite esamą vietą, iš kurios grąžinamos prekės.</value></data>
+  <data name="Credit.Problem.InsufficientStock" xml:space="preserve"><value>Grąžinimo vietoje nepakanka atsargų.</value></data>
+  <data name="Credit.Problem.CreditExceedsOriginal" xml:space="preserve"><value>Kreditai viršytų pirminio dokumento sumą be PVM.</value></data>
+  <data name="Credit.Problem.LineNotInOriginal" xml:space="preserve"><value>Eilutė nepriklauso pirminiam dokumentui.</value></data>
 </root>

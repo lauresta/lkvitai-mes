@@ -23,7 +23,7 @@ public sealed record PostResult(bool NotFound, IReadOnlyList<PostingProblem> Pro
 }
 
 /// <summary>Blueprint 4.2 - 4.4: rate resolution, posting checks, posting of purchase and cost documents.</summary>
-public sealed class PurchaseDocumentService
+public sealed partial class PurchaseDocumentService
 {
     private readonly WarehouseDbContext _db;
     private readonly IFxRateProvider _fx;
