@@ -74,6 +74,8 @@ public sealed class ItemCategory
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public int? ParentCategoryId { get; set; }
+    /// <summary>Blueprint 4.5. Empty = inherited from the parent, then the default profile.</summary>
+    public int? StockAccountProfileId { get; set; }
 
     public ItemCategory? ParentCategory { get; set; }
     public ICollection<ItemCategory> Children { get; set; } = new List<ItemCategory>();
@@ -186,6 +188,15 @@ public sealed class Supplier : AuditableEntity
 
     /// <summary>Timestamp of the most recent successful Agnum sync for this supplier.</summary>
     public DateTimeOffset? LastAgnumSyncedAt { get; set; }
+
+    /// <summary>Blueprint 4.11. Null = not determined yet.</summary>
+    public SupplierKind? Kind { get; set; }
+
+    /// <summary>Set by the Agnum supplier sync when the supplier is absent from the Agnum response.</summary>
+    public bool MissingInAgnum { get; set; }
+
+    /// <summary>Agnum KRD flag (creditor). Null = unknown (Agnum response did not carry it).</summary>
+    public bool? IsAgnumCreditor { get; set; }
 
     /// <summary>Legacy free-text contact blob; retained for backward compatibility only.</summary>
     public string? ContactInfo { get; set; }

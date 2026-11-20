@@ -45,6 +45,9 @@ public class WarehouseDbContext : DbContext
     public DbSet<ItemUoMConversion> ItemUoMConversions => Set<ItemUoMConversion>();
     public DbSet<ItemBarcode> ItemBarcodes => Set<ItemBarcode>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();
+    public DbSet<StockAccountProfile> StockAccountProfiles => Set<StockAccountProfile>();
+    public DbSet<AgnumPostingRule> AgnumPostingRules => Set<AgnumPostingRule>();
+    public DbSet<AccountingConfigAuditEntry> AccountingConfigAudit => Set<AccountingConfigAuditEntry>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<SalesOrder> SalesOrders => Set<SalesOrder>();
     public DbSet<SalesOrderLine> SalesOrderLines => Set<SalesOrderLine>();
@@ -209,6 +212,7 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.Code).HasMaxLength(50).IsRequired();
             entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
             entity.HasIndex(e => e.Code).IsUnique();
+            entity.HasOne<StockAccountProfile>().WithMany().HasForeignKey(e => e.StockAccountProfileId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(e => e.ParentCategory)
                 .WithMany(e => e.Children)
                 .HasForeignKey(e => e.ParentCategoryId)
@@ -456,6 +460,42 @@ public class WarehouseDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
+        modelBuilder.Entity<StockAccountProfile>(entity =>
+        {
+            entity.ToTable("stock_account_profiles");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.StockAccount).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.PriceDifferenceAccount).HasMaxLength(50);
+            entity.Property(e => e.WriteOffAccount).HasMaxLength(50);
+            entity.Property(e => e.MarkdownAccount).HasMaxLength(50);
+            entity.HasIndex(e => e.Name).IsUnique();
+            entity.HasIndex(e => e.IsDefault).IsUnique().HasFilter("\"IsDefault\" = true");
+        });
+
+        modelBuilder.Entity<AgnumPostingRule>(entity =>
+        {
+            entity.ToTable("agnum_posting_rules");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.VatTreatment).HasConversion<string>().HasMaxLength(30);
+            entity.Property(e => e.VatCode).HasMaxLength(20);
+            entity.HasIndex(e => new { e.StockAccountProfileId, e.VatTreatment }).IsUnique();
+            entity.HasOne<StockAccountProfile>().WithMany().HasForeignKey(e => e.StockAccountProfileId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AccountingConfigAuditEntry>(entity =>
+        {
+            entity.ToTable("accounting_config_audit");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Entity).HasMaxLength(60).IsRequired();
+            entity.Property(e => e.EntityId).HasMaxLength(60).IsRequired();
+            entity.Property(e => e.Action).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.ChangedBy).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.BeforeJson).HasColumnType("jsonb");
+            entity.Property(e => e.AfterJson).HasColumnType("jsonb");
+            entity.HasIndex(e => e.ChangedAt);
+        });
+
         modelBuilder.Entity<Supplier>(entity =>
         {
             entity.ToTable("suppliers");
@@ -476,6 +516,9 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.Website).HasMaxLength(200);
             entity.Property(e => e.AdditionalInfo).HasColumnType("text");
             entity.Property(e => e.LastAgnumSyncedAt);
+            entity.Property(e => e.Kind).HasConversion<string>().HasMaxLength(10);
+            entity.Property(e => e.MissingInAgnum).HasDefaultValue(false);
+            entity.Property(e => e.IsAgnumCreditor);
             entity.Property(e => e.ContactInfo).HasColumnType("text");
             entity.HasIndex(e => e.Code).IsUnique();
             entity.HasIndex(e => e.AgnumClientId).IsUnique();

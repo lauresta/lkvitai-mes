@@ -74,6 +74,12 @@ public sealed class AgnumClientDto
     [JsonPropertyName("officeAddress")]
     public string? OfficeAddress { get; init; }
 
+    /// <summary>Agnum KRD flag ("Y" = creditor).</summary>
+    [JsonPropertyName("krd")]
+    public string? Krd { get; init; }
+
+    public string? Country { get; init; }
+
     [JsonPropertyName("client_role")]
     public List<string>? ClientRoles { get; init; }
 

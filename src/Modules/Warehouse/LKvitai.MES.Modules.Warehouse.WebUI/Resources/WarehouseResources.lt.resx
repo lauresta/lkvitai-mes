@@ -1293,6 +1293,7 @@
   <data name="Nav.AdminSettings" xml:space="preserve"><value>Administratoriaus nustatymai</value></data>
   <data name="Nav.AgnumBalances" xml:space="preserve"><value>Agnum likučiai</value></data>
   <data name="Nav.AgnumConfig" xml:space="preserve"><value>Agnum nustatymai</value></data>
+  <data name="Nav.AgnumAccounting" xml:space="preserve"><value>Agnum apskaita</value></data>
   <data name="Nav.AgnumReconcile" xml:space="preserve"><value>Agnum sutikrinimas</value></data>
   <data name="Nav.Allocations" xml:space="preserve"><value>Paskirstymai</value></data>
   <data name="Nav.ApprovalRules" xml:space="preserve"><value>Patvirtinimo taisyklės</value></data>

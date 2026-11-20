@@ -73,6 +73,9 @@ public static class DependencyInjection
         services.AddScoped<IAgnumNomenclatureImportService, AgnumNomenclatureImportService>();
         services.AddScoped<AgnumPriceSyncService>();
         services.AddScoped<IAgnumBalanceImportService, AgnumBalanceImportService>();
+        services.AddScoped<LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum.Accounting.AccountingConfigService>();
+        services.AddScoped<LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum.Accounting.AgnumSupplierSyncService>();
+        services.AddScoped<LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum.Accounting.IExpenseAccountSource, LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum.Accounting.NoExpenseAccountSource>();
         services.AddScoped<IAgnumDistributionService, AgnumDistributionService>();
 
         // Consistency checks
