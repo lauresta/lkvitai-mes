@@ -304,7 +304,7 @@ else if (_tab == "audit")
         catch (ApiException ex)
         {
             // A rejected save shows which rows the scheme is missing.
-            _error = ex.UserMessage;
+            _error = ex.ProblemDetails?.Detail ?? ex.UserMessage;
         }
     }
 }
