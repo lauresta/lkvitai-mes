@@ -31,8 +31,10 @@ public sealed class CycleCountAdjustmentWriter(
 {
     public async Task CommitAsync(IReadOnlyList<StockAdjustedEvent> adjustments, CancellationToken cancellationToken)
     {
-        await dbContext.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
+        IReadOnlyList<StockValueChanged> valueEvents = [];
+        await StockValueRetry.RunAsync(() => dbContext.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
         {
+            var requests = new List<StockValueRequest?>();
             await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
             await using var session = documentStore.LightweightSession(
                 SessionOptions.ForTransaction((NpgsqlTransaction)transaction.GetDbTransaction(), false));
@@ -41,13 +43,21 @@ public sealed class CycleCountAdjustmentWriter(
                 // Stable line identity also guards concurrent approval and ambiguous commit retries.
                 var stream = $"stock-adjustment:{adjustment.AdjustmentId:N}";
                 if (await session.Events.FetchStreamStateAsync(stream, cancellationToken) is null)
+                    {
                     session.Events.StartStream(stream, adjustment);
+                    requests.Add(StockValueRequest.ForAdjustment(
+                        adjustment.SKU, adjustment.QtyDelta, adjustment.Location,
+                        new LKvitai.MES.Modules.Warehouse.Domain.Aggregates.StockValueDocument(
+                            "CycleCount", adjustment.AggregateId.ToString("N"), null, adjustment.Notes ?? adjustment.ReasonCode)));
+                }
             }
             await dbContext.SaveChangesAsync(acceptAllChangesOnSuccess: false, cancellationToken);
+            valueEvents = await StockValueWriter.AppendAsync(session, dbContext, requests, cancellationToken);
             await session.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             dbContext.ChangeTracker.AcceptAllChanges();
-        });
+        }), cancellationToken);
+        await StockValueWriter.ProjectAsync(dbContext, Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance, valueEvents, cancellationToken);
     }
 }
 

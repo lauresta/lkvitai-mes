@@ -1,4 +1,4 @@
-@page "/valuation/adjust-cost"
+@page "/valuation/revaluation"
 @using System.ComponentModel.DataAnnotations
 @using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
 @using LKvitai.MES.Modules.Warehouse.WebUI.Models
@@ -7,9 +7,9 @@
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
 
-<PageTitle>@L["Common.AdjustCost"]</PageTitle>
+<PageTitle>@L["Common.WriteDown"]</PageTitle>
 
-<h1>@L["Valuation.AdjustCost.AdjustItemCost"]</h1>
+<h1>@L["Valuation.WriteDown.WriteDownInventoryValue"]</h1>
 
 @if (_apiError is not null)
 {
@@ -32,11 +32,11 @@
                                       ItemSelected="@(item => _model.ItemId = item?.Id)" />
                 </div>
                 <div class="col-12 col-md-3">
-                    <label class="form-label">@L["Valuation.AdjustCost.NewCost"]</label>
-                    <InputNumber class="form-control" @bind-Value="_model.NewCost" />
+                    <label class="form-label">@L["Valuation.WriteDown.NewValue"]</label>
+                    <InputNumber class="form-control" @bind-Value="_model.NewUnitPrice" />
                 </div>
                 <div class="col-12 col-md-3">
-                    <label class="form-label">@L["Valuation.AdjustCost.ApprovedByOptional"]</label>
+                    <label class="form-label">@L["Common.ApprovedBy"]</label>
                     <InputText class="form-control" @bind-Value="_model.ApprovedBy" />
                 </div>
                 <div class="col-12">
@@ -46,7 +46,7 @@
             </div>
 
             <div class="mt-3 d-flex gap-2">
-                <button class="btn btn-primary" type="submit" disabled="_isSubmitting">@L["Common.AdjustCost"]</button>
+                <button class="btn btn-danger" type="submit" disabled="_isSubmitting">@L["Common.WriteDown"]</button>
                 <button class="btn btn-outline-secondary" type="button" @onclick="BackToDashboard">@L["Common.Back"]</button>
             </div>
         </EditForm>
@@ -54,33 +54,32 @@
 </div>
 
 @code {
-    private readonly AdjustCostFormModel _model = new();
+    private readonly RevaluationFormModel _model = new();
 
     private bool _isSubmitting;
     private ApiException? _apiError;
 
     private async Task SubmitAsync()
     {
-        if (!_model.ItemId.HasValue || !_model.NewCost.HasValue)
+        if (!_model.ItemId.HasValue || !_model.NewUnitPrice.HasValue)
         {
             return;
         }
 
         _isSubmitting = true;
         _apiError = null;
-
         try
         {
-            await ValuationClient.AdjustCostAsync(new AdjustValuationCostRequestDto
+            await ValuationClient.RevaluationAsync(new RevaluationRequestDto
             {
                 CommandId = Guid.NewGuid(),
                 ItemId = _model.ItemId.Value,
-                NewCost = _model.NewCost.Value,
+                NewUnitPrice = _model.NewUnitPrice.Value,
                 Reason = _model.Reason.Trim(),
                 ApprovedBy = string.IsNullOrWhiteSpace(_model.ApprovedBy) ? null : _model.ApprovedBy.Trim()
             });
 
-            ToastService.ShowSuccess(L["Valuation.AdjustCost.Toast.CostAdjustedSuccessfully"].Value);
+            ToastService.ShowSuccess(L["Valuation.WriteDown.Toast.WriteDownCompletedSuccessfully"].Value);
             NavigationManager.NavigateTo("/warehouse/valuation/dashboard");
         }
         catch (ApiException ex)
@@ -113,17 +112,17 @@
 
         return ex.ProblemDetails?.Detail
                ?? ex.ProblemDetails?.Title
-               ?? L["AdjustCost.RequestFailed"].Value;
+               ?? L["WriteDown.RequestFailed"].Value;
     }
 
-    private sealed class AdjustCostFormModel
+    private sealed class RevaluationFormModel
     {
         [Required]
         public int? ItemId { get; set; }
 
         [Required]
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
-        public decimal? NewCost { get; set; }
+        public decimal? NewUnitPrice { get; set; }
 
         [Required]
         [MinLength(3)]

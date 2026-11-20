@@ -28,29 +28,11 @@ public sealed record CostHistoryRowDto
     public string ActionType { get; init; } = string.Empty;
 }
 
-public sealed record AdjustValuationCostRequestDto
+public sealed record RevaluationRequestDto
 {
     public Guid CommandId { get; init; } = Guid.NewGuid();
     public int ItemId { get; init; }
-    public decimal NewCost { get; init; }
-    public string Reason { get; init; } = string.Empty;
-    public string? ApprovedBy { get; init; }
-}
-
-public sealed record ApplyLandedCostRequestDto
-{
-    public Guid CommandId { get; init; } = Guid.NewGuid();
-    public Guid ShipmentId { get; init; }
-    public decimal FreightCost { get; init; }
-    public decimal DutyCost { get; init; }
-    public decimal InsuranceCost { get; init; }
-}
-
-public sealed record WriteDownRequestDto
-{
-    public Guid CommandId { get; init; } = Guid.NewGuid();
-    public int ItemId { get; init; }
-    public decimal NewValue { get; init; }
+    public decimal NewUnitPrice { get; init; }
     public string Reason { get; init; } = string.Empty;
     public string? ApprovedBy { get; init; }
 }

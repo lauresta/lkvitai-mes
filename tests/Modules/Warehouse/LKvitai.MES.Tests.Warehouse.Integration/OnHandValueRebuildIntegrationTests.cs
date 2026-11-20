@@ -41,10 +41,10 @@ public partial class ReceivingWorkflowIntegrationTests
         {
             session.Events.Append("QA-C8-b-stock", new GoodsReceivedEvent
                 { SKU = "RM-0001", WarehouseId = "WH1", DestinationLocation = "BIN", ReceivedQty = 3 });
-            session.Events.Append(ItemValuation.StreamIdFor(1), new ValuationInitialized
-                { ItemId = ValuationItemId.ToValuationItemId(1), InitialUnitCost = 10, Reason = "QA-C8-b" });
-            session.Events.Append(ItemValuation.StreamIdFor(2), new ValuationInitialized
-                { ItemId = ValuationItemId.ToValuationItemId(2), InitialUnitCost = 4, Reason = "QA-C8-b" });
+            session.Events.Append(ItemValuation.StreamIdFor(1), new StockValueChanged
+                { ItemId = 1, Kind = StockValueKinds.Receipt, QtyDelta = 3, ValueDeltaEur = 30, Reason = "QA-C8-b" });
+            session.Events.Append(ItemValuation.StreamIdFor(2), new StockValueChanged
+                { ItemId = 2, Kind = StockValueKinds.Receipt, QtyDelta = 1, ValueDeltaEur = 4, Reason = "QA-C8-b" });
             await session.SaveChangesAsync();
         }
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>

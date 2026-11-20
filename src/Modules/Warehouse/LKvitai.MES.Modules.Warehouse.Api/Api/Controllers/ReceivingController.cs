@@ -14,6 +14,7 @@ using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
+using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.BuildingBlocks.SharedKernel;
 using IDocumentStore = Marten.IDocumentStore;
@@ -31,15 +32,6 @@ public sealed class ReceivingController : ControllerBase
 {
     private readonly IWarehouseCodeProvider _warehouseCode;
     private string DefaultWarehouseId => _warehouseCode.Code;
-
-    /// <summary>
-    /// Marker passed as ApprovedBy when the receiving flow auto-adjusts an item's
-    /// weighted-average cost from a real purchase. This is real purchase data derived
-    /// from a receipt, not a manual override, so it bypasses the &gt;20% manual-approval
-    /// gate that exists to catch typos in ad-hoc cost adjustments (see
-    /// ValuationCostAdjustmentPolicy.ValidateApproval).
-    /// </summary>
-    private const string ReceivingValuationActor = "system:receiving";
 
     private readonly IBalanceGuardLockFactory _balanceLocks;
     private readonly WarehouseDbContext _dbContext;
@@ -477,7 +469,14 @@ public sealed class ReceivingController : ControllerBase
     public sealed record CloseShortRequest(string? Notes);
 
     private Task PersistShipmentEventAsync(int id, object evt, Action? afterEfSave, CancellationToken ct)
-        => _dbContext.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
+        => PersistShipmentEventAsync(id, evt, afterEfSave, null, ct);
+
+    // Quantity event and value event commit in one transaction; a lost value-stream version race is retried.
+    private async Task PersistShipmentEventAsync(
+        int id, object evt, Action? afterEfSave, StockValueRequest? valueRequest, CancellationToken ct)
+    {
+        IReadOnlyList<StockValueChanged> valueEvents = [];
+        await StockValueRetry.RunAsync(() => _dbContext.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
         {
             await using var transaction = await _dbContext.Database.BeginTransactionAsync(ct);
             await using var session = _documentStore.LightweightSession(Marten.Services.SessionOptions.ForTransaction(
@@ -485,10 +484,13 @@ public sealed class ReceivingController : ControllerBase
             await _dbContext.SaveChangesAsync(acceptAllChangesOnSuccess: false, ct);
             afterEfSave?.Invoke();
             session.Events.Append(ShipmentStreamId(id), evt);
+            valueEvents = await StockValueWriter.AppendAsync(session, _dbContext, [valueRequest], ct);
             await session.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
             _dbContext.ChangeTracker.AcceptAllChanges();
-        });
+        }), ct);
+        await StockValueWriter.ProjectAsync(_dbContext, _logger, valueEvents, ct);
+    }
 
     [HttpPost("{id:int}/receive")]
     [HttpPost("{id:int}/receive-items")]
@@ -636,30 +638,20 @@ public sealed class ReceivingController : ControllerBase
             Timestamp = now
         };
 
-        await PersistShipmentEventAsync(shipment.Id, evt, () => evt.LotId = lot?.Id, cancellationToken);
-
-        // Receipt is committed atomically. Report a valuation failure explicitly so it
-        // cannot masquerade as a fully successful receipt or invite a duplicate receipt.
-        try
-        {
-            await UpdateItemValuationForReceiptAsync(
-                shipment,
-                line,
-                item.Id,
-                request.ReceivedQty,
-                effectiveUnitPrice.Value,
-                cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Receipt recorded but valuation failed for item {ItemId}, line {LineId}.", item.Id, line.Id);
-            return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
-            {
-                Title = "Receipt recorded; valuation update failed",
-                Detail = $"Shipment {shipment.Id}, line {line.Id}, quantity {request.ReceivedQty} was received. Do not receive it again; retry the valuation update.",
-                Status = StatusCodes.Status500InternalServerError
-            });
-        }
+        // The receipt value (qty x price, EUR) is written in the same transaction as the quantity event.
+        var receiptValueEur = ItemValuation.Money(request.ReceivedQty * effectiveUnitPrice.Value);
+        var receiptDocument = new StockValueDocument(
+            "InboundShipment",
+            shipment.Id.ToString(CultureInfo.InvariantCulture),
+            shipment.ReferenceNumber,
+            string.Format(
+                CultureInfo.InvariantCulture,
+                "Receipt {0} - {1:0.###} {2} @ {3:0.####}",
+                shipment.ReferenceNumber, request.ReceivedQty, line.BaseUoM, effectiveUnitPrice.Value));
+        await PersistShipmentEventAsync(
+            shipment.Id, evt, () => evt.LotId = lot?.Id,
+            StockValueRequest.ForReceipt(item.InternalSKU, request.ReceivedQty, receiptValueEur, receiptDocument),
+            cancellationToken);
 
         return Ok(new ReceiveGoodsResponse(
             shipment.Id,
@@ -671,99 +663,6 @@ public sealed class ReceivingController : ControllerBase
             destinationCode,
             evt.EventId,
             now));
-    }
-
-    /// <summary>
-    /// Computes this receipt's all-in landed unit cost (invoice price plus its proportional
-    /// share of the shipment's additional-cost pool - manual <see cref="InboundShipmentAdditionalCost"/>
-    /// rows plus any Service-type sibling lines, allocated across Stock-type lines by expected
-    /// value) and folds it into the item's <see cref="ItemValuation"/> stream — initializing it
-    /// on the first receipt, or recomputing a weighted average against the current on-hand cost
-    /// afterwards.
-    /// </summary>
-    private async Task UpdateItemValuationForReceiptAsync(
-        InboundShipment shipment,
-        InboundShipmentLine line,
-        int itemId,
-        decimal receivedQty,
-        decimal unitPrice,
-        CancellationToken cancellationToken)
-    {
-        var totalAdditionalCost = ComputeTotalAdditionalCostPool(shipment);
-
-        var landedUnitCost = unitPrice;
-        if (totalAdditionalCost > 0m)
-        {
-            var totalExpectedValue = shipment.Lines
-                .Where(x => x.Item is null || x.Item.ItemType == ItemType.Stock)
-                .Sum(x => x.ExpectedQty * (x.UnitPrice ?? 0m));
-            if (totalExpectedValue > 0m && line.ExpectedQty > 0m)
-            {
-                var lineExpectedValue = line.ExpectedQty * unitPrice;
-                var lineShareOfAdditionalCost = totalAdditionalCost * lineExpectedValue / totalExpectedValue;
-                landedUnitCost += lineShareOfAdditionalCost / line.ExpectedQty;
-            }
-        }
-
-        var currency = string.IsNullOrWhiteSpace(line.Currency) ? "EUR" : line.Currency;
-        var reason = string.Format(
-            CultureInfo.InvariantCulture,
-            "Receipt {0} - {1:0.###} {2} @ {3:0.####} {4}",
-            shipment.ReferenceNumber,
-            receivedQty,
-            line.BaseUoM,
-            landedUnitCost,
-            currency);
-
-        var initializeResult = await _mediator.Send(
-            new InitializeValuationCommand
-            {
-                ItemId = itemId,
-                InitialCost = landedUnitCost,
-                Reason = reason
-            },
-            cancellationToken);
-
-        if (initializeResult.IsSuccess)
-        {
-            return;
-        }
-
-        var existingValuation = await _dbContext.OnHandValues
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.ItemId == itemId, cancellationToken);
-
-        var newCost = landedUnitCost;
-        if (existingValuation is not null)
-        {
-            // OnHandValue intentionally excludes virtual intake locations. A prior priced
-            // receipt still waiting for QC/putaway must participate in the next receipt's WAC.
-            // The current receipt is already committed, so subtract it exactly once.
-            var physicalQty = await new MartenAvailableStockQuantityResolver(_documentStore, _dbContext)
-                .ResolveTotalQtyAsync(itemId, existingValuation.ItemSku, cancellationToken);
-            var receivingQty = await CommittedLocationStock.ReadAsync(
-                _documentStore, DefaultWarehouseId, existingValuation.ItemSku, "RECEIVING", cancellationToken);
-            var qcQty = await CommittedLocationStock.ReadAsync(
-                _documentStore, DefaultWarehouseId, existingValuation.ItemSku, "QC_HOLD", cancellationToken);
-            var priorQty = Math.Max(0m, physicalQty + receivingQty + qcQty - receivedQty);
-            newCost = ((priorQty * existingValuation.UnitCost) + (receivedQty * landedUnitCost))
-                / (priorQty + receivedQty);
-        }
-
-        var adjustResult = await _mediator.Send(
-            new AdjustValuationCostCommand
-            {
-                ItemId = itemId,
-                NewCost = newCost,
-                Reason = reason,
-                ApprovedBy = ReceivingValuationActor
-            },
-            cancellationToken);
-
-        if (!adjustResult.IsSuccess)
-        {
-            throw new InvalidOperationException($"Valuation update failed for item {itemId}: {adjustResult.Error}");
-        }
     }
 
     /// <summary>
@@ -937,23 +836,6 @@ public sealed class ReceivingController : ControllerBase
         }
 
         return materialized.Any(x => x.ReceivedQty > 0m) ? "Partial" : "Draft";
-    }
-
-    /// <summary>
-    /// Sums the shipment's manual <see cref="InboundShipmentAdditionalCost"/> rows plus the
-    /// expected value of its Service-type lines (e.g. a "Transport" invoice line) - both feed
-    /// the same landed-cost allocation pool distributed across Stock-type lines. No currency
-    /// conversion is performed; amounts are summed as-is, same as the header-column model this
-    /// replaced.
-    /// </summary>
-    private static decimal ComputeTotalAdditionalCostPool(InboundShipment shipment)
-    {
-        var manualCosts = shipment.AdditionalCosts.Sum(x => x.Amount);
-        var serviceLineCosts = shipment.Lines
-            .Where(x => x.Item is not null && x.Item.ItemType == ItemType.Service)
-            .Sum(x => x.ExpectedQty * (x.UnitPrice ?? 0m));
-
-        return manualCosts + serviceLineCosts;
     }
 
     private ObjectResult ValidationFailure(string detail)

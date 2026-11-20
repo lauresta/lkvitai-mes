@@ -140,9 +140,18 @@ public sealed class QCController : ControllerBase
         var evt = new StockMovedEvent { MovementId = Guid.NewGuid(), SKU = item.InternalSKU,
             Quantity = request.Qty, FromLocation = "QUARANTINE", ToLocation = request.Destination,
             MovementType = "QuarantineDisposition", Reason = request.Notes, Timestamp = DateTime.UtcNow };
-        await using var session = _documentStore.LightweightSession();
-        session.Events.Append(StockLedgerStreamId.For(DefaultWarehouseId, "QUARANTINE", item.InternalSKU), evt);
-        await session.SaveChangesAsync(cancellationToken);
+        IReadOnlyList<StockValueChanged> valueEvents = [];
+        await StockValueRetry.RunAsync(async () =>
+        {
+            await using var session = _documentStore.LightweightSession();
+            session.Events.Append(StockLedgerStreamId.For(DefaultWarehouseId, "QUARANTINE", item.InternalSKU), evt);
+            valueEvents = await StockValueWriter.AppendAsync(session, _dbContext, [StockValueRequest.ForMovement(
+                item.InternalSKU, request.Qty, "QUARANTINE", request.Destination,
+                new LKvitai.MES.Modules.Warehouse.Domain.Aggregates.StockValueDocument(
+                    "QuarantineDisposition", evt.MovementId.ToString("N"), null, request.Notes))], cancellationToken);
+            await session.SaveChangesAsync(cancellationToken);
+        }, cancellationToken);
+        await StockValueWriter.ProjectAsync(_dbContext, Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance, valueEvents, cancellationToken);
         await balanceLock.CommitAsync(cancellationToken);
         return Ok(new QcActionResponse(evt.EventId, item.Id, request.Qty, request.Destination, evt.Timestamp));
     }

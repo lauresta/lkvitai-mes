@@ -46,10 +46,11 @@ public sealed class ValuationController : ControllerBase
         _reasonCodeService = reasonCodeService;
     }
 
-    [HttpPost("initialize")]
+    /// <summary>Revaluation ("Уценка") document: lowers the unit price of the valued stock of one item.</summary>
+    [HttpPost("revaluation")]
     [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
-    public async Task<IActionResult> InitializeAsync(
-        [FromBody] InitializeValuationRequest? request,
+    public async Task<IActionResult> RevaluationAsync(
+        [FromBody] RevaluationRequest? request,
         CancellationToken cancellationToken = default)
     {
         if (request is null)
@@ -58,41 +59,12 @@ public sealed class ValuationController : ControllerBase
         }
 
         var commandId = request.CommandId == Guid.Empty ? Guid.NewGuid() : request.CommandId;
-        var result = await _mediator.Send(new InitializeValuationCommand
+        var result = await _mediator.Send(new RevaluationCommand
         {
             CommandId = commandId,
             CorrelationId = ResolveCorrelationId(),
             ItemId = request.ItemId,
-            InitialCost = request.InitialCost,
-            Reason = request.Reason
-        }, cancellationToken);
-
-        if (!result.IsSuccess)
-        {
-            return Failure(result);
-        }
-
-        return Ok(new ValuationCommandAcceptedResponse(commandId, request.ItemId, "INITIALIZED"));
-    }
-
-    [HttpPost("adjust-cost")]
-    [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
-    public async Task<IActionResult> AdjustCostV2Async(
-        [FromBody] AdjustValuationCostRequest? request,
-        CancellationToken cancellationToken = default)
-    {
-        if (request is null)
-        {
-            return ValidationFailure("Request body is required.");
-        }
-
-        var commandId = request.CommandId == Guid.Empty ? Guid.NewGuid() : request.CommandId;
-        var result = await _mediator.Send(new AdjustValuationCostCommand
-        {
-            CommandId = commandId,
-            CorrelationId = ResolveCorrelationId(),
-            ItemId = request.ItemId,
-            NewCost = request.NewCost,
+            NewUnitPrice = request.NewUnitPrice,
             Reason = request.Reason,
             ApprovedBy = request.ApprovedBy
         }, cancellationToken);
@@ -107,72 +79,7 @@ public sealed class ValuationController : ControllerBase
             ReasonCategory.REVALUATION,
             cancellationToken);
 
-        return Ok(new ValuationCommandAcceptedResponse(commandId, request.ItemId, "COST_ADJUSTED"));
-    }
-
-    [HttpPost("apply-landed-cost")]
-    [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
-    public async Task<IActionResult> ApplyLandedCostAsync(
-        [FromBody] ApplyLandedCostRequest? request,
-        CancellationToken cancellationToken = default)
-    {
-        if (request is null)
-        {
-            return ValidationFailure("Request body is required.");
-        }
-
-        var commandId = request.CommandId == Guid.Empty ? Guid.NewGuid() : request.CommandId;
-        var result = await _mediator.Send(new ApplyLandedCostCommand
-        {
-            CommandId = commandId,
-            CorrelationId = ResolveCorrelationId(),
-            ShipmentId = request.ShipmentId,
-            FreightCost = request.FreightCost,
-            DutyCost = request.DutyCost,
-            InsuranceCost = request.InsuranceCost
-        }, cancellationToken);
-
-        if (!result.IsSuccess)
-        {
-            return Failure(result);
-        }
-
-        return Ok(new LandedCostCommandAcceptedResponse(commandId, request.ShipmentId));
-    }
-
-    [HttpPost("write-down")]
-    [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
-    public async Task<IActionResult> WriteDownAsync(
-        [FromBody] WriteDownRequest? request,
-        CancellationToken cancellationToken = default)
-    {
-        if (request is null)
-        {
-            return ValidationFailure("Request body is required.");
-        }
-
-        var commandId = request.CommandId == Guid.Empty ? Guid.NewGuid() : request.CommandId;
-        var result = await _mediator.Send(new WriteDownCommand
-        {
-            CommandId = commandId,
-            CorrelationId = ResolveCorrelationId(),
-            ItemId = request.ItemId,
-            NewValue = request.NewValue,
-            Reason = request.Reason,
-            ApprovedBy = request.ApprovedBy
-        }, cancellationToken);
-
-        if (!result.IsSuccess)
-        {
-            return Failure(result);
-        }
-
-        await _reasonCodeService.IncrementUsageIfCodeMatchesAsync(
-            request.Reason,
-            ReasonCategory.WRITEDOWN,
-            cancellationToken);
-
-        return Ok(new ValuationCommandAcceptedResponse(commandId, request.ItemId, "WRITTEN_DOWN"));
+        return Ok(new ValuationCommandAcceptedResponse(commandId, request.ItemId, "REVALUED"));
     }
 
     [HttpGet("on-hand-value")]
@@ -337,6 +244,8 @@ public sealed class ValuationController : ControllerBase
             }
 
             decimal? runningCost = null;
+            var runningQty = 0m;
+            var runningValue = 0m;
 
             foreach (var streamEvent in streamEvents)
             {
@@ -396,6 +305,27 @@ public sealed class ValuationController : ControllerBase
                             landed.AppliedBy,
                             "LANDED_COST_APPLIED"));
 
+                        runningCost = next;
+                        break;
+                    }
+
+                    case StockValueChanged valueChanged:
+                    {
+                        var previous = runningQty > 0m ? decimal.Round(runningValue / runningQty, 4, MidpointRounding.AwayFromZero) : runningCost;
+                        runningQty += valueChanged.QtyDelta;
+                        runningValue += valueChanged.ValueDeltaEur;
+                        var next = runningQty > 0m ? decimal.Round(runningValue / runningQty, 4, MidpointRounding.AwayFromZero) : previous;
+                        rows.Add(new CostHistoryResponse(
+                            valueChanged.EventId,
+                            item.Id,
+                            item.ItemSku,
+                            item.ItemName,
+                            NormalizeTimestamp(valueChanged.Timestamp, valueChanged.Timestamp),
+                            previous,
+                            next,
+                            valueChanged.Reason ?? string.Empty,
+                            null,
+                            valueChanged.Kind.ToUpperInvariant()));
                         runningCost = next;
                         break;
                     }
@@ -542,30 +472,10 @@ public sealed class ValuationController : ControllerBase
 
     private ICacheService Cache => HttpContext?.RequestServices?.GetService<ICacheService>() ?? new LKvitai.MES.Modules.Warehouse.Infrastructure.Caching.NoOpCacheService();
 
-    public sealed record InitializeValuationRequest(
+    public sealed record RevaluationRequest(
         Guid CommandId,
         int ItemId,
-        decimal InitialCost,
-        string Reason);
-
-    public sealed record AdjustValuationCostRequest(
-        Guid CommandId,
-        int ItemId,
-        decimal NewCost,
-        string Reason,
-        string? ApprovedBy);
-
-    public sealed record ApplyLandedCostRequest(
-        Guid CommandId,
-        Guid ShipmentId,
-        decimal FreightCost,
-        decimal DutyCost,
-        decimal InsuranceCost);
-
-    public sealed record WriteDownRequest(
-        Guid CommandId,
-        int ItemId,
-        decimal NewValue,
+        decimal NewUnitPrice,
         string Reason,
         string? ApprovedBy);
 
@@ -573,10 +483,6 @@ public sealed class ValuationController : ControllerBase
         Guid CommandId,
         int ItemId,
         string Status);
-
-    public sealed record LandedCostCommandAcceptedResponse(
-        Guid CommandId,
-        Guid ShipmentId);
 
     public sealed record OnHandValueResponse(
         Guid Id,

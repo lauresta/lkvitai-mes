@@ -53,6 +53,7 @@ public sealed partial class DatabaseWarehouseStore
         var items = await db.Items.Where(x => itemIds.Contains(x.Id)).ToDictionaryAsync(x => x.Id, ct);
         await using var guard = await locks.CreateAsync(ct);
         await guard.AcquireAsync(items.Values.Select(x => StockLockKey.ForLocation(warehouse.Code, "QC_HOLD", x.InternalSKU)).Distinct().Order().ToArray(), ct);
+        IReadOnlyList<StockValueChanged> valueEvents = [];
         var result = await db.Database.CreateExecutionStrategy().ExecuteAsync(async () => {
             await using var tx = await db.Database.BeginTransactionAsync(ct);
             var row = await db.Set<WarehouseRma>().FromSqlInterpolated($"SELECT * FROM public.warehouse_rmas WHERE \"Id\"={id} FOR UPDATE").SingleOrDefaultAsync(ct);
@@ -69,6 +70,7 @@ public sealed partial class DatabaseWarehouseStore
             var hold = await db.Locations.SingleAsync(x => x.Code == "QC_HOLD", ct);
             var destination = disposition == "SCRAP" ? "SCRAP" : "RECEIVING";
             await using var session = events.LightweightSession(Marten.Services.SessionOptions.ForTransaction((NpgsqlTransaction)tx.GetDbTransaction(), false));
+            var valueRequests = new List<StockValueRequest?>();
             foreach (var line in row.Lines.GroupBy(x => x.ItemId))
             {
                 var qty = line.Sum(x => x.Qty);
@@ -80,6 +82,8 @@ public sealed partial class DatabaseWarehouseStore
                         AggregateId = adjustmentId, AdjustmentId = adjustmentId, UserId = user, WarehouseId = warehouse.Code,
                         ItemId = item.Id, SKU = item.InternalSKU, LocationId = hold.Id, Location = "QC_HOLD", QtyDelta = qty,
                         ReasonCode = "RMA", Notes = $"{row.Reason}; RMA-{row.Number:0000}", Timestamp = DateTime.UtcNow });
+                    valueRequests.Add(new StockValueRequest(item.InternalSKU, StockValueKinds.ReturnIn, qty, true, null,
+                        new LKvitai.MES.Modules.Warehouse.Domain.Aggregates.StockValueDocument("Rma", row.Id.ToString("N"), $"RMA-{row.Number:0000}", row.Reason)));
                 }
                 else
                 {
@@ -88,6 +92,8 @@ public sealed partial class DatabaseWarehouseStore
                     session.Events.Append(StockLedgerStreamId.For(warehouse.Code, "QC_HOLD", item.InternalSKU), new StockMovedEvent {
                         MovementId = Guid.NewGuid(), SKU = item.InternalSKU, Quantity = qty, FromLocation = "QC_HOLD",
                         ToLocation = destination, OperatorId = Guid.TryParse(user, out var operatorId) ? operatorId : Guid.Empty, MovementType = "RMA", Timestamp = DateTime.UtcNow, Reason = $"{row.Reason}; RMA-{row.Number:0000}" });
+                    valueRequests.Add(StockValueRequest.ForMovement(item.InternalSKU, qty, "QC_HOLD", destination,
+                        new LKvitai.MES.Modules.Warehouse.Domain.Aggregates.StockValueDocument("Rma", row.Id.ToString("N"), $"RMA-{row.Number:0000}", row.Reason)));
                 }
             }
             row.UpdatedBy = user;
@@ -95,11 +101,13 @@ public sealed partial class DatabaseWarehouseStore
             else { row.Status = disposition == "SCRAP" ? "Scrapped" : "Restocked"; row.Disposition = disposition;
                 row.CreditAmount = credit; row.InspectedAt = DateTimeOffset.UtcNow; }
             await db.SaveChangesAsync(false, ct);
+            valueEvents = await StockValueWriter.AppendAsync(session, db, valueRequests, ct);
             await session.SaveChangesAsync(ct);
             await tx.CommitAsync(ct);
             db.ChangeTracker.AcceptAllChanges();
             return MapRma(row);
         });
+        await StockValueWriter.ProjectAsync(db, Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance, valueEvents, ct);
         await guard.CommitAsync(ct);
         return result;
     }

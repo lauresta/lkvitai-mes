@@ -74,345 +74,101 @@ public sealed class MartenAvailableStockQuantityResolver : IAvailableStockQuanti
     }
 }
 
-public sealed class OnHandValueProjectionConsumer :
-    IConsumer<ValuationInitialized>,
-    IConsumer<CostAdjusted>,
-    IConsumer<LandedCostApplied>,
-    IConsumer<WrittenDown>,
-    IConsumer<StockMovedEvent>
+/// <summary>
+/// Builds the OnHandValue read model from <see cref="StockValueChanged"/> only: Qty = valued quantity,
+/// TotalValue = value in EUR, UnitCost = value / quantity (last known unit cost when nothing is valued).
+/// </summary>
+public sealed class OnHandValueProjectionConsumer : IConsumer<StockValueChanged>
 {
-    private const string ProjectionName = "OnHandValue";
     private readonly WarehouseDbContext _dbContext;
-    private readonly IAvailableStockQuantityResolver _quantityResolver;
     private readonly ICacheService _cacheService;
     private readonly ILogger<OnHandValueProjectionConsumer> _logger;
 
     public OnHandValueProjectionConsumer(
         WarehouseDbContext dbContext,
-        IAvailableStockQuantityResolver quantityResolver,
         ICacheService cacheService,
         ILogger<OnHandValueProjectionConsumer> logger)
     {
         _dbContext = dbContext;
-        _quantityResolver = quantityResolver;
         _cacheService = cacheService;
         _logger = logger;
     }
 
     public OnHandValueProjectionConsumer(
         WarehouseDbContext dbContext,
-        IAvailableStockQuantityResolver quantityResolver,
         ILogger<OnHandValueProjectionConsumer> logger)
-        : this(dbContext, quantityResolver, new NoOpCacheService(), logger)
+        : this(dbContext, new NoOpCacheService(), logger)
     {
     }
 
-    public Task Consume(ConsumeContext<ValuationInitialized> context)
+    public async Task Consume(ConsumeContext<StockValueChanged> context)
     {
-        return UpsertFromValuationAsync(
-            context.Message.EventId,
-            context.Message.Timestamp,
-            context.Message.CorrelationId,
-            context.Message.ItemId,
-            context.Message.InitialUnitCost,
-            nameof(ValuationInitialized),
-            context.CancellationToken);
+        await StockValueProjection.ApplyAsync(_dbContext, _logger, [context.Message], context.CancellationToken);
+        await _cacheService.RemoveAsync($"value:{context.Message.ItemId}", context.CancellationToken);
     }
+}
 
-    public Task Consume(ConsumeContext<CostAdjusted> context)
-    {
-        return UpsertFromValuationAsync(
-            context.Message.EventId,
-            context.Message.Timestamp,
-            context.Message.CorrelationId,
-            context.Message.ItemId,
-            context.Message.NewUnitCost,
-            nameof(CostAdjusted),
-            context.CancellationToken);
-    }
+internal static class StockValueProjection
+{
+    private const string ProjectionName = "OnHandValue";
 
-    public Task Consume(ConsumeContext<LandedCostApplied> context)
+    /// <summary>Applies value events to the OnHandValue rows once per event id (idempotent).</summary>
+    public static async Task ApplyAsync(
+        WarehouseDbContext db,
+        ILogger logger,
+        IEnumerable<StockValueChanged> events,
+        CancellationToken cancellationToken)
     {
-        return UpsertLandedCostByInventoryIdAsync(
-            context.Message.EventId,
-            context.Message.Timestamp,
-            context.Message.CorrelationId,
-            context.Message.ItemId,
-            context.Message.TotalLandedCost,
-            nameof(LandedCostApplied),
-            context.CancellationToken);
-    }
-
-    public Task Consume(ConsumeContext<WrittenDown> context)
-    {
-        return UpsertFromValuationByInventoryIdAsync(
-            context.Message.EventId,
-            context.Message.Timestamp,
-            context.Message.CorrelationId,
-            context.Message.ItemId,
-            context.Message.NewValue,
-            nameof(WrittenDown),
-            context.CancellationToken);
-    }
-
-    public async Task Consume(ConsumeContext<StockMovedEvent> context)
-    {
-        var message = context.Message;
-        if (!await ProjectionConsumerMetrics.TryRegisterEventAsync(
-                _dbContext,
-                nameof(OnHandValueProjectionConsumer),
-                message.EventId,
-                context.CancellationToken))
+        foreach (var evt in events)
         {
-            return;
-        }
-
-        var projectionQuery = _dbContext.OnHandValues.AsQueryable();
-        var projection = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
-            projectionQuery,
-            x => x.ItemSku == message.SKU,
-            context.CancellationToken);
-
-        if (projection is null)
-        {
-            var itemQuery = _dbContext.Items
-                .AsNoTracking()
-                .Include(x => x.Category);
-            var item = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
-                itemQuery,
-                x => x.InternalSKU == message.SKU,
-                context.CancellationToken);
-
-            if (item is null)
+            if (!await ProjectionConsumerMetrics.TryRegisterEventAsync(
+                    db, nameof(OnHandValueProjectionConsumer), evt.EventId, cancellationToken))
             {
-                await OnHandValueProjectionMetrics.SaveProjectionAsync(
-                    _dbContext,
-                    _logger,
-                    ProjectionName,
-                    nameof(StockMovedEvent),
-                    Guid.Empty,
-                    message.Timestamp,
-                    message.CorrelationId,
-                    context.CancellationToken);
-                return;
+                continue;
             }
 
-            projection = new OnHandValue
+            var row = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                db.OnHandValues, x => x.ItemId == evt.ItemId, cancellationToken);
+            if (row is null)
             {
-                Id = ValuationItemId.ToValuationItemId(item.Id),
-                ItemId = item.Id,
-                ItemSku = item.InternalSKU,
-                ItemName = item.Name,
-                CategoryId = item.CategoryId,
-                CategoryName = item.Category?.Name,
-                UnitCost = 0m
-            };
-            _dbContext.OnHandValues.Add(projection);
-        }
+                var item = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                    db.Items.AsNoTracking(), x => x.Id == evt.ItemId, cancellationToken);
+                if (item is null)
+                {
+                    await OnHandValueProjectionMetrics.SaveProjectionAsync(
+                        db, logger, ProjectionName, nameof(StockValueChanged), Guid.Empty,
+                        evt.Timestamp, evt.CorrelationId, cancellationToken);
+                    continue;
+                }
 
-        var qty = await _quantityResolver.ResolveTotalQtyAsync(
-            projection.ItemId,
-            projection.ItemSku,
-            context.CancellationToken);
+                row = new OnHandValue
+                {
+                    Id = ValuationItemId.ToValuationItemId(item.Id),
+                    ItemId = item.Id,
+                    ItemSku = item.InternalSKU,
+                    ItemName = item.Name,
+                    CategoryId = item.CategoryId,
+                    CategoryName = item.CategoryId == null
+                        ? null
+                        : await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                            db.ItemCategories.AsNoTracking().Where(c => c.Id == item.CategoryId).Select(c => c.Name),
+                            cancellationToken)
+                };
+                db.OnHandValues.Add(row);
+            }
 
-        projection.Qty = qty;
-        projection.TotalValue = decimal.Round(projection.Qty * projection.UnitCost, 4, MidpointRounding.AwayFromZero);
-        projection.LastUpdated = DateTime.SpecifyKind(message.Timestamp, DateTimeKind.Utc);
+            var priorUnitCost = row.UnitCost;
+            row.Qty += evt.QtyDelta;
+            row.TotalValue += evt.ValueDeltaEur;
+            row.UnitCost = row.Qty > 0m
+                ? decimal.Round(row.TotalValue / row.Qty, 4, MidpointRounding.AwayFromZero)
+                : priorUnitCost;
+            row.LastUpdated = DateTime.SpecifyKind(evt.Timestamp, DateTimeKind.Utc);
 
-        await OnHandValueProjectionMetrics.SaveProjectionAsync(
-            _dbContext,
-            _logger,
-            ProjectionName,
-            nameof(StockMovedEvent),
-            projection.Id,
-            message.Timestamp,
-            message.CorrelationId,
-            context.CancellationToken);
-
-        await _cacheService.RemoveByPrefixAsync("stock:", context.CancellationToken);
-        await _cacheService.RemoveAsync($"value:{projection.ItemId}", context.CancellationToken);
-    }
-
-    private async Task UpsertFromValuationAsync(
-        Guid eventId,
-        DateTime eventTimestampUtc,
-        string? correlationId,
-        Guid valuationItemId,
-        decimal unitCost,
-        string eventType,
-        CancellationToken cancellationToken)
-    {
-        if (!await ProjectionConsumerMetrics.TryRegisterEventAsync(
-                _dbContext,
-                nameof(OnHandValueProjectionConsumer),
-                eventId,
-                cancellationToken))
-        {
-            return;
-        }
-
-        if (!ValuationItemId.TryToInventoryItemId(valuationItemId, out var itemId))
-        {
             await OnHandValueProjectionMetrics.SaveProjectionAsync(
-                _dbContext,
-                _logger,
-                ProjectionName,
-                eventType,
-                valuationItemId,
-                eventTimestampUtc,
-                correlationId,
-                cancellationToken);
-            return;
+                db, logger, ProjectionName, nameof(StockValueChanged), row.Id,
+                evt.Timestamp, evt.CorrelationId, cancellationToken);
         }
-
-        var itemProjectionQuery = _dbContext.Items
-            .Include(x => x.Category);
-        var item = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
-            itemProjectionQuery,
-            x => x.Id == itemId,
-            cancellationToken);
-
-        if (item is null)
-        {
-            await OnHandValueProjectionMetrics.SaveProjectionAsync(
-                _dbContext,
-                _logger,
-                ProjectionName,
-                eventType,
-                valuationItemId,
-                eventTimestampUtc,
-                correlationId,
-                cancellationToken);
-            return;
-        }
-
-        var byItemQuery = _dbContext.OnHandValues.AsQueryable();
-        var projection = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
-            byItemQuery,
-            x => x.ItemId == item.Id,
-            cancellationToken);
-
-        if (projection is null)
-        {
-            projection = new OnHandValue
-            {
-                Id = ValuationItemId.ToValuationItemId(item.Id),
-                ItemId = item.Id,
-                ItemSku = item.InternalSKU,
-                ItemName = item.Name,
-                CategoryId = item.CategoryId,
-                CategoryName = item.Category?.Name
-            };
-            _dbContext.OnHandValues.Add(projection);
-        }
-
-        var qty = await _quantityResolver.ResolveTotalQtyAsync(item.Id, item.InternalSKU, cancellationToken);
-        projection.ItemSku = item.InternalSKU;
-        projection.ItemName = item.Name;
-        projection.CategoryId = item.CategoryId;
-        projection.CategoryName = item.Category?.Name;
-        projection.Qty = qty;
-        projection.UnitCost = decimal.Round(unitCost, 4, MidpointRounding.AwayFromZero);
-        projection.TotalValue = decimal.Round(projection.Qty * projection.UnitCost, 4, MidpointRounding.AwayFromZero);
-        projection.LastUpdated = DateTime.SpecifyKind(eventTimestampUtc, DateTimeKind.Utc);
-
-        await OnHandValueProjectionMetrics.SaveProjectionAsync(
-            _dbContext,
-            _logger,
-            ProjectionName,
-            eventType,
-            projection.Id,
-            eventTimestampUtc,
-            correlationId,
-            cancellationToken);
-
-        await _cacheService.RemoveAsync($"value:{projection.ItemId}", cancellationToken);
-    }
-
-    private async Task UpsertFromValuationByInventoryIdAsync(
-        Guid eventId,
-        DateTime eventTimestampUtc,
-        string? correlationId,
-        int itemId,
-        decimal unitCost,
-        string eventType,
-        CancellationToken cancellationToken)
-    {
-        if (itemId <= 0)
-        {
-            await OnHandValueProjectionMetrics.SaveProjectionAsync(
-                _dbContext,
-                _logger,
-                ProjectionName,
-                eventType,
-                Guid.Empty,
-                eventTimestampUtc,
-                correlationId,
-                cancellationToken);
-            return;
-        }
-
-        var valuationItemId = ValuationItemId.ToValuationItemId(itemId);
-        await UpsertFromValuationAsync(
-            eventId,
-            eventTimestampUtc,
-            correlationId,
-            valuationItemId,
-            unitCost,
-            eventType,
-            cancellationToken);
-    }
-
-    private async Task UpsertLandedCostByInventoryIdAsync(
-        Guid eventId,
-        DateTime eventTimestampUtc,
-        string? correlationId,
-        int itemId,
-        decimal landedCostDelta,
-        string eventType,
-        CancellationToken cancellationToken)
-    {
-        if (itemId <= 0)
-        {
-            await OnHandValueProjectionMetrics.SaveProjectionAsync(
-                _dbContext,
-                _logger,
-                ProjectionName,
-                eventType,
-                Guid.Empty,
-                eventTimestampUtc,
-                correlationId,
-                cancellationToken);
-            return;
-        }
-
-        var row = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
-            _dbContext.OnHandValues,
-            x => x.ItemId == itemId,
-            cancellationToken);
-
-        if (row is not null)
-        {
-            var adjustedCost = decimal.Round(row.UnitCost + landedCostDelta, 4, MidpointRounding.AwayFromZero);
-            await UpsertFromValuationByInventoryIdAsync(
-                eventId,
-                eventTimestampUtc,
-                correlationId,
-                itemId,
-                adjustedCost,
-                eventType,
-                cancellationToken);
-            return;
-        }
-
-        await UpsertFromValuationByInventoryIdAsync(
-            eventId,
-            eventTimestampUtc,
-            correlationId,
-            itemId,
-            decimal.Round(landedCostDelta, 4, MidpointRounding.AwayFromZero),
-            eventType,
-            cancellationToken);
     }
 }
 

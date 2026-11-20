@@ -50,9 +50,7 @@
 
 <div class="card shadow-sm mb-3">
     <div class="card-body d-flex flex-wrap gap-2">
-        <button class="btn btn-primary" @onclick="OpenAdjustCost">@L["Common.AdjustCost"]</button>
-        <button class="btn btn-outline-primary" @onclick="OpenLandedCost">@L["Common.ApplyLandedCost"]</button>
-        <button class="btn btn-outline-danger" @onclick="OpenWriteDown">@L["Common.WriteDown"]</button>
+        <button class="btn btn-primary" @onclick="OpenRevaluation">@L["Common.WriteDown"]</button>
         <button class="btn btn-outline-secondary ms-auto" @onclick="LoadAsync">@L["Common.Refresh"]</button>
     </div>
 </div>
@@ -346,19 +344,9 @@
             builder.ToString());
     }
 
-    private void OpenAdjustCost()
+    private void OpenRevaluation()
     {
-        NavigationManager.NavigateTo("/warehouse/valuation/adjust-cost");
-    }
-
-    private void OpenLandedCost()
-    {
-        NavigationManager.NavigateTo("/warehouse/valuation/apply-landed-cost");
-    }
-
-    private void OpenWriteDown()
-    {
-        NavigationManager.NavigateTo("/warehouse/valuation/write-down");
+        NavigationManager.NavigateTo("/warehouse/valuation/revaluation");
     }
 
     private void OpenItem(int itemId)
