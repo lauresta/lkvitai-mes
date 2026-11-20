@@ -65,3 +65,69 @@ public sealed class AdditionalCostDocument
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public string CreatedBy { get; set; } = string.Empty;
 }
+
+/// <summary>
+/// Blueprint 4.8: a supplier credit note (price-only) or a supplier return (goods back plus credit), linked to the
+/// original purchase document. Amounts are entered positive; the signed Agnum* amounts (negative) are what the
+/// sender (W4) puts into Agnum, with <see cref="OriginalInvoiceNumber"/> / <see cref="OriginalInvoiceDate"/> as the reference.
+/// </summary>
+public sealed class SupplierCreditDocument
+{
+    public const string KindCreditNote = "CreditNote";
+    public const string KindSupplierReturn = "SupplierReturn";
+
+    public int Id { get; set; }
+    /// <summary>CreditNote or SupplierReturn.</summary>
+    public string DocumentKind { get; set; } = KindCreditNote;
+    public int OriginalShipmentId { get; set; }
+    public int SupplierId { get; set; }
+    public string CreditNumber { get; set; } = string.Empty;
+    public DateOnly CreditDate { get; set; }
+    /// <summary>Reference to the original document (copied at creation).</summary>
+    public string? OriginalInvoiceNumber { get; set; }
+    public DateOnly? OriginalInvoiceDate { get; set; }
+    public string Currency { get; set; } = "EUR";
+    public decimal NetAmount { get; set; }
+    public decimal VatAmount { get; set; }
+    public decimal GrossAmount { get; set; }
+    public decimal? RateUnitsPerEur { get; set; }
+    public DateOnly? RateDate { get; set; }
+    public string? RateSource { get; set; }
+    public decimal? NetEur { get; set; }
+    public decimal? VatEur { get; set; }
+    public decimal? GrossEur { get; set; }
+    /// <summary>Negative EUR amounts for Agnum, set at posting.</summary>
+    public decimal? AgnumNetEur { get; set; }
+    public decimal? AgnumVatEur { get; set; }
+    public decimal? AgnumGrossEur { get; set; }
+    public VatTreatment? VatTreatment { get; set; }
+    public string AccountingRoute { get; set; } = "Auto";
+    public string? Notes { get; set; }
+    public string PostingStatus { get; set; } = "NotPosted";
+    public DateTimeOffset? PostedAt { get; set; }
+    public string? PostedBy { get; set; }
+    public int PostingRevision { get; set; }
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public string CreatedBy { get; set; } = string.Empty;
+
+    public ICollection<SupplierCreditLine> Lines { get; set; } = new List<SupplierCreditLine>();
+}
+
+public sealed class SupplierCreditLine
+{
+    public int Id { get; set; }
+    public int CreditId { get; set; }
+    public int OriginalLineId { get; set; }
+    public int ItemId { get; set; }
+    /// <summary>Quantity going back to the supplier; 0 for a price-only credit.</summary>
+    public decimal ReturnQty { get; set; }
+    /// <summary>Location the returned goods leave from (required when <see cref="ReturnQty"/> is above 0).</summary>
+    public string? FromLocation { get; set; }
+    /// <summary>Credit amount of the line in the document currency (positive).</summary>
+    public decimal NetAmount { get; set; }
+    public decimal? NetEur { get; set; }
+
+    public SupplierCreditDocument? Credit { get; set; }
+    public InboundShipmentLine? OriginalLine { get; set; }
+    public Item? Item { get; set; }
+}

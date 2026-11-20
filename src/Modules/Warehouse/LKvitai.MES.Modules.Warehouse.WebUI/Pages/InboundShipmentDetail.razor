@@ -3,6 +3,7 @@
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
 @inject ItemPricesClient ItemPricesClient
+@inject SupplierCreditsClient CreditsClient
 
 <PageTitle>@L["InboundShipmentDetail.InboundShipmentDetailCikadaMES"]</PageTitle>
 
@@ -45,6 +46,10 @@
                     @if (_shipment.Status is "Draft" or "Partial" && TotalReceived < TotalExpected)
                     {
                         <button class="btn btn-outline-primary btn-sm" disabled="@_isSubmitting" @onclick="CloseShortAsync">@L["Completion.CloseShort"]</button>
+                    }
+                    @if (string.Equals(_shipment.Purchase?.PostingStatus, "Posted", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <a class="btn btn-outline-primary btn-sm" href="/inbound/credits/new/@_shipment.Id" data-testid="create-credit">@L["Credit.CreateButton"]</a>
                     }
                     <button class="btn btn-outline-secondary btn-sm" @onclick="BackToList">@L["Common.Back"]</button>
                     <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync">@L["Common.Refresh"]</button>
@@ -152,6 +157,30 @@
                                 <button class="btn btn-primary" disabled="@_isSubmitting" @onclick="PostAsync" data-testid="post-document">@L["Purchase.Post"]</button>
                             </div>
                         }
+                    </div>
+                </div>
+            }
+
+            @if (_credits.Count > 0)
+            {
+                <div class="card border mb-3" data-testid="related-credits">
+                    <div class="card-body">
+                        <h5>@L["Credit.Related"]</h5>
+                        <table class="table table-sm mb-0">
+                            <thead><tr><th>@L["Credit.Number"]</th><th>@L["Credit.Kind"]</th><th>@L["Credit.Date"]</th><th class="text-end">@L["Purchase.NetAmount"]</th><th>@L["Purchase.Posted"]</th></tr></thead>
+                            <tbody>
+                                @foreach (var credit in _credits)
+                                {
+                                    <tr>
+                                        <td><a href="/inbound/credits/@credit.Id">@credit.CreditNumber</a></td>
+                                        <td>@(credit.DocumentKind == "SupplierReturn" ? L["Credit.Kind.SupplierReturn"] : L["Credit.Kind.CreditNote"])</td>
+                                        <td>@credit.CreditDate.ToString("yyyy-MM-dd")</td>
+                                        <td class="text-end is-money is-num">@Money.Format(credit.PostingStatus == "Posted" ? credit.AgnumNetEur : -credit.NetAmount) @(credit.PostingStatus == "Posted" ? "EUR" : credit.Currency)</td>
+                                        <td>@(credit.PostingStatus == "Posted" ? L["Purchase.Posted"] : L["Purchase.NotPosted"])</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             }
@@ -306,6 +335,7 @@
 
     private InboundShipmentDetailDto? _shipment;
     private PriceMap _priceMap = PriceMap.Empty;
+    private IReadOnlyList<SupplierCreditDto> _credits = [];
     private ApiException? _apiError;
     private bool _isLoading;
     private bool _isSubmitting;
@@ -350,6 +380,7 @@
         {
             _shipment = await ReceivingClient.GetShipmentByIdAsync(Id);
             _priceMap = await ItemPricesClient.GetMapAsync(_shipment.Lines.Select(x => ((int?)x.ItemId, (string?)x.ItemSku)));
+            try { _credits = await CreditsClient.ListAsync(Id); } catch (ApiException) { _credits = []; }
 
             if (_shipment.Lines.Count > 0 && !SelectedLineId.HasValue)
             {

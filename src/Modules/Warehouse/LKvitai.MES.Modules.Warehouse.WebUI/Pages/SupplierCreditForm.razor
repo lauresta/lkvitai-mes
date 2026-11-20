@@ -1,0 +1,316 @@
+@page "/inbound/credits/new/{ShipmentId:int}"
+@page "/inbound/credits/{Id:int}"
+@inject SupplierCreditsClient CreditsClient
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+
+<PageTitle>@L["Credit.Title"]</PageTitle>
+
+<h1>@L["Credit.Title"]</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)" TraceId="@_apiError.TraceId" OnRetry="LoadAsync" OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm position-relative mb-3" data-testid="credit-form">
+    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+    <div class="card-body">
+        @if (_credit is not null)
+        {
+            var posted = string.Equals(_credit.PostingStatus, "Posted", StringComparison.OrdinalIgnoreCase);
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <div>
+                    <h4 class="mb-1">@_credit.CreditNumber</h4>
+                    <div class="text-muted">@(_credit.DocumentKind == "SupplierReturn" ? L["Credit.Kind.SupplierReturn"] : L["Credit.Kind.CreditNote"]) - @_credit.CreditDate.ToString("yyyy-MM-dd")</div>
+                    <div class="small text-muted">
+                        @L["Credit.OriginalDocument"]:
+                        <a href="/inbound/shipments/@_credit.OriginalShipmentId" data-testid="credit-original-link">ISH-@_credit.OriginalShipmentId</a>
+                        (@(_credit.OriginalInvoiceNumber ?? "-"), @(_credit.OriginalInvoiceDate?.ToString("yyyy-MM-dd") ?? "-"))
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge @(posted ? "bg-success" : "bg-secondary")" data-testid="credit-status">@(posted ? L["Purchase.Posted"] : L["Purchase.NotPosted"])</span>
+                    <a class="btn btn-outline-secondary btn-sm" href="/inbound/shipments/@_credit.OriginalShipmentId">@L["Credit.BackToOriginal"]</a>
+                </div>
+            </div>
+            @if (posted)
+            {
+                <div class="small text-muted mb-2">@L["Purchase.PostedBy", _credit.PostedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-", _credit.PostedBy ?? "-"]</div>
+            }
+            <table class="table table-sm">
+                <thead><tr><th>@L["Common.Item"]</th><th class="text-end">@L["Credit.ReturnQty"]</th><th>@L["Credit.FromLocation"]</th><th class="text-end">@_credit.Currency</th><th class="text-end">EUR</th></tr></thead>
+                <tbody>
+                    @foreach (var line in _credit.Lines)
+                    {
+                        <tr>
+                            <td>@line.ItemSku - @line.ItemName</td>
+                            <td class="text-end is-num">@line.ReturnQty.ToString("0.####")</td>
+                            <td>@(line.FromLocation ?? "-")</td>
+                            <td class="text-end is-money is-num">@Money.Format(line.NetAmount)</td>
+                            <td class="text-end is-money is-num">@Money.Format(line.NetEur)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <table class="table table-sm w-auto">
+                <tbody>
+                    <tr><td>@L["Purchase.NetAmount"]</td><td class="text-end is-money is-num">@Money.Format(_credit.NetAmount)</td></tr>
+                    <tr><td>@L["Purchase.VatAmount"]</td><td class="text-end is-money is-num">@Money.Format(_credit.VatAmount)</td></tr>
+                    <tr><td>@L["Purchase.GrossAmount"]</td><td class="text-end is-money is-num">@Money.Format(_credit.GrossAmount)</td></tr>
+                    @if (posted)
+                    {
+                        <tr><td>@L["Credit.AgnumAmount"]</td><td class="text-end is-money is-num" data-testid="credit-agnum-net">@Money.Format(_credit.AgnumNetEur) EUR</td></tr>
+                    }
+                </tbody>
+            </table>
+            @if (!posted)
+            {
+                if (_credit.Problems.Count > 0)
+                {
+                    <ul class="text-danger" data-testid="credit-problems">
+                        @foreach (var problem in _credit.Problems) { <li>@ProblemText(problem)</li> }
+                    </ul>
+                }
+                <button class="btn btn-primary" disabled="@_isSubmitting" @onclick="PostExistingAsync" data-testid="credit-post">@L["Purchase.Post"]</button>
+            }
+        }
+        else if (_prefill is not null)
+        {
+            <div class="mb-3">
+                <h4 class="mb-1">@L["Credit.New"]</h4>
+                <div class="small text-muted">
+                    @L["Credit.OriginalDocument"]:
+                    <a href="/inbound/shipments/@_prefill.OriginalShipmentId" data-testid="credit-original-link">ISH-@_prefill.OriginalShipmentId</a>
+                    - @_prefill.ReferenceNumber, @_prefill.SupplierName, @(_prefill.InvoiceNumber ?? "-") @(_prefill.InvoiceDate?.ToString("yyyy-MM-dd")) (@_prefill.Currency)
+                </div>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <label class="form-label">@L["Credit.Kind"]</label>
+                    <select class="form-select" @bind="_kind" data-testid="credit-kind">
+                        <option value="CreditNote">@L["Credit.Kind.CreditNote"]</option>
+                        <option value="SupplierReturn">@L["Credit.Kind.SupplierReturn"]</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">@L["Credit.Number"]</label>
+                    <input class="form-control" @bind="_number" data-testid="credit-number" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">@L["Credit.Date"]</label>
+                    <input type="date" class="form-control" @bind="_date" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">@L["Purchase.VatAmount"] (@_prefill.Currency)</label>
+                    <input type="number" min="0" step="0.01" class="form-control" @bind="_vat" />
+                </div>
+            </div>
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>@L["Common.Item"]</th>
+                        <th class="text-end">@L["Credit.Received"]</th>
+                        <th class="text-end">@L["Credit.AlreadyReturned"]</th>
+                        <th style="width:9rem">@L["Credit.ReturnQty"]</th>
+                        <th style="width:11rem">@L["Credit.FromLocation"]</th>
+                        <th style="width:10rem">@L["Credit.Amount"] (@_prefill.Currency)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _rows)
+                    {
+                        <tr>
+                            <td>@row.Source.ItemSku - @row.Source.ItemName</td>
+                            <td class="text-end is-num">@row.Source.ReceivedQty.ToString("0.####")</td>
+                            <td class="text-end is-num">@row.Source.ReturnedQty.ToString("0.####")</td>
+                            <td>
+                                @if (_kind == "SupplierReturn" && !row.Source.IsService)
+                                {
+                                    <input type="number" min="0" step="0.0001" class="form-control form-control-sm" @bind="row.ReturnQty" @bind:after="() => Suggest(row)" />
+                                }
+                            </td>
+                            <td>
+                                @if (_kind == "SupplierReturn" && !row.Source.IsService)
+                                {
+                                    <input class="form-control form-control-sm" @bind="row.FromLocation" />
+                                }
+                            </td>
+                            <td><input type="number" min="0" step="0.01" class="form-control form-control-sm text-end" @bind="row.Amount" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <table class="table table-sm w-auto">
+                <tbody>
+                    <tr><td>@L["Purchase.NetAmount"]</td><td class="text-end is-money is-num" data-testid="credit-net">@Money.Format(Net)</td></tr>
+                    <tr><td>@L["Purchase.VatAmount"]</td><td class="text-end is-money is-num">@Money.Format(_vat)</td></tr>
+                    <tr><td>@L["Purchase.GrossAmount"]</td><td class="text-end is-money is-num">@Money.Format(Net + _vat)</td></tr>
+                </tbody>
+            </table>
+            <div class="small text-muted mb-2">@L["Credit.NegativeNote"]</div>
+            @if (_problems is { Count: > 0 })
+            {
+                <ul class="text-danger" data-testid="credit-problems">
+                    @foreach (var problem in _problems) { <li>@ProblemText(problem)</li> }
+                </ul>
+            }
+            <button class="btn btn-primary" disabled="@_isSubmitting" @onclick="CreateAndPostAsync" data-testid="credit-post">@L["Purchase.Post"]</button>
+            <a class="btn btn-outline-secondary ms-2" href="/inbound/shipments/@_prefill.OriginalShipmentId">@L["Common.Cancel"]</a>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public int ShipmentId { get; set; }
+    [Parameter] public int Id { get; set; }
+
+    private sealed class Row
+    {
+        public required SupplierCreditPrefillLineDto Source { get; init; }
+        public decimal ReturnQty { get; set; }
+        public string? FromLocation { get; set; }
+        public decimal Amount { get; set; }
+    }
+
+    private SupplierCreditPrefillDto? _prefill;
+    private SupplierCreditDto? _credit;
+    private List<Row> _rows = new();
+    private List<PostingProblemDto>? _problems;
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private bool _isSubmitting;
+    private string _kind = "CreditNote";
+    private string _number = string.Empty;
+    private DateTime _date = DateTime.Today;
+    private decimal _vat;
+
+    private decimal Net => _rows.Sum(r => r.Amount);
+
+    protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+        try
+        {
+            if (Id > 0)
+            {
+                _credit = await CreditsClient.GetAsync(Id);
+                _prefill = null;
+            }
+            else
+            {
+                _credit = null;
+                _prefill = await CreditsClient.GetPrefillAsync(ShipmentId);
+                _rows = _prefill.Lines.Select(l => new Row { Source = l }).ToList();
+            }
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private static void Suggest(Row row)
+        => row.Amount = decimal.Round(row.ReturnQty * row.Source.UnitPrice, 2, MidpointRounding.AwayFromZero);
+
+    private async Task CreateAndPostAsync()
+    {
+        if (_prefill is null) return;
+        _isSubmitting = true;
+        _apiError = null;
+        _problems = null;
+        try
+        {
+            var created = await CreditsClient.CreateAsync(new SupplierCreditRequestDto
+            {
+                OriginalShipmentId = _prefill.OriginalShipmentId,
+                DocumentKind = _kind,
+                CreditNumber = _number,
+                CreditDate = DateOnly.FromDateTime(_date),
+                NetAmount = Net,
+                VatAmount = _vat,
+                Post = true,
+                Lines = _rows.Where(r => r.Amount > 0m || r.ReturnQty > 0m).Select(r => new SupplierCreditLineRequestDto
+                {
+                    OriginalLineId = r.Source.OriginalLineId,
+                    ReturnQty = _kind == "SupplierReturn" ? r.ReturnQty : 0m,
+                    FromLocation = _kind == "SupplierReturn" ? r.FromLocation : null,
+                    NetAmount = r.Amount
+                }).ToList()
+            });
+            ToastService.ShowSuccess(L["Purchase.PostedToast"].Value);
+            NavigationManager.NavigateTo($"/inbound/credits/{created.Id}");
+        }
+        catch (ApiException ex) when (ex.StatusCode == 422 && ex.ProblemDetails?.Detail is { } detail && detail.Contains('|'))
+        {
+            _problems = ParseProblems(detail);
+            ToastService.ShowError(L["Purchase.NotPostedToast"].Value);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private async Task PostExistingAsync()
+    {
+        _isSubmitting = true;
+        _apiError = null;
+        try
+        {
+            _credit = await CreditsClient.PostAsync(Id);
+            ToastService.ShowSuccess(L["Purchase.PostedToast"].Value);
+        }
+        catch (ApiException ex) when (ex.StatusCode == 422 && ex.ProblemDetails?.Detail is { } detail && detail.Contains('|'))
+        {
+            if (_credit is not null) _credit.Problems = ParseProblems(detail);
+            ToastService.ShowError(L["Purchase.NotPostedToast"].Value);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private static List<PostingProblemDto> ParseProblems(string detail)
+        => detail.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => x.Split('|', 2))
+            .Select(p => new PostingProblemDto { Code = p[0], Text = p.Length > 1 ? p[1] : p[0] })
+            .ToList();
+
+    private string ProblemText(PostingProblemDto problem)
+    {
+        var localized = L["Credit.Problem." + problem.Code];
+        if (localized.ResourceNotFound) localized = L["Purchase.Problem." + problem.Code];
+        if (localized.ResourceNotFound) return problem.Text;
+        return problem.Code is "LinesTotalMismatch" or "SupplierNotPostable" or "PostingRuleMissing" or "ReturnQtyExceeded" or "InsufficientStock"
+            ? $"{localized.Value} ({problem.Text})"
+            : localized.Value;
+    }
+
+    private void DismissError() => _apiError = null;
+
+    private string BuildErrorMessage(ApiException ex)
+    {
+        var text = WarehouseErrorText.Get(L, ex);
+        return !string.IsNullOrWhiteSpace(text) ? text : ex.ProblemDetails?.Detail ?? ex.ProblemDetails?.Title ?? L["InboundShipmentDetail.RequestFailed"].Value;
+    }
+}

@@ -147,6 +147,57 @@ public sealed class ItemValuation
         return list;
     }
 
+    /// <summary>
+    /// Supplier credit (blueprint 4.8). With <paramref name="returnQty"/> above 0 the goods leave at the average
+    /// (SupplierReturn) and the rest of the credit goes down the remaining stock (Revaluation), at most its value;
+    /// without goods the credit is split by the share of <paramref name="receivedQty"/> still on stock. What has no
+    /// place in the stock is PriceDifference (off ledger, negative for a credit).
+    /// </summary>
+    public IReadOnlyList<StockValueChanged> SupplierCredit(
+        int itemId, decimal returnQty, decimal creditEur, decimal receivedQty, StockValueDocument document, DateTime? businessDate = null)
+    {
+        var list = new List<StockValueChanged>();
+        var remainingQty = ValuedQty;
+        var remainingValue = ValueEur;
+        var returned = 0m;
+        if (returnQty > 0m)
+        {
+            var outflow = Outflow(itemId, StockValueKinds.SupplierReturn, returnQty, document, businessDate);
+            if (outflow is not null)
+            {
+                list.Add(outflow);
+                returned = -outflow.ValueDeltaEur;
+                remainingQty += outflow.QtyDelta;
+                remainingValue += outflow.ValueDeltaEur;
+            }
+        }
+
+        var credit = Money(creditEur);
+        decimal onStock;
+        if (returnQty > 0m)
+        {
+            onStock = Math.Max(0m, Math.Min(credit - returned, remainingValue));
+        }
+        else
+        {
+            var share = receivedQty > 0m ? Money(credit * Math.Min(remainingQty, receivedQty) / receivedQty) : 0m;
+            onStock = Math.Min(share, remainingValue);
+        }
+
+        var rest = credit - returned - onStock;
+        if (onStock != 0m)
+        {
+            list.Add(Change(itemId, StockValueKinds.Revaluation, 0m, -onStock, document, businessDate));
+        }
+
+        if (rest != 0m)
+        {
+            list.Add(Change(itemId, StockValueKinds.PriceDifference, 0m, 0m, document, businessDate, -rest));
+        }
+
+        return list;
+    }
+
     /// <summary>Builds a validated event; throws when it would make the quantity or the value negative.</summary>
     public StockValueChanged Change(int itemId, string kind, decimal qtyDelta, decimal valueDeltaEur, StockValueDocument document, DateTime? businessDate = null, decimal offLedgerEur = 0m)
     {
