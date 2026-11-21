@@ -1,0 +1,255 @@
+# Production - routers, middlewares, services for cikada.lauresta.com
+#
+# Same path-based layout as mes-test.yml (cikada-test.lauresta.com); backends are
+# the production VM lkvitai-apps (10.11.12.9 over WireGuard), stack
+# docker-compose.prod.yml. Keep the two files in step when a module is added.
+#
+# The older mes.lauresta.com routers stay in mes.yml until the cut-over.
+
+http:
+  routers:
+    cikada-portal-root:
+      rule: "Host(`cikada.lauresta.com`) && Path(`/`)"
+      entryPoints: [websecure]
+      middlewares: [cikada-redirect-root-to-portal]
+      service: cikada-portal-webui
+      priority: 10
+      tls:
+        certResolver: letsencrypt
+
+    cikada-portal:
+      rule: "Host(`cikada.lauresta.com`) && PathPrefix(`/portal`)"
+      entryPoints: [websecure]
+      service: cikada-portal-webui
+      priority: 100
+      tls:
+        certResolver: letsencrypt
+
+    cikada-warehouse:
+      rule: "Host(`cikada.lauresta.com`) && PathPrefix(`/warehouse`)"
+      entryPoints: [websecure]
+      service: cikada-warehouse-webui
+      priority: 100
+      tls:
+        certResolver: letsencrypt
+
+    cikada-sales:
+      rule: "Host(`cikada.lauresta.com`) && PathPrefix(`/sales`)"
+      entryPoints: [websecure]
+      service: cikada-sales-webui
+      priority: 100
+      tls:
+        certResolver: letsencrypt
+
+    cikada-frontline:
+      rule: "Host(`cikada.lauresta.com`) && PathPrefix(`/frontline`)"
+      entryPoints: [websecure]
+      service: cikada-frontline-webui
+      priority: 100
+      tls:
+        certResolver: letsencrypt
+
+    cikada-scan:
+      rule: "Host(`cikada.lauresta.com`) && PathPrefix(`/scan`)"
+      entryPoints: [websecure]
+      service: cikada-scanning-webui
+      priority: 100
+      tls:
+        certResolver: letsencrypt
+
+    cikada-shopfloor:
+      rule: "Host(`cikada.lauresta.com`) && PathPrefix(`/shopfloor`)"
+      entryPoints: [websecure]
+      service: cikada-shopfloor-webui
+      priority: 100
+      tls:
+        certResolver: letsencrypt
+
+    cikada-finance:
+      rule: "Host(`cikada.lauresta.com`) && PathPrefix(`/finance`)"
+      entryPoints: [websecure]
+      service: cikada-finance-webui
+      priority: 100
+      tls:
+        certResolver: letsencrypt
+
+    cikada-api-finance:
+      rule: "Host(`cikada.lauresta.com`) && PathPrefix(`/api/finance`)"
+      entryPoints: [websecure]
+      service: cikada-finance-api
+      priority: 200
+      tls:
+        certResolver: letsencrypt
+
+    cikada-api-portal:
+      rule: "Host(`cikada.lauresta.com`) && PathPrefix(`/api/portal`)"
+      entryPoints: [websecure]
+      middlewares: [cikada-strip-api-portal]
+      service: cikada-portal-api
+      priority: 200
+      tls:
+        certResolver: letsencrypt
+
+    # Warehouse API controllers are routed as api/warehouse/v1/* (plus /health at the
+    # root), so the public path is passed through unchanged. Only /api/warehouse/health
+    # is stripped to /health so the root health endpoint stays reachable for monitors.
+    cikada-api-warehouse-health:
+      rule: "Host(`cikada.lauresta.com`) && Path(`/api/warehouse/health`)"
+      entryPoints: [websecure]
+      middlewares: [cikada-strip-api-warehouse]
+      service: cikada-warehouse-api
+      priority: 210
+      tls:
+        certResolver: letsencrypt
+
+    cikada-api-warehouse:
+      rule: "Host(`cikada.lauresta.com`) && PathPrefix(`/api/warehouse`)"
+      entryPoints: [websecure]
+      service: cikada-warehouse-api
+      priority: 200
+      tls:
+        certResolver: letsencrypt
+
+    cikada-api-sales:
+      rule: "Host(`cikada.lauresta.com`) && PathPrefix(`/api/sales`)"
+      entryPoints: [websecure]
+      service: cikada-sales-api
+      priority: 200
+      tls:
+        certResolver: letsencrypt
+
+    cikada-api-frontline:
+      rule: "Host(`cikada.lauresta.com`) && PathPrefix(`/api/frontline`)"
+      entryPoints: [websecure]
+      service: cikada-frontline-api
+      priority: 200
+      tls:
+        certResolver: letsencrypt
+
+    cikada-api-scan:
+      rule: "Host(`cikada.lauresta.com`) && PathPrefix(`/api/scan`)"
+      entryPoints: [websecure]
+      service: cikada-scanning-api
+      priority: 200
+      tls:
+        certResolver: letsencrypt
+
+    # Cikada MCP (remote MCP server for ChatGPT / Claude). The resource is
+    # https://cikada.lauresta.com/mcp; MCP clients look for OAuth discovery
+    # at the host root, so the well-known documents, /register (static public
+    # client), /authorize (302 to sso.lauresta.com) and /token (relay to
+    # sso.lauresta.com) are routed to the MCP container too. Priority above the
+    # module routers and the root redirect; no path is stripped.
+    cikada-mcp:
+      rule: "Host(`cikada.lauresta.com`) && (PathPrefix(`/mcp`) || PathPrefix(`/.well-known/oauth-protected-resource`) || PathPrefix(`/.well-known/oauth-authorization-server`) || PathPrefix(`/.well-known/openid-configuration`) || Path(`/register`) || Path(`/authorize`) || Path(`/token`))"
+      entryPoints: [websecure]
+      service: cikada-mcp
+      priority: 250
+      tls:
+        certResolver: letsencrypt
+
+  middlewares:
+    cikada-redirect-root-to-portal:
+      redirectRegex:
+        regex: "^https://cikada\\.lauresta\\.com/$"
+        replacement: "https://cikada.lauresta.com/portal/"
+        permanent: false
+
+    cikada-strip-api-portal:
+      stripPrefix:
+        prefixes: [/api/portal]
+
+    # Used only by cikada-api-warehouse-health; the API routers keep the full path.
+    cikada-strip-api-warehouse:
+      stripPrefix:
+        prefixes: [/api/warehouse]
+
+    # Warehouse / Sales / Frontline / Scanning APIs receive the full /api/<module>/* path
+    # so the MapGroup("/api/sales") etc. in each host's Program.cs matches as
+    # declared. No stripPrefix middleware is needed, matching the group prefix
+    # used by the app.
+
+  services:
+    cikada-portal-webui:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5010"
+
+    cikada-warehouse-webui:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5000"
+
+    cikada-portal-api:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5011"
+
+    cikada-warehouse-api:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5001"
+
+    cikada-sales-webui:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5020"
+
+    cikada-sales-api:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5021"
+
+    cikada-frontline-webui:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5030"
+
+    cikada-frontline-api:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5031"
+
+    cikada-scanning-webui:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5040"
+
+    cikada-scanning-api:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5041"
+
+    cikada-shopfloor-webui:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5050"
+
+    cikada-finance-webui:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5060"
+
+    cikada-finance-api:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5061"
+
+    cikada-mcp:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5070"

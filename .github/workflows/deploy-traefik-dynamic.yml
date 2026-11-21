@@ -27,6 +27,7 @@ jobs:
 
           test -f deploy/traefik/dynamic/mes.yml
           test -f deploy/traefik/dynamic/mes-test.yml
+          test -f deploy/traefik/dynamic/cikada.yml
 
           if grep -R $'\t' deploy/traefik/dynamic/*.yml; then
             echo "::error::Traefik YAML files must not contain tabs."
@@ -43,6 +44,11 @@ jobs:
           grep -q 'PathPrefix(`/api/warehouse`)' deploy/traefik/dynamic/mes-test.yml
           grep -q 'PathPrefix(`/shopfloor`)' deploy/traefik/dynamic/mes-test.yml
           grep -q 'PathPrefix(`/finance`)' deploy/traefik/dynamic/mes-test.yml
+          grep -q 'Host(`cikada.lauresta.com`)' deploy/traefik/dynamic/cikada.yml
+          if grep -q '10\.11\.12\.15' deploy/traefik/dynamic/cikada.yml; then
+            echo "::error::cikada.yml (production) must not point at the test VM 10.11.12.15."
+            exit 1
+          fi
 
           if grep -Eq 'Host\(`(portal|warehouse|api)\.mes-test\.lauresta\.com`\)' deploy/traefik/dynamic/mes-test.yml; then
             echo "::error::Test routing must stay path-based under mes-test.lauresta.com."
@@ -80,6 +86,6 @@ jobs:
         run: |
           echo "## Traefik Dynamic Config" >> "$GITHUB_STEP_SUMMARY"
           echo "- Installed to: \`$TRAEFIK_DYNAMIC_DIR\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Production: \`mes.yml\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Production: \`cikada.yml\` (cikada.lauresta.com), \`mes.yml\` (older mes.lauresta.com)" >> "$GITHUB_STEP_SUMMARY"
           echo "- Test: \`mes-test.yml\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Traefik file provider should reload these files automatically." >> "$GITHUB_STEP_SUMMARY"
