@@ -29,15 +29,30 @@ public static class ProductionTaskWriteEndpoints
     }
 }
 
-public sealed class ProductionTaskWriter(ProductionQueueReader queue)
+public sealed class ProductionTaskWriter(ProductionQueueReader queue, IConfiguration configuration)
 {
+    // false (default): issuing is limited to the legacy test branch TESTAVIMAS.
+    // true (production): every branch the signed-in user's legacy permissions cover.
+    private readonly bool _allBranches = configuration.GetValue<bool>("Shopfloor:ProductionTaskWrite:AllBranches");
+
     public Task<IssueProductionPortionResult> IssueAsync(IssueProductionPortionRequest request, CancellationToken ct)
-        => queue.WithActorConnectionAsync((connection, token) => IssueRowsAsync(connection, request, token),
+        => queue.WithActorConnectionAsync((connection, token) => IssueRowsAsync(connection, request, _allBranches, token),
             ct, ProductionQueueReader.ProductionTaskMenuId);
 
     private static async Task<IssueProductionPortionResult> IssueRowsAsync(SqlConnection connection,
-        IssueProductionPortionRequest request, CancellationToken ct)
+        IssueProductionPortionRequest request, bool allBranches, CancellationToken ct)
     {
+        var onlyTestBranchTask = allBranches ? "" : """
+                      AND NOT EXISTS (
+                          SELECT 1 FROM dbo.TAB_ProductionOutputDocumentDetails existing
+                          LEFT JOIN dbo.ParduotiGaminiai epg ON epg.iBarCode=existing.iBarCode
+                          LEFT JOIN dbo.Uzsakymai eu ON eu.UzsakymasID=epg.UzsakymoID
+                          LEFT JOIN dbo.Zinynas_UzsakymoSerijos es ON es.UzsakymoSerijaID=eu.UzsakymoSerija
+                          LEFT JOIN dbo.Zinynas_filialai ef ON ef.FilialoID=es.FilialoID
+                          WHERE existing.iProductionOutputDocumentID=d.iProductionOutputDocumentID
+                            AND UPPER(COALESCE(ef.FilialoPavadinimas,N''))<>N'TESTAVIMAS')
+            """;
+        var onlyTestBranchItem = allBranches ? "" : "AND UPPER(f.FilialoPavadinimas)=N'TESTAVIMAS'";
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         try
         {
@@ -52,14 +67,7 @@ public sealed class ProductionTaskWriter(ProductionQueueReader queue)
                       AND sProductionOutputDocumentNo LIKE N'GU%'
                       AND sUserNameInsert=SYSTEM_USER
                       AND {ProductionTaskReader.Visibility}
-                      AND NOT EXISTS (
-                          SELECT 1 FROM dbo.TAB_ProductionOutputDocumentDetails existing
-                          LEFT JOIN dbo.ParduotiGaminiai epg ON epg.iBarCode=existing.iBarCode
-                          LEFT JOIN dbo.Uzsakymai eu ON eu.UzsakymasID=epg.UzsakymoID
-                          LEFT JOIN dbo.Zinynas_UzsakymoSerijos es ON es.UzsakymoSerijaID=eu.UzsakymoSerija
-                          LEFT JOIN dbo.Zinynas_filialai ef ON ef.FilialoID=es.FilialoID
-                          WHERE existing.iProductionOutputDocumentID=d.iProductionOutputDocumentID
-                            AND UPPER(COALESCE(ef.FilialoPavadinimas,N''))<>N'TESTAVIMAS');
+                      {onlyTestBranchTask};
                     """, connection, transaction);
                 task.Parameters.Add("@id", SqlDbType.Int).Value = existing;
                 number = await task.ExecuteScalarAsync(ct) as string
@@ -107,12 +115,12 @@ public sealed class ProductionTaskWriter(ProductionQueueReader queue)
                 await using var eligible = new SqlCommand($"""
                     SELECT pg.iBarCode {ProductionQueueReader.QueueSourceSql}
                       AND pg.ParduotoGaminioID=@productId
-                      AND UPPER(f.FilialoPavadinimas)=N'TESTAVIMAS';
+                      {onlyTestBranchItem};
                     """, connection, transaction);
                 eligible.Parameters.Add("@productId", SqlDbType.BigInt).Value = productId;
                 var barcode = await eligible.ExecuteScalarAsync(ct) as string;
                 if (string.IsNullOrWhiteSpace(barcode))
-                    throw Denied("PRODUCTION_ITEM_NOT_AVAILABLE", "A selected item is no longer available in Testavimas. Refresh the queue.", 409);
+                    throw Denied("PRODUCTION_ITEM_NOT_AVAILABLE", "A selected item is no longer available. Refresh the queue.", 409);
 
                 // The legacy trigger reads scalar values from INSERTED; do not
                 // combine multiple barcodes into a single INSERT statement.

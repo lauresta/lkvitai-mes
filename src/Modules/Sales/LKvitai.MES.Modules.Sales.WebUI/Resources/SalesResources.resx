@@ -2194,4 +2194,10 @@
   <data name="Order.FixedPriceShort" xml:space="preserve">
     <value>Fixed price €</value>
   </data>
+  <data name="Workspace.LiveEntryHelpAll" xml:space="preserve">
+    <value>Live order entry. Creating an order saves its header.</value>
+  </data>
+  <data name="Workspace.ReadOnly" xml:space="preserve">
+    <value>Read-only order: saving is not available for this order.</value>
+  </data>
 </root>
