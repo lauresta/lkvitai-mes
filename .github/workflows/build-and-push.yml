@@ -14,6 +14,8 @@ on:
       - src/Modules/Finance/**
       - src/BuildingBlocks/**
       - src/Mcp/**
+      # the MCP image indexes the user manuals at build time (docs_search / docs_get)
+      - docs/manuals/docs/**
       - docker-compose.test.yml
       - .github/workflows/build-and-push.yml
   workflow_dispatch:
@@ -71,10 +73,10 @@ jobs:
           - name: finance-webui
             dockerfile: src/Modules/Finance/LKvitai.MES.Modules.Finance.WebUI/Dockerfile
             image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-finance-webui
-          # Node service: its own build context (the package directory), not the repo root.
+          # Node service. Built from the repo root (default context) because the image also indexes docs/manuals/docs;
+          # the context is filtered by src/Mcp/Cikada.Mcp/Dockerfile.dockerignore.
           - name: mcp
             dockerfile: src/Mcp/Cikada.Mcp/Dockerfile
-            context: src/Mcp/Cikada.Mcp
             image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-mcp
 
     steps:

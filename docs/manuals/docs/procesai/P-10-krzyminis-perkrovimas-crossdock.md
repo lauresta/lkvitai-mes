@@ -1,76 +1,58 @@
-# P-10 — Kryžminis perkrovimas (Cross-Dock)
-
-**Proceso numeris:** P-10
-**Atnaujinta:** 2026-02-24
-**Versija:** 1.0 (šablonas)
-
+---
+module: warehouse
+title: Tiesioginis perkrovimas (Cross-Dock)
+routes: ["/cross-dock"]
+roles: ["Operator", "QCInspector", "WarehouseManager", "WarehouseAdmin"]
+status: dalinai
 ---
 
-## Pavadinimas
+# Tiesioginis perkrovimas (Cross-Dock)
 
-Kryžminis perkrovimas: tiesioginis pervežimas iš priėmimo į išsiuntimą (Cross-Dock Operations)
+**Būsena:** dalinai
 
----
+Ekranas veikia, bet tik kaip ryšių registras: jis nejudina atsargų ir nesudaro užduočių. Smulkiau – skyriuje „Dar neįgyvendinta".
 
-## Tikslas
+## Kam skirta
+Sandėlio modulio ekranas (UI: Outbound > Cross-Dock), kurio antraštė (UI: Cross-Dock Tracking), leidžia užregistruoti, kad atvežta priimamos siuntos eilutė skirta konkrečiam išsiunčiamam užsakymui, ir sekti to ryšio būseną. Ekraną naudoja sandėlio darbuotojai ir vadovai.
 
-Perkelti prekes tiesiogiai iš priėmimo doko į išsiuntimo dokso nepadedant jų į saugojimo vietas. Taikoma kai gaunamos prekės jau turi laukiantį užsakymą.
-
----
-
-## Kam skirta (rolės)
-
-| Rolė | Veiksmai |
-|------|---------|
-| Sandėlio vadovas | Identifikuoja ir tvirtina kryžminio perkrovimo galimybę |
-| Išsiuntimo tarnautojas | Patvirtina galutinį išsiuntimą |
-
----
-
-## Prieš pradedant (preconditions)
-
-- Yra gaunamų prekių siunta (P-01)
-- Yra laukiantis išsiuntimo orderis toms pačioms prekėms (P-03)
-- Sandėlio vadovas identifikavo sutapimą
-
----
+## Prieš pradedant
+- Ekraną naudoti leidžiama rolėms Operator, QCInspector, WarehouseManager, WarehouseAdmin.
+- Turi būti sukurta priimama siunta (žr. [P-01 Prekių priėmimas](P-01-priemimas-inbound.md)) ir išsiunčiamas užsakymas (žr. [P-03 Pardavimo užsakymai ir išsiuntimas](P-03-israsymas-isuntimas-outbound.md)) su ta pačia preke.
+- Reikia žinoti: siuntos eilutės numerį (matomą siuntos kortelės sąraše (UI: Line) skliaustuose, pvz., „(Line 12)"), išsiunčiamo užsakymo GUID (naršyklės adreso eilutėje atidarius užsakymą) ir prekės numerį (Id).
 
 ## Žingsniai
+### 1. Sukurti ryšį
+1. Meniu pasirinkite (UI: Outbound > Cross-Dock). Atsidaro (UI: Cross-Dock Tracking) su blokeliu (UI: Create Cross-Dock Match).
+2. Įveskite (UI: Inbound shipment line ID), (UI: Outbound Order Id) (GUID), (UI: Item ID) ir (UI: Qty). Pradinė (UI: Item ID) reikšmė 1 yra pavyzdinė – pakeiskite ją.
+3. Spauskite (UI: Create). Pranešime „Cross-dock record created." Įrašas atsiranda eilėje su numeriu XD-… ir būsena Pending.
 
-### 1. Sukurti kryžminio perkrovimo įrašą
+### 2. Keisti būseną
+1. Blokelyje (UI: Cross-Dock Queue) matote (UI: Number), prekę, (UI: Qty), kainą, vertę, (UI: Status) ir (UI: Created).
+2. Spauskite (UI: Match), kai prekė atvežta ir priskirta užsakymui – būsena tampa Matched.
+3. Spauskite (UI: Complete), kai prekė perduota užsakymui – būsena tampa Completed. Užbaigimo data išsaugoma.
+4. Eilutę atnaujina (UI: Refresh).
 
-1. Eik į `Outbound` → `Cross-Dock` (UI: Outbound → Cross-Dock).
-2. Paspausk `+ Create` (UI: Create).
-3. Susietas įeinančią siuntą ir išeinantį orderį.
-4. Paspausk `Save` (UI: Save).
+![Tiesioginio perkrovimo eilė](../img/warehouse/cross-dock-queue.png)
 
-### 2. Vykdyti perkrovimą
+## Ką reiškia būsenos ir spalvos
+Ekrane (UI: Cross-Dock Tracking) ryšio būsena rodoma pilka žyma.
+- Pending – ryšys užregistruotas.
+- Matched – prekė atvežta ir priskirta užsakymui.
+- Completed – perkrovimas baigtas.
+Ekrane rodoma pastaba „Link an inbound line to an order. This link does not move stock."
 
-1. Rask įrašą sąraše.
-2. Paspausk `Update Status` (UI: Update Status) kai prekės fiziškai perkeltos.
+## Dažnos klaidos
+- „Enter a positive inbound line ID and a valid outbound order ID." – siuntos eilutės numeris turi būti teigiamas, o užsakymo identifikatorius – GUID.
+- „Quantity must be positive." – (UI: Qty) turi būti didesnis už 0.
+- „Inbound line does not contain this item." – (UI: Item ID) nesutampa su siuntos eilutės preke.
+- „Outbound order does not contain this item." – išsiunčiamame užsakyme tokios prekės nėra.
+- „Quantity exceeds the inbound line." – kiekis didesnis už tikėtiną siuntos eilutės kiekį.
+- „This link already exists." – šis siuntos eilutės ir užsakymo ryšys jau sukurtas.
 
-### 3. Patvirtinti išsiuntimą
-
-1. Eik į `Outbound` → `Dispatch` (UI: Outbound → Dispatch).
-2. Patvirtink išsiuntimą kaip įprastai.
-
----
-
-## Rezultatas (expected result)
-
-- Prekės išsiųstos be sandėliavimo
-- Atsargų judėjimas užfiksuotas sistemoje
-
----
-
-## Pastabos / ekrano nuotraukos
-
-> TODO: pridėk ekrano nuotraukas
-> **Pastaba:** Kryžminio perkrovimo susiejimo taisyklės (kaip sistema automatiškai pasiūlo sutapimus) dar dokumentuojamos.
-
----
+## Dar neįgyvendinta
+- Ryšys nejudina atsargų: ekrane (UI: Cross-Dock Tracking) mygtukai (UI: Match) ir (UI: Complete) tik keičia įrašo būseną. Atsargos priimamos ir išsiunčiamos įprastais ekranais.
+- Siuntos eilutė, užsakymas ir prekė pasirenkami ranka įvedant numerius, o ne iš sąrašo; lentelėje prekė rodoma numeriu, ne SKU.
 
 ## Susiję procesai
-
 - [P-01 Prekių priėmimas](P-01-priemimas-inbound.md)
-- [P-03 Išsiuntimas](P-03-israsymas-isuntimas-outbound.md)
+- [P-03 Pardavimo užsakymai ir išsiuntimas](P-03-israsymas-isuntimas-outbound.md)

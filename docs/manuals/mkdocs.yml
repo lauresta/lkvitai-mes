@@ -1,5 +1,5 @@
-site_name: "LKvitai MES - Naudotojo gidas"
-site_description: "LKvitai.MES sandėlio valdymo sistemos naudotojo vadovas (Warehouse Management System)"
+site_name: "Cikada.MES - Naudotojo gidas"
+site_description: "Cikada.MES (LKvitai.MES) naudotojo vadovas: Portalas, Pardavimai, Gamyba, Sandėlis, Frontline, Finansai, AI asistentas"
 docs_dir: docs
 site_dir: site
 
@@ -22,31 +22,102 @@ plugins:
 nav:
   - Pagrindinis: index.md
 
-  - Rolės:
-    - Sandėlio operatorius: roles/sandelio-operatorius.md
-    - Kokybės inspektorius: roles/kokybes-inspektorius.md
-    - Gamybos vadovas: roles/gamybos-vadovas.md
+  - "Portalas ir darbo pradžia":
+    - "Portalas": portal/index.md
+    - "Darbo pradžia Portale": portal/darbo-pradzia.md
+    - "Plytelių valdymas (Portal CMS)": portal/plyteliu-valdymas.md
+    - "Portalo pradžios puslapis": portal/pradzios-puslapis.md
 
-  - Procesai:
-    - P-01 Prekių priėmimas (Inbound): procesai/P-01-priemimas-inbound.md
-    - P-02 Padėjimas į vietą (Putaway): procesai/P-02-padeti-i-lokacija-putaway.md
-    - P-03 Išsiuntimas (Outbound): procesai/P-03-israsymas-isuntimas-outbound.md
-    - P-04 Perkėlimas (Transfer): procesai/P-04-perkelimas-transfer.md
-    - P-05 Inventorizacija (Cycle Count): procesai/P-05-inventorizacija-cycle-count.md
-    - P-06 Atsargų koregavimas (Adjustments): procesai/P-06-atsargu-koregavimas-adjustments.md
-    - P-07 Atsargų vertinimas (Valuation): procesai/P-07-atsargu-vertinimas-valuation.md
-    - P-08 Agnum integracija: procesai/P-08-agnum-integracija.md
-    - P-09 Grąžinimai (RMA): procesai/P-09-grazinimai-rma.md
-    - P-10 Kryžminis perkrovimas (Cross-Dock): procesai/P-10-krzyminis-perkrovimas-crossdock.md
-    - P-11 Partijų ir serijų sekimas: procesai/P-11-partiju-seriju-sekimas.md
-    - P-12 Sandėlio žemėlapis (Visualization): procesai/P-12-sandelio-zemelapis-visualization.md
-    - P-13 Ataskaitos ir analizė (Reports): procesai/P-13-ataskaitos-analize-reports.md
-    - P-14 Sistemos administravimas: procesai/P-14-sistemos-administravimas.md
-    - P-15 Pagrindinių duomenų valdymas: procesai/P-15-pagrindinis-duomenu-valdymas.md
+  - "Pardavimai (Sales)":
+    - "Pardavimų modulis – apžvalga": sales/index.md
+    - "Nutrūkęs išsaugojimas ir atkūrimas": sales/uzsakymo-atkurimas.md
+    - "Gaminiai ir priedai užsakyme": sales/uzsakymo-gaminiai.md
+    - "Užsakymo informacija": sales/uzsakymo-informacija.md
+    - "Naujo užsakymo kūrimas ir užsakymo kortelė": sales/uzsakymo-ivedimas.md
+    - "Mokėjimai, patvirtinimas gamybai ir anuliavimas": sales/uzsakymo-mokejimai-patvirtinimas.md
+    - "Užsakymų sąrašas": sales/uzsakymu-sarasas.md
 
-  - Trikčių šalinimas:
-    - Apžvalga: trikciu-salinimas/index.md
-    - Dažnos klaidos: trikciu-salinimas/daznos-klaidos.md
+  - "Gamyba (Shopfloor)":
+    - "Gamybos modulis (Shopfloor) – apžvalga": shopfloor/index.md
+    - "Skydelis": shopfloor/dashboard.md
+    - "Gamyba – Dokumentai ir Roletai šablonas": shopfloor/gamyba-dokumentai.md
+    - "Gamyba – Paruošta gamybai ir išdavimas į GU": shopfloor/gamyba-eile-ir-isdavimas.md
+    - "Gamyba – GT dokumentai, gaminio istorija, remontai": shopfloor/gamyba-gt-istorija-remontai.md
+    - "Gamyba – ekranai su pavyzdiniais duomenimis": shopfloor/gamyba-pavyzdiniai-ekranai.md
+    - "Gamyba – Gamybos užduotys (GU)": shopfloor/gamyba-uzduotys.md
+    - "Operatoriaus darbų eilė": shopfloor/operator-work-queue.md
+    - "Senos sistemos tipai ir aprėptis": shopfloor/produktu-tipu-sasajos.md
+    - "Roletai (gamyba be popieriaus)": shopfloor/roletai.md
+    - "Gamyba – Trapecijos dokumentas": shopfloor/trapecijos-dokumentas.md
+    - "Darbų sekų redaktorius": shopfloor/workflow-editor.md
+    - "Gamybos šeimos (darbų sekų šablonai)": shopfloor/workflows.md
+    - "Žinynai – gamybos centrai ir darbo vietos": shopfloor/zinynai.md
+
+  - "Sandėlis (Warehouse) – procesai":
+    - "Prekių priėmimas ir kokybės patikra (Inbound)": procesai/P-01-priemimas-inbound.md
+    - "Padėjimas į sandėlio vietą (Putaway)": procesai/P-02-padeti-i-lokacija-putaway.md
+    - "Pardavimo užsakymai, pakavimas ir išsiuntimas (Outbound)": procesai/P-03-israsymas-isuntimas-outbound.md
+    - "Atsargų perkėlimas tarp vietų (Transfers)": procesai/P-04-perkelimas-transfer.md
+    - "Inventorizacija (Cycle Counts)": procesai/P-05-inventorizacija-cycle-count.md
+    - "Atsargų koregavimas (Stock Adjustments)": procesai/P-06-atsargu-koregavimas-adjustments.md
+    - "Atsargų vertinimas ir nukainojimas": procesai/P-07-atsargu-vertinimas-valuation.md
+    - "Agnum integracija (suminė apskaita)": procesai/P-08-agnum-integracija.md
+    - "Klientų grąžinimai (RMA)": procesai/P-09-grazinimai-rma.md
+    - "Tiesioginis perkrovimas (Cross-Dock)": procesai/P-10-krzyminis-perkrovimas-crossdock.md
+    - "Partijų ir serijų numeriai": procesai/P-11-partiju-seriju-sekimas.md
+    - "Sandėlio žemėlapis (3D ir 2D)": procesai/P-12-sandelio-zemelapis-visualization.md
+    - "Sandėlio ataskaitos": procesai/P-13-ataskaitos-analize-reports.md
+    - "Sistemos administravimas - nustatymai, priežasčių kodai, patvirtinimo taisyklės": procesai/P-14-sistemos-administravimas.md
+    - "Pagrindinių duomenų valdymas - tiekėjai, klientai, kainų grupės, importas": procesai/P-15-pagrindinis-duomenu-valdymas.md
+    - "Pirkimo dokumentas (tiekėjo sąskaita, valiuta, PVM, užregistravimas)": procesai/P-16-pirkimo-dokumentas.md
+    - "Tiekėjo kreditinės sąskaitos ir prekių grąžinimas tiekėjui": procesai/P-17-tiekejo-kreditines-ir-grazinimai.md
+    - "Kito tiekėjo papildomų išlaidų sąskaitos": procesai/P-18-papildomu-islaidu-saskaitos.md
+    - "Agnum apskaitos nustatymai ir siuntimo eilė": procesai/P-19-agnum-nustatymai-ir-eile.md
+    - "Pradiniai likučiai iš CSV failo": procesai/P-20-pradiniai-likuciai.md
+    - "Intrastat atvykimų ataskaita": procesai/P-21-intrastat-atvykimai.md
+    - "Mėnesio uždarymas: atsargų vertės ataskaita, tiltas į Agnum, aktai": procesai/P-22-menesio-uzdarymas.md
+    - "Etikečių stotelė (Labels)": procesai/P-23-etikeciu-stotele.md
+    - "Atsargų peržiūra (Available Stock, Stock Dashboard, Location Balance)": procesai/P-24-atsargu-perziura.md
+    - "Rezervacijos (Reservations)": procesai/P-25-rezervacijos.md
+    - "Bangos ir komplektavimo užduotys (Wave Picking, Picking Tasks)": procesai/P-26-bangos-ir-komplektavimas.md
+    - "Pradžia ir sistemos būsena": procesai/P-27-pradzia-ir-sistemos-busena.md
+    - "Atsekamumas ir atitiktis": procesai/P-28-atsekamumas-ir-atitiktis.md
+    - "Analitika (užsakymų vykdymas ir kokybė)": procesai/P-29-analitika.md
+    - "Vartotojai, rolės ir API raktai": procesai/P-30-vartotojai-roles-api-raktai.md
+    - "Auditas, duomenų saugojimas, GDPR, atsarginės kopijos ir avarinio atkūrimo bandymai": procesai/P-31-auditas-saugojimas-gdpr-kopijos.md
+    - "Prekių pagrindiniai duomenys - prekės, kategorijos, matavimo vienetai, partijos, serijos numeriai": procesai/P-32-prekiu-pagrindiniai-duomenys.md
+    - "Sandėliai, sandėlio vietos, slotai ir sandėlio maketas": procesai/P-33-sandeliai-vietos-slotai-maketas.md
+
+  - "Sandėlis (Warehouse) – rolės":
+    - "Sandėlio vadovas ir buhalteris": roles/gamybos-vadovas.md
+    - "Kokybės inspektorius": roles/kokybes-inspektorius.md
+    - "Sandėlio operatorius": roles/sandelio-operatorius.md
+
+  - "Sandėlis (Warehouse) – trikčių šalinimas":
+    - "Trikčių šalinimas (Sandėlis)": trikciu-salinimas/index.md
+    - "Dažnos klaidos ir sprendimai (Sandėlis)": trikciu-salinimas/daznos-klaidos.md
+
+  - "Frontline (audinių likučiai)":
+    - "Frontline modulis (audinių likučiai)": frontline/index.md
+    - "Audinio patikra (Fabric availability)": frontline/audinio-patikra.md
+    - "Mažų likučių sąrašas (Low-stock materials)": frontline/mazu-likuciu-sarasas.md
+
+  - "Finansai (Finance)":
+    - "Finansų modulis – apžvalga": finance/index.md
+    - "Banko pavedimų įkėlimas iš Excel": finance/bankiniai-pavedimai-ikelimas.md
+    - "Bankiniai pavedimai": finance/bankiniai-pavedimai.md
+
+  - "Skenavimas (Scanning)":
+    - "Skenavimo modulis (Scanning) – apžvalga": scanning/index.md
+    - "Skenavimo modulio pradžios puslapis": scanning/pradzios-puslapis.md
+
+  - "AI asistentas (Cikada MCP)":
+    - "AI asistentas (Cikada MCP) – apžvalga": mcp/index.md
+    - "Vadovų ataskaitos ir sąrašai per AI asistentą": mcp/ataskaitos.md
+    - "Banko pavedimai ir išrašų įkėlimas per AI asistentą": mcp/bankas.md
+    - "Prisijungimas iš ChatGPT ir Claude": mcp/prisijungimas.md
+    - "Ką galima klausti – užsakymai, klientai, kainos, atsargos": mcp/uzsakymai-klientai-atsargos.md
+    - "Užsakymų įvedimas per AI asistentą (pagal nutylėjimą išjungta)": mcp/uzsakymu-ivedimas.md
 
 extra:
   version:

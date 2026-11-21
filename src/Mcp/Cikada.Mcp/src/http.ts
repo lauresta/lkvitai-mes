@@ -59,6 +59,7 @@ export interface Dependencies {
   fetchImpl?: typeof fetch;
   newId?: () => string;
   today?: () => string;
+  docs?: import('./docs-search.js').DocsSearch;
 }
 
 export function startRemote(config: Config, log: Log = stderrLog, deps: Dependencies = {}): Promise<HttpServer> {
@@ -116,7 +117,8 @@ export function startRemote(config: Config, log: Log = stderrLog, deps: Dependen
 
     const api = new CikadaApi({ salesUrl: config.salesApiUrl, warehouseUrl: config.warehouseApiUrl,
       financeUrl: config.financeApiUrl, token: bearer.token, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
-    const server = createServer({ api, newId: deps.newId ?? randomUUID, today: deps.today ?? vilniusToday, user: bearer.user }, config.orderEntry, log);
+    const server = createServer({ api, newId: deps.newId ?? randomUUID, today: deps.today ?? vilniusToday, user: bearer.user,
+      ...(deps.docs ? { docs: deps.docs } : {}), ...(config.manualsBaseUrl ? { manualsBaseUrl: config.manualsBaseUrl } : {}) }, config.orderEntry, log);
     const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
     try {
       await server.connect(transport);

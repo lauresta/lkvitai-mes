@@ -59,6 +59,13 @@ Management reports (live legacy Mango workbook reports; roles SalesAdmin or Repo
 | `customer_debt` | Sales `GET /api/sales/reports/lists/customer-debt` |
 | `orders_find` | Sales `GET /api/sales/reports/lists/order-search` |
 
+User manuals (always on, no backend call, any signed-in user; the manuals are Lithuanian, see "User manuals index" below):
+
+| Tool | Source |
+|---|---|
+| `docs_search` | In-process BM25 search over the manual chunks (diacritics folded, title / heading boost, light prefix match for Lithuanian endings); filter by `module`, `limit` 1-15 (default 6). Returns id, module, page title, heading path, status, url and a snippet per hit, plus the total |
+| `docs_get` | The full text of one chunk (`id`) or of every chunk of a page in order (`page`), with module, status (`laikina` = stub), routes, roles and url |
+
 Prompts: `production_status`, `debt_review`, `management_report`, `daily_orders_review`, `take_new_order`.
 
 Order entry (only with `MCP_ENABLE_ORDER_ENTRY=true`; on test via the `CIKADA_MCP_ORDER_ENTRY` environment variable):
@@ -110,18 +117,27 @@ Prompts: `daily_orders_review`, `take_new_order` (order entry only).
 | `WAREHOUSE_API_URL` | yes | | e.g. `http://lkvitai-mes-warehouse-api:8080` |
 | `FINANCE_API_URL` | yes | | e.g. `http://lkvitai-mes-finance-api:8080` |
 | `MCP_ENABLE_ORDER_ENTRY` | no | `false` | `true` offers the order entry tools |
+| `MANUALS_BASE_URL` | no | | Where the MkDocs manuals site is served; with it `docs_search` / `docs_get` return absolute links, without it the site path (`procesai/P-01-.../#anchor`) |
+| `DOCS_INDEX_PATH` | no | `data/docs-index.json` next to `dist/` | Override the generated index file |
 | `MCP_PORT` | no | `8080` | |
 | `MCP_OAUTH_ISSUER` | no | `https://sso.lauresta.com/application/o/cikada-mcp/` | Expected `iss` |
 | `MCP_OAUTH_AUTHORIZE_URL`, `MCP_OAUTH_TOKEN_URL`, `MCP_OAUTH_JWKS_URL` | no | authentik endpoints | |
+
+## User manuals index
+
+The manuals (`docs/manuals/docs/**/*.md`, MkDocs source, format in `docs/manuals/AUTHORING.md`) are chunked by `src/docs-chunker.ts`: optional YAML front matter (`module`, `title`, `routes`, `roles`, `status`), one chunk per `##` section (a `##` over about 1800 characters is split at `###`; text before the first `##` is its own `#intro` chunk), images reduced to their alt text, `(UI: ...)` labels kept. Chunk id is `<path without .md>#<heading slugs>`; the module comes from front matter, else from the folder (`procesai`, `roles`, `trikciu-salinimas` are `warehouse`).
+
+The index is **generated, not committed**: `npm run docs:index` (`src/build-docs-index.ts`, after `npm run build`) writes `data/docs-index.json` and `data/docs-manifest.json` (page count, chunk count, generated-at, git sha), both git-ignored. The Dockerfile runs it in the build stage and copies `data/` into the image, so the **Docker build context is the repository root** (filtered by `Dockerfile.dockerignore` to this package and `docs/manuals/docs/**/*.md`). `mcp-ci` and `build-and-push` also run when `docs/manuals/docs/**` changes, so a manual edit publishes a new MCP image. Without the file the two tools answer `DOCS_UNAVAILABLE`.
 
 ## Develop
 
 ```bash
 cd src/Mcp/Cikada.Mcp
 npm ci && npm run build && npm test
+npm run docs:index   # data/docs-index.json from ../../../docs/manuals/docs
 MCP_PUBLIC_URL=http://localhost:5070 MCP_PORT=5070 MCP_OAUTH_CLIENT_ID=<client id> \
   SALES_API_URL=http://localhost:5021 WAREHOUSE_API_URL=http://localhost:5001 FINANCE_API_URL=http://localhost:5031 npm start
-docker build -t lkvitai-mes-mcp .
+docker build -f src/Mcp/Cikada.Mcp/Dockerfile -t lkvitai-mes-mcp .   # run from the repository root
 ```
 
 Try it with the MCP Inspector: `npx @modelcontextprotocol/inspector`, transport Streamable HTTP, URL `http://localhost:5070/mcp`.

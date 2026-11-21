@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - src/Mcp/**
+      - docs/manuals/docs/**
       - .github/workflows/mcp-ci.yml
 
 permissions:
@@ -35,5 +36,12 @@ jobs:
       - name: Build and test
         run: npm test
 
+      - name: Index the manuals
+        run: |
+          npm run docs:index
+          node -e "const m=require('./data/docs-manifest.json'); console.log(m); if(!(m.chunk_count>0)) process.exit(1)"
+
+      # Build context is the repository root: the image indexes docs/manuals/docs at build time.
       - name: Docker build
-        run: docker build -t lkvitai-mes-mcp:ci .
+        working-directory: ${{ github.workspace }}
+        run: docker build -f src/Mcp/Cikada.Mcp/Dockerfile --build-arg GIT_SHA=${{ github.sha }} -t lkvitai-mes-mcp:ci .

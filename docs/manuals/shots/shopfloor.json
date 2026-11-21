@@ -1,0 +1,122 @@
+[
+  {
+    "file": "img/shopfloor/dashboard.png",
+    "url": "https://cikada-test.lauresta.com/shopfloor/dashboard",
+    "steps": [{ "wait": 1000 }],
+    "fullPage": true,
+    "note": "Skydelis: pavyzdiniai rodikliai, išjungtos meniu plytelės ir langelis Duomenų bazė."
+  },
+  {
+    "file": "img/shopfloor/gamyba-eile.png",
+    "url": "https://cikada-test.lauresta.com/shopfloor/gamyba",
+    "steps": [{ "wait": 2500 }],
+    "fullPage": false,
+    "note": "Skirtukas Paruošta gamybai su filtrais ir eilės lentele (reikia, kad eilės šaltinis būtų įjungtas)."
+  },
+  {
+    "file": "img/shopfloor/gamyba-uzduotys.png",
+    "url": "https://cikada-test.lauresta.com/shopfloor/gamyba",
+    "steps": [
+      { "click": ".gamyba-tabs button:has-text('Gamybos užduotys')" },
+      { "wait": 2500 }
+    ],
+    "fullPage": false,
+    "note": "Gamybos užduočių (GU) sąrašas."
+  },
+  {
+    "file": "img/shopfloor/gamyba-gt.png",
+    "url": "https://cikada-test.lauresta.com/shopfloor/gamyba",
+    "steps": [
+      { "click": ".gamyba-tabs button:has-text('GT dokumentai')" },
+      { "wait": 2500 }
+    ],
+    "fullPage": false,
+    "note": "GT dokumentų sąrašas (tik peržiūra)."
+  },
+  {
+    "file": "img/shopfloor/gamyba-dokumentai.png",
+    "url": "https://cikada-test.lauresta.com/shopfloor/gamyba",
+    "steps": [
+      { "click": ".gamyba-tabs button:has-text('Dokumentai')" },
+      { "wait": 2500 }
+    ],
+    "fullPage": false,
+    "note": "Skirtukas Dokumentai be pasirinktos GU: rodomas sąrašas Paskutiniai trapecijos užsakymai (#recent-trapezoid-order). Pasirinkti užsakymą galima tik atidarant ekraną rankiniu būdu."
+  },
+  {
+    "file": "img/shopfloor/gamyba-skenavimas.png",
+    "url": "https://cikada-test.lauresta.com/shopfloor/gamyba",
+    "steps": [
+      { "click": ".gamyba-tabs button:has-text('Skenavimas')" },
+      { "wait": 1000 }
+    ],
+    "fullPage": false,
+    "note": "Skirtukas Skenavimas su pranešimu apie pavyzdinius duomenis (zagluška)."
+  },
+  {
+    "file": "img/shopfloor/roletai.png",
+    "url": "https://cikada-test.lauresta.com/shopfloor/roletai",
+    "steps": [{ "wait": 2500 }],
+    "fullPage": false,
+    "note": "Roletai puslapis, rodinys Lapas, paskutinių 14 dienų gaminiai."
+  },
+  {
+    "file": "img/shopfloor/roletai-filtras.png",
+    "url": "https://cikada-test.lauresta.com/shopfloor/roletai",
+    "steps": [
+      { "wait": 2500 },
+      { "click": "button.sfr-show" },
+      { "wait": 500 }
+    ],
+    "fullPage": false,
+    "note": "Atidarytas filtro skydelis Rodyti (žingsniai, pasirašyta, datos)."
+  },
+  {
+    "file": "img/shopfloor/operator-work-queue.png",
+    "url": "https://cikada-test.lauresta.com/shopfloor/operator-work-queue",
+    "steps": [{ "wait": 1500 }],
+    "fullPage": false,
+    "note": "Operatoriaus eilės statinis prototipas (iframe) su sugalvotais duomenimis."
+  },
+  {
+    "file": "img/shopfloor/workflows.png",
+    "url": "https://cikada-test.lauresta.com/shopfloor/workflows",
+    "steps": [
+      { "click": "button:has-text('Nauja šeima')" },
+      { "wait": 500 }
+    ],
+    "fullPage": false,
+    "note": "Gamybos šeimų sąrašas ir atidaryta forma Nauja šeima (be išsaugojimo)."
+  },
+  {
+    "file": "img/shopfloor/workflow-editor.png",
+    "url": "https://cikada-test.lauresta.com/shopfloor/workflow-editor",
+    "steps": [{ "wait": 2500 }],
+    "fullPage": false,
+    "note": "Darbų sekų redaktorius su pirma šeima (įkeliama automatiškai, jei šeimų yra)."
+  },
+  {
+    "file": "img/shopfloor/ref-work-centers.png",
+    "url": "https://cikada-test.lauresta.com/shopfloor/ref/work-centers",
+    "steps": [{ "wait": 1000 }],
+    "fullPage": false,
+    "note": "Gamybos centrų sąrašas."
+  },
+  {
+    "file": "img/shopfloor/ref-stations.png",
+    "url": "https://cikada-test.lauresta.com/shopfloor/ref/stations",
+    "steps": [
+      { "click": "button:has-text('Nauja darbo vieta')" },
+      { "wait": 500 }
+    ],
+    "fullPage": false,
+    "note": "Darbo vietų sąrašas ir atidaryta forma Nauja darbo vieta (be išsaugojimo)."
+  },
+  {
+    "file": "img/shopfloor/product-types.png",
+    "url": "https://cikada-test.lauresta.com/shopfloor/map/product-types",
+    "steps": [{ "wait": 1500 }],
+    "fullPage": false,
+    "note": "Senos sistemos tipų aprėptis: kortelės, filtrai ir lentelė."
+  }
+]
