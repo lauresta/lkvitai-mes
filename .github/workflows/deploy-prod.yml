@@ -1,32 +1,118 @@
 name: Deploy to Production
 
+# Deploys the whole Cikada stack (docker-compose.prod.yml) to VM lkvitai-apps,
+# https://cikada.lauresta.com.
+#
+#   * Called by release-prod.yml after it has built the images for a release tag.
+#   * Can be started by hand to (re)deploy a tag that already exists in GHCR:
+#     a release tag (v0.2.0) or the full 40-character commit SHA of a main build.
+#
+# Never runs on push. Configuration lives in GitHub Environment "prod";
+# the list of what must be set there is in docs/deploy/production.md.
+
 on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: "Image tag to deploy (defaults to latest)"
-        required: false
-        default: "latest"
+        description: "Image tag to deploy: release tag (v0.2.0) or full commit SHA. Must exist in GHCR and as a git ref."
+        required: true
+  workflow_call:
+    inputs:
+      image_tag:
+        description: "Image tag to deploy (also the git ref whose migrations are applied)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: [self-hosted, lkvitai-apps]
     environment: prod
     env:
-      IMAGE_TAG: ${{ github.event.inputs.image_tag || 'latest' }}
+      IMAGE_TAG: ${{ inputs.image_tag }}
+      COMPOSE_FILE: docker-compose.prod.yml
       DOCKER_NETWORK_NAME: ${{ vars.DOCKER_NETWORK_NAME || 'lkvitai-mes_prod' }}
+      AUTH_KEYS_DIR: ${{ vars.AUTH_KEYS_DIR || '/opt/lkvitai-mes/auth-keys' }}
+      LOGS_DIR: ${{ vars.LOGS_DIR || '/opt/lkvitai-mes/logs' }}
+      CLIP_MODEL_DIR: ${{ vars.CLIP_MODEL_DIR || '/opt/lkvitai-mes/models' }}
+      # One PostgreSQL database (lkvitai on lkvitai-db) serves Warehouse, Portal and
+      # Shopfloor, as on the test stand. Separate secrets are honoured if they are set.
       WAREHOUSE_DB_CONNECTION: ${{ secrets.WAREHOUSE_DB_CONNECTION }}
-      WAREHOUSE_API_BASE_URL: ${{ vars.WAREHOUSE_API_BASE_URL }}
+      PORTAL_DB_CONNECTION: ${{ secrets.PORTAL_DB_CONNECTION || secrets.WAREHOUSE_DB_CONNECTION }}
+      SHOPFLOOR_DB_CONNECTION: ${{ secrets.SHOPFLOOR_DB_CONNECTION || secrets.WAREHOUSE_DB_CONNECTION }}
+      # Legacy SQL Server database (the migrated MS Access one). Shared with daily work.
+      LKVITAI_MSACCESS_DB_CONNECTION: ${{ secrets.LKVITAI_MSACCESS_DB_CONNECTION }}
+      LKVITAI_LEGACY_DB_GUID: ${{ vars.LKVITAI_LEGACY_DB_GUID }}
+      CIKADA_OIDC_CLIENT_ID: ${{ vars.CIKADA_OIDC_CLIENT_ID }}
+      CIKADA_OIDC_CLIENT_SECRET: ${{ secrets.CIKADA_OIDC_CLIENT_SECRET }}
+      CIKADA_MCP_CLIENT_ID: ${{ vars.CIKADA_MCP_CLIENT_ID }}
+      ITEMIMAGES__ENDPOINT: ${{ vars.ITEMIMAGES__ENDPOINT }}
+      ITEMIMAGES__BUCKET: ${{ vars.ITEMIMAGES__BUCKET }}
+      ITEMIMAGES__USESSL: ${{ vars.ITEMIMAGES__USESSL }}
+      ITEMIMAGES__ACCESSKEY: ${{ secrets.ITEMIMAGES__ACCESSKEY }}
+      ITEMIMAGES__SECRETKEY: ${{ secrets.ITEMIMAGES__SECRETKEY }}
+      ITEMIMAGES__MODEL_PATH: ${{ vars.ITEMIMAGES__MODEL_PATH }}
+      WAREHOUSE_CODE: ${{ vars.WAREHOUSE_CODE }}
+      CLARITY_PROJECT_ID: ${{ vars.CLARITY_PROJECT_ID }}
+      # Switches for writes into the legacy database. Unset = off (see docker-compose.prod.yml).
+      SALES_ORDER_ENTRY_ENABLED: ${{ vars.SALES_ORDER_ENTRY_ENABLED }}
+      SALES_ORDER_ENTRY_PAYMENTS_ENABLED: ${{ vars.SALES_ORDER_ENTRY_PAYMENTS_ENABLED }}
+      SALES_PRODUCTION_CONFIRMATION_ENABLED: ${{ vars.SALES_PRODUCTION_CONFIRMATION_ENABLED }}
+      SALES_PRODUCTION_DOCUMENT_PREFIX: ${{ vars.SALES_PRODUCTION_DOCUMENT_PREFIX }}
+      SHOPFLOOR_TASK_WRITE_ENABLED: ${{ vars.SHOPFLOOR_TASK_WRITE_ENABLED }}
+      CIKADA_MCP_ORDER_ENTRY: ${{ vars.CIKADA_MCP_ORDER_ENTRY }}
+      # Agnum is not connected on production yet. Leave these unset until it is.
+      Agnum__Api__BaseUrl: ${{ vars.AGNUM__API__BASEURL }}
+      Agnum__PriceSync__Enabled: ${{ vars.AGNUM__PRICESYNC__ENABLED }}
+      Agnum__Warehouses__sandelys__ApiKey: ${{ secrets.AGNUM__WAREHOUSES__SANDELYS__APIKEY }}
+      Agnum__Warehouses__pardavimai__ApiKey: ${{ secrets.AGNUM__WAREHOUSES__PARDAVIMAI__APIKEY }}
     steps:
-      # Required environment configuration:
-      # - secrets.WAREHOUSE_DB_CONNECTION
-      # - vars.WAREHOUSE_API_BASE_URL
-      # - optional vars.DOCKER_NETWORK_NAME
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Fail fast if required configuration is missing
+        run: |
+          set -u
+          missing=0
+          require() {
+            if [ -z "${!1:-}" ]; then
+              echo "::error::$1 is missing. Set it in GitHub Environment 'prod' ($2)."
+              missing=1
+            fi
+          }
+          require WAREHOUSE_DB_CONNECTION "secret: PostgreSQL connection string for database lkvitai on lkvitai-db"
+          require LKVITAI_MSACCESS_DB_CONNECTION "secret: SQL Server connection string of the legacy database; Sales, Shopfloor, Finance and Frontline APIs do not start without it"
+          require CIKADA_OIDC_CLIENT_ID "variable: client id of the authentik application 'cikada'"
+          require CIKADA_OIDC_CLIENT_SECRET "secret: client secret of the authentik application 'cikada'; without it nobody can sign in"
+          require CIKADA_MCP_CLIENT_ID "variable: client id of the authentik application 'cikada-mcp'; the MCP container does not start without it"
+          require LKVITAI_LEGACY_DB_GUID "variable: database_guid of the legacy database; guards order entry against a wrong server"
+          if ! printf '%s' "$IMAGE_TAG" | grep -Eq '^([0-9a-f]{40}|v?[0-9]+(\.[0-9]+){1,2}([.-][0-9A-Za-z.-]+)?)$'; then
+            echo "::error::image_tag '$IMAGE_TAG' must be a release tag (v0.2.0) or a full 40-character commit SHA."
+            missing=1
+          fi
+          if [ -z "${ITEMIMAGES__ENDPOINT:-}" ] || [ -z "${ITEMIMAGES__BUCKET:-}" ]; then
+            echo "::warning::ITEMIMAGES__ENDPOINT / ITEMIMAGES__BUCKET are not set: item photos will not work."
+          fi
+          exit "$missing"
+
+      - name: Clean workspace (fix root-owned files from Docker)
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE":/workspace \
+            alpine:3.20 \
+            sh -c "rm -rf /workspace/* /workspace/.[!.]*"
+
+      - name: Checkout the code that matches the images
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          ref: ${{ inputs.image_tag }}
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -37,57 +123,133 @@ jobs:
           docker network inspect "$DOCKER_NETWORK_NAME" >/dev/null 2>&1 || \
             docker network create "$DOCKER_NETWORK_NAME"
 
+      - name: Ensure host bind-mount directories exist with correct ownership
+        run: |
+          set -euo pipefail
+          # Containers run as the .NET `app` user (uid/gid 1654). auth-keys holds the
+          # DataProtection key ring shared by every module: if it is not writable,
+          # sign-in loops; if it is lost, everybody is signed out.
+          mkdir -p "$AUTH_KEYS_DIR" "$LOGS_DIR" "$CLIP_MODEL_DIR" 2>/dev/null || true
+          docker run --rm \
+            --user 0:0 \
+            -v "$AUTH_KEYS_DIR:/mnt/auth-keys" \
+            -v "$LOGS_DIR:/mnt/logs" \
+            alpine:3.20 \
+            sh -eu -c '
+              chown -R 1654:1654 /mnt/auth-keys /mnt/logs
+              chmod 700 /mnt/auth-keys
+              chmod 755 /mnt/logs
+            '
+          model="${CLIP_MODEL_DIR}/$(basename "${ITEMIMAGES__MODEL_PATH:-/models/item-image-model.onnx}")"
+          if [ ! -f "$model" ]; then
+            echo "::warning::Image model $model is not on the host: search by photo will not work until it is copied there."
+          fi
+
       - name: Pull production images
-        run: IMAGE_TAG=${{ env.IMAGE_TAG }} docker compose -f docker-compose.prod.yml pull
+        run: docker compose pull
+
+      - name: Check PostgreSQL is reachable
+        run: |
+          set -euo pipefail
+          host="$(printf '%s' "$WAREHOUSE_DB_CONNECTION" | tr ';' '\n' | awk -F= 'tolower($1)=="host"||tolower($1)=="server"{print $2}' | head -1)"
+          port="$(printf '%s' "$WAREHOUSE_DB_CONNECTION" | tr ';' '\n' | awk -F= 'tolower($1)=="port"{print $2}' | head -1)"
+          for i in $(seq 1 5); do
+            if docker run --rm --network "$DOCKER_NETWORK_NAME" postgres:16-alpine \
+                 pg_isready -h "$host" -p "${port:-5432}" > /dev/null 2>&1; then
+              echo "PostgreSQL is reachable."
+              exit 0
+            fi
+            echo "  attempt $i/5 - not reachable yet"
+            sleep 3
+          done
+          echo "::error::PostgreSQL from WAREHOUSE_DB_CONNECTION is not reachable from the deploy network."
+          exit 1
+
+      - name: Apply EF Core migrations to production DB
+        # Warehouse and Portal are migrated here, before the new containers start.
+        # Shopfloor migrates its own schema when its API starts.
+        run: |
+          docker rm -f lkvitai-mes-prod-migration 2>/dev/null || true
+
+          # Root inside the short-lived SDK container: under the runner uid the SDK
+          # fails in NuGet's first-run setup. The next run's "Clean workspace" step
+          # removes the root-owned build output.
+          docker run --rm --name lkvitai-mes-prod-migration \
+            --network "$DOCKER_NETWORK_NAME" \
+            --user 0:0 \
+            -v "${{ github.workspace }}:/src" \
+            -w /src \
+            -e HOME=/tmp \
+            -e DOTNET_CLI_HOME=/tmp/.dotnet \
+            -e "ConnectionStrings__WarehouseDb=$WAREHOUSE_DB_CONNECTION" \
+            -e "ConnectionStrings__PortalDb=$PORTAL_DB_CONNECTION" \
+            mcr.microsoft.com/dotnet/sdk:8.0 \
+            bash -c '
+              set -e
+              dotnet tool install --global dotnet-ef --version 8.0.13
+              export PATH="$PATH:/tmp/.dotnet/.dotnet/tools"
+              dotnet build src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/LKvitai.MES.Modules.Warehouse.Api.csproj -c Release
+              dotnet ef database update \
+                --project src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Infrastructure \
+                --startup-project src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api \
+                --no-build \
+                --configuration Release
+              dotnet build src/Modules/Portal/LKvitai.MES.Modules.Portal.Api/LKvitai.MES.Modules.Portal.Api.csproj -c Release
+              dotnet ef database update \
+                --project src/Modules/Portal/LKvitai.MES.Modules.Portal.Api \
+                --startup-project src/Modules/Portal/LKvitai.MES.Modules.Portal.Api \
+                --no-build \
+                --configuration Release
+            '
 
       - name: Deploy production containers
-        run: IMAGE_TAG=${{ env.IMAGE_TAG }} docker compose -f docker-compose.prod.yml up -d
+        run: docker compose up -d --remove-orphans
 
-      - name: Wait for API health
+      - name: Wait for every container to become healthy
         run: |
-          echo "Waiting for production API to become healthy..."
-          for i in $(seq 1 30); do
-            if docker exec lkvitai-mes-warehouse-api-prod curl -sf http://localhost:8080/health > /dev/null 2>&1; then
-              echo "API is healthy!"
-              exit 0
+          set -euo pipefail
+          for service in $(docker compose config --services); do
+            id="$(docker compose ps -q "$service")"
+            if [ -z "$id" ]; then
+              echo "::error::Service $service has no container."
+              exit 1
             fi
-            echo "  attempt $i/30 — not ready yet"
-            sleep 5
-          done
-          echo "API failed to become healthy within 150s"
-          docker compose -f docker-compose.prod.yml logs api --tail 50
-          exit 1
-
-      - name: Wait for Portal API health
-        run: |
-          echo "Waiting for production Portal API to become healthy..."
-          for i in $(seq 1 30); do
-            if docker exec lkvitai-mes-portal-api-prod curl -sf http://localhost:8080/health > /dev/null 2>&1; then
-              echo "Portal API is healthy!"
-              exit 0
+            echo "Waiting for $service..."
+            ok=0
+            for i in $(seq 1 36); do
+              state="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$id")"
+              if [ "$state" = "healthy" ] || [ "$state" = "running" ]; then
+                ok=1
+                break
+              fi
+              sleep 5
+            done
+            if [ "$ok" -ne 1 ]; then
+              echo "::error::$service did not become healthy within 180s (state: $state)"
+              docker compose logs "$service" --tail 80 || true
+              exit 1
             fi
-            echo "  attempt $i/30 — not ready yet"
-            sleep 5
+            echo "$service is $state."
           done
-          echo "Portal API failed to become healthy within 150s"
-          docker compose -f docker-compose.prod.yml logs portal-api --tail 50
-          exit 1
 
       - name: Deployment summary
+        if: always()
         run: |
-          echo "## Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **Image tag:** ${{ env.IMAGE_TAG }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Portal API:** lkvitai-apps:5011" >> $GITHUB_STEP_SUMMARY
-          echo "- **Portal WebUI:** lkvitai-apps:5010" >> $GITHUB_STEP_SUMMARY
-          docker compose -f docker-compose.prod.yml ps >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Production deployment"
+            echo "- **Image tag:** \`$IMAGE_TAG\`"
+            echo "- **Address:** https://cikada.lauresta.com"
+            echo "- **Order entry (Sales):** ${SALES_ORDER_ENTRY_ENABLED:-false}"
+            echo "- **Task write (Shopfloor):** ${SHOPFLOOR_TASK_WRITE_ENABLED:-false}"
+            echo "- **Order entry (MCP):** ${CIKADA_MCP_ORDER_ENTRY:-false}"
+            echo '```'
+            docker compose ps --format 'table {{.Service}}\t{{.Status}}\t{{.Image}}' 2>/dev/null || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Prune unused Docker images
-        # `up -d` above replaced every container with one from the new
-        # IMAGE_TAG, so the previous deploy's images are now unreferenced by
-        # any container. `-a` (not just dangling) is what actually reclaims
-        # that space; it only ever removes images with zero containers
-        # (running or stopped) attached to them, so this can't touch what's
-        # live. Runs even if an earlier step failed, since a failed deploy
-        # still pulled a new image and left the runner's disk that much fuller.
+        # Removes only images that no container (running or stopped) uses, so the
+        # images of the stack just started stay. Runs after a failed deploy as well:
+        # a failed deploy still pulled new images.
         if: always()
         run: docker image prune -af

@@ -1,18 +1,82 @@
+# Production stack for https://cikada.lauresta.com (VM lkvitai-apps).
+#
+# Mirrors docker-compose.test.yml service for service; differences:
+#   * containers carry the -prod suffix and run with ASPNETCORE_ENVIRONMENT=Production;
+#   * PostgreSQL is the external server lkvitai-db (connection strings come from
+#     GitHub Environment "prod" secrets), Redis is part of this file;
+#   * every switch that WRITES into the legacy (Access) database defaults to off
+#     and is turned on per module with an environment variable:
+#       SALES_ORDER_ENTRY_ENABLED, SALES_ORDER_ENTRY_PAYMENTS_ENABLED,
+#       SALES_PRODUCTION_CONFIRMATION_ENABLED (+ SALES_PRODUCTION_DOCUMENT_PREFIX),
+#       SHOPFLOOR_TASK_WRITE_ENABLED, CIKADA_MCP_ORDER_ENTRY;
+#   * no Agnum API on production yet (Agnum__Api__BaseUrl empty).
+#
+# When a service is added to docker-compose.test.yml, add it here as well.
+
 name: lkvitai-mes-prod
 
+# SSO (authentik, sso.lauresta.com). APIs accept JWTs minted for the web client
+# and for the MCP client; Portal WebUI also runs the interactive login.
+x-oidc-api: &oidc-api
+  Oidc__Enabled: "${CIKADA_OIDC_ENABLED:-true}"
+  Oidc__Authority: "https://sso.lauresta.com/application/o/cikada/"
+  Oidc__ClientId: "${CIKADA_OIDC_CLIENT_ID:-}"
+  Oidc__Audiences__0: "${CIKADA_MCP_CLIENT_ID:-}"
+  Oidc__Issuers__0: "https://sso.lauresta.com/application/o/cikada-mcp/"
+  # SSO-only: no password login, unsigned legacy bearer tokens and X-User-* headers are refused.
+  Oidc__DisableLegacyTokens: "${CIKADA_SSO_ONLY:-true}"
+
 services:
+  redis:
+    image: redis:7.2-alpine
+    container_name: lkvitai-redis-prod
+    restart: unless-stopped
+    # Cache and lot-trace state only; nothing here is the system of record.
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    networks:
+      - lkvitai-mes_prod
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
   api:
     image: ghcr.io/lauresta/lkvitai-mes-warehouse-api:${IMAGE_TAG:-latest}
     container_name: lkvitai-mes-warehouse-api-prod
+    depends_on:
+      redis:
+        condition: service_healthy
     restart: unless-stopped
     ports:
       - "5001:8080"
     environment:
+      <<: *oidc-api
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__WarehouseDb: ${WAREHOUSE_DB_CONNECTION}
+      UseJaegerExporter: "false"
+      PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+      ConnectionStrings__WarehouseDb: "${WAREHOUSE_DB_CONNECTION}"
       SkipSchemaValidation: "true"
+      # Code of the one physical warehouse; must match the warehouse created in Admin.
+      Warehouse__Code: "${WAREHOUSE_CODE:-WH1}"
+      Caching__RedisConnectionString: "lkvitai-redis-prod:6379,abortConnect=false,connectRetry=3,connectTimeout=1000,syncTimeout=1000"
+      ITEMIMAGES__ENDPOINT: "${ITEMIMAGES__ENDPOINT}"
+      ITEMIMAGES__BUCKET: "${ITEMIMAGES__BUCKET}"
+      ITEMIMAGES__USESSL: "${ITEMIMAGES__USESSL:-false}"
+      ITEMIMAGES__ACCESSKEY: "${ITEMIMAGES__ACCESSKEY}"
+      ITEMIMAGES__SECRETKEY: "${ITEMIMAGES__SECRETKEY}"
+      ITEMIMAGES__MAXUPLOADMB: "${ITEMIMAGES__MAXUPLOADMB:-5}"
+      ITEMIMAGES__CACHEMAXAGESECONDS: "${ITEMIMAGES__CACHEMAXAGESECONDS:-86400}"
+      ITEMIMAGES__MODEL_PATH: "${ITEMIMAGES__MODEL_PATH:-/models/item-image-model.onnx}"
+      Agnum__Api__BaseUrl: "${Agnum__Api__BaseUrl:-}"
+      Agnum__PriceSync__Enabled: "${Agnum__PriceSync__Enabled:-false}"
+      Agnum__Warehouses__sandelys__ApiKey: "${Agnum__Warehouses__sandelys__ApiKey}"
+      Agnum__Warehouses__pardavimai__ApiKey: "${Agnum__Warehouses__pardavimai__ApiKey}"
+      Agnum__Api__ReferenceApiKey: "${Agnum__Api__ReferenceApiKey:-${Agnum__Warehouses__sandelys__ApiKey}}"
     volumes:
       - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
+      - ${CLIP_MODEL_DIR:-/opt/lkvitai-mes/models}:/models:ro
+      - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys:ro
     networks:
       - lkvitai-mes_prod
     healthcheck:
@@ -29,16 +93,26 @@ services:
     ports:
       - "5000:8080"
     environment:
+      <<: *oidc-api
       ASPNETCORE_ENVIRONMENT: Production
-      WarehouseApi__BaseUrl: ${WAREHOUSE_API_BASE_URL:-http://lkvitai-mes-warehouse-api-prod:8080}
-      PortalAuth__CookieDomain: ".mes.lauresta.com"
+      WarehouseApi__BaseUrl: "http://lkvitai-mes-warehouse-api-prod:8080"
+      Hangfire__DashboardUrl: "http://lkvitai-apps.vpn.lauresta.com:5001/warehouse/hangfire"
+      PathBase: "/warehouse"
+      PortalAuth__LoginBasePath: "/portal"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+      Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
     networks:
       - lkvitai-mes_prod
     depends_on:
       - api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   portal-api:
     image: ghcr.io/lauresta/lkvitai-mes-portal-api:${IMAGE_TAG:-latest}
@@ -47,9 +121,10 @@ services:
     ports:
       - "5011:8080"
     environment:
+      <<: *oidc-api
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__PortalDb: ${PORTAL_DB_CONNECTION}
-      ConnectionStrings__LKvitaiDb: ${LKVITAI_MSACCESS_DB_CONNECTION}
+      ConnectionStrings__PortalDb: "${PORTAL_DB_CONNECTION}"
+      ConnectionStrings__LKvitaiDb: "${LKVITAI_MSACCESS_DB_CONNECTION}"
     networks:
       - lkvitai-mes_prod
     healthcheck:
@@ -66,11 +141,15 @@ services:
     ports:
       - "5010:8080"
     environment:
+      <<: *oidc-api
+      Oidc__ClientSecret: "${CIKADA_OIDC_CLIENT_SECRET:-}"
       ASPNETCORE_ENVIRONMENT: Production
       PortalApi__BaseUrl: "http://lkvitai-mes-portal-api-prod:8080"
       WarehouseApi__BaseUrl: "http://lkvitai-mes-warehouse-api-prod:8080"
-      PortalAuth__CookieDomain: ".mes.lauresta.com"
+      WarehouseWebUi__BaseUrl: "https://cikada.lauresta.com/warehouse"
+      PathBase: "/portal"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+      Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
       - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
@@ -78,6 +157,361 @@ services:
       - lkvitai-mes_prod
     depends_on:
       - portal-api
+
+  # --- Sales module -------------------------------------------------------------
+  # Uses the shared PortalAuth cookie (same auth-keys bind-mount, same cookie name)
+  # so a user signed in via Portal is authenticated against the Sales API too.
+  # S-2: Sales.Api now talks directly to the legacy SQL Server (LKvitaiDb — the
+  # migrated MS Access database) via the weblb_* stored procedures. The
+  # connection string is required — the deploy workflow fails fast if
+  # LKVITAI_MSACCESS_DB_CONNECTION is empty, and Sales.Api itself refuses to
+  # start without ConnectionStrings__LKvitaiDb.
+  sales-api:
+    image: ghcr.io/lauresta/lkvitai-mes-sales-api:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-sales-api-prod
+    restart: unless-stopped
+    ports:
+      - "5021:8080"
+    environment:
+      <<: *oidc-api
+      ASPNETCORE_ENVIRONMENT: Production
+      PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+      ConnectionStrings__LKvitaiDb: "${LKVITAI_MSACCESS_DB_CONNECTION}"
+      Sales__OrdersDataSource: "Sql"
+      CikadaUsers__BaseUrl: "http://lkvitai-mes-warehouse-api-prod:8080"
+      # Order entry writes into the live legacy database. Off by default; the series
+      # list below is still the Testavimas-only list from the test stand and must be
+      # replaced with the owner-approved production series before switching it on.
+      Sales__OrderEntry__Enabled: "${SALES_ORDER_ENTRY_ENABLED:-false}"
+      # database_guid changes on every RESTORE (e.g. the move to SQL Server on Ubuntu, 192.168.0.32).
+      # Set vars.LKVITAI_LEGACY_DB_GUID in the 'prod' environment (same value as 'test': one legacy database).
+      Sales__OrderEntry__ExpectedDatabaseGuid: "${LKVITAI_LEGACY_DB_GUID:-31FC1889-3D3E-4422-A4E3-362899649FF5}"
+      Sales__OrderEntry__AllowedSeriesIds__0: "2136330188"
+      Sales__OrderEntry__AllowedSeriesIds__1: "2136330191"
+      Sales__OrderEntry__AllowedSeriesIds__2: "551738835"
+      Sales__OrderEntry__AllowedSeriesIds__3: "768439496"
+      Sales__OrderEntry__CancellationEnabled: "false"
+      Sales__OrderEntry__PaymentsEnabled: "${SALES_ORDER_ENTRY_PAYMENTS_ENABLED:-false}"
+      Sales__OrderEntry__PaymentCurrencyId: "2"
+      Sales__OrderEntry__AllowedPaymentEmployeeIds__0: "77249366"
+      Sales__OrderEntry__AllowedPaymentMethodIds__0: "1"
+      Sales__OrderEntry__AllowedPaymentMethodIds__1: "2"
+      Sales__OrderEntry__AllowedPaymentMethodIds__2: "81423987"
+      Sales__OrderEntry__AllowedPaymentMethodIds__3: "834019474"
+      # Confirmation is enabled for the owner's manual verification, within this scope.
+      Sales__OrderEntry__ProductionConfirmationEnabled: "${SALES_PRODUCTION_CONFIRMATION_ENABLED:-false}"
+      Sales__OrderEntry__ProductionDocumentPrefix: "${SALES_PRODUCTION_DOCUMENT_PREFIX:-}"
+      Sales__OrderEntry__BuildVersion: "${IMAGE_TAG:-working-tree}"
+    volumes:
+      - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
+    networks:
+      - lkvitai-mes_prod
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  sales-webui:
+    image: ghcr.io/lauresta/lkvitai-mes-sales-webui:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-sales-webui-prod
+    restart: unless-stopped
+    ports:
+      - "5020:8080"
+    environment:
+      <<: *oidc-api
+      ASPNETCORE_ENVIRONMENT: Production
+      SalesApi__BaseUrl: "http://lkvitai-mes-sales-api-prod:8080"
+      CikadaUsers__BaseUrl: "http://lkvitai-mes-warehouse-api-prod:8080"
+      PathBase: "/sales"
+      PortalAuth__LoginBasePath: "/portal"
+      PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+      Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
+    volumes:
+      - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
+    networks:
+      - lkvitai-mes_prod
+    depends_on:
+      - sales-api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # --- Frontline module (anonymous in F-2; PortalAuth lands in F-Auth) ---------
+  # F-2.4: Frontline.Api defaults to FabricDataSource=Auto, so it talks to the
+  # legacy SQL Server (LKvitaiDb) when the connection string is set, and
+  # quietly falls back to the in-memory stub otherwise (with a Warning log).
+  # The deploy workflow ships LKVITAI_MSACCESS_DB_CONNECTION as a secret —
+  # mirror Sales here so /api/frontline/fabric/{code} and /api/frontline/fabric/low-stock
+  # return real production data instead of the F-1 stub fixtures.
+  frontline-api:
+    image: ghcr.io/lauresta/lkvitai-mes-frontline-api:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-frontline-api-prod
+    restart: unless-stopped
+    ports:
+      - "5031:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__LKvitaiDb: "${LKVITAI_MSACCESS_DB_CONNECTION}"
+      Frontline__FabricDataSource: "Sql"
+    volumes:
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
+    networks:
+      - lkvitai-mes_prod
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  frontline-webui:
+    image: ghcr.io/lauresta/lkvitai-mes-frontline-webui:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-frontline-webui-prod
+    restart: unless-stopped
+    ports:
+      - "5030:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      FrontlineApi__BaseUrl: "http://lkvitai-mes-frontline-api-prod:8080"
+      PathBase: "/frontline"
+      # #92 — Frontline.WebUI registers AddPortalCookieAuthentication so the
+      # shared dark Portal topbar's user-block surfaces the real signed-in
+      # admin name instead of the "Signed in" / "U" fallback. The cookie is
+      # written by Portal.WebUI; for Frontline to decrypt it we have to:
+      #   1. Pin the same DataProtection key ring (PortalAuth__DataProtectionKeysPath
+      #      → /app/auth-keys, bind-mounted from $AUTH_KEYS_DIR on the host).
+      #   2. Tell PortalAuth to redirect 401s back through the Portal login
+      #      flow (PortalAuth__LoginBasePath="/portal"). Frontline doesn't
+      #      enforce auth on any route, so this only fires if a future page
+      #      adds [Authorize] — but wiring it now keeps Frontline aligned
+      #      with Sales/Portal in case F-2.4 lands an authenticated route.
+      PortalAuth__LoginBasePath: "/portal"
+      PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+      Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
+    volumes:
+      - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
+    networks:
+      - lkvitai-mes_prod
+    depends_on:
+      - frontline-api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # --- Scanning module (authenticated route group; anonymous scaffold ping) ----
+  scanning-api:
+    image: ghcr.io/lauresta/lkvitai-mes-scanning-api:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-scanning-api-prod
+    restart: unless-stopped
+    ports:
+      - "5041:8080"
+    environment:
+      <<: *oidc-api
+      ASPNETCORE_ENVIRONMENT: Production
+      PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+    volumes:
+      - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
+    networks:
+      - lkvitai-mes_prod
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  scanning-webui:
+    image: ghcr.io/lauresta/lkvitai-mes-scanning-webui:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-scanning-webui-prod
+    restart: unless-stopped
+    ports:
+      - "5040:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ScanningApi__BaseUrl: "http://lkvitai-mes-scanning-api-prod:8080"
+      PathBase: "/scan"
+      Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
+    volumes:
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
+    networks:
+      - lkvitai-mes_prod
+    depends_on:
+      - scanning-api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # --- Shopfloor module (MVP authoring, PortalAuth) ----------------------------
+  # Shopfloor.Api owns its own PostgreSQL schema (`shopfloor`) and applies EF
+  # migrations on startup. Legacy product types are pulled from the same legacy
+  # SQL Server (LKvitaiDb) that Sales/Frontline use; falls back to the in-memory
+  # stub when LKVITAI_MSACCESS_DB_CONNECTION is empty.
+  shopfloor-api:
+    image: ghcr.io/lauresta/lkvitai-mes-shopfloor-api:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-shopfloor-api-prod
+    restart: unless-stopped
+    ports:
+      - "5051:8080"
+    environment:
+      <<: *oidc-api
+      ASPNETCORE_ENVIRONMENT: Production
+      PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+      ConnectionStrings__ShopfloorDb: "${SHOPFLOOR_DB_CONNECTION}"
+      ConnectionStrings__LKvitaiDb: "${LKVITAI_MSACCESS_DB_CONNECTION}"
+      Shopfloor__LegacyProductTypes__DataSource: "Sql"
+      Shopfloor__ProductionQueue__Enabled: "true"
+      Shopfloor__ProductionTaskWrite__Enabled: "${SHOPFLOOR_TASK_WRITE_ENABLED:-false}"
+      CikadaUsers__BaseUrl: "http://lkvitai-mes-warehouse-api-prod:8080"
+    volumes:
+      - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
+    networks:
+      - lkvitai-mes_prod
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  shopfloor-webui:
+    image: ghcr.io/lauresta/lkvitai-mes-shopfloor-webui:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-shopfloor-webui-prod
+    restart: unless-stopped
+    ports:
+      - "5050:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      PathBase: "/shopfloor"
+      ShopfloorApi__BaseUrl: "http://lkvitai-mes-shopfloor-api-prod:8080"
+      Shopfloor__ProductionQueue__Enabled: "true"
+      Shopfloor__ProductionTaskWrite__Enabled: "${SHOPFLOOR_TASK_WRITE_ENABLED:-false}"
+      # Dashboard "Database" panel runs a read-only diagnostic query directly
+      # against the same PostgreSQL used by shopfloor-api.
+      ConnectionStrings__ShopfloorDb: "${SHOPFLOOR_DB_CONNECTION}"
+      PortalAuth__LoginBasePath: "/portal"
+      PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+      Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
+    volumes:
+      - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
+    networks:
+      - lkvitai-mes_prod
+    depends_on:
+      - portal-webui
+      - shopfloor-api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # --- Finance scaffold: no financial database or command routes --------------
+  finance-api:
+    image: ghcr.io/lauresta/lkvitai-mes-finance-api:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-finance-api-prod
+    restart: unless-stopped
+    ports:
+      - "5061:8080"
+    environment:
+      <<: *oidc-api
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__LKvitaiDb: "${LKVITAI_MSACCESS_DB_CONNECTION}"
+      CikadaUsers__BaseUrl: "http://lkvitai-mes-warehouse-api-prod:8080"
+      Finance__AllowedLegacyLogins__0: 'TERMINAL\d.bykovas'
+      Finance__AllowedLegacyLogins__1: 'TERMINAL\v.stropus'
+      # SQL logins without the Windows prefix on the new SQL Server (Ubuntu, no Windows auth)
+      Finance__AllowedLegacyLogins__2: 'd.bykovas'
+      Finance__AllowedLegacyLogins__3: 'v.stropus'
+      PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+    volumes:
+      - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
+    networks:
+      - lkvitai-mes_prod
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  finance-webui:
+    image: ghcr.io/lauresta/lkvitai-mes-finance-webui:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-finance-webui-prod
+    restart: unless-stopped
+    ports:
+      - "5060:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      PathBase: "/finance"
+      FinanceApi__BaseUrl: "http://lkvitai-mes-finance-api-prod:8080"
+      PortalAuth__LoginBasePath: "/portal"
+      PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+    volumes:
+      - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
+    networks:
+      - lkvitai-mes_prod
+    depends_on:
+      - portal-webui
+      - finance-api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # --- Cikada MCP (remote MCP server for ChatGPT / Claude) ---------------------
+  # Node service, stateless Streamable HTTP at https://cikada.lauresta.com/mcp
+  # plus OAuth discovery at the host root (Traefik routes those paths here).
+  # Sign-in is the operator's own sso.lauresta.com (authentik) login through
+  # the PUBLIC client cikada-mcp (PKCE, no secret); the access token is
+  # forwarded unchanged to the Sales / Warehouse APIs, which validate it.
+  # MCP order-entry tools remain separately opt-in after the Sales M2 API deploy.
+  mcp:
+    image: ghcr.io/lauresta/lkvitai-mes-mcp:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-mcp-prod
+    restart: unless-stopped
+    ports:
+      - "5070:8080"
+    environment:
+      MCP_PORT: "8080"
+      MCP_PUBLIC_URL: "https://cikada.lauresta.com"
+      MCP_OAUTH_CLIENT_ID: "${CIKADA_MCP_CLIENT_ID:-}"
+      SALES_API_URL: "http://lkvitai-mes-sales-api-prod:8080"
+      WAREHOUSE_API_URL: "http://lkvitai-mes-warehouse-api-prod:8080"
+      FINANCE_API_URL: "http://lkvitai-mes-finance-api-prod:8080"
+      MCP_ENABLE_ORDER_ENTRY: "${CIKADA_MCP_ORDER_ENTRY:-false}"
+    networks:
+      - lkvitai-mes_prod
+    depends_on:
+      - api
+      - sales-api
+      - finance-api
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 networks:
   lkvitai-mes_prod:
