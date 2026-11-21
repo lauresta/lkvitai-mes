@@ -82,3 +82,7 @@ Rules that matter for the AI chunks:
 - `steps` are optional Playwright actions run after the page loads (selectors must come from the page markup in the code). Only actions that do not change data: open a dialog, switch a tab, type into a filter. Never a save, post, delete or send.
 - For a URL that needs an id, put `{firstRow}` style placeholders only if you also explain in `note` how to get the value; prefer list pages.
 - One or two pictures per page; a picture per step only where the step is hard to find.
+
+### Real data on the test stand
+
+Sales, Finance and the Shopfloor queue read the live legacy database even on the test stand. Never put customer or payer names into the manuals: add `"blurColumns": ["Klientas"]` (table column header texts) or `"blur": [".css-selector"]` to the shot entry, and for detail screens use an order of the test series.

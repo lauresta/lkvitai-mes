@@ -14,7 +14,7 @@ for (const f of fs.readdirSync(here).filter((x) => x.endsWith('.json')).sort()) 
   const mod = f.replace(/\.json$/, '');
   if (only.length && !only.includes(mod)) continue;
   for (const s of JSON.parse(fs.readFileSync(path.join(here, f), 'utf8'))) {
-    shots.push({ ...s, out: path.join(docsDir, s.file).replace(/\\/g, '/') });
+    shots.push({ ...s, lang: ['sales', 'shopfloor', 'finance'].includes(mod) ? 'lt' : 'en', out: path.join(docsDir, s.file).replace(/\\/g, '/') });
   }
 }
 for (const s of shots) fs.mkdirSync(path.dirname(s.out), { recursive: true });
@@ -22,6 +22,7 @@ for (const s of shots) fs.mkdirSync(path.dirname(s.out), { recursive: true });
 const body = `async (page) => {
   const shots = ${JSON.stringify(shots)};
   const results = [];
+  let curLang = null;
   await page.setViewportSize({ width: 1440, height: 900 });
   for (const s of shots) {
     try {
@@ -29,6 +30,14 @@ const body = `async (page) => {
       await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
       await page.waitForTimeout(1500);
       if (/sso\\.lauresta\\.com/.test(page.url())) { results.push(s.file + ' -> NOT SIGNED IN'); break; }
+      if (s.lang !== curLang) {
+        curLang = s.lang;
+        await page.locator('form[action*="culture/set"] button', { hasText: s.lang === 'lt' ? /^(LT|Lietuvi)/ : /^(EN|English)/ }).first().click({ timeout: 5000 }).catch(() => {});
+        await page.waitForTimeout(1500);
+        await page.goto(s.url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
+        await page.waitForTimeout(1500);
+      }
       const status = resp ? resp.status() : 0;
       let note = '';
       for (const st of s.steps || []) {
@@ -42,6 +51,21 @@ const body = `async (page) => {
       }
       const text = (await page.locator('body').innerText().catch(() => '')).slice(0, 4000);
       if (/Server error|404 page not found|Access denied|An unhandled error/i.test(text)) note += ' page-shows-error';
+      if (s.blurColumns) {
+        await page.evaluate((names) => {
+          for (const table of document.querySelectorAll('table')) {
+            const heads = [...table.querySelectorAll('thead th')];
+            heads.forEach((th, i) => {
+              if (names.some((n) => th.innerText.trim().toLowerCase().startsWith(n.toLowerCase()))) {
+                for (const td of table.querySelectorAll('tbody tr td:nth-child(' + (i + 1) + ')')) td.style.filter = 'blur(5px)';
+              }
+            });
+          }
+        }, s.blurColumns);
+      }
+      if (s.blur) {
+        await page.evaluate((sels) => { for (const sel of sels) for (const el of document.querySelectorAll(sel)) el.style.filter = 'blur(5px)'; }, s.blur);
+      }
       await page.screenshot({ path: s.out, fullPage: !!s.fullPage });
       results.push(s.file + ' -> ' + status + note);
     } catch (e) {
