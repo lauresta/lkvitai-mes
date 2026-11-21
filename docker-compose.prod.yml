@@ -4,11 +4,13 @@
 #   * containers carry the -prod suffix and run with ASPNETCORE_ENVIRONMENT=Production;
 #   * PostgreSQL is the external server lkvitai-db (connection strings come from
 #     GitHub Environment "prod" secrets), Redis is part of this file;
-#   * every switch that WRITES into the legacy (Access) database defaults to off
-#     and is turned on per module with an environment variable:
+#   * production works on the legacy (Access) database in full: Sales and Shopfloor
+#     write to every branch the signed-in user may use in Access (AllBranches), while
+#     the test stand stays inside the TESTAVIMAS branch. Each kind of write can be
+#     switched off with a variable of GitHub Environment "prod" set to "false":
 #       SALES_ORDER_ENTRY_ENABLED, SALES_ORDER_ENTRY_PAYMENTS_ENABLED,
-#       SALES_PRODUCTION_CONFIRMATION_ENABLED (+ SALES_PRODUCTION_DOCUMENT_PREFIX),
-#       SHOPFLOOR_TASK_WRITE_ENABLED, CIKADA_MCP_ORDER_ENTRY;
+#       SALES_PRODUCTION_CONFIRMATION_ENABLED, SHOPFLOOR_TASK_WRITE_ENABLED;
+#     order entry through the assistant (CIKADA_MCP_ORDER_ENTRY) stays off until set;
 #   * no Agnum API on production yet (Agnum__Api__BaseUrl empty).
 #
 # When a service is added to docker-compose.test.yml, add it here as well.
@@ -179,10 +181,11 @@ services:
       ConnectionStrings__LKvitaiDb: "${LKVITAI_MSACCESS_DB_CONNECTION}"
       Sales__OrdersDataSource: "Sql"
       CikadaUsers__BaseUrl: "http://lkvitai-mes-warehouse-api-prod:8080"
-      # Order entry writes into the live legacy database. Off by default; the series
-      # list below is still the Testavimas-only list from the test stand and must be
-      # replaced with the owner-approved production series before switching it on.
-      Sales__OrderEntry__Enabled: "${SALES_ORDER_ENTRY_ENABLED:-false}"
+      # Order entry writes into the live legacy database.
+      Sales__OrderEntry__Enabled: "${SALES_ORDER_ENTRY_ENABLED:-true}"
+      # Production works with every branch the signed-in user may use in Access.
+      # (The test stand keeps the default: TESTAVIMAS branch only.)
+      Sales__OrderEntry__AllBranches: "${SALES_ORDER_ENTRY_ALL_BRANCHES:-true}"
       # database_guid changes on every RESTORE (e.g. the move to SQL Server on Ubuntu, 192.168.0.32).
       # Set vars.LKVITAI_LEGACY_DB_GUID in the 'prod' environment (same value as 'test': one legacy database).
       Sales__OrderEntry__ExpectedDatabaseGuid: "${LKVITAI_LEGACY_DB_GUID:-31FC1889-3D3E-4422-A4E3-362899649FF5}"
@@ -191,7 +194,7 @@ services:
       Sales__OrderEntry__AllowedSeriesIds__2: "551738835"
       Sales__OrderEntry__AllowedSeriesIds__3: "768439496"
       Sales__OrderEntry__CancellationEnabled: "false"
-      Sales__OrderEntry__PaymentsEnabled: "${SALES_ORDER_ENTRY_PAYMENTS_ENABLED:-false}"
+      Sales__OrderEntry__PaymentsEnabled: "${SALES_ORDER_ENTRY_PAYMENTS_ENABLED:-true}"
       Sales__OrderEntry__PaymentCurrencyId: "2"
       Sales__OrderEntry__AllowedPaymentEmployeeIds__0: "77249366"
       Sales__OrderEntry__AllowedPaymentMethodIds__0: "1"
@@ -199,8 +202,8 @@ services:
       Sales__OrderEntry__AllowedPaymentMethodIds__2: "81423987"
       Sales__OrderEntry__AllowedPaymentMethodIds__3: "834019474"
       # Confirmation is enabled for the owner's manual verification, within this scope.
-      Sales__OrderEntry__ProductionConfirmationEnabled: "${SALES_PRODUCTION_CONFIRMATION_ENABLED:-false}"
-      Sales__OrderEntry__ProductionDocumentPrefix: "${SALES_PRODUCTION_DOCUMENT_PREFIX:-}"
+      Sales__OrderEntry__ProductionConfirmationEnabled: "${SALES_PRODUCTION_CONFIRMATION_ENABLED:-true}"
+      Sales__OrderEntry__ProductionDocumentPrefix: "${SALES_PRODUCTION_DOCUMENT_PREFIX:-MES}"
       Sales__OrderEntry__BuildVersion: "${IMAGE_TAG:-working-tree}"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
@@ -224,6 +227,7 @@ services:
       <<: *oidc-api
       ASPNETCORE_ENVIRONMENT: Production
       SalesApi__BaseUrl: "http://lkvitai-mes-sales-api-prod:8080"
+      Sales__OrderEntry__AllBranches: "${SALES_ORDER_ENTRY_ALL_BRANCHES:-true}"
       CikadaUsers__BaseUrl: "http://lkvitai-mes-warehouse-api-prod:8080"
       PathBase: "/sales"
       PortalAuth__LoginBasePath: "/portal"
@@ -375,7 +379,8 @@ services:
       ConnectionStrings__LKvitaiDb: "${LKVITAI_MSACCESS_DB_CONNECTION}"
       Shopfloor__LegacyProductTypes__DataSource: "Sql"
       Shopfloor__ProductionQueue__Enabled: "true"
-      Shopfloor__ProductionTaskWrite__Enabled: "${SHOPFLOOR_TASK_WRITE_ENABLED:-false}"
+      Shopfloor__ProductionTaskWrite__Enabled: "${SHOPFLOOR_TASK_WRITE_ENABLED:-true}"
+      Shopfloor__ProductionTaskWrite__AllBranches: "${SHOPFLOOR_TASK_WRITE_ALL_BRANCHES:-true}"
       CikadaUsers__BaseUrl: "http://lkvitai-mes-warehouse-api-prod:8080"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
@@ -400,7 +405,8 @@ services:
       PathBase: "/shopfloor"
       ShopfloorApi__BaseUrl: "http://lkvitai-mes-shopfloor-api-prod:8080"
       Shopfloor__ProductionQueue__Enabled: "true"
-      Shopfloor__ProductionTaskWrite__Enabled: "${SHOPFLOOR_TASK_WRITE_ENABLED:-false}"
+      Shopfloor__ProductionTaskWrite__Enabled: "${SHOPFLOOR_TASK_WRITE_ENABLED:-true}"
+      Shopfloor__ProductionTaskWrite__AllBranches: "${SHOPFLOOR_TASK_WRITE_ALL_BRANCHES:-true}"
       # Dashboard "Database" panel runs a read-only diagnostic query directly
       # against the same PostgreSQL used by shopfloor-api.
       ConnectionStrings__ShopfloorDb: "${SHOPFLOOR_DB_CONNECTION}"

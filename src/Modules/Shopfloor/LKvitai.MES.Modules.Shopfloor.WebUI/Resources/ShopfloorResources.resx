@@ -2710,4 +2710,7 @@
   <data name="Roletai.Paperless.DateSummary" xml:space="preserve"><value>date {0}–{1}</value></data>
   <data name="Roletai.Paperless.AlreadySigned" xml:space="preserve"><value>Already signed: {0} · {1}</value></data>
   <data name="Roletai.Paperless.SignFailed" xml:space="preserve"><value>Sign-off was not saved. Check your connection and try again.</value></data>
+  <data name="Gamyba.CurrentAccessStateIsCheckedAgainOnSave" xml:space="preserve">
+    <value>The current Access state is checked again on save.</value>
+  </data>
 </root>

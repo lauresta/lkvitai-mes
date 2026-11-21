@@ -57,8 +57,8 @@ public sealed partial class SqlSalesOrderEntryService(SalesSqlOptions sql, Sales
     {
         if (!options.Enabled) throw new OrderEntryException("WRITES_DISABLED", "Sales saving is currently disabled.",403);
         if (actor == Guid.Empty || commandId == Guid.Empty) throw new OrderEntryException("INVALID_COMMAND", "An authenticated actor and command ID are required.",400);
-        if (options.ExpectedDatabaseGuid == Guid.Empty || options.AllowedSeriesIds.Length == 0)
-            throw new OrderEntryException("WRITE_CONFIGURATION", "Sales test-write scope is not configured.",503);
+        if (options.ExpectedDatabaseGuid == Guid.Empty || !options.ScopeConfigured)
+            throw new OrderEntryException("WRITE_CONFIGURATION", "Sales write scope is not configured.",503);
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(operation + "\n" + JsonSerializer.Serialize(new { OrderId = orderId, Request = request })));
         await using var lease = await connections.OpenAsync(ct); var connection = lease.Connection;
         await using var tx = await lease.BeginTransactionAsync(IsolationLevel.Serializable,ct);
@@ -115,10 +115,10 @@ public sealed partial class SqlSalesOrderEntryService(SalesSqlOptions sql, Sales
     private static async Task Rollback(SqlTransaction tx) { try { await tx.RollbackAsync(CancellationToken.None); } catch (InvalidOperationException) { } catch(SqlException) { } }
     private void RequireScope(OrderEditorSnapshot snapshot)
     {
-        if (snapshot.Header.BranchId!=7 || !options.AllowedSeriesIds.Contains(snapshot.Header.SeriesId))
+        if (!options.InScope(snapshot.Header.BranchId,snapshot.Header.SeriesId))
             throw new OrderEntryException("TEST_BRANCH_ONLY","Saving is restricted to the configured Testavimas series.",403);
     }
-    private bool Scope(int branch,int series) => options.Enabled && branch==7 && options.AllowedSeriesIds.Contains(series);
+    private bool Scope(int branch,int series) => options.Enabled && options.InScope(branch,series);
     private static void RequireEditable(OrderEditorSnapshot snapshot)
     { if (!snapshot.Header.CanEdit || snapshot.Header.Cancelled) throw new OrderEntryException("ORDER_LOCKED","This order cannot be edited in its current state.",409); }
     private static ProductSnapshot Product(OrderEditorSnapshot snapshot,long productId)

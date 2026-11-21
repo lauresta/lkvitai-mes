@@ -32,7 +32,7 @@ public sealed partial class SqlSalesOrderEntryService
         await using var tx=await lease.BeginTransactionAsync(IsolationLevel.ReadCommitted,ct);
         var scope=(await Rows(c,tx,"SELECT s.FilialoID,u.UzsakymoSerija FROM dbo.Uzsakymai u JOIN dbo.Zinynas_UzsakymoSerijos s ON s.UzsakymoSerijaID=u.UzsakymoSerija WHERE u.UzsakymasID=@order AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=s.FilialoID)",ct,("@order",orderId))).SingleOrDefault()
             ??throw new OrderEntryException("NOT_FOUND","Order not found.",404);
-        if(I(scope,"FilialoID")!=7||!options.AllowedSeriesIds.Contains(I(scope,"UzsakymoSerija")!.Value))
+        if(!options.InScope(I(scope,"FilialoID"),I(scope,"UzsakymoSerija")!.Value))
             throw new OrderEntryException("TEST_BRANCH_ONLY","Payment choices are restricted to configured Testavimas orders.",403);
         if(!options.PaymentsEnabled)throw new OrderEntryException("PAYMENTS_DISABLED","Payment posting is disabled for this deployment.",403);
         var literal=search?.Replace("[","[[]").Replace("%","[%]").Replace("_","[_]");
