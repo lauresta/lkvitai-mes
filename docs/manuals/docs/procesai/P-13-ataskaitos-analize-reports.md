@@ -1,95 +1,67 @@
-# P-13 — Ataskaitos ir analizė (Reports & Analytics)
-
-**Proceso numeris:** P-13
-**Atnaujinta:** 2026-02-24
-**Versija:** 1.0 (šablonas)
-
+---
+module: warehouse
+title: Sandėlio ataskaitos
+routes: ["/reports/stock-level", "/reports/receiving-history", "/reports/pick-history", "/reports/dispatch-history", "/reports/stock-movements"]
+roles: ["Operator", "QCInspector", "WarehouseManager", "WarehouseAdmin"]
+status: veikia
 ---
 
-## Pavadinimas
+# Sandėlio ataskaitos
 
-Atsargų, judėjimų ir vykdymo ataskaitų bei KPI peržiūra (Reporting & Analytics)
+**Būsena:** veikia
 
----
+## Kam skirta
+Sandėlio modulio (Warehouse) skyriuje (UI: Reports) yra penkios lentelinės ataskaitos: atsargų likučiai, priėmimų istorija, surinkimų istorija, išsiuntimų istorija ir atsargų judėjimai. Visos jos tik rodo duomenis, nieko nekeičia, o rezultatą galima išsaugoti į CSV failą. Atsekamumo ir atitikties ataskaitos aprašytos puslapyje [Atsekamumas ir atitiktis](P-28-atsekamumas-ir-atitiktis.md), skaičiai ir tendencijos – puslapyje [Analitika](P-29-analitika.md).
 
-## Tikslas
-
-Gauti aktualią informaciją apie sandėlio atsargas, judėjimus, priėmimus, išsiuntimus ir efektyvumą.
-
----
-
-## Kam skirta (rolės)
-
-| Rolė | Prieiga |
-|------|---------|
-| Sandėlio vadovas | Visos operatyvinės ataskaitos |
-| Inventoriaus buhalteris | Atsargų likučių ir vertinimo ataskaitos |
-| Finansų direktorius (CFO) | Pasenusių atsargų ataskaita |
-| Atitikties pareigūnas / auditorius | Atitikties audito ataskaita |
-
----
-
-## Prieš pradedant (preconditions)
-
-- Sistemos duomenys atnaujinti (projekcijų vėlavimas ≤5 sek.)
-
----
+## Prieš pradedant
+- Visas penkias ataskaitas gali atidaryti rolės Operator, QCInspector, WarehouseManager ir WarehouseAdmin.
+- Ataskaitose rodomos savikainos ir pardavimo kainos yra dabartinės prekių kainos, o ne sandorio metu galiojusios (antraštės užuomina: „Current item prices; historical transaction prices remain unchanged.“).
+- Lentelės puslapiuojamos (pagal nutylėjimą 50 eilučių). Po lentele pasirenkamas puslapis ir eilučių skaičius.
 
 ## Žingsniai
+### 1. Atsargų likučiai
+1. Meniu pasirinkite (UI: Reports > Stock Level). Atsidaro (UI: Stock Level Report).
+2. Pasirinktinai užpildykite filtrus: (UI: Item ID), (UI: Location Id), (UI: Category Id) – tai skaičiai; (UI: Expiring Before) – rodo tik likučius, kurių galiojimas baigiasi iki tos datos.
+3. Pažymėkite (UI: Include reserved), jei reikia matyti rezervuotą kiekį stulpelyje (UI: Reserved). Be šios varnelės stulpelyje rodomas nulis. Pažymėkite (UI: Include virtual), jei reikia įtraukti virtualias vietas, kurios pagal nutylėjimą paslėptos.
+4. Spauskite (UI: Apply). Viršuje rodoma (UI: Total: N) ir „Stock as of HH:mm:ss“. Šalia gali būti ženklelis (UI: Stale), jei duomenys atsilieka.
+5. Spauskite (UI: Export CSV), kad gautumėte failą `stock-level-report.csv` su tais pačiais filtrais.
 
-### Atsargų likučio peržiūra
+Stulpeliai: SKU, (UI: Item), (UI: Location), (UI: Lot), (UI: Expiry), (UI: Qty), (UI: Reserved), (UI: Available), (UI: Cost), (UI: Sale), (UI: Value).
 
-1. Eik į `Stock` → `Available Stock` (UI: Stock → Available Stock) — prieinamas kiekis.
-2. Eik į `Stock` → `Location Balance` (UI: Stock → Location Balance) — detalus kiekis pagal vietą.
+![Atsargų likučių ataskaita](../img/warehouse/reports-stock-level.png)
 
-### Prekių judėjimų istorija
+### 2. Priėmimų istorija
+1. Pasirinkite (UI: Reports > Receiving History).
+2. Filtrai: (UI: Supplier Id) (skaičius), (UI: Status) – (UI: All), (UI: Draft), (UI: Partial) arba (UI: Complete), datų intervalas (UI: Expected From) ir (UI: Expected To).
+3. Spauskite (UI: Apply), o failui – (UI: Export CSV).
+4. Lentelėje rodoma siunta, nuoroda, tiekėjas, laukiama data, būsena, laukiamas ir priimtas kiekis bei sumos (UI: Purchase Total), (UI: Cost Total), (UI: Sale Total).
 
-1. Eik į `Reports` → `Stock Movements` (UI: Reports → Stock Movements).
-2. Filtruok pagal datą, prekę, vietą.
+### 3. Surinkimų istorija
+1. Pasirinkite (UI: Reports > Pick History).
+2. Filtrai: (UI: Order Id), (UI: Operator/User), (UI: Completed From), (UI: Completed To). Du pastarieji turi ir datą, ir laiką.
+3. Spauskite (UI: Apply) arba (UI: Export CSV).
+4. Eilutėje rodoma surinkimo užduotis, užsakymas, prekė, užsakytas ir surinktas kiekis, vertė pagal dabartinę savikainą (UI: Value (current cost)), operatorius ir užbaigimo laikas.
 
-### Priėmimų istorija
+### 4. Išsiuntimų istorija
+1. Pasirinkite (UI: Reports > Dispatch History).
+2. Filtrai: (UI: Date From), (UI: Date To), (UI: Carrier). (UI: Apply) pritaiko, (UI: Reset) išvalo, (UI: Refresh) perkrauna, (UI: Export CSV) išsaugo failą.
+3. Viršuje trys kortelės: (UI: Total Shipments), (UI: Total Orders), (UI: On-Time Delivery) (procentas). Lentelėje: siunta, užsakymas, klientas, vežėjas, sekimo numeris, išsiuntimo ir pristatymo datos, būsena.
 
-1. Eik į `Reports` → `Receiving History` (UI: Reports → Receiving History).
+### 5. Atsargų judėjimai
+1. Pasirinkite (UI: Reports > Stock Movements).
+2. Pagal nutylėjimą rodomos paskutinės 7 dienos. Keiskite (UI: Start) ir (UI: End), taip pat gali filtruoti pagal (UI: Item ID), (UI: Location Id), (UI: Operator) ir (UI: Movement Type): (UI: Receive), (UI: Transfer), (UI: Pick), (UI: Adjust), (UI: Dispatch).
+3. Spauskite (UI: Apply), o failui – (UI: CSV).
+4. Lentelėje: laikas, tipas, SKU, iš kurios ir į kurią vietą, kiekis su matavimo vienetu, savikaina, kaina, vertė, operatorius, priežastis ir nuoroda.
 
-### Krovimų istorija
+![Atsargų judėjimų ataskaita](../img/warehouse/reports-stock-movements.png)
 
-1. Eik į `Reports` → `Pick History` (UI: Reports → Pick History).
+## Ką reiškia būsenos ir spalvos
+- Priėmimų istorijoje siuntos būsena rodoma kaip (UI: Draft), (UI: Partial) arba (UI: Complete); ta pati trijų reikšmių aibė siūloma filtre.
+- Išsiuntimų istorijoje būsena rodoma ženkleliu: (UI: Dispatched) reiškia, kad siunta išsiųsta, bet pristatymo data neužfiksuota; (UI: Delivered) reiškia, kad pristatymo data užfiksuota.
+- Atsargų likučių ataskaitoje ženklelis (UI: Stale) rodo, kad projekcija, iš kurios imami likučiai, atsilieka (daugiau nei 5 sekundės geltonai, daugiau nei 30 sekundžių raudonai). Jei ženklelis nedingsta, žr. [Pradžia ir sistemos būsena](P-27-pradzia-ir-sistemos-busena.md).
 
-### Išsiuntimų istorija
-
-1. Eik į `Reports` → `Dispatch History` (UI: Reports → Dispatch History).
-
-### Atitikties auditų ataskaita
-
-1. Eik į `Reports` → `Compliance Audit` (UI: Reports → Compliance Audit).
-
-### Vykdymo KPI
-
-1. Eik į `Analytics` → `Fulfillment KPIs` (UI: Analytics → Fulfillment KPIs).
-2. Eik į `Analytics` → `Quality Analytics` (UI: Analytics → Quality Analytics).
-
-### Projekcijų būsena (administratorius)
-
-1. Eik į `Operations` → `Projections` (UI: Operations → Projections).
-2. Matai projekcijų vėlavimą ir galimybę paleisti atstatymą (`Rebuild`, UI: Rebuild).
-
----
-
-## Rezultatas (expected result)
-
-- Ataskaita pateikta ekrane
-- Galima eksportuoti (CSV, Excel) — funkcionalumas priklauso nuo versijos
-
----
-
-## Pastabos / ekrano nuotraukos
-
-> TODO: pridėk ekrano nuotraukas kiekvienos ataskaitos pavyzdžiu
-> **Pastaba:** Jei duomenys rodomi kaip `Refreshing...` — palaukite iki 5 sekundžių.
-
----
-
-## Susiję procesai
-
-- Visi procesai (P-01..P-12) generuoja duomenis ataskaitoms
-- [P-08 Agnum integracija](P-08-agnum-integracija.md) — finansinių duomenų eksportas
+## Dažnos klaidos
+- (UI: No rows found.) arba „No dispatch history rows found.“ / „No stock movements found.“: pagal filtrus duomenų nėra. Išplėskite datų intervalą arba išvalykite filtrus.
+- Klaidos plakatas su mygtuku (UI: Retry): serveris nepasiekiamas arba trūksta teisių. Pakartokite, o jei kartojasi, perduokite plakato sekimo kodą palaikymui.
+- Stulpelyje (UI: Reserved) rodomas nulis, nors prekė rezervuota: nepažymėta (UI: Include reserved).
+- Likučių ataskaitoje nematyti prekės virtualioje vietoje: nepažymėta (UI: Include virtual).

@@ -1,2 +1,4 @@
 node_modules/
 dist/
+# generated at image build time by `npm run docs:index` (src/build-docs-index.ts), never committed
+data/

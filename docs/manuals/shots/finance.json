@@ -1,0 +1,24 @@
+[
+  {
+    "file": "img/finance/bank-payments.png",
+    "url": "https://cikada-test.lauresta.com/finance/bank-payments",
+    "steps": [
+      { "wait": 2000 },
+      { "click": "button[role='radio']:has-text('90 d')" },
+      { "wait": 1500 }
+    ],
+    "fullPage": false,
+    "note": "Bankinių pavedimų sąrašas: šalies perjungiklis Lietuva/Latvija, paieškos laukas, laikotarpio mygtukai, lentelė su stulpeliais Nr, Data, Firma, Paskirtis, Suma ir × šalinimo mygtukais."
+  },
+  {
+    "file": "img/finance/bank-payments-paste.png",
+    "url": "https://cikada-test.lauresta.com/finance/bank-payments",
+    "steps": [
+      { "wait": 2000 },
+      { "click": "button.bp-primary:has-text('Įklijuoti iš Excel')" },
+      { "wait": 1000 }
+    ],
+    "fullPage": false,
+    "note": "Atidarytas įklijavimo laukas (textarea[data-paste]) su užuomina apie Ctrl+V. Peržiūros lentelei parodyti reikia suformuoti peržiūrą įklijuojant duomenis; ji nerašo į duomenų bazę, bet jos nesukuriame automatiškai – paveikslėlį su peržiūra padaryti rankiniu būdu, jei reikia (mygtuko 'Įkelti' nespausti)."
+  }
+]

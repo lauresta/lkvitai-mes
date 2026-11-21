@@ -1,77 +1,48 @@
-# P-02 — Padėjimas į vietą (Putaway)
-
-**Proceso numeris:** P-02
-**Atnaujinta:** 2026-02-24
-**Versija:** 1.0 (šablonas)
-
+---
+module: warehouse
+title: Padėjimas į sandėlio vietą (Putaway)
+routes: ["/putaway"]
+roles: ["Operator", "QCInspector", "WarehouseManager", "WarehouseAdmin"]
+status: veikia
 ---
 
-## Pavadinimas
+# Padėjimas į sandėlio vietą (Putaway)
 
-Priimtų prekių padėjimas į sandėlio saugojimo vietas (Putaway & Location Assignment)
+**Būsena:** veikia
 
----
+## Kam skirta
+Sandėlio modulio ekranas (UI: Inbound > Putaway) rodo prekes, kurios laukia priėmimo zonoje RECEIVING, ir leidžia kiekvieną iš jų perkelti į galutinę lentynos vietą. Ekraną atidaro visi sandėlio darbuotojai, bet perkelti gali tik kokybės inspektorius ir sandėlio vadovas.
 
-## Tikslas
-
-Po prekių priėmimo (P-01) perkelti sandėliavimo vienetus (HU) iš priėmimo doko į jų saugojimo vietas sandėlyje.
-
----
-
-## Kam skirta (rolės)
-
-| Rolė | Veiksmai |
-|------|---------|
-| Sandėlio operatorius | Vykdo padėjimo užduotis |
-| Sandėlio vadovas | Sukuria rankines padėjimo užduotis |
-
----
-
-## Prieš pradedant (preconditions)
-
-- Siunta priimta ir kokybės tikrinimas atliktas (P-01 baigtas)
-- Sandėlio vietos (bins) sukonfigūruotos sistemoje (P-15)
-- Sandėliavimo vienetas (HU) turi barkodą
-
----
+## Prieš pradedant
+- Prekės turi būti priimtos (žr. [P-01 Prekių priėmimas](P-01-priemimas-inbound.md)) ir, jei reikia, praėjusios kokybės patikrą – tada jos matomos vietoje RECEIVING.
+- Ekraną matyti leidžiama rolėms Operator, QCInspector, WarehouseManager, WarehouseAdmin. Mygtukas (UI: Putaway) veikia tik rolėms QCInspector, WarehouseManager, WarehouseAdmin.
+- Tikslo vietos turi būti sukurtos ir aktyvios (žr. [P-15 Pagrindinių duomenų valdymas](P-15-pagrindinis-duomenu-valdymas.md)).
 
 ## Žingsniai
+### 1. Atidaryti užduočių sąrašą
+1. Meniu pasirinkite (UI: Inbound > Putaway). Atsidaro ekranas (UI: Putaway Tasks) su blokeliu (UI: Tasks from RECEIVING).
+2. Lentelėje matote SKU, prekę, (UI: Qty), (UI: Cost), (UI: Sale), (UI: Value) ir vietą (UI: From). Sąrašą atnaujina (UI: Refresh).
+3. Jei sąrašas tuščias, rodoma „No putaway tasks available." – priėmimo zonoje prekių nėra.
 
-### 1. Atidaryti padėjimo užduotis (operatorius)
+![Padėjimo į vietą užduočių sąrašas](../img/warehouse/putaway-tasks.png)
 
-1. Eik į `Inbound` → `Putaway` (UI: Inbound → Putaway).
-2. Matai sąrašą laukiančių padėjimo užduočių.
-3. Pasirink užduotį, kurią nori vykdyti — paspausk ant jos.
+### 2. Perkelti prekę į lentyną
+1. Eilutėje stulpelyje (UI: To Location) pasirinkite tikslo vietą (pradinė reikšmė (UI: Select destination)). Sąraše yra aktyvios vietos, išskyrus RECEIVING.
+2. Pasirinktinai įrašykite (UI: Notes).
+3. Spauskite (UI: Putaway). Mygtukas neaktyvus, kol nepasirinkta vieta.
+4. Pranešime „Putaway completed for … to …" matote, kur prekė padėta. Eilutė iš sąrašo dingsta.
+5. Jei tikslo vietai nustatytas didžiausias svoris ar tūris ir jis būtų viršytas, po sėkmingo perkėlimo po lentele rodomas geltonas įspėjimas. Perkėlimas vis tiek įvyksta.
 
-### 2. Vykdyti padėjimo užduotį (operatorius)
+Perkeliamas visas eilutėje rodomas kiekis; dalinio perkėlimo šiame ekrane nėra.
 
-1. Nuskenavus sandėliavimo vieneto (HU) barkodą — sistema nurodo tikslą (`Target Location`, UI: Target Location).
-2. Fiziškai perkelk prekę į nurodytą vietą.
-3. Nuskenavus tikslinę vietą — paspausk `Complete` (UI: Complete).
-
-### 3. Patikrinti rezultatą
-
-1. Eik į `Stock` → `Location Balance` (UI: Stock → Location Balance).
-2. Įvesk sandėlio vietą ir patikrink, ar prekės rodomos teisingai.
-
----
-
-## Rezultatas (expected result)
-
-- Sandėliavimo vienetas (HU) užfiksuotas tikslinėje vietoje
-- Atsargų likutis atnaujintas abiejose vietose (išvykimo ir atvykimo) — `Location Balance`
-- Padėjimo užduoties statusas = `Completed` (UI: Completed)
-
----
-
-## Pastabos / ekrano nuotraukos
-
-> TODO: pridėk ekrano nuotraukas
-
----
+## Dažnos klaidos
+- „Putaway source location must be RECEIVING." – šaltinis nėra RECEIVING; šis ekranas dirba tik su priėmimo zona.
+- „Putaway destination must be a physical storage location." – pasirinkta virtuali vieta; parinkite fizinę lentynos vietą.
+- „Item … at location RECEIVING has only … available." – kiekis jau pasikeitė (kitas darbuotojas perkėlė); atnaujinkite sąrašą.
+- Mygtukas (UI: Putaway) neaktyvus – nepasirinkta tikslo vieta arba sistemoje nėra vietos RECEIVING.
+- Prieigos klaida – trūksta rolės QCInspector, WarehouseManager ar WarehouseAdmin.
 
 ## Susiję procesai
-
-- [P-01 Prekių priėmimas](P-01-priemimas-inbound.md) — pirmtakas
-- [P-04 Perkėlimas](P-04-perkelimas-transfer.md) — rankinis perkėlimas tarp vietų
-- [P-12 Sandėlio žemėlapis](P-12-sandelio-zemelapis-visualization.md) — vietų paieška
+- [P-01 Prekių priėmimas](P-01-priemimas-inbound.md)
+- [P-04 Perkėlimas tarp vietų](P-04-perkelimas-transfer.md) – vėlesni perkėlimai tarp lentynų.
+- [P-23 Etikečių stotelė](P-23-etikeciu-stotele.md) – vietų etikečių spausdinimas.

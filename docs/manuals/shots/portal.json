@@ -1,0 +1,33 @@
+[
+  {
+    "file": "img/portal/pradzia.png",
+    "url": "https://cikada-test.lauresta.com/portal/",
+    "steps": [
+      { "wait": 2500 }
+    ],
+    "fullPage": false,
+    "note": "Portalo pradžia po prisijungimo: geltona TEST ENVIRONMENT juosta, viršutinė juosta su EN/LT jungikliu ir Logout, modulių plytelės. Reikalinga prisijungusi sesija."
+  },
+  {
+    "file": "img/portal/paieska.png",
+    "url": "https://cikada-test.lauresta.com/portal/",
+    "steps": [
+      { "wait": 1500 },
+      { "click": "button.portal-search" },
+      { "wait": 500 }
+    ],
+    "fullPage": false,
+    "note": "Atidarytas langelis Universal search su tekstu coming soon po viršutine juosta."
+  },
+  {
+    "file": "img/portal/plyteliu-valdymas.png",
+    "url": "https://cikada-test.lauresta.com/portal/cms/tiles",
+    "steps": [
+      { "wait": 2500 },
+      { "click": ".cms-table tbody tr:first-child button.cms-action" },
+      { "wait": 500 }
+    ],
+    "fullPage": false,
+    "note": "Lentelė Dashboard tiles ir dešinėje redaktorius Edit tile su užpildytais laukais pirmai plytelei. Reikalinga Admin, WarehouseAdmin arba PortalAdmin rolė; nieko neišsaugoma."
+  }
+]

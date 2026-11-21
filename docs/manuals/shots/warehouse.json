@@ -1,0 +1,480 @@
+[
+  {
+    "file": "img/warehouse/inbound-shipments-list.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/inbound/shipments",
+    "fullPage": false,
+    "note": "Inbound Shipments list with the filter row (Supplier Id, Status, Expected From/To, Apply, Reset, Refresh, + Create Inbound) and the shipment table."
+  },
+  {
+    "file": "img/warehouse/inbound-qc-queue.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/inbound/qc",
+    "fullPage": false,
+    "note": "Receiving QC Queue with the queue/Quarantine toggle, Scan SKU / Lot and Reason Code fields and Pass / Fail buttons."
+  },
+  {
+    "file": "img/warehouse/putaway-tasks.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/putaway",
+    "fullPage": false,
+    "note": "Putaway Tasks table (Tasks from RECEIVING) with the To Location selector and the Putaway button."
+  },
+  {
+    "file": "img/warehouse/sales-orders-list.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/sales/orders",
+    "fullPage": false,
+    "note": "Sales Orders list with status/customer/date filters and the + Create button."
+  },
+  {
+    "file": "img/warehouse/outbound-orders-list.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/outbound/orders",
+    "fullPage": false,
+    "note": "Outbound Orders list with filters, status badges and Pack button on PICKED rows."
+  },
+  {
+    "file": "img/warehouse/outbound-dispatch.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/outbound/dispatch",
+    "fullPage": false,
+    "note": "Dispatch Confirmation list of packed shipments with the Dispatch button."
+  },
+  {
+    "file": "img/warehouse/waves-list.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/waves",
+    "fullPage": false,
+    "note": "Wave Picking page with the Create Wave card and the Active Waves table."
+  },
+  {
+    "file": "img/warehouse/picking-tasks.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/picking/tasks",
+    "fullPage": false,
+    "note": "Picking Tasks page: Create Task card on the left, Locations + Complete Task card on the right."
+  },
+  {
+    "file": "img/warehouse/labels-station.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/labels",
+    "fullPage": false,
+    "note": "Labels Station: Print / Preview card (template, JSON data) and the Queue table."
+  },
+  {
+    "file": "img/warehouse/cross-dock-queue.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/cross-dock",
+    "fullPage": false,
+    "note": "Cross-Dock Tracking: Create Cross-Dock Match card and the Cross-Dock Queue with Match / Complete buttons."
+  },
+  {
+    "file": "img/warehouse/rmas-queue.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/rmas",
+    "fullPage": false,
+    "note": "Returns / RMA: Create RMA card and the RMA Queue with Receive / Restock / Scrap buttons."
+  },
+  {
+    "file": "img/warehouse/transfers-list.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/transfers",
+    "fullPage": false,
+    "note": "Stock Transfers list with the status filter, + Create Transfer and Submit / Approve / Execute buttons."
+  },
+  {
+    "file": "img/warehouse/cycle-counts-list.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/cycle-counts",
+    "fullPage": false,
+    "note": "Cycle Counts list with Schedule Cycle Count button and View / Execute / Review Discrepancies buttons."
+  },
+  {
+    "file": "img/warehouse/cycle-counts-schedule.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/cycle-counts/schedule",
+    "fullPage": false,
+    "note": "Schedule Cycle Count form: date, ABC class, operator and the location checkboxes."
+  },
+  {
+    "file": "img/warehouse/stock-adjustments.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/stock/adjustments",
+    "fullPage": false,
+    "note": "Stock Adjustments: Create Adjustment form and the Adjustment History table. Needs WarehouseManager or WarehouseAdmin."
+  },
+  {
+    "file": "img/warehouse/available-stock-search.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/available-stock",
+    "steps": [
+      {
+        "fill": [
+          "[data-testid=\"stock-search\"] input",
+          "RM"
+        ]
+      },
+      {
+        "click": "button:has-text(\"Search\")"
+      },
+      {
+        "wait": 1500
+      }
+    ],
+    "fullPage": false,
+    "note": "Available Stock after a search by SKU (table view with Physical / Reserved / Available columns)."
+  },
+  {
+    "file": "img/warehouse/stock-dashboard.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/stock/dashboard",
+    "fullPage": false,
+    "note": "Stock Dashboard: filter row, four summary tiles, Stock by Location and Low Stock Alerts blocks."
+  },
+  {
+    "file": "img/warehouse/reservations-list.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/reservations",
+    "fullPage": false,
+    "note": "Reservations list with the status filter, Start Picking / Pick buttons."
+  },
+  {
+    "file": "img/warehouse/lots-list.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/admin/lots",
+    "steps": [
+      {
+        "wait": 2500
+      }
+    ],
+    "fullPage": false,
+    "note": "Partijų sąrašas (Admin > Lots): paieškos laukas, būsenos pasirinkimas, mygtukai Filter ir Refresh, lentelė su stulpeliais Lot, Item, Qty, Cost, Sale, Value, Reserved, Available, UoM, Production, Expiry, Status."
+  },
+  {
+    "file": "img/warehouse/serial-numbers-list.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/admin/serial-numbers",
+    "steps": [
+      {
+        "wait": 2000
+      }
+    ],
+    "fullPage": false,
+    "note": "Serijų numerių ekranas: blokas Register Serial, paieškos eilutė (Serial, Item ID, Status, Location, Search, Reset) ir lentelė. Jei paskyra be admin rolės, rodomas tik pranešimas 'Admin role required.' - tada reikia admin paskyros."
+  },
+  {
+    "file": "img/warehouse/map-2d.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/visualization/2d",
+    "steps": [
+      {
+        "wait": 3500
+      }
+    ],
+    "fullPage": false,
+    "note": "Sandėlio žemėlapis 2D vaizdu: įrankių juosta (sandėlio pasirinkimas, paieška, 3D/2D perjungiklis, Filters), SVG planas su vietomis ir spalvų legenda Status."
+  },
+  {
+    "file": "img/warehouse/map-3d.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/visualization/3d",
+    "steps": [
+      {
+        "wait": 6000
+      }
+    ],
+    "fullPage": false,
+    "note": "Sandėlio žemėlapis 3D vaizdu: matoma 3D scena su lentynomis, legenda ir blokas 'Mouse controls'. Reikia WebGL palaikymo; jei scena tuščia, šį paveikslėlį praleisti."
+  },
+  {
+    "file": "img/warehouse/reports-stock-level.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/reports/stock-level",
+    "steps": [
+      {
+        "wait": 2500
+      }
+    ],
+    "fullPage": false,
+    "note": "Atsargų likučių ataskaita (Stock Level Report): filtrų eilutė su Item ID, Location Id, Category Id, Expiring Before, varnelėmis Include reserved ir Include virtual, mygtukais Apply ir Export CSV; lentelė su likučiais."
+  },
+  {
+    "file": "img/warehouse/reports-stock-movements.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/reports/stock-movements",
+    "steps": [
+      {
+        "wait": 2500
+      }
+    ],
+    "fullPage": false,
+    "note": "Atsargų judėjimų ataskaita (Stock Movement History): datų laukai Start ir End (paskutinės 7 dienos), Movement Type sąrašas, mygtukai Apply ir CSV, lentelė su judėjimais."
+  },
+  {
+    "file": "img/warehouse/traceability-report.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/reports/traceability",
+    "steps": [
+      {
+        "wait": 3000
+      }
+    ],
+    "fullPage": false,
+    "note": "Partijos kelio ataskaita (Traceability report (Lot -> Order)): filtrai Lot Number, Item SKU, Sales Order, Supplier, mygtukai Search ir Reset; partijų kortelės su blokais Upstream, Current, Downstream Sales ir ženkleliu Approximate Linkage."
+  },
+  {
+    "file": "img/warehouse/compliance-dashboard.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/compliance/dashboard",
+    "steps": [
+      {
+        "wait": 2500
+      }
+    ],
+    "fullPage": true,
+    "note": "Atitikties skydelis: trys skaičių kortelės (Pending Exports, Recent Lot Traces, Variance Alerts), forma Schedule Report, lentelė Recent Scheduled Reports ir lentelė Scheduled Jobs. Reikia WarehouseManager arba Auditor paskyros."
+  },
+  {
+    "file": "img/warehouse/analytics-fulfillment.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/analytics/fulfillment",
+    "steps": [
+      {
+        "wait": 2500
+      }
+    ],
+    "fullPage": false,
+    "note": "Fulfillment KPIs: keturios kortelės (Total Orders, Shipped Orders, On-Time Delivery, Avg Pick Minutes) ir lentelė 14-Day Trend."
+  },
+  {
+    "file": "img/warehouse/analytics-quality.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/analytics/quality",
+    "steps": [
+      {
+        "wait": 2500
+      }
+    ],
+    "fullPage": false,
+    "note": "Kokybės analitika: kortelės QC Defect Count ir Late Shipments, lentelės Top Defect Types ir Late Shipments."
+  },
+  {
+    "file": "img/warehouse/dashboard-overview.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/dashboard",
+    "steps": [
+      {
+        "wait": 4000
+      }
+    ],
+    "fullPage": true,
+    "note": "Sandėlio pradžios skydelis (Warehouse Dashboard): sandėlių perjungiklis, KPI kortelės, žiedinė diagrama, sandėlių stulpeliai, Low stock & reorder, Expiring soon, Incoming & expected, Agnum integration health, Reservations & picking, Recent activity."
+  },
+  {
+    "file": "img/warehouse/projections-lag.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/projections",
+    "steps": [
+      {
+        "wait": 2500
+      }
+    ],
+    "fullPage": true,
+    "note": "Projekcijų ekranas: lentelė Projection Lag, blokas Rebuild / Verify su projekcijos pasirinkimu ir mygtukais Rebuild bei Verify, blokas Warehouse consolidation ir Runbook. Nespausti Rebuild, Verify ar Move stock."
+  },
+  {
+    "file": "img/warehouse/admin-system-settings.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/admin/settings",
+    "steps": [
+      {
+        "wait": 1500
+      }
+    ],
+    "fullPage": false,
+    "note": "Warehouse Settings form: Capacity Threshold, Default Pick Strategy, Low Stock Threshold, Reorder Point, Auto allocate orders, Save button."
+  },
+  {
+    "file": "img/warehouse/admin-system-reason-codes.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/admin/reason-codes",
+    "steps": [
+      {
+        "wait": 1500
+      }
+    ],
+    "fullPage": false,
+    "note": "Reason Codes list with Category/Active filters and the Add Reason Code button."
+  },
+  {
+    "file": "img/warehouse/admin-users-list.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/admin/users",
+    "steps": [
+      {
+        "wait": 1500
+      }
+    ],
+    "fullPage": false,
+    "note": "Create User form on the left and the Users table with Edit buttons on the right."
+  },
+  {
+    "file": "img/warehouse/admin-api-keys-list.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/admin/api-keys",
+    "steps": [
+      {
+        "wait": 1500
+      },
+      {
+        "click": "button:has-text('Create New Key')"
+      },
+      {
+        "wait": 500
+      }
+    ],
+    "fullPage": false,
+    "note": "API Keys list with the Create New Key form open (name, rate limit, expiry, scopes). Do not press Save."
+  },
+  {
+    "file": "img/warehouse/admin-audit-logs-list.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/admin/audit-logs",
+    "steps": [
+      {
+        "wait": 1500
+      }
+    ],
+    "fullPage": false,
+    "note": "Security Audit Logs with filters (User, Action, Resource, Start, End, Fetch Limit) and the results table."
+  },
+  {
+    "file": "img/warehouse/admin-gdpr-erasure-list.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/admin/gdpr-erasure",
+    "steps": [
+      {
+        "wait": 1500
+      }
+    ],
+    "fullPage": false,
+    "note": "GDPR Erasure Requests: New Erasure Request form and the request list with Approve/Reject buttons."
+  },
+  {
+    "file": "img/warehouse/admin-items-list.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/admin/items",
+    "steps": [
+      {
+        "wait": 2000
+      }
+    ],
+    "fullPage": false,
+    "note": "Items Management grid with search, category and status filters and the Create button."
+  },
+  {
+    "file": "img/warehouse/admin-warehouses-list.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/admin/warehouses",
+    "steps": [
+      {
+        "wait": 1500
+      }
+    ],
+    "fullPage": false,
+    "note": "Warehouses Management list with filters and the Create Warehouse button."
+  },
+  {
+    "file": "img/warehouse/admin-locations-list.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/admin/locations",
+    "steps": [
+      {
+        "wait": 1500
+      }
+    ],
+    "fullPage": false,
+    "note": "Locations Management list with filters (code/barcode, status, placement warehouse) and the Create Location button."
+  },
+  {
+    "file": "img/warehouse/admin-layout-editor.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/admin/layout-editor",
+    "steps": [
+      {
+        "wait": 2000
+      }
+    ],
+    "fullPage": false,
+    "note": "Warehouse Layout Editor: warehouse selector, Layout JSON and Rack Config JSON text areas, Reload and Save Layout buttons. Do not press Save Layout."
+  },
+  {
+    "file": "img/warehouse/admin-suppliers-list.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/admin/suppliers",
+    "steps": [
+      {
+        "wait": 2000
+      }
+    ],
+    "fullPage": false,
+    "note": "Suppliers Management grid with filters, Create, Mappings and Refresh from Agnum buttons. Do not press Refresh from Agnum."
+  },
+  {
+    "file": "img/warehouse/admin-import-wizard.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/admin/import",
+    "steps": [
+      {
+        "wait": 1500
+      }
+    ],
+    "fullPage": false,
+    "note": "Import Master Data page with the entity tabs, Download Template, File and Dry run controls."
+  },
+  {
+    "file": "img/warehouse/purchase-document-create.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/inbound/shipments/create",
+    "fullPage": false,
+    "note": "Create Inbound Shipment form: reference, supplier, invoice number/date, currency, net/VAT amounts, VAT treatment, accounting route, lines and additional costs."
+  },
+  {
+    "file": "img/warehouse/purchase-document-detail.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/inbound/shipments/13",
+    "fullPage": false,
+    "note": "Inbound Shipment Detail of the posted PLN document (id 13): Purchase document card with Posted badge, PLN/EUR amounts, Bank of Lithuania rate, VAT treatment, Agnum queue state and Un-post button."
+  },
+  {
+    "file": "img/warehouse/supplier-credit-new.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/inbound/credits/new/13",
+    "fullPage": false,
+    "note": "New credit note / return form prefilled from posted shipment id 13 (kind, number, date, VAT, lines table). Do not press Post."
+  },
+  {
+    "file": "img/warehouse/supplier-credit-posted.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/inbound/credits/1",
+    "fullPage": false,
+    "note": "Posted supplier credit id 1 with lines, amounts and Amount sent to Agnum."
+  },
+  {
+    "file": "img/warehouse/additional-costs.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/additional-costs",
+    "fullPage": false,
+    "note": "Additional cost invoices page: New cost invoice form and the list of cost invoices."
+  },
+  {
+    "file": "img/warehouse/agnum-accounting-stock-accounts.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/agnum/accounting",
+    "fullPage": false,
+    "note": "Agnum accounting configuration, tab Stock accounts (default tab) with the profile table."
+  },
+  {
+    "file": "img/warehouse/agnum-accounting-sending.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/agnum/accounting",
+    "steps": [
+      {
+        "click": "button.nav-link:has-text('Sending')"
+      },
+      {
+        "wait": 1000
+      }
+    ],
+    "fullPage": false,
+    "note": "Agnum accounting configuration, Sending tab: switch, start date, service address, Check connection and queue state."
+  },
+  {
+    "file": "img/warehouse/agnum-outbox.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/agnum/outbox",
+    "fullPage": false,
+    "note": "Agnum sending queue with the status filter, Send now button, queue table and the nightly reconciliation section."
+  },
+  {
+    "file": "img/warehouse/opening-balances.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/valuation/opening-balances",
+    "fullPage": false,
+    "note": "Opening balances page: CSV file picker, Preview and Confirm and load buttons, list of loaded opening documents."
+  },
+  {
+    "file": "img/warehouse/intrastat-arrivals.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/valuation/intrastat",
+    "fullPage": false,
+    "note": "Intrastat arrivals report of the current month with Month field, Show and Download CSV."
+  },
+  {
+    "file": "img/warehouse/month-end.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/valuation/month-end",
+    "fullPage": false,
+    "note": "Month end page for the previous month: state badge, Close month button or blockers, stock value statement."
+  },
+  {
+    "file": "img/warehouse/valuation-dashboard.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/valuation/dashboard",
+    "fullPage": false,
+    "note": "Valuation Dashboard: summary cards, Revaluation button and Valuation register."
+  },
+  {
+    "file": "img/warehouse/valuation-revaluation.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/valuation/revaluation",
+    "fullPage": false,
+    "note": "Revaluation of stock form (empty): Item, New unit price (EUR), Approved By, Reason."
+  }
+]

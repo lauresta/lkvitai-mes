@@ -1,84 +1,66 @@
-# P-04 — Perkėlimas (Internal Stock Transfer)
-
-**Proceso numeris:** P-04
-**Atnaujinta:** 2026-02-24
-**Versija:** 1.0 (šablonas)
-
+---
+module: warehouse
+title: Atsargų perkėlimas tarp vietų (Transfers)
+routes: ["/transfers", "/transfers/create", "/transfers/{Id}/execute"]
+roles: ["Operator", "QCInspector", "WarehouseManager", "WarehouseAdmin"]
+status: veikia
 ---
 
-## Pavadinimas
+# Atsargų perkėlimas tarp vietų (Transfers)
 
-Vidinės atsargų perkėlimas tarp sandėlio vietų (Internal Stock Transfer)
+**Būsena:** veikia
 
----
+## Kam skirta
+Sandėlio modulio ekranai (UI: Operations > Transfers) skirti perkelti prekes iš vienos sandėlio vietos į kitą: sukurti perkėlimo prašymą, jį pateikti, prireikus patvirtinti ir įvykdyti. Ekranus naudoja sandėlio darbuotojai, o patvirtina sandėlio vadovas.
 
-## Tikslas
-
-Perkelti fizines atsargas iš vienos sandėlio vietos į kitą — tarp zonų, sekcijų arba loginių sandėlių.
-
----
-
-## Kam skirta (rolės)
-
-| Rolė | Veiksmai |
-|------|---------|
-| Sandėlio operatorius | Vykdo patvirtintą perkėlimą |
-| Sandėlio vadovas | Sukuria ir tvirtina perkėlimo užklausą |
-
----
-
-## Prieš pradedant (preconditions)
-
-- Perkėlimo šaltinis ir tikslo vieta egzistuoja sistemoje
-- Atsargos yra šaltinio vietoje
-- Jei konfigūruoti patvirtinimo taisyklės (`Approval Rules`) — vadovas turi patvirtinti
-
----
+## Prieš pradedant
+- Prekės turi būti sandėlyje išeinamojoje vietoje, o abi vietos – sukurtos ir aktyvios.
+- Sąrašą, kūrimą, pateikimą (UI: Submit) ir vykdymą (UI: Execute) leidžiama naudoti rolėms Operator, QCInspector, WarehouseManager, WarehouseAdmin.
+- Patvirtinti (UI: Approve) gali tik WarehouseManager ir WarehouseAdmin.
 
 ## Žingsniai
+### 1. Sukurti perkėlimą
+1. Meniu pasirinkite (UI: Operations > Transfers). Atsidaro (UI: Stock Transfers). Spauskite (UI: + Create Transfer).
+2. Ekrane (UI: Create Transfer) laukas (UI: Warehouse) tik rodomas – perkėlimas vyksta to paties sandėlio viduje.
+3. Spauskite (UI: + Add Line), pasirinkite prekę, įveskite (UI: Qty), (UI: From Location) ir (UI: To Location). Šalia matote kainą, pardavimo kainą ir vertę pagal dabartinę savikainą. (UI: Remove) pašalina eilutę.
+4. Spauskite (UI: Submit). Perkėlimas sukuriamas su būsena Draft („Transfer … created"), sąraše atsiranda naujas įrašas.
 
-### 1. Sukurti perkėlimo užklausą (sandėlio vadovas)
+### 2. Pateikti ir patvirtinti
+1. Sąraše prie Draft įrašo spauskite (UI: Submit). Perkėlimas tampa Approved („Transfer submitted for approval").
+2. Perkėlimas laukia vadovo (būsena Pending approval) tik tada, kai paskirties sandėlis yra SCRAP. Tada vadovas spaudžia (UI: Approve), lange (UI: Approve Transfer) gali įrašyti (UI: Reason (optional)) ir patvirtina.
 
-1. Eik į `Operations` → `Transfers` (UI: Operations → Transfers).
-2. Paspausk `+ Create` (UI: Create).
-3. Užpildyk:
-   - `From Location` (UI: From Location) — išvykimo vieta
-   - `To Location` (UI: To Location) — tikslo vieta
-   - Prekė (`Item`, UI: Item) ir kiekis (`Qty`, UI: Qty)
-4. Paspausk `Save` (UI: Save).
-5. Jei reikalingas patvirtinimas — vadovas patvirtina užklausą.
+![Perkėlimų sąrašas](../img/warehouse/transfers-list.png)
 
-### 2. Vykdyti perkėlimą (operatorius)
+### 3. Įvykdyti
+1. Prie įrašo su būsena Approved spauskite (UI: Execute) (arba (UI: View) ir tada (UI: Execute) kortelėje (UI: Execute Transfer)). Kortelėje matote eilutes, vietas ir būseną.
+2. Lange (UI: Confirm Execution) skaitote „Execute transfer? Stock will be moved." ir spauskite (UI: Confirm).
+3. Pranešime „Transfer executed successfully." Atsargos perkeliamos iš pasirinktos vietos į paskirties vietą, perkėlimas tampa Completed.
+4. Sąraše galima filtruoti pagal (UI: Status) ir spausti (UI: Apply) arba (UI: Reset).
 
-1. Eik į `Operations` → `Transfers` (UI: Operations → Transfers).
-2. Rask patvirtintą perkėlimą.
-3. Paspausk `Execute` (UI: Execute) arba atidaryk detales ir paspausk `Execute Transfer` (UI: Execute Transfer).
-4. Fiziškai perkelk prekes.
-5. Patvirtink vykdymą.
+## Ką reiškia būsenos ir spalvos
+Sandėlio modulio ekrane (UI: Stock Transfers) perkėlimo būsena rodoma žyma.
+- Draft – sukurtas, dar nepateiktas.
+- Pending approval – laukia vadovo (tik SCRAP paskirties atveju).
+- Approved – galima vykdyti.
+- In transit – vykdomas; tarpinė būsena vykdymo metu.
+- Completed – atsargos perkeltos.
+- Cancelled – atšauktas.
+Mygtukai eilutėje būna neaktyvūs, kai veiksmas esamai būsenai netinka (pvz., (UI: Execute) neaktyvus, kol perkėlimas nėra Approved).
 
-### 3. Patikrinti rezultatą
+## Dažnos klaidos
+- „Add at least one valid transfer line." – nėra nė vienos užpildytos eilutės.
+- „Transfer line cannot move to same location." – (UI: From Location) ir (UI: To Location) sutampa.
+- „Insufficient stock at location …" – išeinamojoje vietoje nepakanka atsargų.
+- „Transfer requires approval before execution." – perkėlimas dar nepatvirtintas.
+- „Manager approval is required for SCRAP transfers." – patvirtinti gali tik vadovas.
+- „Invalid status transition" – veiksmas neleidžiamas šiai būsenai; atnaujinkite sąrašą.
+- „Transfer not found" / „Transfer does not exist or is unavailable." – įrašas pašalintas arba adresas neteisingas.
 
-1. Eik į `Stock` → `Location Balance` (UI: Stock → Location Balance).
-2. Patikrink šaltinio ir tikslo vietas — kiekiai turi būti atnaujinti.
-
----
-
-## Rezultatas (expected result)
-
-- Perkėlimo statusas = `Completed` (UI: Completed)
-- Šaltinio vietos likutis sumažėjo
-- Tikslo vietos likutis padidėjo
-- `Available Stock` atnaujintas (≤5 sek.)
-
----
-
-## Pastabos / ekrano nuotraukos
-
-> TODO: pridėk ekrano nuotraukas
-
----
+## Dar neįgyvendinta
+- Perkėlimo atšaukti ekrane negalima: mygtuko nėra, nors būsena Cancelled yra filtre.
+- Ekrane (UI: Create Transfer) paskirties sandėlis visada lygus esamam, todėl perkėlimai į kitą sandėlį ar SCRAP iš šio ekrano nekuriami ir šio ekrano perkėlimams vadovo patvirtinimas nereikalingas.
 
 ## Susiję procesai
-
 - [P-02 Padėjimas į vietą](P-02-padeti-i-lokacija-putaway.md)
-- [P-12 Sandėlio žemėlapis](P-12-sandelio-zemelapis-visualization.md) — vietos paieška
+- [P-06 Atsargų koregavimas](P-06-atsargu-koregavimas-adjustments.md)
+- [P-24 Atsargų peržiūra](P-24-atsargu-perziura.md)

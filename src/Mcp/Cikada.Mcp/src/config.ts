@@ -30,6 +30,8 @@ export interface Config {
   financeApiUrl: string;
   /** MCP_ENABLE_ORDER_ENTRY=true: the order entry tools (writes and their helper reads) are offered. */
   orderEntry: boolean;
+  /** MANUALS_BASE_URL (optional): where the MkDocs manuals site is served; docs tools return absolute links when set. */
+  manualsBaseUrl?: string;
 }
 
 export class ConfigError extends Error {}
@@ -87,5 +89,6 @@ export function loadConfig(env: Readonly<Record<string, string | undefined>>): C
     warehouseApiUrl: httpUrl('WAREHOUSE_API_URL', env.WAREHOUSE_API_URL),
     financeApiUrl: httpUrl('FINANCE_API_URL', env.FINANCE_API_URL),
     orderEntry: env.MCP_ENABLE_ORDER_ENTRY?.trim().toLowerCase() === 'true',
+    ...(env.MANUALS_BASE_URL?.trim() ? { manualsBaseUrl: httpUrl('MANUALS_BASE_URL', env.MANUALS_BASE_URL) } : {}),
   };
 }

@@ -1,0 +1,12 @@
+[
+  {
+    "file": "img/scanning/pradzia.png",
+    "url": "https://cikada-test.lauresta.com/scan/",
+    "steps": [
+      { "click": "button:has-text('Ping API')" },
+      { "wait": 1500 }
+    ],
+    "fullPage": false,
+    "note": "Pradžios puslapis su antrašte 'Hello from Scanning.' ir žaliu pranešimu po Ping API paspaudimo (GET užklausa, duomenų nekeičia)."
+  }
+]

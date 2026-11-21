@@ -1,88 +1,58 @@
-# P-07 — Atsargų vertinimas (Inventory Valuation & Costing)
-
-**Proceso numeris:** P-07
-**Atnaujinta:** 2026-02-24
-**Versija:** 1.0 (šablonas)
-
+---
+module: warehouse
+title: Atsargų vertinimas ir nukainojimas
+routes: ["/valuation/dashboard", "/valuation/revaluation"]
+roles: ["InventoryAccountant", "WarehouseManager", "WarehouseAdmin"]
+status: veikia
 ---
 
-## Pavadinimas
+# Atsargų vertinimas ir nukainojimas
 
-Atsargų finansinis vertinimas: savikainos keitimas, papildomų kaštų priskyrimas, nurašymai (Inventory Valuation & Costing)
+**Būsena:** veikia
 
----
+## Kam skirta
+Sandėlio modulio ekranai (UI: Valuation Dashboard) ir (UI: Revaluation of stock) skirti matyti atsargų vertę ir ją sumažinti nukainojimo dokumentu. Sandėlis vertę laiko sumomis eurais: kiekvienas judėjimas (priėmimas, išdavimas, nurašymas, korekcija) keičia prekės likučio vertę, o vieneto savikaina yra vertė, padalinta iš kiekio. Savikainos redagavimo ir papildomų išlaidų paskirstymo ekranų nebėra: išlaidos įvedamos pirkimo dokumente (žr. [P-16](P-16-pirkimo-dokumentas.md)), o mėnesio vertė tikrinama [P-22](P-22-menesio-uzdarymas.md).
 
-## Tikslas
-
-Palaikyti teisingą sandėlyje esančių atsargų finansinę vertę: keisti savikainą, priskirti papildomus kaštus (transportas, muito mokesčiai) ir nurašyti prekes.
-
----
-
-## Kam skirta (rolės)
-
-| Rolė | Veiksmai |
-|------|---------|
-| Inventoriaus buhalteris | Keičia savikainą, priskiria papildomus kaštus |
-| Finansų direktorius (CFO) | Tvirtina nurašymus, peržiūri vertinimo suvestinę |
-
----
-
-## Prieš pradedant (preconditions)
-
-- Atsargos yra sistemoje
-- Savikainos duomenys gauti iš tiekėjo (sąskaita faktūra)
-- Papildomų kaštų dokumentai paruošti
-
----
+## Prieš pradedant
+- Prieiga prie nukainojimo: InventoryAccountant, WarehouseManager, WarehouseAdmin. Vertės ataskaitas gali žiūrėti visos Warehouse rolės.
+- Prekė turi turėti vertinamų atsargų (kitaip „There is no valued stock to revalue.“).
+- Nukainojimo data neturi patekti į uždarytą mėnesį.
 
 ## Žingsniai
+### 1. Peržiūrėti atsargų vertę
+1. Meniu pasirinkite (UI: Finance > Valuation). Atsidaro (UI: Valuation Dashboard).
+2. Viršuje matote kortelės (UI: Valued stock total), (UI: Recent Cost Changes (7d)) ir (UI: Pending Approvals) (didelių savikainos pokyčių be patvirtinusio asmens skaičius; skaičiuojamas iš istorijos lentelės: pokytis didesnis kaip 1000 be patvirtinusio asmens).
+3. Skiltyje (UI: Valuation register) matote prekę, kiekį, savikainą, pardavimo kainą ir bendrą vertę; (UI: Export CSV) eksportuoja lentelę.
+4. Skiltyje (UI: Cost History Report) filtruokite pagal (UI: Item ID), (UI: Reason), (UI: Approved By), datas ir spauskite (UI: Apply Filters); (UI: Reset) išvalo filtrus.
 
-### Savikainos keitimas (Adjust Cost)
+![Vertinimo suvestinė](../img/warehouse/valuation-dashboard.png)
 
-1. Eik į `Finance` → `Valuation` → `Adjust Cost` (UI: Finance → Valuation → Adjust Cost).
-2. Pasirink prekę (`Item`, UI: Item) arba vietą.
-3. Įvesk naują savikainą (`New Unit Cost`, UI: New Unit Cost).
-4. Pridėk pastabą.
-5. Paspausk `Save` (UI: Save).
+### 2. Nukainoti prekę
+1. Suvestinėje spauskite (UI: Revaluation). Atsidaro (UI: Revaluation of stock).
+2. Pasirinkite (UI: Item), įveskite (UI: New unit price (EUR)) ir (UI: Reason) (bent 3 simboliai). Jei nukainojimas sumažina vertę daugiau kaip 1000 EUR, įveskite (UI: Approved By) (el. pašto formatu) – tokį nukainojimą gali patvirtinti tik vadovo rolė.
+3. Spauskite (UI: Revaluation). Pranešimas „Write-down completed successfully.“ ir grįžtama į suvestinę. Dokumentas gauna numerį UC-data-kodas.
+4. Nukainojimas gali tik sumažinti vertę: nauja kaina turi būti mažesnė už dabartinę vidutinę.
 
-### Papildomų kaštų priskyrimas (Apply Landed Cost)
+![Nukainojimo forma](../img/warehouse/valuation-revaluation.png)
 
-1. Eik į `Finance` → `Valuation` → `Apply Landed Cost` (UI: Finance → Valuation → Apply Landed Cost).
-2. Pasirink siuntos numerį ar prekių grupę.
-3. Įvesk papildomų kaštų sumą (pvz. transportas).
-4. Pasirink paskirstymo metodą (`Allocation Method`, UI: Allocation Method).
-5. Paspausk `Apply` (UI: Apply).
+### 3. Kaip vertė keičiasi kitur
+- Priėmimas pagal pirkimo dokumentą įvertinamas preliminaria kaina, o užregistravus – galutine suma (žr. P-16).
+- Išdavimai, grąžinimai, nurašymai ir korekcijos keičia vertę pagal vidutinę savikainą; mėnesio vertės ataskaita – [P-22](P-22-menesio-uzdarymas.md).
+- Pradinė vertė įkeliama iš CSV – [P-20](P-20-pradiniai-likuciai.md).
 
-### Vertės nurašymas (Write Down)
+## Ką reiškia būsenos ir spalvos
+Ekrane (UI: Valuation Dashboard) skiltyje (UI: Cost History Report) rodomi senos ir naujos savikainos pokyčiai bei patvirtinęs asmuo; tuščias „Approved By“ pažymimas brūkšniu.
 
-1. Eik į `Finance` → `Valuation` → `Write Down` (UI: Finance → Valuation → Write Down).
-2. Pasirink prekes, kurias nurašyti.
-3. Įvesk nurašymo sumą ir priežastį.
-4. Paspausk `Submit for Approval` (UI: Submit for Approval).
-5. CFO peržiūri ir patvirtina.
-
-### Vertinimo suvestinės peržiūra
-
-1. Eik į `Finance` → `Valuation` (UI: Finance → Valuation).
-2. Matai bendrą sandėlio vertę pagal vietą ir prekę.
-
----
-
-## Rezultatas (expected result)
-
-- Finansiniai įrašai atnaujinti sistemoje
-- Suvestinė rodoma `Finance` → `Valuation` (UI: Finance → Valuation)
-- Duomenys paruošti eksportui į Agnum (P-08)
-
----
-
-## Pastabos / ekrano nuotraukos
-
-> TODO: pridėk ekrano nuotraukas
-
----
+## Dažnos klaidos
+- „Approval required for revaluation > 1000 EUR.“ – įveskite (UI: Approved By).
+- „Manager approval is required for revaluation > 1000 EUR.“ – tokį nukainojimą gali atlikti tik vadovas ar administratorius.
+- „Revaluation must reduce the stock value.“ – nauja kaina turi būti mažesnė.
+- „There is no valued stock to revalue.“ – prekė neturi vertinamų atsargų.
+- „Reason is required.“ / „NewUnitPrice must be >= 0.“ – užpildykite laukus.
+- Uždarytas mėnuo – nukainojimas atmetamas; atidarykite mėnesį pagal P-22.
 
 ## Susiję procesai
-
-- [P-08 Agnum integracija](P-08-agnum-integracija.md) — eksportas į apskaitą
-- [P-13 Ataskaitos](P-13-ataskaitos-analize-reports.md) — atsargų vertės ataskaitos
+- [P-16 Pirkimo dokumentas](P-16-pirkimo-dokumentas.md)
+- [P-22 Mėnesio uždarymas](P-22-menesio-uzdarymas.md)
+- [P-08 Agnum integracija](P-08-agnum-integracija.md)
+- [P-13 Ataskaitos](P-13-ataskaitos-analize-reports.md)

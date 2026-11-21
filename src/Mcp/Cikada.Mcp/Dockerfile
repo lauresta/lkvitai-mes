@@ -1,20 +1,25 @@
-# Cikada.MES remote MCP server. Build context: this directory (src/Mcp/Cikada.Mcp).
-#   docker build -t lkvitai-mes-mcp src/Mcp/Cikada.Mcp
+# Cikada.MES remote MCP server. Build context: the REPOSITORY ROOT, because the image also carries the user manuals index built from
+# docs/manuals/docs (the filter is Dockerfile.dockerignore next to this file).
+#   docker build -f src/Mcp/Cikada.Mcp/Dockerfile -t lkvitai-mes-mcp .
 FROM node:22-alpine AS build
-WORKDIR /app
-COPY package.json package-lock.json tsconfig.json ./
+WORKDIR /repo/src/Mcp/Cikada.Mcp
+COPY src/Mcp/Cikada.Mcp/package.json src/Mcp/Cikada.Mcp/package-lock.json src/Mcp/Cikada.Mcp/tsconfig.json ./
 RUN npm ci --ignore-scripts --no-audit --no-fund
-COPY src ./src
-COPY test ./test
-RUN npm run build && npm prune --omit=dev
+COPY src/Mcp/Cikada.Mcp/src ./src
+COPY src/Mcp/Cikada.Mcp/test ./test
+COPY docs/manuals/docs /repo/docs/manuals/docs
+ARG GIT_SHA=
+# data/docs-index.json (+ docs-manifest.json) is generated here from the manuals, never committed
+RUN npm run build && GIT_SHA="$GIT_SHA" npm run docs:index && npm prune --omit=dev
 
 FROM node:22-alpine
 ENV NODE_ENV=production \
     MCP_PORT=8080
 WORKDIR /app
-COPY --from=build --chown=node:node /app/package.json ./package.json
-COPY --from=build --chown=node:node /app/node_modules ./node_modules
-COPY --from=build --chown=node:node /app/dist/src ./dist/src
+COPY --from=build --chown=node:node /repo/src/Mcp/Cikada.Mcp/package.json ./package.json
+COPY --from=build --chown=node:node /repo/src/Mcp/Cikada.Mcp/node_modules ./node_modules
+COPY --from=build --chown=node:node /repo/src/Mcp/Cikada.Mcp/dist/src ./dist/src
+COPY --from=build --chown=node:node /repo/src/Mcp/Cikada.Mcp/data ./data
 USER node
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

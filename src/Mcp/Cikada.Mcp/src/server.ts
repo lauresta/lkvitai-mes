@@ -7,11 +7,12 @@ import { promptsFor } from './prompts.js';
 import type { ToolContext, ToolDef } from './tool.js';
 import { ORDER_ENTRY_TOOLS } from './tools-order-entry.js';
 import { FINANCE_TOOLS } from './tools-finance.js';
+import { DOCS_TOOLS } from './tools-docs.js';
 import { READ_TOOLS } from './tools-read.js';
 import { REPORT_TOOLS } from './tools-reports.js';
 import { ArgumentError, validateArgs } from './validate.js';
 
-export const ALL_TOOLS: readonly ToolDef[] = [...READ_TOOLS, ...REPORT_TOOLS, ...ORDER_ENTRY_TOOLS, ...FINANCE_TOOLS];
+export const ALL_TOOLS: readonly ToolDef[] = [...READ_TOOLS, ...REPORT_TOOLS, ...ORDER_ENTRY_TOOLS, ...FINANCE_TOOLS, ...DOCS_TOOLS];
 
 export const toolsFor = (orderEntry: boolean): readonly ToolDef[] => ALL_TOOLS.filter((tool) => orderEntry || !tool.orderEntry);
 
@@ -56,6 +57,7 @@ export function instructions(orderEntry: boolean): string {
       ? 'Order entry: order_entry_catalog / order_entry_references give every id; order_entry_get gives the revision every write needs. Never guess an id, a number or a price; summarise and get an explicit yes before order_create, order_confirm, order_cancel or order_product_remove. After a refused write read the order again.'
       : 'Order entry (creating or changing orders) is not enabled on this server.',
     'Management reports (live, with history since 2020): report_production (made / in production / queue / stopped by product type, series, state, day or month), report_work (accruals per employee and duty), report_payments (money received by method and branch); report_dimensions gives exact filter values. Live lists: production_queue (queue now), materials_popularity, stopped_products, unpaid_orders, made_not_delivered (not handed out / not installed), customer_debt, orders_find (orders by period, product, material). Answer from them directly, and draw a chart from data.rows when it helps.',
+    'User manuals (Lithuanian, how to use each screen and process in every module): docs_search with Lithuanian keywords (translate the question first, try 2-3 queries), then docs_get for the full chunk before answering; say when a screen is marked "laikina" (a stub). No backend call, any signed-in user.',
     'Every call runs as the signed-in user; a 403 means the user lacks the Cikada role for it.',
   ].join('\n');
 }

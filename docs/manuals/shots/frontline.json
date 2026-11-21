@@ -1,0 +1,20 @@
+[
+  {
+    "file": "img/frontline/audinio-patikra.png",
+    "url": "https://cikada-test.lauresta.com/frontline/fabric",
+    "steps": [
+      { "wait": 1500 }
+    ],
+    "fullPage": false,
+    "note": "Ekranas Fabric availability: telefono rėmelis su paieškos lauku Enter fabric code…, mygtuku Check ir tuščia būsena Check availability; dešinėje QR kodas. Paieška nevykdoma, nes kiekviena patikra įrašoma į duomenų bazę."
+  },
+  {
+    "file": "img/frontline/mazu-likuciu-sarasas.png",
+    "url": "https://cikada-test.lauresta.com/frontline/fabric/low-stock",
+    "steps": [
+      { "wait": 3000 }
+    ],
+    "fullPage": false,
+    "note": "Ekranas Low-stock materials: keturios suvestinės plytelės, įrankių juosta su paieška ir filtrais Threshold, Status, Width, Supplier, lentelė su audiniais."
+  }
+]

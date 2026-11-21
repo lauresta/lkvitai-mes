@@ -13,7 +13,7 @@ test('tools/list: the read tools by default, read-only annotated; order entry on
   try {
     const token = fakeJwt();
     const listed = (await rpc(off.base, token, 'tools/list')).body.result.tools as { name: string; annotations: Record<string, unknown> }[];
-    assert.deepEqual(listed.map((t) => t.name), [...READ_TOOLS, 'bank_payments_import']);
+    assert.deepEqual(listed.map((t) => t.name), [...READ_TOOLS, 'bank_payments_import', 'docs_search', 'docs_get']);
     for (const tool of listed.filter((t) => t.name !== 'bank_payments_import')) assert.equal(tool.annotations.readOnlyHint, true, tool.name);
     assert.equal(listed.find((t) => t.name === 'bank_payments_import')?.annotations.destructiveHint, true);
 

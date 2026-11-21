@@ -25,6 +25,10 @@ export interface ToolContext {
   /** Today in Europe/Vilnius, YYYY-MM-DD. */
   today: () => string;
   /** The caller as the token names them (display only). */
+  /** The manuals index (tests inject one; otherwise the generated data/docs-index.json is loaded). */
+  docs?: import('./docs-search.js').DocsSearch;
+  /** MANUALS_BASE_URL without a trailing slash: docs_search / docs_get then return absolute URLs. */
+  manualsBaseUrl?: string;
   user?: { username?: string; name?: string; email?: string; roles: string[] };
 }
 

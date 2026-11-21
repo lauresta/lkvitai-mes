@@ -1,103 +1,63 @@
-# P-14 — Sistemos administravimas ir atitiktis (System Administration & Compliance)
-
-**Proceso numeris:** P-14
-**Atnaujinta:** 2026-02-24
-**Versija:** 1.0 (šablonas)
-
+---
+module: warehouse
+title: Sistemos administravimas - nustatymai, priežasčių kodai, patvirtinimo taisyklės
+routes: ["/admin/settings", "/admin/reason-codes", "/admin/approval-rules"]
+roles: ["WarehouseAdmin", "WarehouseManager"]
+status: dalinai
 ---
 
-## Pavadinimas
+# Sistemos administravimas - nustatymai, priežasčių kodai, patvirtinimo taisyklės
 
-Sistemos administravimas: vartotojai, prieigos, saugumas, GDPR, atsarginės kopijos ir atitiktis (System Administration & Compliance)
+**Būsena:** dalinai
 
----
+## Kam skirta
+Sandėlio modulio (Warehouse) skyrius `(UI: Admin)` skirtas sistemos administratoriui. Šiame puslapyje aprašyti trys bendrų nustatymų ekranai: sandėlio nustatymai `(UI: Admin > Admin Settings)`, atsargų korekcijų priežasčių kodai `(UI: Admin > Reason Codes)` ir patvirtinimo taisyklės `(UI: Admin > Approval Rules)`. Kitos administravimo temos aprašytos atskiruose puslapiuose, žr. skyrių „Susiję puslapiai".
 
-## Tikslas
-
-Valdyti sistemos konfigūraciją, vartotojų prieigą, saugumo parametrus ir užtikrinti atitiktį teisiniams reikalavimams.
-
----
-
-## Kam skirta (rolės)
-
-| Rolė | Veiksmai |
-|------|---------|
-| Sistemos administratorius | Visos administravimo funkcijos |
-| Atitikties pareigūnas / auditorius | Audito žurnalai, atitikties ataskaitos |
-
----
-
-## Prieš pradedant (preconditions)
-
-- Sistemos administratoriaus prieigos duomenys
-
----
+## Prieš pradedant
+- Visi trys ekranai yra meniu skiltyje `(UI: Admin)`. Skiltis matoma visiems prisijungusiems, tačiau duomenis keisti gali tik rolė `WarehouseAdmin`.
+- Reason Codes sąrašą serveris leidžia skaityti ir rolei `WarehouseManager`; kurti, keisti ir trinti kodus gali tik `WarehouseAdmin`.
+- Admin Settings skaityti gali bet kuri rolė nuo `Operator` aukštyn, keisti - tik `WarehouseAdmin`.
+- Jei ekrane matote geltoną pranešimą „Admin role required.", šiam stendui nesukonfigūruota administratoriaus rolė; kreipkitės į sistemos administratorių.
 
 ## Žingsniai
 
-### Vartotojų valdymas
+### 1. Sandėlio nustatymai (Admin Settings)
+1. Meniu pasirinkite `(UI: Admin > Admin Settings)`. Atsidaro puslapis `(UI: Warehouse Settings)`.
+2. Užpildykite laukus: `(UI: Capacity Threshold (%))` - skaičius nuo 0 iki 100; `(UI: Default Pick Strategy)` - `FEFO` arba `FIFO`; `(UI: Low Stock Threshold)`; `(UI: Reorder Point)` - sveikieji skaičiai, ne mažesni už 0.
+3. Pažymėkite arba nuimkite varnelę `(UI: Auto allocate orders)`.
+4. Paspauskite `(UI: Save)`. Pasirodo pranešimas „Settings saved successfully", o šalia mygtuko - eilutė „Last updated by ... at ...".
 
-1. Eik į `Admin` → `Users` (UI: Admin → Users).
-2. Sukurk naują vartotoją: paspausk `+ Create` (UI: Create).
-3. Priskirk rolę: `Admin` → `Roles` (UI: Admin → Roles).
+![Sandėlio nustatymų ekranas](../img/warehouse/admin-system-settings.png)
 
-### API raktų valdymas
+### 2. Priežasčių kodai (Reason Codes)
+1. Meniu pasirinkite `(UI: Admin > Reason Codes)`.
+2. Sąrašą galima filtruoti: `(UI: Category)` ir `(UI: Active)`, tada paspausti `(UI: Filter)`. Kategorijos: `ADJUSTMENT`, `REVALUATION`, `WRITEDOWN`, `RETURN`.
+3. Naujam kodui paspauskite `(UI: Add Reason Code)`. Atsidariusioje formoje `(UI: Create Reason Code)` užpildykite `(UI: Code)`, `(UI: Name)`, `(UI: Category)`, nebūtinai `(UI: Parent)` (rodomi tik kodai be tėvinio kodo) ir `(UI: Description)`; palikite `(UI: Active)` ir paspauskite `(UI: Save)`.
+4. Kodui pakeisti eilutėje paspauskite `(UI: Edit)`, pataisykite laukus ir `(UI: Save)`.
+5. Kodui pašalinti paspauskite `(UI: Delete)` ir patvirtinkite dialoge `(UI: Delete Reason Code)`. Stulpelyje `(UI: Usage)` rodoma, kiek kartų kodas panaudotas.
 
-1. Eik į `Admin` → `API Keys` (UI: Admin → API Keys).
-2. Sukurk naują raktą: `+ Create` (UI: Create).
-3. Rotuok raktą: paspausk `Rotate` (UI: Rotate).
-4. Ištrink nebenaudojamą raktą: `Delete` (UI: Delete).
+![Priežasčių kodų sąrašas](../img/warehouse/admin-system-reason-codes.png)
 
-### Audito žurnalų peržiūra
+### 3. Patvirtinimo taisyklės (Approval Rules)
+1. Meniu pasirinkite `(UI: Admin > Approval Rules)`.
+2. Paspauskite `(UI: Add Approval Rule)`. Formoje `(UI: Create Approval Rule)` pasirinkite `(UI: Rule Type)` (`COST_ADJUSTMENT`, `WRITEDOWN` arba `TRANSFER`), `(UI: Threshold Type)` (`AMOUNT` arba `PERCENTAGE`), įveskite `(UI: Threshold Value)`, `(UI: Priority)`, pasirinkite `(UI: Approver Role)` ir paspauskite `(UI: Save)`.
+3. Taisyklę galima keisti `(UI: Edit)` arba šalinti `(UI: Delete)`.
+4. Taisyklei išbandyti skiltyje `(UI: Test Rule Evaluation)` pasirinkite taisyklės tipą, įveskite `(UI: Test Value)` ir paspauskite `(UI: Test Rule)`. Rezultatas: „Requires approval: <rolė>" arba „No approval required."
 
-1. Eik į `Admin` → `Audit Logs` (UI: Admin → Audit Logs).
-2. Filtruok pagal datą, vartotoją, veiksmą.
+## Ką reiškia būsenos ir spalvos
+- Stulpelis `(UI: Active)` Reason Codes ir Approval Rules sąrašuose rodo `(UI: Yes)` arba `(UI: No)`. Panaudotą priežasties kodą trinti negalima, todėl jį reikia pažymėti kaip neaktyvų.
+- Reason Codes eilutės su tėviniu kodu rodomos įtrauktos į dešinę po tėviniu kodu.
 
-### GDPR duomenų ištrynimas
+## Dažnos klaidos
+- „Admin role required." - ekranas atidarytas be administratoriaus rolės konfigūracijos; kreipkitės į administratorių.
+- „Cannot delete reason code with usage history. Mark inactive instead." - kodas jau panaudotas; vietoj trynimo atidarykite `(UI: Edit)` ir nuimkite varnelę `(UI: Active)`.
+- Forma nepasiduoda su raudonu patikros pranešimu - neįvestas privalomas laukas (`Code`, `Name`) arba reikšmė už leistinų ribų (pvz., `Capacity Threshold (%)` virš 100).
 
-1. Eik į `Admin` → `GDPR Erasure` (UI: Admin → GDPR Erasure).
-2. Sukurk ištrynimo užklausą su asmens duomenimis.
-3. Stebėk užklausos būseną.
+## Dar neįgyvendinta
+- Approval Rules: kode nerasta vietų, kur kiti procesai (korekcijos, nurašymai, perkėlimai) skaitytų šias taisykles. Ekranas leidžia taisykles saugoti ir išbandyti, bet realių operacijų jos kol kas nestabdo.
+- Admin Settings: sistema realiai naudoja tik `(UI: Reorder Point)` - jis lemia, kurios prekės rodomos pritrūkstančių atsargų sąrašuose Dashboard. `(UI: Capacity Threshold (%))`, `(UI: Default Pick Strategy)`, `(UI: Low Stock Threshold)` ir `(UI: Auto allocate orders)` yra išsaugomi, bet kode nerasta, kad kiti procesai juos skaitytų.
 
-### Atsarginės kopijos
-
-1. Eik į `Admin` → `Backups` (UI: Admin → Backups).
-2. Paspausk `Backup Now` (UI: Backup Now) rankinei kopijai.
-3. Jei reikia atstatyti — pasirink kopiją ir paspausk `Restore` (UI: Restore).
-
-### Katastrofų valdymo testai (DR Drills)
-
-1. Eik į `Admin` → `DR Drills` (UI: Admin → DR Drills).
-2. Paleisk testą: `Run Drill` (UI: Run Drill).
-3. Patikrink rezultatus ir dokumentuok.
-
-### Duomenų saugojimo politikos
-
-1. Eik į `Admin` → `Retention Policies` (UI: Admin → Retention Policies).
-2. Sukonfigūruok, kiek laiko saugoti duomenis.
-
-### Patvirtinimo taisyklės
-
-1. Eik į `Admin` → `Approval Rules` (UI: Admin → Approval Rules).
-2. Sukonfigūruok, kuriems veiksmams reikia vadovo patvirtinimo.
-
----
-
-## Rezultatas (expected result)
-
-- Sistema tinkamai sukonfigūruota
-- Prieigos teisės valdymo sistema veikia
-- Audito žurnalas pilnas ir prieinamas auditoriams
-
----
-
-## Pastabos / ekrano nuotraukos
-
-> TODO: pridėk ekrano nuotraukas
-
----
-
-## Susiję procesai
-
+## Susiję puslapiai
+- [P-30 Vartotojai, rolės ir API raktai](P-30-vartotojai-roles-api-raktai.md)
+- [P-31 Auditas, duomenų saugojimas, GDPR, atsarginės kopijos](P-31-auditas-saugojimas-gdpr-kopijos.md)
 - [P-15 Pagrindinių duomenų valdymas](P-15-pagrindinis-duomenu-valdymas.md)
-- [P-13 Ataskaitos](P-13-ataskaitos-analize-reports.md) — atitikties ataskaitos

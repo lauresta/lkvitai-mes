@@ -1,0 +1,8 @@
+# Build context is the repository root; send only what the MCP image needs (BuildKit prefers this file over the root .dockerignore).
+**
+!src/Mcp/Cikada.Mcp/package.json
+!src/Mcp/Cikada.Mcp/package-lock.json
+!src/Mcp/Cikada.Mcp/tsconfig.json
+!src/Mcp/Cikada.Mcp/src
+!src/Mcp/Cikada.Mcp/test
+!docs/manuals/docs/**/*.md

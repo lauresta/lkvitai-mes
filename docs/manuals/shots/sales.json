@@ -1,0 +1,76 @@
+[
+  {
+    "file": "img/sales/orders-list.png",
+    "url": "https://cikada-test.lauresta.com/sales/",
+    "steps": [
+      { "click": "label[title='Rodyti tik neapmokėtus užsakymus']" },
+      { "wait": 1500 }
+    ],
+    "fullPage": false,
+    "note": "Užsakymų sąrašas su įjungtu filtru 'Yra skola'; matomi paieškos laukas, būsenos ir salono sąrašai, išjungtas datos filtras, lentelė su skolos stulpeliu."
+  },
+  {
+    "file": "img/sales/order-detail.png",
+    "url": "https://cikada-test.lauresta.com/sales/orders/{firstRow}",
+    "steps": [
+      { "wait": 1000 }
+    ],
+    "fullPage": true,
+    "note": "{firstRow} = pirmos eilutės užsakymo numeris iš sąrašo https://cikada-test.lauresta.com/sales/ (nuoroda a.order-link pirmoje lentelės eilutėje, pvz. href 'orders/VV-123'). Turi būti matomi: antraštė, prekių lentelė, sumų kortelės ir darbuotojų lentelė."
+  },
+  {
+    "file": "img/sales/order-entry-new.png",
+    "url": "https://cikada-test.lauresta.com/sales/",
+    "steps": [
+      { "wait": 1500 },
+      { "click": "button:has-text('Naujas užsakymas')" },
+      { "wait": 1500 },
+      { "fill": ["#demo-number", "VV-123"] },
+      { "wait": 1000 }
+    ],
+    "fullPage": false,
+    "note": "Šoninis langas 'Naujas užsakymas' su užpildytu numerio lauku (nespausti 'Sukurti ir atidaryti užsakymą'): matomi Klientas, Salonas, Vadybininkas, Konsultantas, datos."
+  },
+  {
+    "file": "img/sales/order-entry.png",
+    "url": "https://cikada-test.lauresta.com/sales/entry/{firstRow}",
+    "steps": [
+      { "wait": 2500 }
+    ],
+    "fullPage": true,
+    "note": "{firstRow} = pirmos eilutės UŽSAKYMO ID (skaičius, ne numeris): sąraše spustelėti pirmą eilutę ir paimti href iš mygtuko 'Redaguoti pasirinktą užsakymą' (a[href^='entry/']). Turi būti matomos kortelės Asmenys ir datos, Adresas, Atsakingi darbuotojai, gaminių lentelė, Kvitas ir Mokėjimai."
+  },
+  {
+    "file": "img/sales/order-entry-picker.png",
+    "url": "https://cikada-test.lauresta.com/sales/entry/{firstRow}",
+    "steps": [
+      { "wait": 2500 },
+      { "click": "button:has-text('Pridėti gaminį / paslaugą')" },
+      { "wait": 1500 }
+    ],
+    "fullPage": false,
+    "note": "{firstRow} kaip ir order-entry paveikslėlyje (užsakymo ID iš nuorodos 'entry/{id}'). Atidarytas gaminio rūšies (kairėje) ir tipo (dešinėje) pasirinkimas; nieko nespausti tipų sąraše. Mygtukas gali būti neaktyvus, jei serija neleidžiama rašymui – tada rinktis užsakymą leidžiamoje (Testavimas) serijoje."
+  },
+  {
+    "file": "img/sales/order-entry-product.png",
+    "url": "https://cikada-test.lauresta.com/sales/entry/{firstRow}",
+    "steps": [
+      { "wait": 2500 },
+      { "click": "button.demo-line-open >> nth=0" },
+      { "wait": 2000 }
+    ],
+    "fullPage": true,
+    "note": "{firstRow} = užsakymo ID, kurio užsakyme jau yra bent viena gaminio eilutė (kitaip mygtuko button.demo-line-open nėra). Atidarytas gaminio redagavimas: Pagrindiniai parametrai, PPP01-PPP12, Priedai, Tiesioginė peržiūra, Kaina ir atsargos. Neišsaugoti."
+  },
+  {
+    "file": "img/sales/order-entry-payment.png",
+    "url": "https://cikada-test.lauresta.com/sales/entry/{firstRow}",
+    "steps": [
+      { "wait": 2500 },
+      { "click": "button:has-text('Naujas mokėjimas')" },
+      { "wait": 2000 }
+    ],
+    "fullPage": false,
+    "note": "{firstRow} = užsakymo ID (kaip order-entry). Atidaryta forma 'Naujas mokėjimas' su mokėjimo būdo sąrašu; nieko nepasirinkti ir nespausti 'Įrašyti mokėjimą'. Jei mokėjimai išjungti, mygtukas neaktyvus – naudoti užsakymą leidžiamoje serijoje."
+  }
+]
