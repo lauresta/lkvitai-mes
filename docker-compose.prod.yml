@@ -198,7 +198,9 @@ services:
       Sales__OrderEntry__CancellationEnabled: "false"
       Sales__OrderEntry__PaymentsEnabled: "${SALES_ORDER_ENTRY_PAYMENTS_ENABLED:-true}"
       Sales__OrderEntry__PaymentCurrencyId: "2"
-      Sales__OrderEntry__AllowedPaymentEmployeeIds__0: "77249366"
+      # No Sales__OrderEntry__AllowedPaymentEmployeeIds here: on the test stand that list adds an
+      # approved receiver and makes them the default for cash; in production the receiver is
+      # chosen from the employees the signed-in user may see in Access.
       Sales__OrderEntry__AllowedPaymentMethodIds__0: "1"
       Sales__OrderEntry__AllowedPaymentMethodIds__1: "2"
       Sales__OrderEntry__AllowedPaymentMethodIds__2: "81423987"

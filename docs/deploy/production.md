@@ -77,6 +77,29 @@ The deploy job runs on the repository runner `lkvitai-apps-01` (label `lkvitai-a
 runner is still listed under repository Settings - Actions - Runners; GitHub deletes
 the registration of a runner that was offline for a long time.
 
+## First-time setup of an empty database
+
+Nothing below is created by the deploy.
+
+1. **First administrator.** Signing in through SSO does not create an account. Sales,
+   Finance, the live Shopfloor screens and user administration need an active row in
+   `public.local_user_accounts` whose `Username` equals the authentik username; its
+   `LegacySqlLogin` is the SQL Server login the user works under in Access. The first
+   row (role `WarehouseAdmin`) has to be inserted in SQL; after that, accounts are
+   managed in Warehouse - `/warehouse/admin/users`.
+2. **Finance.** Bank payment import is additionally limited to the logins in
+   `Finance__AllowedLegacyLogins` (`docker-compose.prod.yml`).
+3. **Warehouse.** Create the physical warehouse whose code equals `WAREHOUSE_CODE`
+   (default `WH1`), active and not virtual, in `/warehouse/admin/warehouses`. Until
+   then Warehouse API logs a warning at startup and stock operations find no master data.
+4. **Shopfloor.** Press *Sync legacy* on `/shopfloor/map/product-types` once; work
+   centers, stations and workflows are entered in the Shopfloor reference screens.
+   The live queue and task screens read the legacy database and need none of this.
+5. **Agnum.** Not connected: import is switched off for both rows of
+   `public.agnum_warehouse_mappings` (`IsImportEnabled = false`). Switch it back on
+   when Agnum is connected. Items, suppliers and price groups are entered in the
+   Warehouse admin screens or imported from Excel until then.
+
 ## On the servers
 
 - `lkvitai-apps`: `/opt/lkvitai-mes/auth-keys` (sign-in key ring, created by the
@@ -84,4 +107,6 @@ the registration of a runner that was offline for a long time.
   `/opt/lkvitai-mes/models/item-image-model.onnx` (copied by hand, needed for search
   by photo).
 - `lkvitai-db`: the `vector` extension must be installed and created in `lkvitai`
-  for search by photo.
+  for search by photo. The application signs in as `lkvitai_app`, which owns the
+  database and is not a superuser. `/etc/cron.d/lkvitai-pg-dump` writes a daily dump
+  to `/var/backups/postgresql` (kept 14 days), in addition to the nightly VM backup.
