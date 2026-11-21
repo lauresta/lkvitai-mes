@@ -29,14 +29,53 @@ public static class ProductionTaskWriteEndpoints
     }
 }
 
-public sealed class ProductionTaskWriter(ProductionQueueReader queue)
+public sealed class ProductionTaskWriter(ProductionQueueReader queue, IConfiguration configuration)
 {
+    // false (default): issuing is limited to the legacy test branch TESTAVIMAS.
+    // true (production): every branch the signed-in user's legacy permissions cover.
+    private const string ContinueTaskSql = $"""
+        SELECT sProductionOutputDocumentNo
+        FROM dbo.TAB_ProductionOutputDocuments d WITH (UPDLOCK,HOLDLOCK)
+        WHERE iProductionOutputDocumentID=@id AND iAssignedStatusID=1
+          AND sProductionOutputDocumentNo LIKE NGU%
+          AND sUserNameInsert=SYSTEM_USER
+          AND {ProductionTaskReader.Visibility}
+        """;
+
+    // Test stand: a GU may be continued only while every row in it belongs to TESTAVIMAS.
+    private const string ContinueTestBranchTaskSql = ContinueTaskSql + """
+
+          AND NOT EXISTS (
+              SELECT 1 FROM dbo.TAB_ProductionOutputDocumentDetails existing
+              LEFT JOIN dbo.ParduotiGaminiai epg ON epg.iBarCode=existing.iBarCode
+              LEFT JOIN dbo.Uzsakymai eu ON eu.UzsakymasID=epg.UzsakymoID
+              LEFT JOIN dbo.Zinynas_UzsakymoSerijos es ON es.UzsakymoSerijaID=eu.UzsakymoSerija
+              LEFT JOIN dbo.Zinynas_filialai ef ON ef.FilialoID=es.FilialoID
+              WHERE existing.iProductionOutputDocumentID=d.iProductionOutputDocumentID
+                AND UPPER(COALESCE(ef.FilialoPavadinimas,N))<>NTESTAVIMAS)
+        """;
+
+    private const string EligibleItemSql = $"""
+        SELECT pg.iBarCode {ProductionQueueReader.QueueSourceSql}
+          AND pg.ParduotoGaminioID=@productId
+        """;
+
+    private const string EligibleTestBranchItemSql = EligibleItemSql + """
+
+          AND UPPER(f.FilialoPavadinimas)=NTESTAVIMAS
+        """;
+
+    private readonly bool _allBranches = configuration.GetValue<bool>("Shopfloor:ProductionTaskWrite:AllBranches");
+
+    private string ContinueSql => _allBranches ? ContinueTaskSql : ContinueTestBranchTaskSql;
+    private string EligibleSql => _allBranches ? EligibleItemSql : EligibleTestBranchItemSql;
+
     public Task<IssueProductionPortionResult> IssueAsync(IssueProductionPortionRequest request, CancellationToken ct)
-        => queue.WithActorConnectionAsync((connection, token) => IssueRowsAsync(connection, request, token),
+        => queue.WithActorConnectionAsync((connection, token) => IssueRowsAsync(connection, request, ContinueSql, EligibleSql, token),
             ct, ProductionQueueReader.ProductionTaskMenuId);
 
     private static async Task<IssueProductionPortionResult> IssueRowsAsync(SqlConnection connection,
-        IssueProductionPortionRequest request, CancellationToken ct)
+        IssueProductionPortionRequest request, string continueTaskSql, string eligibleItemSql, CancellationToken ct)
     {
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         try
@@ -45,22 +84,7 @@ public sealed class ProductionTaskWriter(ProductionQueueReader queue)
             string number;
             if (request.TaskId is int existing)
             {
-                await using var task = new SqlCommand($"""
-                    SELECT sProductionOutputDocumentNo
-                    FROM dbo.TAB_ProductionOutputDocuments d WITH (UPDLOCK,HOLDLOCK)
-                    WHERE iProductionOutputDocumentID=@id AND iAssignedStatusID=1
-                      AND sProductionOutputDocumentNo LIKE N'GU%'
-                      AND sUserNameInsert=SYSTEM_USER
-                      AND {ProductionTaskReader.Visibility}
-                      AND NOT EXISTS (
-                          SELECT 1 FROM dbo.TAB_ProductionOutputDocumentDetails existing
-                          LEFT JOIN dbo.ParduotiGaminiai epg ON epg.iBarCode=existing.iBarCode
-                          LEFT JOIN dbo.Uzsakymai eu ON eu.UzsakymasID=epg.UzsakymoID
-                          LEFT JOIN dbo.Zinynas_UzsakymoSerijos es ON es.UzsakymoSerijaID=eu.UzsakymoSerija
-                          LEFT JOIN dbo.Zinynas_filialai ef ON ef.FilialoID=es.FilialoID
-                          WHERE existing.iProductionOutputDocumentID=d.iProductionOutputDocumentID
-                            AND UPPER(COALESCE(ef.FilialoPavadinimas,N''))<>N'TESTAVIMAS');
-                    """, connection, transaction);
+                await using var task = new SqlCommand(continueTaskSql, connection, transaction);
                 task.Parameters.Add("@id", SqlDbType.Int).Value = existing;
                 number = await task.ExecuteScalarAsync(ct) as string
                     ?? throw Denied("PRODUCTION_TASK_NOT_AVAILABLE", "This GU is not available to continue.", 404);
@@ -104,15 +128,11 @@ public sealed class ProductionTaskWriter(ProductionQueueReader queue)
                 if (await lockProduct.ExecuteScalarAsync(ct) is null)
                     throw Denied("PRODUCTION_ITEM_NOT_AVAILABLE", "A selected item is no longer available. Refresh the queue.", 409);
 
-                await using var eligible = new SqlCommand($"""
-                    SELECT pg.iBarCode {ProductionQueueReader.QueueSourceSql}
-                      AND pg.ParduotoGaminioID=@productId
-                      AND UPPER(f.FilialoPavadinimas)=N'TESTAVIMAS';
-                    """, connection, transaction);
+                await using var eligible = new SqlCommand(eligibleItemSql, connection, transaction);
                 eligible.Parameters.Add("@productId", SqlDbType.BigInt).Value = productId;
                 var barcode = await eligible.ExecuteScalarAsync(ct) as string;
                 if (string.IsNullOrWhiteSpace(barcode))
-                    throw Denied("PRODUCTION_ITEM_NOT_AVAILABLE", "A selected item is no longer available in Testavimas. Refresh the queue.", 409);
+                    throw Denied("PRODUCTION_ITEM_NOT_AVAILABLE", "A selected item is no longer available. Refresh the queue.", 409);
 
                 // The legacy trigger reads scalar values from INSERTED; do not
                 // combine multiple barcodes into a single INSERT statement.

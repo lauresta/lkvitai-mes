@@ -10,6 +10,7 @@ public partial class Gamyba
     [Inject] private ShopfloorApiClient ShopfloorApi { get; set; } = default!;
 
     private bool LiveQueueEnabled => Configuration.GetValue<bool>("Shopfloor:ProductionQueue:Enabled");
+    private bool LiveAllBranches => Configuration.GetValue<bool>("Shopfloor:ProductionTaskWrite:AllBranches");
     private bool LiveTaskWriteEnabled => LiveQueueEnabled && Configuration.GetValue<bool>("Shopfloor:ProductionTaskWrite:Enabled");
     private int? _liveIssueTaskId;
     private bool _liveIssueBusy;

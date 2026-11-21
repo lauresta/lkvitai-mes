@@ -10,7 +10,7 @@ public sealed partial class SqlSalesOrderEntryService
         {
             var h=command.Header;ValidateHeader(h);ValidateDiscount(h.DiscountPercent);
             var series=(await Rows(c,tx,"SELECT s.* FROM dbo.Zinynas_UzsakymoSerijos s WITH(UPDLOCK,HOLDLOCK) WHERE s.UzsakymoSerijaID=@id AND s.bHideInApplicationFlag=0 AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=s.FilialoID)",token,("@id",h.SeriesId))).SingleOrDefault()??throw new OrderEntryException("NOT_FOUND","Series not found.",404);
-            if(I(series,"FilialoID")!=7 || !options.AllowedSeriesIds.Contains(h.SeriesId))throw new OrderEntryException("TEST_BRANCH_ONLY","Choose a configured Testavimas series.",403);
+            if(!options.InScope(I(series,"FilialoID"),h.SeriesId))throw new OrderEntryException("TEST_BRANCH_ONLY","Choose a configured Testavimas series.",403);
             var year=TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow,TimeZoneInfo.FindSystemTimeZoneById("Europe/Vilnius")).Year;
             var number=LegacyOrderNumber.Normalize(h.Number,S(series,"UzsakymoSerijaPav")!,year);
             await ValidateHeaderReferences(c,tx,h,token);

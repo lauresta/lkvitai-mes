@@ -50,20 +50,23 @@ Optional:
 | `CLARITY_PROJECT_ID` | variable | Microsoft Clarity project for production |
 | `AUTH_KEYS_DIR`, `LOGS_DIR`, `CLIP_MODEL_DIR` | variable | Host folders, default under `/opt/lkvitai-mes` |
 
-Switches for writing into the legacy database - all off unless set to `true`:
+Writing into the legacy database. Production works on the same database as Access,
+in every branch the signed-in user may use there; the test stand is limited to the
+TESTAVIMAS branch (series XXXX, XXX1, RY-TEST, RY01) by default in code. Each kind of
+write is on unless its variable is set to `false`:
 
-| Variable | Turns on |
-| --- | --- |
-| `SALES_ORDER_ENTRY_ENABLED` | Creating and editing orders in Sales |
-| `SALES_ORDER_ENTRY_PAYMENTS_ENABLED` | Registering payments in Sales |
-| `SALES_PRODUCTION_CONFIRMATION_ENABLED` + `SALES_PRODUCTION_DOCUMENT_PREFIX` | Confirming orders into production |
-| `SHOPFLOOR_TASK_WRITE_ENABLED` | Operators changing task state in Shopfloor |
-| `CIKADA_MCP_ORDER_ENTRY` | Order entry tools of the assistant (MCP) |
+| Variable | Default | Controls |
+| --- | --- | --- |
+| `SALES_ORDER_ENTRY_ENABLED` | `true` | Creating and editing orders in Sales |
+| `SALES_ORDER_ENTRY_PAYMENTS_ENABLED` | `true` | Registering payments in Sales |
+| `SALES_PRODUCTION_CONFIRMATION_ENABLED` | `true` | Confirming orders into production |
+| `SALES_PRODUCTION_DOCUMENT_PREFIX` | `MES` | Prefix of production documents created by Cikada (test stand: `MEST`) |
+| `SHOPFLOOR_TASK_WRITE_ENABLED` | `true` | Issuing items into production tasks (GU) in Shopfloor |
+| `SALES_ORDER_ENTRY_ALL_BRANCHES`, `SHOPFLOOR_TASK_WRITE_ALL_BRANCHES` | `true` | `false` narrows production to the TESTAVIMAS branch, as on the test stand |
+| `CIKADA_MCP_ORDER_ENTRY` | off | Order entry tools of the assistant (MCP) |
 
-Before turning order entry on, replace the allowed series, payment methods and
-employee lists in `docker-compose.prod.yml` (`Sales__OrderEntry__Allowed*`): they are
-still the test-only values from the test stand. The Finance allow-list
-(`Finance__AllowedLegacyLogins`) is in the same file.
+Bank payment import in Finance is open to the logins listed in
+`Finance__AllowedLegacyLogins` in `docker-compose.prod.yml`.
 
 Agnum is not connected on production. `AGNUM__API__BASEURL` and the Agnum key secrets
 stay unset until it is.

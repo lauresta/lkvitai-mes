@@ -2194,4 +2194,10 @@
   <data name="Order.FixedPriceShort" xml:space="preserve">
     <value>Fiksuota kaina €</value>
   </data>
+  <data name="Workspace.LiveEntryHelpAll" xml:space="preserve">
+    <value>Užsakymo įvedimas į duomenų bazę. Sukūrus užsakymą išsaugomi jo pagrindiniai duomenys.</value>
+  </data>
+  <data name="Workspace.ReadOnly" xml:space="preserve">
+    <value>Užsakymą galima tik peržiūrėti: jo įrašyti negalima.</value>
+  </data>
 </root>

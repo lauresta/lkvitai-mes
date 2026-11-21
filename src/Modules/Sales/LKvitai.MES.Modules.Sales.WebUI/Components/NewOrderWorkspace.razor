@@ -60,7 +60,7 @@
                 <button class="demo-icon-button" type="button" aria-label="@L["Common.Close"].Value" @onclick="CloseAsync">×</button>
             </div>
             <div class="demo-drawer__body">
-                <p class="demo-notice">@(IsLive ? L["Workspace.LiveEntryHelp"].Value : L["Workspace.SnapshotPreview", Catalog.SnapshotDate].Value)</p>
+                <p class="demo-notice">@(IsLive ? L[LiveEntryHelpKey].Value : L["Workspace.SnapshotPreview", Catalog.SnapshotDate].Value)</p>
                 <label class="demo-label" for="demo-number">@L["Workspace.OrderNumber"].Value <span class="demo-required">*</span></label>
                 <input id="demo-number" class="demo-input mono" value="@_rawNumber" @oninput="OnNumberInput"
                        placeholder="@L["Workspace.NumberExample"].Value" autocomplete="off" aria-describedby="demo-number-help" />
@@ -222,7 +222,7 @@
                     <div class="demo-receipt__row"><span>@L["Common.Paid"].Value</span><strong class="mono">@OrderFormat.Money(_order.Paid)</strong></div>
                     <div class="demo-receipt__row"><span>@L["Common.Debt"].Value</span><strong class="mono">@OrderFormat.Money(_order.Debt)</strong></div>
                     <button class="btn btn--primary" type="button" disabled="@(IsLive && !_order.WritesAllowed)" @onclick="SavePreview">@(IsLive ? L["Workspace.SaveOrder"].Value : L["Workspace.SaveDraft"].Value)</button>
-                    <p class="order-save-help">@(IsLive ? (_order.WritesAllowed ? L["Workspace.SaveHelp"].Value : L["Workspace.ReadOnlyTest"].Value) : L["Workspace.DraftHelp"].Value)</p>
+                    <p class="order-save-help">@(IsLive ? (_order.WritesAllowed ? L["Workspace.SaveHelp"].Value : L[ReadOnlyKey].Value) : L["Workspace.DraftHelp"].Value)</p>
                     @if (!string.IsNullOrWhiteSpace(_saveMessage)) { <div class="demo-save-message @(_saveIsError ? "demo-save-message--error" : "")" role="status">@_saveMessage</div> }
                     <button class="btn btn--ghost" type="button" disabled="@(!CanConfirmLiveProducts)" title="@(!CanConfirmLiveProducts ? L["Confirmation.Unavailable"].Value : null)" @onclick="OpenConfirmationAsync">@L["Confirmation.ConfirmProduction"].Value</button>
                 </section><section class="panel order-payments">                    <div class="demo-receipt__payments">

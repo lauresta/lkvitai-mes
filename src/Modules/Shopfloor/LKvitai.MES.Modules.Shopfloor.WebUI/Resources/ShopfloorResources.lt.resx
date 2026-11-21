@@ -2710,4 +2710,7 @@
   <data name="Roletai.Paperless.DateSummary" xml:space="preserve"><value>data {0}–{1}</value></data>
   <data name="Roletai.Paperless.AlreadySigned" xml:space="preserve"><value>Jau pasirašė: {0} · {1}</value></data>
   <data name="Roletai.Paperless.SignFailed" xml:space="preserve"><value>Pasirašymo išsaugoti nepavyko. Patikrinkite ryšį ir bandykite dar kartą.</value></data>
+  <data name="Gamyba.CurrentAccessStateIsCheckedAgainOnSave" xml:space="preserve">
+    <value>Išsaugant dar kartą tikrinama dabartinė Access būsena.</value>
+  </data>
 </root>

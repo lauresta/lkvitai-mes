@@ -17,12 +17,16 @@ public sealed class SqlSalesOrderEntryReferences : ISalesOrderEntryReferences
     private readonly SalesSqlOptions _options;
     private readonly ILegacySqlConnectionFactory _connections;
 
-    public SqlSalesOrderEntryReferences(SalesSqlOptions options, ILegacySqlConnectionFactory connections)
+    private readonly bool _allBranches;
+
+    public SqlSalesOrderEntryReferences(SalesSqlOptions options, ILegacySqlConnectionFactory connections,
+        SalesOrderEntryOptions? orderEntry = null)
     {
         ArgumentNullException.ThrowIfNull(options);
         if (string.IsNullOrWhiteSpace(options.ConnectionString))
             throw new ArgumentException("Live references require a SQL connection.", nameof(options));
         _options = options;
+        _allBranches = orderEntry?.AllBranches ?? false;
         _connections = connections ?? throw new ArgumentNullException(nameof(connections));
     }
 
@@ -67,7 +71,8 @@ public sealed class SqlSalesOrderEntryReferences : ISalesOrderEntryReferences
                 NullableString(reader, "UzsakymoSerijaPav"), branchId,
                 NullableInt(reader, "UzaskovoID"), NullableInt(reader, "VietaID"),
                 NullableInt(reader, "Vad_DarbuotojasID"), NullableInt(reader, "Kons_DarbuotojoID"),
-                reader.GetBoolean(reader.GetOrdinal("bHideInApplicationFlag")), branchId == 7));
+                reader.GetBoolean(reader.GetOrdinal("bHideInApplicationFlag")),
+                _allBranches || branchId == SalesOrderEntryOptions.TestBranchId));
         }
         return new PagedResult<OrderSeriesReferenceDto>(rows, total, page, pageSize);
     }
