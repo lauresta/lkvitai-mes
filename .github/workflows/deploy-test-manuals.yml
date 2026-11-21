@@ -49,7 +49,7 @@ jobs:
               body="$(docker run --rm --network host curlimages/curl:8.10.1 -fsS http://localhost:5002/ || true)"
             fi
 
-            if [ -n "$body" ] && echo "$body" | grep -qi "LKvitai MES"; then
+            if [ -n "$body" ] && echo "$body" | grep -qi "Naudotojo gidas"; then
               echo "Manuals site is healthy."
               exit 0
             fi
