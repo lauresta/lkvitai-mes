@@ -16,9 +16,9 @@ public partial class NewOrderWorkspace
     [Inject] public SalesOrderEntryClient Entry { get; set; } = default!;
     [Inject] public AuthenticationStateProvider Authentication { get; set; } = default!;
     [Inject] public NavigationManager Navigation { get; set; } = default!;
-    [Inject] public Microsoft.Extensions.Configuration.IConfiguration Configuration { get; set; } = default!;
+    [Inject] public IServiceProvider Services { get; set; } = default!;
     /// <summary>Mirrors Sales:OrderEntry:AllBranches of the API; only chooses which help text is shown.</summary>
-    private bool AllBranches => Microsoft.Extensions.Configuration.ConfigurationBinder.GetValue<bool>(Configuration, "Sales:OrderEntry:AllBranches");
+    private bool AllBranches => string.Equals((Services.GetService(typeof(Microsoft.Extensions.Configuration.IConfiguration)) as Microsoft.Extensions.Configuration.IConfiguration)?["Sales:OrderEntry:AllBranches"], "true", StringComparison.OrdinalIgnoreCase);
     private bool IsLive = true;
     private bool _loading = true;
     private bool _busy;
