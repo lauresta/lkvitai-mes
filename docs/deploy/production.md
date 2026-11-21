@@ -68,8 +68,14 @@ write is on unless its variable is set to `false`:
 Bank payment import in Finance is open to the logins listed in
 `Finance__AllowedLegacyLogins` in `docker-compose.prod.yml`.
 
-Agnum is not connected on production. `AGNUM__API__BASEURL` and the Agnum key secrets
-stay unset until it is.
+Agnum is not connected on production. The Agnum key secrets stay unset until it is.
+Warehouse API does not start without an Agnum address, so `AGNUM__API__BASEURL`
+defaults to a placeholder that never resolves (`http://agnum-not-connected.invalid:8181`).
+
+The deploy job runs on the repository runner `lkvitai-apps-01` (label `lkvitai-apps`,
+`/opt/actions-runner` on `lkvitai-apps`). If a deploy stays queued, check that the
+runner is still listed under repository Settings - Actions - Runners; GitHub deletes
+the registration of a runner that was offline for a long time.
 
 ## On the servers
 

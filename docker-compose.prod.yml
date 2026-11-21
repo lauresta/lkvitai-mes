@@ -11,7 +11,7 @@
 #       SALES_ORDER_ENTRY_ENABLED, SALES_ORDER_ENTRY_PAYMENTS_ENABLED,
 #       SALES_PRODUCTION_CONFIRMATION_ENABLED, SHOPFLOOR_TASK_WRITE_ENABLED;
 #     order entry through the assistant (CIKADA_MCP_ORDER_ENTRY) stays off until set;
-#   * no Agnum API on production yet (Agnum__Api__BaseUrl empty).
+#   * no Agnum API on production yet (Agnum__Api__BaseUrl is a placeholder).
 #
 # When a service is added to docker-compose.test.yml, add it here as well.
 
@@ -70,7 +70,9 @@ services:
       ITEMIMAGES__MAXUPLOADMB: "${ITEMIMAGES__MAXUPLOADMB:-5}"
       ITEMIMAGES__CACHEMAXAGESECONDS: "${ITEMIMAGES__CACHEMAXAGESECONDS:-86400}"
       ITEMIMAGES__MODEL_PATH: "${ITEMIMAGES__MODEL_PATH:-/models/item-image-model.onnx}"
-      Agnum__Api__BaseUrl: "${Agnum__Api__BaseUrl:-}"
+      # Warehouse API does not start without an Agnum address. Until Agnum is connected
+      # this placeholder never resolves, so every Agnum call fails at once.
+      Agnum__Api__BaseUrl: "${Agnum__Api__BaseUrl:-http://agnum-not-connected.invalid:8181}"
       Agnum__PriceSync__Enabled: "${Agnum__PriceSync__Enabled:-false}"
       Agnum__Warehouses__sandelys__ApiKey: "${Agnum__Warehouses__sandelys__ApiKey}"
       Agnum__Warehouses__pardavimai__ApiKey: "${Agnum__Warehouses__pardavimai__ApiKey}"
