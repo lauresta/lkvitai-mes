@@ -58,7 +58,7 @@ export function parseIndex(json) {
 }
 
 function snippet(text, query) {
-    const plain = text.replace(/\s+/g, ' ').trim();
+    const plain = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
     if (plain === '') return null;
     const at = fold(plain).indexOf(fold(query).trim());
     const start = Math.max(0, at - 30);
