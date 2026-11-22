@@ -37,7 +37,9 @@ public sealed class UniversalSearchCustomersTests
         return new StreamReader(stream).ReadToEnd();
     }
 
-    private static string WithoutComments(string sql) => Regex.Replace(sql, "--[^\n]*", string.Empty);
+    /// <summary>The statement without comments and with LF line ends, whatever the checkout uses.</summary>
+    private static string WithoutComments(string sql)
+        => Regex.Replace(sql.ReplaceLineEndings("\n"), "--[^\\n]*", string.Empty);
 
     [Fact]
     public void Customer_query_is_read_only_and_scoped_by_the_callers_branches()
@@ -50,9 +52,9 @@ public sealed class UniversalSearchCustomersTests
         Assert.Contains("LIKE N'%' + @Search + N'%'", sql);
         // Read-only: one SELECT statement over the three legacy tables, nothing else.
         Assert.DoesNotMatch(new Regex(@"\b(INSERT|UPDATE|DELETE|MERGE|EXEC|EXECUTE|ALTER|CREATE|DROP|TRUNCATE|GRANT|INTO)\b", RegexOptions.IgnoreCase), sql);
-        var objects = Regex.Matches(sql, @"dbo\.(\w+)").Select(m => m.Groups[1].Value).Distinct().Order().ToArray();
+        var objects = Regex.Matches(sql, @"dbo\.(\w+)").Select(m => m.Groups[1].Value).Distinct().Order(StringComparer.Ordinal).ToArray();
         Assert.Equal(["Loc_leidimas", "Uzsakymai", "Zinynas_UzsakymoSerijos", "Zinynas_uzsakovai"], objects);
-        Assert.Equal(["@Search", "@Top"], Regex.Matches(sql, @"@\w+").Select(m => m.Value).Distinct().Order().ToArray());
+        Assert.Equal(["@Search", "@Top"], Regex.Matches(sql, @"@\w+").Select(m => m.Value).Distinct().Order(StringComparer.Ordinal).ToArray());
     }
 
     [Fact]
