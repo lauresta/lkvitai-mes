@@ -31,6 +31,10 @@ Sandėlio modulio ekranai (UI: Create Inbound Shipment) ir (UI: Inbound Shipment
 
 ![Pirkimo dokumento kūrimo forma](../img/warehouse/purchase-document-create.png)
 
+Pasirinkus (UI: EU acquisition), forma papildoma Intrastat laukais:
+
+![Pirkimo dokumento kūrimo forma su Intrastat laukais (ES įsigijimas)](../img/warehouse/purchase-document-create-eu.png)
+
 ### 2. Įvesti eilutes ir papildomas išlaidas
 1. Skiltyje (UI: Lines) spauskite (UI: Add Line), pasirinkite prekę (UI: Item), (UI: Qty) ir (UI: Invoice unit price) (kaina pagal sąskaitą dokumento valiuta).
 2. Stulpelyje (UI: Actual unit price) matoma kaina su paskirstytomis „į savikainą“ papildomomis išlaidomis. Paslaugų prekės (žyma „Service“) atsargų nesukuria – jų suma traktuojama kaip papildoma išlaida.
@@ -49,6 +53,10 @@ Prekių priėmimas daromas dokumento kortelėje, kaip aprašyta [P-01 Prekių pr
 5. Spauskite (UI: Post). Pranešimas „Document posted.“ reiškia sėkmę; žyma pasikeičia į (UI: Posted), pasirodo „Posted … by …“ ir užrašas „The document is posted and locked. Goods can still be received.“
 
 ![Pirkimo dokumento kortelė su užregistravimo skiltimi](../img/warehouse/purchase-document-detail.png)
+
+ES įsigijimo dokumento kortelėje papildomai rodoma eilutė (UI: Intrastat (nature / terms / transport / country)), pavyzdžiui „11 / DAP / 3 / PL“:
+
+![Užregistruoto ES įsigijimo dokumento kortelė su Intrastat eilute](../img/warehouse/purchase-document-detail-eu.png)
 
 ### 5. Sekti siuntimą į Agnum
 1. Užregistruoto dokumento skiltyje (UI: Purchase document) eilutėje „Agnum:“ rodoma siuntimo eilės būsena (Waiting, Sending, Sent, Unknown, Needs review, Annulled) ir bandymų skaičius. Nuoroda (UI: Agnum sending queue) atidaro eilę, žr. [P-19](P-19-agnum-nustatymai-ir-eile.md).

@@ -44,6 +44,7 @@ const body = `async (page) => {
         try {
           if (st.click) await page.locator(st.click).first().click({ timeout: 5000 });
           else if (st.fill) await page.locator(st.fill[0]).first().fill(st.fill[1], { timeout: 5000 });
+          else if (st.open) await page.locator(st.open).first().evaluate((e) => { e.open = true; });
           else if (st.hover) await page.locator(st.hover).first().hover({ timeout: 5000 });
           else if (st.wait) await page.waitForTimeout(st.wait);
           await page.waitForTimeout(600);
@@ -66,7 +67,8 @@ const body = `async (page) => {
       if (s.blur) {
         await page.evaluate((sels) => { for (const sel of sels) for (const el of document.querySelectorAll(sel)) el.style.filter = 'blur(5px)'; }, s.blur);
       }
-      await page.screenshot({ path: s.out, fullPage: !!s.fullPage });
+      if (s.element) await page.locator(s.element).first().screenshot({ path: s.out });
+      else await page.screenshot({ path: s.out, fullPage: !!s.fullPage });
       results.push(s.file + ' -> ' + status + note);
     } catch (e) {
       results.push(s.file + ' -> FAILED ' + String(e).slice(0, 120));

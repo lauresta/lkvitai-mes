@@ -26,6 +26,10 @@ Sandėlio modulio ekranas (UI: Intrastat arrivals) skirtas parengti mėnesio Int
 Prekių kortelių po vieną redaguoti nereikia. Trys būdai:
 1. **Rasti, ko trūksta.** (UI: Admin > Items) lange pažymėkite varnelę (UI: Intrastat data missing) ir paspauskite (UI: Filter): lieka atsargų prekės, kurioms nėra prekės kodo, neto masės arba kilmės šalies (paslaugų prekės neįtraukiamos). Tokios prekės sąraše pažymėtos ženkleliu (UI: Intrastat missing).
 2. **Nustatyti keliom prekėm iš karto.** Pažymėkite prekes sąraše (pažymėjimas galioja tame puslapyje) arba nežymėkite nieko ir pasirinkite visas pagal dabartinį filtrą (pvz. vieną kategoriją). Paspauskite (UI: Set Intrastat data) ir užpildykite tik tuos laukus, kuriuos norite nustatyti: prekės kodą, kilmės šalį, papildomą vienetą su koeficientu. Tušti laukai prekių nekeičia. Prieš įrašant parodoma, kiek prekių pasikeis; patvirtinus pakeitimas taikomas visoms. Neto masė šiuo būdu nenustatoma, nes ji skiriasi pagal prekę.
+![Prekių sąrašas, atrinktas pagal trūkstamus Intrastat duomenis](../img/warehouse/admin-items-intrastat-missing.png)
+
+![Intrastat duomenų nustatymo keliom prekėm dialogas](../img/warehouse/admin-items-intrastat-bulk.png)
+
 3. **Excel.** (UI: Admin > Import Wizard) skirtuko (UI: Items) šablone yra stulpeliai `CommodityCode`, `NetWeightKg`, `OriginCountry`, `SupplementaryUnit`, `SupplementaryUnitFactor`; žr. [P-15](P-15-pagrindinis-duomenu-valdymas.md). Prekių eksporto į Excel kol kas nėra, todėl esamų prekių duomenis reikia įrašyti į šabloną patiems.
 
 Patikros taisyklės tos pačios visur: prekės kodas - 8 skaitmenys, šalis - 2 raidžių ISO kodas, papildomas vienetas - 3 simboliai ir kartu su koeficientu, didesniu už nulį, neto masė - didesnė už nulį.
@@ -38,13 +42,15 @@ Patikros taisyklės tos pačios visur: prekės kodas - 8 skaitmenys, šalis - 2 
 4. Grąžinimai tiekėjui (paskelbti grąžinimo dokumentai) rodomi atskiromis geltonomis eilutėmis su žyma (UI: Return) ir sandorio pobūdžiu 21. Jie nėra atimami iš atvykimų sumos, o apatinėje eilutėje rodoma jų bendra vertė. Kreditinė sąskaita tik dėl kainos (be prekių grąžinimo) eilutėje nerodoma, o įrašoma į įspėjimų sąrašą: tokį atvejį reikia spręsti su buhalteriu (deklaracijos pataisymas).
 5. Jei kai kurios eilutės praleistos (trūksta prekės kodo, šalių, kodų, papildomo vieneto koeficiento ar vertės), virš lentelės rodoma geltona žinutė su praleistų eilučių skaičiumi ir sąrašu. Papildykite duomenis ir paspauskite (UI: Show) dar kartą.
 
-![Intrastat atvykimų ataskaita](../img/warehouse/intrastat-arrivals.png)
+![Intrastat atvykimų ataskaita: mėnuo, deklaruotojo blokas, lentelė ir XML versijų sąrašas](../img/warehouse/intrastat-arrivals.png)
 
 ### 2. Parsisiųsti CSV
 Spauskite (UI: Download CSV). Failas vadinasi `intrastat-arrivals-YYYY-MM.csv`. Stulpeliai: CommodityCode, DispatchCountry, OriginCountry, NatureOfTransaction, DeliveryTerms, TransportMode, SupplementaryUnit, Return (1 – grąžinimas), NetMassKg, SupplementaryQuantity, Quantity, InvoiceValueEur, LandedCostEur.
 
 ### 3. Deklaruotojo duomenys
-Prieš pirmą XML sugeneravimą puslapio viršuje atidarykite bloką (UI: Declarant (VAT payer)) ir įveskite PVM mokėtojo kodą su šalies raidėmis (pvz. LT123456789) bei pavadinimą; adresas, ataskaitą rengiančio asmens vardas, el. paštas ir telefonas neprivalomi. Spauskite (UI: Save). Kol kodas ir pavadinimas nenurodyti, XML failo sugeneruoti neleidžiama.
+Prieš pirmą XML sugeneravimą puslapio viršuje atidarykite bloką (UI: Declarant (VAT payer)) ir įveskite PVM mokėtojo kodą su šalies raidėmis (pvz. LT123456789) bei pavadinimą; adresas, ataskaitą rengiančio asmens vardas, el. paštas ir telefonas neprivalomi. Spauskite (UI: Save). Kol kodas ir pavadinimas nenurodyti, XML failo sugeneruoti neleidžiama; tada blokas atidarytas iškart ir virš jo rodomas geltonas įspėjimas.
+
+![Intrastat deklaruotojo (PVM mokėtojo) blokas](../img/warehouse/intrastat-declarant.png)
 
 ### 4. Atsisiųsti XML ir įkelti į IDAIS
 1. Parodykite mėnesio ataskaitą ir spauskite (UI: Download XML). Failas vadinasi `intrastat-arrivals-YYYY-MM-vN.xml`.

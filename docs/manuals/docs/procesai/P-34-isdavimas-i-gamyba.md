@@ -28,6 +28,8 @@ Ekranas (UI: Issue to Production) skirtas vienu žingsniu išduoti atsargas iš 
 6. Jei reikia, užpildykite (UI: Notes).
 7. Spauskite (UI: Issue to production). Sėkmės atveju rodoma žinutė „Issued … to production.“, o eilutė atsiranda lentelėje apačioje.
 
+![Išdavimo į gamybą forma ir paskutinių išdavimų žurnalas](../img/warehouse/production-issues.png)
+
 ### 2. Peržiūrėti išdavimus
 Lentelėje (UI: Issues of the last 30 days) matote datą, prekę, kiekį, vietą, gamybos užduotį, kas išdavė ir pastabas. Sąrašą atnaujina mygtukas (UI: Refresh).
 

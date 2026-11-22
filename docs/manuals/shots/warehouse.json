@@ -456,8 +456,182 @@
   {
     "file": "img/warehouse/intrastat-arrivals.png",
     "url": "https://cikada-test.lauresta.com/warehouse/valuation/intrastat",
+    "steps": [
+      {
+        "wait": 1500
+      },
+      {
+        "click": "button:has-text('Show')"
+      },
+      {
+        "wait": 2500
+      }
+    ],
+    "fullPage": true,
+    "note": "Intrastat arrivals page: Month field with Show, Download CSV and Download XML, the Declarant (VAT payer) block, warnings, the report table with totals and the XML versions of the month list. Reads posted purchase documents; nothing is changed (do not press Download XML, it creates a version). Month defaults to the current one; if it is empty pick the month that has the posted EU purchase document (id 14)."
+  },
+  {
+    "file": "img/warehouse/intrastat-declarant.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/valuation/intrastat",
+    "steps": [
+      {
+        "wait": 1500
+      },
+      {
+        "open": "details.card"
+      },
+      {
+        "wait": 500
+      }
+    ],
+    "element": "details.card",
+    "note": "Element shot of the Declarant (VAT payer) block opened: VAT code, name, address, contact person, e-mail, phone and Save. Do not press Save."
+  },
+  {
+    "file": "img/warehouse/production-issues.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/production-issues",
+    "steps": [
+      {
+        "wait": 2000
+      }
+    ],
     "fullPage": false,
-    "note": "Intrastat arrivals report of the current month with Month field, Show and Download CSV."
+    "note": "Issue to Production page: the form (Item, Qty, From location, Production task / order, Notes, Issue to production) and the journal of the last 30 days. Do not press Issue to production."
+  },
+  {
+    "file": "img/warehouse/supplier-stock-report.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/reports/supplier-stock",
+    "steps": [
+      {
+        "wait": 1500
+      },
+      {
+        "fill": [
+          ".mud-autocomplete input",
+          "MegaMarket"
+        ]
+      },
+      {
+        "wait": 2000
+      },
+      {
+        "click": ".mud-popover-open .mud-list-item:has-text('MegaMarket')"
+      },
+      {
+        "wait": 1500
+      },
+      {
+        "click": "button:has-text('Apply')"
+      },
+      {
+        "wait": 3000
+      }
+    ],
+    "fullPage": true,
+    "note": "Stock by Supplier report for the supplier MegaMarket: supplier field, period, Only shortages, Apply, Export CSV and the table with On hand, To production, Dispatched, Written off, Missing and price columns. Read only."
+  },
+  {
+    "file": "img/warehouse/admin-items-intrastat-missing.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/admin/items",
+    "steps": [
+      {
+        "wait": 2000
+      },
+      {
+        "click": "[data-testid='admin-items-intrastat-missing'] label"
+      },
+      {
+        "click": "[data-testid='admin-items-search-btn']"
+      },
+      {
+        "wait": 2500
+      },
+      {
+        "click": ".items-grid tbody tr:first-child .mud-checkbox"
+      },
+      {
+        "wait": 800
+      }
+    ],
+    "fullPage": false,
+    "note": "Items list filtered by the Intrastat data missing checkbox (Filter pressed): rows with the Intrastat missing badge, first row ticked, the Set Intrastat data (1 selected) button."
+  },
+  {
+    "file": "img/warehouse/admin-items-intrastat-bulk.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/admin/items",
+    "steps": [
+      {
+        "wait": 2000
+      },
+      {
+        "click": "[data-testid='admin-items-intrastat-missing'] label"
+      },
+      {
+        "click": "[data-testid='admin-items-search-btn']"
+      },
+      {
+        "wait": 2500
+      },
+      {
+        "click": ".items-grid tbody tr:first-child .mud-checkbox"
+      },
+      {
+        "wait": 800
+      },
+      {
+        "click": "[data-testid='admin-items-intrastat-bulk']"
+      },
+      {
+        "wait": 1200
+      }
+    ],
+    "fullPage": false,
+    "note": "Set Intrastat data for several items dialog opened for one ticked item: scope choice (selected / all by filter), commodity code, country of origin, supplementary unit and factor, Cancel and Continue. Do not press Continue."
+  },
+  {
+    "file": "img/warehouse/admin-item-detail-intrastat.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/admin/items/1307",
+    "steps": [
+      {
+        "wait": 2500
+      }
+    ],
+    "fullPage": true,
+    "note": "Item Details of item id 1307: the Intrastat block under the main fields with commodity code, net weight, country of origin and supplementary unit (and the Data missing badge when something is empty)."
+  },
+  {
+    "file": "img/warehouse/purchase-document-create-eu.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/inbound/shipments/create",
+    "steps": [
+      {
+        "wait": 2000
+      },
+      {
+        "click": ".lk-form-field:has-text('VAT treatment') .mud-select"
+      },
+      {
+        "wait": 500
+      },
+      {
+        "click": ".mud-popover-open .mud-list-item:has-text('EU acquisition')"
+      },
+      {
+        "wait": 800
+      }
+    ],
+    "fullPage": true,
+    "note": "Create Inbound Shipment with VAT treatment set to EU acquisition: the Delivery terms, Transport mode, Country of dispatch and Transaction nature fields are visible. Nothing is saved; never press Create Shipment."
+  },
+  {
+    "file": "img/warehouse/purchase-document-detail-eu.png",
+    "url": "https://cikada-test.lauresta.com/warehouse/inbound/shipments/14",
+    "steps": [
+      {
+        "wait": 2500
+      }
+    ],
+    "fullPage": true,
+    "note": "Inbound Shipment Detail of the posted EU purchase document (id 14): Purchase document card with VAT treatment EU acquisition and the Intrastat line (11 / DAP / 3 / PL). Read only."
   },
   {
     "file": "img/warehouse/month-end.png",
