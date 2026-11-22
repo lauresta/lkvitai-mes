@@ -163,7 +163,7 @@ docker compose -f src/docker-compose.yml up -d
 |-----------|------|---------|
 | `warehouse-postgres` | `5432` | PostgreSQL 15 (dev DB: `lkvitai_warehouse_dev`) |
 | `warehouse-redis` | `6379` | Redis 7.2 — caching |
-| `warehouse-jaeger` | `16686` (UI), `6831` (agent UDP) | Distributed tracing — UI at http://localhost:16686 |
+| `warehouse-jaeger` | `16686` (UI), `4317` (OTLP gRPC) | Distributed tracing — UI at http://localhost:16686 |
 
 > `pgvector` extension must be installed in your PostgreSQL. The `pgvector/pgvector:pg16` Docker image includes it.
 > If using a plain postgres image, run once: `CREATE EXTENSION IF NOT EXISTS vector;`
@@ -200,8 +200,8 @@ Create at `src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/Properties/la
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "Caching__RedisConnectionString": "localhost:6379,abortConnect=false,connectRetry=3,connectTimeout=1000,syncTimeout=1000",
-        "UseJaegerExporter": "true",
-        "Jaeger__AgentHost": "localhost",
+        "UseOtlpExporter": "true",
+        "Otlp__Endpoint": "http://localhost:4317",
         "ITEMIMAGES__ENDPOINT": "lauresta-bin.vpn.lauresta.com:9000",
         "ITEMIMAGES__BUCKET": "lkvitai-dev",
         "ITEMIMAGES__USESSL": "false",
@@ -218,7 +218,7 @@ Create at `src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/Properties/la
 ```
 
 > **Debugging from a separate Windows VM** while infrastructure (Redis, Jaeger, Postgres) runs on Mac:
-> - Replace `localhost` with the Mac's VPN IP (e.g. `10.11.12.4`) for `Caching__RedisConnectionString` and `Jaeger__AgentHost`
+> - Replace `localhost` with the Mac's VPN IP (e.g. `10.11.12.4`) for `Caching__RedisConnectionString` and `Otlp__Endpoint`
 > - Set `ITEMIMAGES__MODEL_PATH` to a Windows path: `C:\\models\\item-image-model.onnx`
 
 ### 5. Environment Variables Reference
@@ -234,8 +234,8 @@ Create at `src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/Properties/la
 | `ITEMIMAGES__MAXUPLOADMB` | No | `5` | Max photo upload size in MB |
 | `ITEMIMAGES__CACHEMAXAGESECONDS` | No | `86400` | Photo proxy `Cache-Control` max-age |
 | `ITEMIMAGES__MODEL_PATH` | Yes* | — | Absolute path to CLIP ViT-B/32 ONNX file. *App starts without it but `/search-by-image` returns 503 |
-| `UseJaegerExporter` | No | `false` | `true` → send traces to Jaeger; `false` → traces to console |
-| `Jaeger__AgentHost` | No | `localhost` | Jaeger UDP agent host |
+| `UseOtlpExporter` | No | `false` | `true` → send traces via OTLP/gRPC (e.g. to Jaeger); `false` → traces to console |
+| `Otlp__Endpoint` | No | `http://localhost:4317` | OTLP gRPC collector endpoint |
 
 ---
 

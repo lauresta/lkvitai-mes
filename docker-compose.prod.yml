@@ -56,7 +56,7 @@ services:
     environment:
       <<: *oidc-api
       ASPNETCORE_ENVIRONMENT: Production
-      UseJaegerExporter: "false"
+      UseOtlpExporter: "false"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
       ConnectionStrings__WarehouseDb: "${WAREHOUSE_DB_CONNECTION}"
       SkipSchemaValidation: "true"
