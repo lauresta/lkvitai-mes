@@ -300,6 +300,48 @@
         }
     </MudPaper>
 
+    <MudPaper Outlined="true" Elevation="0" Class="panel items-detail-panel" data-testid="admin-item-detail-suppliers">
+        <div class="panel__head">
+            <span class="panel__title">@L["AdminItemDetail.Suppliers"] <small>@L["AdminItemDetail.Total", _supplierMappings.Count]</small></span>
+            <div class="panel__actions">
+                <a href="/admin/supplier-mappings">@L["AdminItemDetail.ManageSupplierMappings"]</a>
+            </div>
+        </div>
+
+        @if (_supplierMappings.Count == 0)
+        {
+            <div class="lots-grid__empty">
+                <span class="lots-grid__empty-title">@L["AdminItemDetail.NoSuppliers"]</span>
+            </div>
+        }
+        else
+        {
+            <table class="lk-table">
+                <thead>
+                <tr>
+                    <th>@L["Common.Supplier"]</th>
+                    <th>@L["Common.SupplierSKU"]</th>
+                    <th class="is-num">@L["Common.LeadTimeDays"]</th>
+                    <th class="is-num">MOQ</th>
+                    <th class="is-num">@L["Common.Price"]</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var row in _supplierMappings)
+                {
+                    <tr>
+                        <td>@row.SupplierName</td>
+                        <td class="mono">@row.SupplierSKU</td>
+                        <td class="is-num">@(row.LeadTimeDays?.ToString() ?? "-")</td>
+                        <td class="is-num">@(row.MinOrderQty?.ToString("0.###") ?? "-")</td>
+                        <td class="is-money is-num">@(row.PricePerUnit?.ToString("0.####") ?? "-")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+    </MudPaper>
+
     <MudPaper Outlined="true" Elevation="0" Class="panel items-detail-panel" data-testid="admin-item-detail-purchase-history">
         <div class="panel__head">
             <span class="panel__title">@L["AdminItemDetail.PurchaseCostHistory"]</span>
@@ -352,6 +394,7 @@
     private readonly List<ItemPriceOverrideDto> _priceOverrides = [];
     private readonly List<ItemPriceHistoryDto> _priceHistory = [];
     private readonly List<CostHistoryRowDto> _purchaseHistory = [];
+    private readonly List<AdminSupplierMappingDto> _supplierMappings = [];
     private OnHandValueRowDto? _onHandValue;
     private bool _isLoading;
     private ApiException? _apiError;
@@ -382,6 +425,10 @@
             _priceHistory.Clear();
             _priceHistory.AddRange(history);
 
+            var mappings = await AdminClient.GetSupplierMappingsAsync(null, null, Id, 1, 100);
+            _supplierMappings.Clear();
+            _supplierMappings.AddRange(mappings.Items.OrderBy(x => x.SupplierName).ThenBy(x => x.SupplierSKU));
+
             var purchaseHistory = await ValuationClient.GetCostHistoryAsync(itemId: Id);
             _purchaseHistory.Clear();
             _purchaseHistory.AddRange(purchaseHistory.OrderByDescending(x => x.ChangedAt));
@@ -394,6 +441,7 @@
             _apiError = ex;
             _item = null;
             _photos.Clear();
+            _supplierMappings.Clear();
             _onHandValue = null;
         }
         finally

@@ -167,6 +167,25 @@ public sealed class SupplierItemMappingsController : ControllerBase
             entity.PricePerUnit));
     }
 
+    [HttpDelete("{id:int}")]
+    [Authorize(Policy = WarehousePolicies.ManagerOrAdmin)]
+    public async Task<IActionResult> DeleteAsync(
+        int id,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await _dbContext.SupplierItemMappings
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (entity is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Supplier-item mapping '{id}' does not exist."));
+        }
+
+        _dbContext.SupplierItemMappings.Remove(entity);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return NoContent();
+    }
+
     private async Task<ObjectResult?> ValidateRequestAsync(
         UpsertSupplierItemMappingRequest request,
         int? existingId,

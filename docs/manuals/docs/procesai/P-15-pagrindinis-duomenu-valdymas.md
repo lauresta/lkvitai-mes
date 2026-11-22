@@ -43,7 +43,11 @@ Pirkimo dokumentų (priėmimo) apskaita remiasi šiais tiekėjo duomenimis:
 1. Meniu pasirinkite `(UI: Admin > Supplier Mappings)`. Šį ekraną taip pat galima atidaryti iš tiekėjų sąrašo mygtuku `(UI: Mappings)`.
 2. Filtruokite pagal `(UI: Supplier SKU / supplier / item)` ir `(UI: Supplier)`; paspauskite `(UI: Filter)`.
 3. Paspauskite `(UI: Create Mapping)`. Formoje `(UI: Create Supplier Mapping)` pasirinkite `(UI: Supplier)` ir `(UI: Item)`, įveskite `(UI: Supplier SKU)`, `(UI: Lead Time (days))` ir `(UI: Price)`, tada `(UI: Save Mapping)`.
-4. Esamam susiejimui pakeisti paspauskite `(UI: Edit)` ir `(UI: Save Changes)`. Trinti šiame ekrane negalima.
+4. Esamam susiejimui pakeisti paspauskite `(UI: Edit)` ir `(UI: Save Changes)`.
+5. Susiejimui pašalinti eilutėje paspauskite `(UI: Delete)` ir patvirtinkite dialoge `(UI: Delete mapping)`. Ištrinamas tik susiejimas su tiekėjo prekės kodu; pati prekė ir tiekėjas lieka.
+6. Prekės tiekėjų kodus matysite ir prekės detalių puslapyje, bloke `(UI: Suppliers)`: tiekėjas, `(UI: Supplier SKU)`, pristatymo laikas, MOQ ir kaina. Jei prekei kodų nėra, rodomas užrašas „No supplier item codes for this item yet."; nuoroda `(UI: Manage supplier mappings)` atidaro šį ekraną.
+7. Tiekėjo prekės kodą galima naudoti ir skenavimui: jei skenuojamas kodas nėra prekės brūkšninis kodas, sistema ieško tiekėjo prekės kodo (didžiosios ir mažosios raidės nesvarbios). Jei kodas priklauso vienai prekei, ji parenkama; jei to paties kodo turi kelios skirtingos prekės, sistema neatspėlioja ir parodo pranešimą, kad skenuoti reikia prekės brūkšninį kodą arba pasirinkti prekę rankiniu būdu.
+8. Importuojant prekes iš Agnum, tiekėjo prekės kodas imamas tik iš Agnum tiekėjo kodo arba pagalbinio lauko; prekės pačios kodas čia nekopijuojamas. Jei Agnum tiekėjo kodo neturi, susiejimas nekuriamas.
 
 ### 4. Klientai
 1. Meniu pasirinkite `(UI: Admin > Customers)`. Atsidaro puslapis `(UI: Customers Management)`; paieška `(UI: Code or name)`, `(UI: Filter)`, `(UI: Refresh)`.

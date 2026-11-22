@@ -2202,4 +2202,10 @@
   <data name="SupplierStock.SupplierPrice" xml:space="preserve"><value>Purchase price</value></data>
   <data name="SupplierStock.LastInvoice" xml:space="preserve"><value>Last invoice</value></data>
   <data name="SupplierStock.RequestFailed" xml:space="preserve"><value>The report could not be loaded.</value></data>
+  <data name="AdminItemDetail.Suppliers" xml:space="preserve"><value>Suppliers</value></data>
+  <data name="AdminItemDetail.NoSuppliers" xml:space="preserve"><value>No supplier item codes for this item yet.</value></data>
+  <data name="AdminItemDetail.ManageSupplierMappings" xml:space="preserve"><value>Manage supplier mappings</value></data>
+  <data name="AdminSupplierMappings.DeleteMapping" xml:space="preserve"><value>Delete mapping</value></data>
+  <data name="AdminSupplierMappings.DeleteConfirmation" xml:space="preserve"><value>Delete mapping {0} - {1}?</value></data>
+  <data name="AdminSupplierMappings.Toast.SupplierMappingDeleted" xml:space="preserve"><value>Supplier mapping deleted.</value></data>
 </root>

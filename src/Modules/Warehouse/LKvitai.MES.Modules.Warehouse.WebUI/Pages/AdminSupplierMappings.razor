@@ -86,6 +86,7 @@
                             <td>@(row.PricePerUnit?.ToString("0.##") ?? "-")</td>
                             <td class="text-end">
                                 <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => BeginEdit(row))">@L["Common.Edit"]</button>
+                                <button class="btn btn-sm btn-outline-danger ms-1" @onclick="@(() => _deleteTarget = row)">@L["Common.Delete"]</button>
                             </td>
                         </tr>
                     }
@@ -196,6 +197,13 @@
     </div>
 }
 
+<SharedConfirmDialog IsVisible="@(_deleteTarget is not null)"
+                     Title="@L["AdminSupplierMappings.DeleteMapping"]"
+                     Message="@DeleteMessage"
+                     ConfirmText="@L["Common.Delete"]"
+                     OnConfirm="ConfirmDeleteAsync"
+                     OnCancel="@(() => _deleteTarget = null)" />
+
 @code {
     private readonly List<AdminSupplierMappingDto> _mappings = [];
     private readonly List<AdminSupplierDto> _suppliers = [];
@@ -212,6 +220,11 @@
 
     private MappingFormModel _create = new();
     private MappingEditModel? _editing;
+    private AdminSupplierMappingDto? _deleteTarget;
+
+    private string DeleteMessage => _deleteTarget is null
+        ? string.Empty
+        : L["AdminSupplierMappings.DeleteConfirmation", _deleteTarget.SupplierSKU, _deleteTarget.ItemSKU].Value;
 
     [Parameter]
     [SupplyParameterFromQuery(Name = "supplierId")]
@@ -348,6 +361,40 @@
             ToastService.ShowSuccess(L["AdminSupplierMappings.Toast.SupplierMappingUpdated"].Value);
             _editing = null;
             await LoadMappingsAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_deleteTarget is null)
+        {
+            return;
+        }
+
+        var target = _deleteTarget;
+        _deleteTarget = null;
+
+        try
+        {
+            _apiError = null;
+            await AdminClient.DeleteSupplierMappingAsync(target.Id);
+            ToastService.ShowWarning(L["AdminSupplierMappings.Toast.SupplierMappingDeleted"].Value);
+            if (_editing?.Id == target.Id)
+            {
+                _editing = null;
+            }
+
+            await LoadMappingsAsync();
+            if (_mappings.Count == 0 && _pageNumber > 1)
+            {
+                _pageNumber--;
+                await LoadMappingsAsync();
+            }
         }
         catch (ApiException ex)
         {

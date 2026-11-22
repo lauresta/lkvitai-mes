@@ -2202,4 +2202,10 @@
   <data name="SupplierStock.SupplierPrice" xml:space="preserve"><value>Pirkimo kaina</value></data>
   <data name="SupplierStock.LastInvoice" xml:space="preserve"><value>Paskutinė sąskaita</value></data>
   <data name="SupplierStock.RequestFailed" xml:space="preserve"><value>Ataskaitos įkelti nepavyko.</value></data>
+  <data name="AdminItemDetail.Suppliers" xml:space="preserve"><value>Tiekėjai</value></data>
+  <data name="AdminItemDetail.NoSuppliers" xml:space="preserve"><value>Šiai prekei dar nėra tiekėjų kodų.</value></data>
+  <data name="AdminItemDetail.ManageSupplierMappings" xml:space="preserve"><value>Tvarkyti tiekėjų susiejimus</value></data>
+  <data name="AdminSupplierMappings.DeleteMapping" xml:space="preserve"><value>Ištrinti susiejimą</value></data>
+  <data name="AdminSupplierMappings.DeleteConfirmation" xml:space="preserve"><value>Ištrinti susiejimą {0} – {1}?</value></data>
+  <data name="AdminSupplierMappings.Toast.SupplierMappingDeleted" xml:space="preserve"><value>Tiekėjo susiejimas ištrintas.</value></data>
 </root>
