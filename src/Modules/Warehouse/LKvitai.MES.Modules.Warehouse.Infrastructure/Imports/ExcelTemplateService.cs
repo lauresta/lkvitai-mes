@@ -111,7 +111,7 @@ public sealed class ExcelTemplateService : IExcelTemplateService
     private static string[] BuildSampleRow(string normalizedEntityType) => normalizedEntityType switch
     {
         "prices" => ["SKU-001", "10.00", "15.00"],
-        "items" => ["", "Steel Bolt M8", "High-strength bolt", "RAW", "PCS", "0.015", "0.0001", "false", "false", "Active", "8594156780187", ""],
+        "items" => ["", "Steel Bolt M8", "High-strength bolt", "RAW", "PCS", "0.015", "0.0001", "false", "false", "Active", "8594156780187", "", "73181500", "0.002", "DE", "", ""],
         "suppliers" => ["SUP-001", "ABC Fasteners Ltd", "ABC", "302345678", "LT100001234567", "Gamyklos g. 1, Vilnius", "Sandėlio g. 5, Vilnius", "Vilnius", "Lithuania", "Jonas Jonaitis", "+370 600 00000", "orders@abc.com", "https://abc.example", "Preferred fastener supplier", ""],
         "mappings" => ["SUP-001", "ABC-M8-BOLT", "RM-0001", "7", "100", "0.45"],
         "barcodes" => ["RM-0001", "8594156780187", "EAN13", "true"],
@@ -124,10 +124,14 @@ public sealed class ExcelTemplateService : IExcelTemplateService
 
     public static readonly string[] PriceHeaders = ["InternalSKU", "PurchasePrice", "BasePrice"];
 
+    /// <summary>Leading item columns every file must have; the Intrastat columns after them may be left out of older files.</summary>
+    public const int ItemRequiredHeaderCount = 12;
+
     public static readonly string[] ItemHeaders =
     [
         "InternalSKU", "Name", "Description", "CategoryCode", "BaseUoM", "Weight", "Volume",
-        "RequiresLotTracking", "RequiresQC", "Status", "PrimaryBarcode", "ProductConfigId"
+        "RequiresLotTracking", "RequiresQC", "Status", "PrimaryBarcode", "ProductConfigId",
+        "CommodityCode", "NetWeightKg", "OriginCountry", "SupplementaryUnit", "SupplementaryUnitFactor"
     ];
 
     public static readonly string[] SupplierHeaders =

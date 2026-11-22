@@ -66,6 +66,7 @@ Pirkimo dokumentų (priėmimo) apskaita remiasi šiais tiekėjo duomenimis:
 4. Pasirinkite failą `(UI: File)`. Varnelė `(UI: Dry run)` pagal numatytąją pažymėta - tai tik patikra be įrašymo. Paspauskite `(UI: Run Import)`.
 5. Skiltyje `(UI: Import Result)` matote `(UI: Inserted:)`, `(UI: Updated:)`, `(UI: Skipped:)`, `(UI: Errors:)` ir lentelę (`(UI: Row)`, `(UI: Column)`, `(UI: Value)`, `(UI: Message)`). Klaidų ataskaitą parsisiųskite `(UI: Download Error Report)`.
 6. Kai patikra be klaidų, `(UI: Commit Changes)` tampa aktyvus ir įrašo duomenis. Kol yra klaidų, rodoma „Commit is disabled until dry-run errors are resolved."
+7. Prekių šablone po įprastų stulpelių yra penki Intrastat stulpeliai: `CommodityCode` (8 skaitmenys), `NetWeightKg` (didesnė už nulį; kablelis ar taškas), `OriginCountry` (2 raidės), `SupplementaryUnit` (3 simboliai) ir `SupplementaryUnitFactor` (didesnis už nulį). Papildomas vienetas ir koeficientas pildomi kartu. Tuščias langelis esamos prekės reikšmės nekeičia; senesni failai be šių stulpelių tebeveikia. Neteisinga reikšmė rodoma klaidų lentelėje su stulpelio pavadinimu, ir nieko neįrašoma. Intrastat duomenų užpildymo keliom prekėm apžvalga - [P-21](P-21-intrastat-atvykimai.md).
 
 ![Importo vedlys](../img/warehouse/admin-import-wizard.png)
 
@@ -76,6 +77,7 @@ Pirkimo dokumentų (priėmimo) apskaita remiasi šiais tiekėjo duomenimis:
 ## Dažnos klaidos
 - „Code is required." / „Name is required." - tiekėjo dialoge nepildytas privalomas laukas.
 - „Supplier with code '...' already exists." - tiekėjo kodas turi būti unikalus.
+- „Commodity code must be exactly 8 digits.", „Origin country must be a 2-letter ISO code.", „Supplementary unit must be exactly 3 characters." - prekių importo Intrastat stulpelio reikšmė neteisinga; pataisykite langelį.
 - „Email is required.", „Credit limit must be greater than or equal to zero." - kliento dialogo patikros pranešimai.
 - „Agnum sync: ... N code conflicts" - Agnum kliento kodas sutapo su kito tiekėjo kodu; toks tiekėjas sukuriamas atskirai, o jo kodas gauna priedą „~<Agnum kliento Id>". Patikrinkite tiekėjų sąrašą.
 

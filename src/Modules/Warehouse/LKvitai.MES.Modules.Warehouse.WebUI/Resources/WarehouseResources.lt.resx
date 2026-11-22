@@ -2097,6 +2097,22 @@
   <data name="Intrastat.Item.CommodityCodeHelp" xml:space="preserve"><value>8 skaitmenys; reikalingas pirkimams iš ES</value></data>
   <data name="Intrastat.Item.NetWeightKg" xml:space="preserve"><value>Neto masė vienetui, kg</value></data>
   <data name="Intrastat.Item.OriginCountry" xml:space="preserve"><value>Kilmės šalis (ISO, 2 raidės)</value></data>
+  <data name="Intrastat.Items.FilterMissing" xml:space="preserve"><value>Trūksta Intrastat duomenų</value></data>
+  <data name="Intrastat.Items.Missing" xml:space="preserve"><value>Trūksta Intrastat</value></data>
+  <data name="Intrastat.Items.MissingHint" xml:space="preserve"><value>Neužpildytas prekės kodas, neto masė arba kilmės šalis</value></data>
+  <data name="Intrastat.Bulk.Button" xml:space="preserve"><value>Nustatyti Intrastat duomenis (pasirinkta: {0})</value></data>
+  <data name="Intrastat.Bulk.Title" xml:space="preserve"><value>Intrastat duomenys keliom prekėm</value></data>
+  <data name="Intrastat.Bulk.Help" xml:space="preserve"><value>Taikomi tik užpildyti laukai; tušti laukai prekių nekeičia. Neto masė nustatoma kiekvienai prekei atskirai.</value></data>
+  <data name="Intrastat.Bulk.ScopeSelected" xml:space="preserve"><value>Pažymėtos prekės šiame puslapyje ({0})</value></data>
+  <data name="Intrastat.Bulk.ScopeFilter" xml:space="preserve"><value>Visos prekės pagal dabartinį filtrą ({0})</value></data>
+  <data name="Intrastat.Bulk.ScopeAll" xml:space="preserve"><value>Visos prekės ({0})</value></data>
+  <data name="Intrastat.Bulk.Continue" xml:space="preserve"><value>Tęsti</value></data>
+  <data name="Intrastat.Bulk.NothingFilled" xml:space="preserve"><value>Užpildykite bent vieną lauką.</value></data>
+  <data name="Intrastat.Bulk.CountryInvalid" xml:space="preserve"><value>Kilmės šalis turi būti 2 raidžių ISO kodas.</value></data>
+  <data name="Intrastat.Bulk.UnitInvalid" xml:space="preserve"><value>Papildomas vienetas turi būti 3 simbolių ir turėti koeficientą didesnį už nulį.</value></data>
+  <data name="Intrastat.Bulk.Confirm" xml:space="preserve"><value>Pasikeis {0} iš {1} prekių. Taikyti?</value></data>
+  <data name="Intrastat.Bulk.NothingToChange" xml:space="preserve"><value>Nėra ką keisti: {0} pasirinktų prekių jau turi šias reikšmes.</value></data>
+  <data name="Intrastat.Bulk.Done" xml:space="preserve"><value>Intrastat duomenys atnaujinti {0} prekių.</value></data>
   <data name="Intrastat.NothingDeclarable" xml:space="preserve"><value>Kol nepataisytos išvardytos eilutės, nieko deklaruoti negalima. Šio mėnesio nenurodykite kaip nulinės ataskaitos.</value></data>
   <data name="Intrastat.OriginCountry" xml:space="preserve"><value>Kilmės šalis</value></data>
   <data name="Intrastat.Nature" xml:space="preserve"><value>Pobūdis</value></data>

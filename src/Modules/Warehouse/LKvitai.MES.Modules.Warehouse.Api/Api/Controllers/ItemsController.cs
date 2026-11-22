@@ -3,6 +3,7 @@ using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
+using LKvitai.MES.Modules.Warehouse.Domain.Purchasing;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Caching;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.BuildingBlocks.SharedKernel;
@@ -53,6 +54,7 @@ public sealed class ItemsController : ControllerBase
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 50,
         [FromQuery] int? supplierId = null,
+        [FromQuery] bool intrastatMissing = false,
         CancellationToken cancellationToken = default)
     {
         pageSize = Math.Clamp(pageSize, 1, 500);
@@ -78,6 +80,11 @@ public sealed class ItemsController : ControllerBase
         if (!string.IsNullOrWhiteSpace(status))
         {
             query = query.Where(i => i.Status == status.Trim());
+        }
+
+        if (intrastatMissing)
+        {
+            query = query.Where(IntrastatItemRules.MissingData);
         }
 
         var totalCount = await query.CountAsync(cancellationToken);

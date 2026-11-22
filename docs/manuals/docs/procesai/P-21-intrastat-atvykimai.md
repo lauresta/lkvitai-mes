@@ -22,6 +22,14 @@ Sandėlio modulio ekranas (UI: Intrastat arrivals) skirtas parengti mėnesio Int
 - Kiekviena atsargų prekė turi turėti 8 skaitmenų prekės kodą (UI: Commodity code (CN)), neto svorį vienetui (UI: Net weight per unit, kg) ir kilmės šalį (UI: Country of origin (ISO, 2 letters)) – (UI: Admin > Items) > (UI: Edit), žr. [P-32](P-32-prekiu-pagrindiniai-duomenys.md). Be jų ES įsigijimo užregistruoti neleidžiama.
 - Jei prekės kodui reikalingas papildomas vienetas, prekės kortelėje užpildykite (UI: Supplementary unit code (3 characters, customs measurement unit classifier)) ir (UI: Supplementary units per one stock unit).
 
+## Intrastat duomenų užpildymas keliom prekėm
+Prekių kortelių po vieną redaguoti nereikia. Trys būdai:
+1. **Rasti, ko trūksta.** (UI: Admin > Items) lange pažymėkite varnelę (UI: Intrastat data missing) ir paspauskite (UI: Filter): lieka atsargų prekės, kurioms nėra prekės kodo, neto masės arba kilmės šalies (paslaugų prekės neįtraukiamos). Tokios prekės sąraše pažymėtos ženkleliu (UI: Intrastat missing).
+2. **Nustatyti keliom prekėm iš karto.** Pažymėkite prekes sąraše (pažymėjimas galioja tame puslapyje) arba nežymėkite nieko ir pasirinkite visas pagal dabartinį filtrą (pvz. vieną kategoriją). Paspauskite (UI: Set Intrastat data) ir užpildykite tik tuos laukus, kuriuos norite nustatyti: prekės kodą, kilmės šalį, papildomą vienetą su koeficientu. Tušti laukai prekių nekeičia. Prieš įrašant parodoma, kiek prekių pasikeis; patvirtinus pakeitimas taikomas visoms. Neto masė šiuo būdu nenustatoma, nes ji skiriasi pagal prekę.
+3. **Excel.** (UI: Admin > Import Wizard) skirtuko (UI: Items) šablone yra stulpeliai `CommodityCode`, `NetWeightKg`, `OriginCountry`, `SupplementaryUnit`, `SupplementaryUnitFactor`; žr. [P-15](P-15-pagrindinis-duomenu-valdymas.md). Prekių eksporto į Excel kol kas nėra, todėl esamų prekių duomenis reikia įrašyti į šabloną patiems.
+
+Patikros taisyklės tos pačios visur: prekės kodas - 8 skaitmenys, šalis - 2 raidžių ISO kodas, papildomas vienetas - 3 simboliai ir kartu su koeficientu, didesniu už nulį, neto masė - didesnė už nulį.
+
 ## Žingsniai
 ### 1. Parodyti mėnesio ataskaitą
 1. Meniu pasirinkite (UI: Finance > Intrastat arrivals). Ataskaita atsidaro iškart einamam mėnesiui.

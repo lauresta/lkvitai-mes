@@ -30,7 +30,8 @@ public sealed class MasterDataAdminClient
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken = default,
-        int? supplierId = null)
+        int? supplierId = null,
+        bool intrastatMissing = false)
     {
         var query = new List<string>
         {
@@ -58,9 +59,26 @@ public sealed class MasterDataAdminClient
             query.Add($"status={Uri.EscapeDataString(status)}");
         }
 
+        if (intrastatMissing)
+        {
+            query.Add("intrastatMissing=true");
+        }
+
         return GetAsync<PagedApiResponse<AdminItemDto>>(
             $"/api/warehouse/v1/items?{string.Join("&", query)}",
             cancellationToken);
+    }
+
+    public async Task<BulkIntrastatResult> SetItemsIntrastatAsync(
+        BulkIntrastatRequest request, CancellationToken cancellationToken = default)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        var response = await client.PostAsJsonAsync("/api/warehouse/v1/items/intrastat-bulk", request, cancellationToken);
+        await EnsureSuccessAsync(response);
+
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        return JsonSerializer.Deserialize<BulkIntrastatResult>(body, JsonOptions)
+            ?? throw new JsonException("Unable to deserialize the bulk Intrastat response.");
     }
 
     public Task CreateItemAsync(CreateOrUpdateItemRequest request, CancellationToken cancellationToken = default)
