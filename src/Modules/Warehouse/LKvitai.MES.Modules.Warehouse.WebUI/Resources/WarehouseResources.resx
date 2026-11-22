@@ -416,6 +416,8 @@
   <data name="Agnum.Configuration.FilePath" xml:space="preserve"><value>File Path</value></data>
   <data name="Agnum.Configuration.Hourly" xml:space="preserve"><value>Hourly</value></data>
   <data name="Agnum.Configuration.Mappings" xml:space="preserve"><value>Mappings</value></data>
+  <data name="Agnum.Configuration.NotConfigured" xml:space="preserve"><value>The Agnum integration is not configured yet. Fill in the form and save to create the first configuration.</value></data>
+  <data name="Agnum.Configuration.ActiveHint" xml:space="preserve"><value>Turning this on starts sending data to Agnum on the schedule.</value></data>
   <data name="Agnum.Configuration.NoExportHistoryFound" xml:space="preserve"><value>No export history found.</value></data>
   <data name="Agnum.Configuration.NoMappingsConfiguredAddYourFirstMapping" xml:space="preserve"><value>No mappings configured. Add your first mapping.</value></data>
   <data name="Agnum.Configuration.RefreshHistory" xml:space="preserve"><value>Refresh History</value></data>

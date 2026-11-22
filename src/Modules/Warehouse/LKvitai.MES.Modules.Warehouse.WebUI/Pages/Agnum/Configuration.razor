@@ -19,6 +19,11 @@
                  OnDismiss="DismissError" />
 }
 
+@if (_notConfigured)
+{
+    <div class="alert alert-info" role="status">@L["Agnum.Configuration.NotConfigured"]</div>
+}
+
 <div class="card shadow-sm position-relative">
     <LoadingSpinner IsLoading="_isLoading || _isSaving || _isTestingConnection" />
 
@@ -55,6 +60,7 @@
                     <div class="form-check">
                         <InputCheckbox class="form-check-input" @bind-Value="_model.IsActive" />
                         <label class="form-check-label">@L["Common.Active"]</label>
+                        <div class="form-text">@L["Agnum.Configuration.ActiveHint"]</div>
                     </div>
                 </div>
                 <div class="col-12 col-md-8">
@@ -207,6 +213,7 @@
 
     private ApiException? _apiError;
     private bool _isLoading;
+    private bool _notConfigured;
     private bool _isSaving;
     private bool _isTestingConnection;
 
@@ -233,6 +240,7 @@
             _history.AddRange(historyTask.Result.OrderByDescending(x => x.ExportedAt).Take(50));
 
             var config = configTask.Result;
+            _notConfigured = config is null;
             if (config is null)
             {
                 _mappings.Clear();
@@ -474,27 +482,6 @@
         return ex.ProblemDetails?.Detail
                ?? ex.ProblemDetails?.Title
                ?? L["Configuration.RequestFailed"].Value;
-    }
-
-    private sealed class AgnumConfigFormModel
-    {
-        public Guid? ConfigId { get; set; }
-
-        [Required]
-        public string Scope { get; set; } = "BY_CATEGORY";
-
-        [Required]
-        public string Schedule { get; set; } = "0 23 * * *";
-
-        [Required]
-        public string Format { get; set; } = "CSV";
-
-        [Url]
-        public string? ApiEndpoint { get; set; }
-
-        public string? ApiKey { get; set; }
-
-        public bool IsActive { get; set; } = true;
     }
 
     private sealed class MappingRowModel

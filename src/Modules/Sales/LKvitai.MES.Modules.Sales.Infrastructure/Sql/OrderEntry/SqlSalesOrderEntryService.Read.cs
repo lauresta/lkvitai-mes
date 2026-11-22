@@ -64,6 +64,8 @@ public sealed partial class SqlSalesOrderEntryService
             LEFT JOIN dbo.Zinynas_EKA register ON register.EKA_ID=payment.EKA_ID
             WHERE payment.UzsakymasID=@id ORDER BY payment.MokejimoID;
             """,ct,("@id",id));
+        // Rates are read separately so the revision hash above stays computed from the payment rows only.
+        var currencyRates=(await Rows(c,tx,"SELECT ValiutosID,Kursas FROM dbo.Zinynas_valiutos",ct)).Where(r=>I(r,"ValiutosID") is not null).ToDictionary(r=>I(r,"ValiutosID")!.Value,r=>D(r,"Kursas"));
         var revision=Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(new{Version=1,Header=h,Products=productRows,Accessories=accessories,Addresses=addresses,Duties=duties,Payments=payments})));
         var discountable=(D(h,"mOrderDiscountableBlindsCost")??0)+(D(h,"mOrderAccessoriesCost")??0);
         var total=D(h,"CurrentFinalTotal")!.Value;
@@ -76,7 +78,7 @@ public sealed partial class SqlSalesOrderEntryService
             Scope(header.BranchId,header.SeriesId)&&options.PaymentsEnabled&&options.PaymentCurrencyId.HasValue,
             Scope(header.BranchId,header.SeriesId)&&options.ProductionConfirmationEnabled&&!string.IsNullOrWhiteSpace(options.ProductionDocumentPrefix),
             paymentMethodIds,
-            payments.Select(p=>new OrderPaymentSnapshot(L(p,"MokejimoID")!.Value,Date(p,"Data"),D(p,"Suma")!.Value,I(p,"MokeijimoTipasID"),I(p,"EmployeeID"),I(p,"BankTransferNR"),S(p,"PPKKvitasNR")?.TrimEnd(),I(p,"EKA_ID"),S(p,"Pastabos"),I(p,"ValiutosID"),S(p,"CurrencyCode"),S(p,"PaymentMethodName"),S(p,"PaymentEmployeeName"),S(p,"PaymentRegisterName"))).ToArray(),
+            payments.Select(p=>new OrderPaymentSnapshot(L(p,"MokejimoID")!.Value,Date(p,"Data"),D(p,"Suma")!.Value,I(p,"MokeijimoTipasID"),I(p,"EmployeeID"),I(p,"BankTransferNR"),S(p,"PPKKvitasNR")?.TrimEnd(),I(p,"EKA_ID"),S(p,"Pastabos"),I(p,"ValiutosID"),LegacyCurrencyLabel.Display(S(p,"CurrencyCode"),I(p,"ValiutosID") is {} currencyId&&currencyRates.TryGetValue(currencyId,out var rate)?rate:null),S(p,"PaymentMethodName"),S(p,"PaymentEmployeeName"),S(p,"PaymentRegisterName"))).ToArray(),
             await CancellationAuditUnavailableReason(c,tx,id,ct));
     }
 }

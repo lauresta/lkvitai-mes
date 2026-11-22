@@ -66,14 +66,14 @@ public sealed class AgnumOutboxClient
     {
         using var response = await Http.GetAsync(uri, ct);
         await EnsureAsync(response);
-        return (await response.Content.ReadFromJsonAsync<T>(cancellationToken: ct))!;
+        return await JsonBody.ReadRequiredAsync<T>(response, typeof(T).Name, ct: ct);
     }
 
     private async Task<T> PostAsync<T>(string uri, object? body, CancellationToken ct)
     {
         using var response = body is null ? await Http.PostAsync(uri, null, ct) : await Http.PostAsJsonAsync(uri, body, ct);
         await EnsureAsync(response);
-        return (await response.Content.ReadFromJsonAsync<T>(cancellationToken: ct))!;
+        return await JsonBody.ReadRequiredAsync<T>(response, typeof(T).Name, ct: ct);
     }
 
     private static async Task SendAsync(Func<Task<HttpResponseMessage>> send)

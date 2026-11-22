@@ -663,3 +663,66 @@ button.shell-search__item {
   color: #dfc07a;
   font-weight: 700;
 }
+
+/* Header fit (production walkthrough): the search box is the only flexible
+   item in the topbar. Brand, env/version chips, language buttons and the user
+   block keep their natural width, and the tagline gives way first. */
+.portal-search {
+  flex: 1 1 200px;
+  min-width: 120px;
+}
+
+.brand,
+.env-badge,
+.lang-switch,
+.user-block {
+  flex: 0 0 auto;
+}
+
+.env-badge div,
+.env-badge strong,
+.lang-switch__option,
+.user-block__name,
+.link-button {
+  white-space: nowrap;
+}
+
+@media (max-width: 1279px) {
+  .brand__tagline {
+    display: none;
+  }
+
+  .topbar {
+    gap: 16px;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
+@media (max-width: 980px) {
+  .portal-search {
+    min-width: 0;
+  }
+
+  .topbar {
+    gap: 12px;
+  }
+
+  .brand {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .user-block {
+    margin-left: auto;
+    padding-left: 10px;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+}

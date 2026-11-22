@@ -64,7 +64,7 @@ public sealed class AgnumAccountingClient
     private static async Task<T> ReadAsync<T>(HttpResponseMessage response, CancellationToken ct)
     {
         await EnsureAsync(response);
-        return (await response.Content.ReadFromJsonAsync<T>(cancellationToken: ct))!;
+        return await JsonBody.ReadRequiredAsync<T>(response, typeof(T).Name, ct: ct);
     }
 
     private static async Task EnsureAsync(HttpResponseMessage response)

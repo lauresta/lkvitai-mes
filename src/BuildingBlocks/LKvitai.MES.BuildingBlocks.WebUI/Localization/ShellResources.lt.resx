@@ -40,4 +40,6 @@
   <data name="Shell.HomeLink" xml:space="preserve"><value>Cikada.MES portalo pradžia</value></data>
   <data name="Shell.HomeLink.Open" xml:space="preserve"><value>Atidaryti Cikada.MES portalo pradžią</value></data>
   <data name="Shell.Language" xml:space="preserve"><value>Kalba</value></data>
+  <data name="Scanning.InDevelopment.Title" xml:space="preserve"><value>Šis modulis kuriamas</value></data>
+  <data name="Scanning.InDevelopment.Body" xml:space="preserve"><value>Brūkšninių kodų skenavimas dar neprieinamas. Jis bus įjungtas čia, kai bus paruoštas.</value></data>
 </root>

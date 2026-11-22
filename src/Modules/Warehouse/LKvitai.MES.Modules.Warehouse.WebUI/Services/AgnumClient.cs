@@ -22,8 +22,14 @@ public sealed class AgnumClient
         _logger = logger;
     }
 
-    public Task<AgnumConfigDto?> GetConfigAsync(CancellationToken cancellationToken = default)
-        => GetAsync<AgnumConfigDto?>("/api/warehouse/v1/agnum/config", cancellationToken);
+    /// <summary>The saved configuration, or null while none has been saved yet (the API answers with an empty body).</summary>
+    public async Task<AgnumConfigDto?> GetConfigAsync(CancellationToken cancellationToken = default)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        using var response = await client.GetAsync("/api/warehouse/v1/agnum/config", cancellationToken);
+        await EnsureSuccessAsync(response);
+        return await JsonBody.ReadOrDefaultAsync<AgnumConfigDto>(response, JsonOptions, cancellationToken);
+    }
 
     public Task<AgnumConfigSavedResponseDto> SaveConfigAsync(
         PutAgnumConfigRequestDto request,
@@ -149,6 +155,15 @@ public sealed class AgnumClient
 
     private async Task<T> DeserializeResponseAsync<T>(HttpResponseMessage response)
     {
+        await EnsureSuccessAsync(response);
+
+        var body = await response.Content.ReadAsStringAsync();
+        var model = JsonBody.ParseOrDefault<T>(response.StatusCode, body, JsonOptions) ?? JsonBody.EmptyValue<T>();
+        return model ?? throw new JsonException($"Unable to deserialize response to {typeof(T).Name}.");
+    }
+
+    private async Task EnsureSuccessAsync(HttpResponseMessage response)
+    {
         if (!response.IsSuccessStatusCode)
         {
             var problem = await ProblemDetailsParser.ParseAsync(response);
@@ -163,10 +178,6 @@ public sealed class AgnumClient
 
             throw new ApiException(problem, (int)response.StatusCode);
         }
-
-        var body = await response.Content.ReadAsStringAsync();
-        var model = JsonSerializer.Deserialize<T>(body, JsonOptions);
-        return model ?? throw new JsonException($"Unable to deserialize response to {typeof(T).Name}.");
     }
 
     private static string BuildQueryString(

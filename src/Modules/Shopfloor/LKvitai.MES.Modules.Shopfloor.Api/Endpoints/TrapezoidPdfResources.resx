@@ -12,9 +12,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
   </resheader>
-  <data name="testNote" xml:space="preserve">
-    <value>Data in this environment is not production data and may be reset without notice.</value>
-  </data>
   <data name="search" xml:space="preserve">
     <value>Barcode, GU, GT or order… (Enter)</value>
   </data>
