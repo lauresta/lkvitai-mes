@@ -256,8 +256,19 @@
     private bool HasAppliedFilters =>
         !string.IsNullOrWhiteSpace(_appliedSearch) || !string.IsNullOrWhiteSpace(_appliedCountry);
 
+    /// <summary>Opens the list already filtered, e.g. from a supplier hit of the top-bar search (<c>?search=</c>).</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "search")]
+    public string? SearchQuery { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
+        if (!string.IsNullOrWhiteSpace(SearchQuery))
+        {
+            _search = SearchQuery.Trim();
+            _appliedSearch = _search;
+        }
+
         await LoadCountriesAsync();
     }
 

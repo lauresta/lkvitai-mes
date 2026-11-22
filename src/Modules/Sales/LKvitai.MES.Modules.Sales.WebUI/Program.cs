@@ -70,6 +70,8 @@ app.UseAuthorization();
 app.MapGet("/health", () => Results.Ok());
 app.MapPortalLogout();
 app.MapSalesSessionProof();
+// Portal "Search everything" (#375): same-origin relay to GET /api/sales/search for the signed-in user.
+app.MapSalesShellSearch();
 app.MapCikadaCultureEndpoint();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");

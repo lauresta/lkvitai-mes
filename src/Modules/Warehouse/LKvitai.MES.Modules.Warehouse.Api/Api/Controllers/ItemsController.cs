@@ -67,13 +67,7 @@ public sealed class ItemsController : ControllerBase
         if (!string.IsNullOrWhiteSpace(search))
         {
             normalized = search.Trim().ToLowerInvariant();
-            query = query.Where(i =>
-                i.InternalSKU.ToLower().Contains(normalized) ||
-                i.Name.ToLower().Contains(normalized) ||
-                (i.PrimaryBarcode != null && i.PrimaryBarcode.ToLower() == normalized) ||
-                (i.Tags != null && i.Tags.ToLower().Contains(normalized.TrimStart('#'))) ||
-                // The supplier's own code of the item, so a code read off a supplier invoice finds it.
-                _dbContext.SupplierItemMappings.Any(m => m.ItemId == i.Id && m.SupplierSKU.ToLower().Contains(normalized)));
+            query = query.WhereMatches(_dbContext, normalized);
         }
 
         if (categoryId.HasValue)
@@ -90,9 +84,7 @@ public sealed class ItemsController : ControllerBase
         // With a search term, exact SKU matches first, then SKU prefix matches, so a typed SKU is on top of a small picker page.
         var ordered = normalized is null
             ? query.OrderBy(i => i.InternalSKU)
-            : query
-                .OrderBy(i => i.InternalSKU.ToLower() == normalized ? 0 : i.InternalSKU.ToLower().StartsWith(normalized) ? 1 : 2)
-                .ThenBy(i => i.InternalSKU);
+            : query.OrderBySkuRelevance(normalized);
 
         var items = await ordered
             .Skip((pageNumber - 1) * pageSize)

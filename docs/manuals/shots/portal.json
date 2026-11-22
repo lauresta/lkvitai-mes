@@ -14,10 +14,12 @@
     "steps": [
       { "wait": 1500 },
       { "click": "button.portal-search" },
-      { "wait": 500 }
+      { "fill": ["input.shell-search__input", "tiekeju"] },
+      { "wait": 2500 }
     ],
     "fullPage": false,
-    "note": "Atidarytas langelis Universal search su tekstu coming soon po viršutine juosta."
+    "blur": ["#shell-search-kind-order ~ .shell-search__item", "#shell-search-kind-customer ~ .shell-search__item"],
+    "note": "Atidarytas bendros paieškos langas po viršutine juosta: įvesta „tiekeju“, matomos grupės su tiekėjais ir Sandėlio langais (Tiekėjai, Tiekėjų atitikmenys). Reikalinga prisijungusi sesija su Sandėlio teisėmis. Užsakymų ir klientų eilutės, jei jų būtų, užtemdomos."
   },
   {
     "file": "img/portal/plyteliu-valdymas.png",

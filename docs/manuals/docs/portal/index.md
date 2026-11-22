@@ -25,6 +25,6 @@ Cikada.MES Portalas yra pradinis visų modulių puslapis: čia prisijungiama, pa
 Portalas turi ir bendrą viršutinę juostą, kurią rodo visi moduliai (Portalas, Sales, Frontline ir kiti): aplinkos juosta, prekės ženklas su nuoroda į Portalo pradžią, paieškos mygtukas, aplinkos ir versijos ženklas, kalbos jungiklis ir vartotojo blokas. Ji aprašyta puslapyje [Darbo pradžia](darbo-pradzia.md).
 
 ## Dar neįgyvendinta
-- Bendra paieška (UI: Search everything…) kol kas yra tik užrašas „coming soon“.
+- Bendra paieška (UI: Search everything…) randa užsakymus, klientus, prekes, tiekėjus ir Sales bei Sandėlio langus. Kitų modulių duomenų, žinynų puslapių ir paskutinių paieškų dar nerodo.
 - Pradžios puslapio skiltys „Operations preview“ ir „News“ gali rodyti pavyzdinius duomenis, kai tikri nepasiekiami.
 - Pradžios puslapio apačios nuorodos (UI: Release notes), (UI: Documentation), (UI: Support) ir (UI: All updates) yra neaktyvios (vedama į `#`).

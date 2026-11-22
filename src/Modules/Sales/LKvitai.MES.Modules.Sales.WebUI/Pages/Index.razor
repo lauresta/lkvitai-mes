@@ -354,8 +354,18 @@
         _persistingSub = ApplicationState.RegisterOnPersisting(PersistDataAsync);
     }
 
+    /// <summary>Opens the list already filtered, e.g. from a customer hit of the top-bar search (<c>?search=</c>).</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "search")]
+    public string? SearchQuery { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
+        if (!string.IsNullOrWhiteSpace(SearchQuery))
+        {
+            _search = SearchQuery.Trim();
+        }
+
         // 1) Try to rehydrate the orders snapshot persisted by the prerender
         //    side. When present, we skip the HTTP call entirely so the user
         //    sees the same data the prerendered HTML showed — no flicker.
