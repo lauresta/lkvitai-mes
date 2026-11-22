@@ -606,7 +606,7 @@
   <data name="Common.Street" xml:space="preserve"><value>Gatvė</value></data>
   <data name="Common.Submit" xml:space="preserve"><value>Pateikti</value></data>
   <data name="Common.Supplier" xml:space="preserve"><value>Tiekėjas</value></data>
-  <data name="Common.SupplierSKU" xml:space="preserve"><value>Tiekėjo SKU</value></data>
+  <data name="Common.SupplierSKU" xml:space="preserve"><value>Tiekėjo prekės kodas</value></data>
   <data name="Common.Tags" xml:space="preserve"><value>Žymos</value></data>
   <data name="Common.Timestamp" xml:space="preserve"><value>Laiko žyma</value></data>
   <data name="Common.To" xml:space="preserve"><value>Iki</value></data>

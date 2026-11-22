@@ -316,6 +316,10 @@
                                 <td>
                                     <div>@line.ItemSku</div>
                                     <div class="small text-muted">@line.ItemName</div>
+                                    @if (!string.IsNullOrWhiteSpace(line.SupplierSku))
+                                    {
+                                        <div class="small text-muted">@L["Common.SupplierSKU"]: <span class="mono">@line.SupplierSku</span></div>
+                                    }
                                 </td>
                                 <td>@(line.PrimaryBarcode ?? "-")</td>
                                 <td>@line.ExpectedQty.ToString("0.##") @line.BaseUoM</td>

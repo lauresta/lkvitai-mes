@@ -181,6 +181,14 @@ public sealed class ReceivingController : ControllerBase
                 x => ItemPhotoService.BuildProxyUrl(x.ItemId, x.Id, "thumb"),
                 cancellationToken);
 
+        // The supplier's own code of each item, as mapped for this document's supplier.
+        var supplierCodes = (await _dbContext.SupplierItemMappings
+                .AsNoTracking()
+                .Where(x => x.SupplierId == shipment.SupplierId && itemIds.Contains(x.ItemId))
+                .Select(x => new { x.ItemId, x.SupplierId, x.SupplierSKU })
+                .ToListAsync(cancellationToken))
+            .ToLookup(x => x.ItemId, x => (x.SupplierId, x.SupplierSKU));
+
         return Ok(new InboundShipmentDetailDto(
             shipment.Id,
             shipment.ReferenceNumber,
@@ -212,7 +220,8 @@ public sealed class ReceivingController : ControllerBase
                     x.Item?.CostType,
                     x.InvoiceQty ?? x.ExpectedQty,
                     x.InvoiceUnitPrice ?? x.UnitPrice,
-                    x.FinalValueEur))
+                    x.FinalValueEur,
+                    SupplierItemCodes.Pick(supplierCodes[x.ItemId], shipment.SupplierId, null)))
                 .ToList(),
             shipment.AdditionalCosts
                 .OrderBy(x => x.Id)
@@ -1309,7 +1318,8 @@ public sealed class ReceivingController : ControllerBase
         string? CostType,
         decimal? InvoiceQty = null,
         decimal? InvoiceUnitPrice = null,
-        decimal? FinalValueEur = null);
+        decimal? FinalValueEur = null,
+        string? SupplierSku = null);
 
     public sealed record AdditionalCostDto(
         int Id,

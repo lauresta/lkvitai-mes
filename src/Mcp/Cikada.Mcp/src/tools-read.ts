@@ -241,7 +241,7 @@ const itemsSearch: ToolDef = {
   name: 'items_search',
   title: 'Search items with prices and stock',
   description:
-    'Search the item catalogue by SKU, name or #tag. Each item comes with its base (sales) price, purchase price and, with includeStock (default), the quantity on hand and available now across real warehouse locations. Give priceGroupId (a customer\'s price group, see customer_get / price_groups_list) to also get the price for that group. Use stock_get for the per-location breakdown of one item.',
+    'Search the item catalogue by SKU, name, #tag or the supplier\'s own code of the item (supplierCode is returned when that code matched). Each item comes with its base (sales) price, purchase price and, with includeStock (default), the quantity on hand and available now across real warehouse locations. Give priceGroupId (a customer\'s price group, see customer_get / price_groups_list) to also get the price for that group. Use stock_get for the per-location breakdown of one item.',
   inputSchema: obj({
     search: str('Part of the SKU or name, or a #tag.', { maxLength: 200 }),
     categoryId: int('Only items of this category.'),
@@ -297,6 +297,7 @@ const itemsSearch: ToolDef = {
         basePrice: i.basePrice,
         purchasePrice: i.purchasePrice,
         groupPrice: priceGroupId === undefined ? undefined : override ?? i.basePrice,
+        supplierCode: i.supplierSku,
         groupPriceIsOverride: priceGroupId === undefined ? undefined : override !== undefined,
         stock: stockOut,
       });

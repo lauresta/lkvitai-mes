@@ -35,6 +35,8 @@ public record AdminItemDto
     public string? CommodityCode { get; init; }
     public decimal? NetWeightKg { get; init; }
     public string? OriginCountry { get; init; }
+    /// <summary>The supplier's own code of the item: the one of the requested supplier, or the one the search text matched.</summary>
+    public string? SupplierSku { get; init; }
 
     public bool IsService => string.Equals(ItemType, "Service", StringComparison.OrdinalIgnoreCase);
 }
