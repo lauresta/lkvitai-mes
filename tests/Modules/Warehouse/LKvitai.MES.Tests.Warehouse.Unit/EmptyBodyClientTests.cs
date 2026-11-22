@@ -92,6 +92,15 @@ public class EmptyBodyClientTests
         none.Should().BeNull();
     }
 
+    [Fact]
+    public void New_agnum_configuration_form_starts_switched_off()
+    {
+        var form = new LKvitai.MES.Modules.Warehouse.WebUI.Models.AgnumConfigFormModel();
+
+        form.IsActive.Should().BeFalse();
+        form.ConfigId.Should().BeNull();
+    }
+
     private sealed class StubFactory(HttpStatusCode status, string body) : IHttpClientFactory
     {
         public HttpClient CreateClient(string name) =>

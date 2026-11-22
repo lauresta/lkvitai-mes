@@ -60,6 +60,7 @@
                     <div class="form-check">
                         <InputCheckbox class="form-check-input" @bind-Value="_model.IsActive" />
                         <label class="form-check-label">@L["Common.Active"]</label>
+                        <div class="form-text">@L["Agnum.Configuration.ActiveHint"]</div>
                     </div>
                 </div>
                 <div class="col-12 col-md-8">
@@ -481,27 +482,6 @@
         return ex.ProblemDetails?.Detail
                ?? ex.ProblemDetails?.Title
                ?? L["Configuration.RequestFailed"].Value;
-    }
-
-    private sealed class AgnumConfigFormModel
-    {
-        public Guid? ConfigId { get; set; }
-
-        [Required]
-        public string Scope { get; set; } = "BY_CATEGORY";
-
-        [Required]
-        public string Schedule { get; set; } = "0 23 * * *";
-
-        [Required]
-        public string Format { get; set; } = "CSV";
-
-        [Url]
-        public string? ApiEndpoint { get; set; }
-
-        public string? ApiKey { get; set; }
-
-        public bool IsActive { get; set; } = true;
     }
 
     private sealed class MappingRowModel
