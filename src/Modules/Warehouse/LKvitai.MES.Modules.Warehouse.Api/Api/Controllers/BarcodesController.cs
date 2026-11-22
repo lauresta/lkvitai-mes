@@ -13,6 +13,8 @@ namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 [Route("api/warehouse/v1/barcodes")]
 public sealed class BarcodesController : ControllerBase
 {
+    public const string SupplierCodeAmbiguousErrorCode = "SUPPLIER_CODE_AMBIGUOUS";
+
     private readonly WarehouseDbContext _dbContext;
 
     public BarcodesController(WarehouseDbContext dbContext)
@@ -63,18 +65,66 @@ public sealed class BarcodesController : ControllerBase
             .Include(x => x.Item)
             .FirstOrDefaultAsync(x => x.Barcode == normalized, cancellationToken);
 
-        if (barcode is null || barcode.Item is null)
+        if (barcode is not null && barcode.Item is not null)
         {
-            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Barcode '{normalized}' does not exist in the system."));
+            return Ok(new ItemBarcodeLookupDto(
+                barcode.Barcode,
+                barcode.ItemId,
+                barcode.Item.InternalSKU,
+                barcode.Item.Name,
+                barcode.BarcodeType,
+                barcode.IsPrimary));
         }
 
-        return Ok(new ItemBarcodeLookupDto(
-            barcode.Barcode,
-            barcode.ItemId,
-            barcode.Item.InternalSKU,
-            barcode.Item.Name,
-            barcode.BarcodeType,
-            barcode.IsPrimary));
+        // No item barcode matches: fall back to the supplier's own item code.
+        var lowered = normalized.ToLower();
+        var supplierMatches = await _dbContext.SupplierItemMappings
+            .AsNoTracking()
+            .Where(x => x.SupplierSKU.ToLower() == lowered && x.Item != null)
+            .Select(x => new SupplierCodeCandidateDto(
+                x.ItemId,
+                x.Item!.InternalSKU,
+                x.Item.Name,
+                x.SupplierId,
+                x.Supplier != null ? x.Supplier.Name : string.Empty,
+                x.SupplierSKU))
+            .ToListAsync(cancellationToken);
+
+        var distinctItems = supplierMatches.Select(x => x.ItemId).Distinct().Count();
+        if (distinctItems == 1)
+        {
+            var match = supplierMatches[0];
+            return Ok(new ItemBarcodeLookupDto(
+                match.SupplierSKU,
+                match.ItemId,
+                match.InternalSKU,
+                match.ItemName,
+                "SupplierCode",
+                false,
+                MatchedBySupplierCode: true));
+        }
+
+        if (distinctItems > 1)
+        {
+            var problemDetails = ResultProblemDetailsMapper.ToProblemDetails(
+                DomainErrorCodes.ValidationError,
+                $"Several items have supplier code '{normalized}'. Scan the item barcode or choose the item manually.",
+                HttpContext);
+            problemDetails.Status = StatusCodes.Status409Conflict;
+            problemDetails.Title = "Ambiguous supplier code";
+            problemDetails.Extensions["errorCode"] = SupplierCodeAmbiguousErrorCode;
+            problemDetails.Extensions["candidates"] = supplierMatches
+                .OrderBy(x => x.InternalSKU, StringComparer.Ordinal)
+                .ThenBy(x => x.SupplierName, StringComparer.Ordinal)
+                .ToList();
+
+            return new ObjectResult(problemDetails)
+            {
+                StatusCode = StatusCodes.Status409Conflict
+            };
+        }
+
+        return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Barcode '{normalized}' does not exist in the system."));
     }
 
     private ObjectResult ValidationFailure(string detail)
@@ -126,5 +176,14 @@ public sealed class BarcodesController : ControllerBase
         string InternalSKU,
         string ItemName,
         string BarcodeType,
-        bool IsPrimary);
+        bool IsPrimary,
+        bool MatchedBySupplierCode = false);
+
+    public sealed record SupplierCodeCandidateDto(
+        int ItemId,
+        string InternalSKU,
+        string ItemName,
+        int SupplierId,
+        string SupplierName,
+        string SupplierSKU);
 }

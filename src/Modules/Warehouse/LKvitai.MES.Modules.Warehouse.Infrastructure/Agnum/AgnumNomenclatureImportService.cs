@@ -801,7 +801,9 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
             return;
         }
 
-        var supplierSku = (product.SupplierSku ?? product.F2 ?? product.Code).Trim();
+        // The item's own code (product.Code) is never a supplier code; without a real
+        // supplier code there is nothing to map.
+        var supplierSku = (product.SupplierSku ?? product.F2)?.Trim();
         if (string.IsNullOrWhiteSpace(supplierSku))
         {
             return;

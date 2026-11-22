@@ -242,6 +242,13 @@ public sealed class MasterDataAdminClient
         CancellationToken cancellationToken = default)
         => SendNoContentAsync(HttpMethod.Put, $"/api/warehouse/v1/supplier-item-mappings/{id}", request, cancellationToken);
 
+    public async Task DeleteSupplierMappingAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        var response = await client.DeleteAsync($"/api/warehouse/v1/supplier-item-mappings/{id}", cancellationToken);
+        await EnsureSuccessAsync(response);
+    }
+
     public Task<PagedApiResponse<AdminLocationDto>> GetLocationsAsync(
         string? search,
         string? status,
