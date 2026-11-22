@@ -208,7 +208,7 @@ public sealed class UniversalSearchTests
             var options = JsonSerializer.SerializeToElement(js.Module.InitArgs![2]);
             Assert.Equal(["/sales/shell/search", "/warehouse/shell/search", "/portal/shell/search", "/shopfloor/shell/search", "/finance/shell/search", "/frontline/shell/search"], options.GetProperty("endpoints").EnumerateArray().Select(x => x.GetString()!).ToArray());
             Assert.Equal(2, options.GetProperty("minLength").GetInt32()); Assert.Equal(250, options.GetProperty("debounceMs").GetInt32());
-            Assert.Equal(2000, options.GetProperty("timeoutMs").GetInt32()); Assert.InRange(options.GetProperty("limit").GetInt32(), 5, 8);
+            Assert.Equal(5000, options.GetProperty("timeoutMs").GetInt32()); Assert.InRange(options.GetProperty("limit").GetInt32(), 5, 8);
             var text = options.GetProperty("text");
             Assert.Equal(empty, text.GetProperty("empty").GetString());
             Assert.Equal(ordersHeading, text.GetProperty("kinds").GetProperty("order").GetString());
