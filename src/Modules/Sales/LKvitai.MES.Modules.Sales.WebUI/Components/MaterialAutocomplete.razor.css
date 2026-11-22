@@ -1,4 +1,4 @@
-.material-picker{position:relative;min-width:0}
+.material-picker{position:relative;min-width:0;container-type:inline-size}
 .material-picker__field{display:flex;align-items:center;gap:9px;min-height:43px;padding:5px 10px;border:1px solid var(--n-200);border-radius:5px;background:var(--n-0)}
 .material-picker__field:focus-within{border-color:var(--accent-500);box-shadow:0 0 0 3px var(--accent-50)}
 .material-picker__input{flex:1;min-width:100px;width:100%;padding:5px 0;border:0;outline:0;background:transparent;color:var(--n-900);font-size:14px;font-weight:700}
@@ -8,8 +8,10 @@
 .material-picker__selected-name{max-width:30%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--n-600);font-size:12px}
 .material-picker__free{flex:none;color:var(--ok-fg);font:600 12px var(--font-mono);white-space:nowrap}
 .material-picker__toggle{flex:none;border:0;background:transparent;color:var(--n-600);padding:4px 0 4px 5px;cursor:pointer}
-.material-picker__menu{position:absolute;z-index:60;top:calc(100% + 4px);left:0;right:0;max-height:330px;overflow:auto;border:1px solid var(--n-200);border-radius:6px;background:var(--n-0);box-shadow:0 8px 22px rgb(21 25 34 / 16%)}
-.material-picker__head,.material-picker__option{display:grid;grid-template-columns:minmax(180px,1fr) repeat(5,minmax(64px,.23fr));align-items:center;gap:8px;min-width:620px;padding:7px 10px}
+.material-picker__menu{position:absolute;z-index:60;top:calc(100% + 4px);left:0;right:0;max-height:330px;overflow-x:hidden;overflow-y:auto;border:1px solid var(--n-200);border-radius:6px;background:var(--n-0);box-shadow:0 8px 22px rgb(21 25 34 / 16%)}
+.material-picker__head,.material-picker__option{display:grid;grid-template-columns:minmax(150px,1fr) repeat(5,minmax(52px,.23fr));align-items:center;gap:8px;min-width:0;padding:7px 10px}
+/* A narrow field keeps Free, Warehouse and Total; no horizontal scrollbar inside the menu. */
+@container (max-width:600px){.material-picker__head,.material-picker__option{grid-template-columns:minmax(140px,1fr) repeat(3,minmax(52px,.25fr))}.material-picker__head>span:nth-child(4),.material-picker__head>span:nth-child(6),.material-picker__option>span:nth-child(4),.material-picker__option>span:nth-child(6){display:none}}
 .material-picker__head{position:sticky;top:0;z-index:1;background:var(--n-50);border-bottom:1px solid var(--n-200);color:var(--n-500);font-size:10px;font-weight:700}
 .material-picker__head>span:not(:first-child){text-align:right}
 .material-picker__option{min-height:48px;border-bottom:1px solid var(--n-100);cursor:pointer}

@@ -75,9 +75,9 @@ public sealed partial class SqlSalesOrderEntryService
         if(existing is null || h.StoreId!=existing.StoreId)
             await RequireExists(c,tx,"SELECT 1 FROM dbo.Zinynas_vieta v WHERE v.VietaID=@id AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=v.Filialas)",h.StoreId,"Store",ct);
         if(h.ManagerId.HasValue && (existing is null || h.ManagerId!=existing.ManagerId))
-            await RequireExists(c,tx,"SELECT 1 FROM dbo.Zinynas_darbuotojai e WHERE e.DarbuotojoID=@id AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=e.FilialasID)",h.ManagerId.Value,"Manager",ct);
+            await RequireExists(c,tx,"SELECT 1 FROM dbo.Zinynas_darbuotojai e WHERE e.DarbuotojoID=@id AND ISNULL(e.bHideInApplicationFlag,0)=0 AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=e.FilialasID)",h.ManagerId.Value,"Manager",ct);
         if(h.ConsultantId.HasValue && (existing is null || h.ConsultantId!=existing.ConsultantId))
-            await RequireExists(c,tx,"SELECT 1 FROM dbo.Zinynas_darbuotojai e WHERE e.DarbuotojoID=@id AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=e.FilialasID)",h.ConsultantId.Value,"Consultant",ct);
+            await RequireExists(c,tx,"SELECT 1 FROM dbo.Zinynas_darbuotojai e WHERE e.DarbuotojoID=@id AND ISNULL(e.bHideInApplicationFlag,0)=0 AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=e.FilialasID)",h.ConsultantId.Value,"Consultant",ct);
         await RequireExists(c,tx,"SELECT 1 FROM dbo.DIC_Priorities WHERE PriorityID=@id",h.PriorityId,"Priority",ct);
     }
     private async Task RequireExists(SqlConnection c,SqlTransaction tx,string text,int id,string name,CancellationToken ct)

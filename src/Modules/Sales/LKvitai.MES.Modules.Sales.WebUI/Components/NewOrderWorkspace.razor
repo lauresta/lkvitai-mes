@@ -332,14 +332,14 @@
                                 <div class="picker__section-label">@L["Product.CategoryStep"].Value · @L["Product.Frequent7d"].Value</div>
                                 @foreach (var category in FrequentCategories)
                                 {
-                                    <button type="button" role="option" aria-selected="@(_selectedCategoryId == category.Id)" class="picker__row @(_selectedCategoryId == category.Id ? "is-selected" : "")" @onmouseenter="() => SelectCategory(category.Id)" @onclick="() => SelectCategory(category.Id)"><span class="picker__cat-icon"><CategoryIcon Category="@category.Name" /></span><span class="picker__cat-name">@category.Name</span><small class="picker__usage mono">@CategoryUses(category.Id)×</small></button>
+                                    <button type="button" role="option" aria-selected="@(_selectedCategoryId == category.Id)" class="picker__row @(_selectedCategoryId == category.Id ? "is-selected" : "")" @onclick="() => SelectCategory(category.Id)"><span class="picker__cat-icon"><CategoryIcon Category="@category.Name" /></span><span class="picker__cat-name">@category.Name</span><small class="picker__usage mono">@CategoryUses(category.Id)×</small></button>
                                 }
                                 <div class="picker__divider"></div>
                             }
                             <div class="picker__section-label">@L["Product.All"].Value · @AllPickerCategories.Count</div>
                             @foreach (var category in AllPickerCategories)
                             {
-                                <button type="button" role="option" aria-selected="@(_selectedCategoryId == category.Id)" class="picker__row @(_selectedCategoryId == category.Id ? "is-selected" : "")" @onmouseenter="() => SelectCategory(category.Id)" @onclick="() => SelectCategory(category.Id)"><span class="picker__cat-icon"><CategoryIcon Category="@category.Name" /></span><span class="picker__cat-name">@category.Name</span><small class="mono">@category.Types.Count</small></button>
+                                <button type="button" role="option" aria-selected="@(_selectedCategoryId == category.Id)" class="picker__row @(_selectedCategoryId == category.Id ? "is-selected" : "")" @onclick="() => SelectCategory(category.Id)"><span class="picker__cat-icon"><CategoryIcon Category="@category.Name" /></span><span class="picker__cat-name">@category.Name</span><small class="mono">@category.Types.Count</small></button>
                             }
                         </div>
                     </aside>

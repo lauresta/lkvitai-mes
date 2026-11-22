@@ -1,5 +1,10 @@
 # Sales product picker change log
 
+## 2026-11-22 — click selects, hover only highlights
+
+- A category is selected by click, arrow keys or Enter from search. Hover no longer selects: moving the pointer from a category to the type grid crossed neighbouring rows and switched the list (issue 363).
+- Colour / material and employee pickers choose an option in the browser on mouse press, by record id; the menu no longer closes when its header, messages or scrollbar are pressed, a click on the focused field reopens the list, and the material menu has no horizontal scrollbar on a narrow field (issues 362, 364).
+
 ## 2026-11-04 — two-column finder
 
 - The product picker now shows categories on the left and types on the right. Up to five frequently used categories and types appear first; those entries are omitted from the corresponding **All** section. Category rows use 22 px on desktop viewports at or below 950 px high and the specified 26 px on taller screens, so 26 categories fit within 1440×900 without scrolling.
