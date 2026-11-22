@@ -3,7 +3,9 @@
     "file": "img/portal/pradzia.png",
     "url": "https://cikada-test.lauresta.com/portal/",
     "steps": [
-      { "wait": 2500 }
+      {
+        "wait": 2500
+      }
     ],
     "fullPage": false,
     "note": "Portalo pradžia po prisijungimo: geltona TEST ENVIRONMENT juosta, viršutinė juosta su EN/LT jungikliu ir Logout, modulių plytelės. Reikalinga prisijungusi sesija."
@@ -12,22 +14,42 @@
     "file": "img/portal/paieska.png",
     "url": "https://cikada-test.lauresta.com/portal/",
     "steps": [
-      { "wait": 1500 },
-      { "click": "button.portal-search" },
-      { "fill": ["input.shell-search__input", "tiekeju"] },
-      { "wait": 2500 }
+      {
+        "wait": 1500
+      },
+      {
+        "click": "button.portal-search"
+      },
+      {
+        "fill": [
+          "input.shell-search__input",
+          "sand"
+        ]
+      },
+      {
+        "wait": 3000
+      }
     ],
     "fullPage": false,
-    "blur": ["#shell-search-kind-order ~ .shell-search__item", "#shell-search-kind-customer ~ .shell-search__item"],
-    "note": "Atidarytas bendros paieškos langas po viršutine juosta: įvesta „tiekeju“, virš rezultatų matomi grupių mygtukai (All, Suppliers, Screens and settings), žemiau grupės su tiekėjais ir Sandėlio langais (Tiekėjai, Tiekėjų atitikmenys). Reikalinga prisijungusi sesija su Sandėlio teisėmis. Užsakymų ir klientų eilutės, jei jų būtų, užtemdomos."
+    "blur": [
+      ".shell-search__item[data-kind='order'] .shell-search__subtitle",
+      ".shell-search__item[data-kind='customer']"
+    ],
+    "note": "Atidarytas bendros paieškos langas po viršutine juosta (atidaromas mygtuku, kaip Ctrl+K): įvesta „sand“, virš rezultatų grupių mygtukai (All ir po vieną grupei), žemiau grupės su skaičiais (užsakymai, prekės, tiekėjai, vietos, langai). Reikalinga prisijungusi sesija su Sandėlio ir Sales teisėmis. Užsakymų eilučių paantraštės (klientas, adresas) ir klientų eilutės užtemdomos."
   },
   {
     "file": "img/portal/plyteliu-valdymas.png",
     "url": "https://cikada-test.lauresta.com/portal/cms/tiles",
     "steps": [
-      { "wait": 2500 },
-      { "click": ".cms-table tbody tr:first-child button.cms-action" },
-      { "wait": 500 }
+      {
+        "wait": 2500
+      },
+      {
+        "click": ".cms-table tbody tr:first-child button.cms-action"
+      },
+      {
+        "wait": 500
+      }
     ],
     "fullPage": false,
     "note": "Lentelė Dashboard tiles ir dešinėje redaktorius Edit tile su užpildytais laukais pirmai plytelei. Reikalinga Admin, WarehouseAdmin arba PortalAdmin rolė; nieko neišsaugoma."

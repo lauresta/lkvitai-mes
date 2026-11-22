@@ -25,6 +25,8 @@ Ataskaita (UI: Stock by Supplier) vienam tiekėjui parodo kiekvieną jo prekę: 
 3. Lauke (UI: Issued over) pasirinkite laikotarpį: 1, 3, 6 arba 12 mėnesių, ir spauskite (UI: Apply).
 4. Pažymėkite (UI: Only shortages), jei norite matyti tik prekes, kurių trūksta.
 
+![Ataskaita Atsargos pagal tiekėją pasirinktam tiekėjui](../img/warehouse/supplier-stock-report.png)
+
 ### 2. Kaip skaityti stulpelius
 | Stulpelis | Ką rodo |
 |---|---|

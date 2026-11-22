@@ -41,7 +41,9 @@ Prekės, kurios perkamos iš ES tiekėjų (ES įsigijimas, Intrastat), privalo t
 4. `(UI: Supplementary unit code (3 characters, customs measurement unit classifier))` ir `(UI: Supplementary units per one stock unit)` - papildomas Intrastat matavimo vienetas ir kiek tokių vienetų yra viename sandėlio vienete (pvz. m2 ir 1,5, jei vienas gaminys yra 1,5 m2). Kodas turi būti 3 simbolių muitinės matavimo vienetų klasifikatoriaus kodas (jis patenka į XML failą). Užpildykite tik prekėms, kurių CN kodui reikia papildomo vieneto; abu laukai pildomi kartu, koeficientas didesnis už 0.
 5. Šie laukai nėra privalomi saugant prekę, bet pirkimo dokumento apskaitos metu serveris tikrina: kiekvienai atsargų (`(UI: Stock)`) prekei ES įsigijimo dokumente reikia 8 skaitmenų kodo, neto svorio didesnio už 0 ir kilmės šalies (kitaip rodoma pranešimas apie kilmės šalį), o taip pat, jei papildomas vienetas nurodytas, jo koeficiento. Dėl kodo ir svorio rodoma „Every stock item of an EU acquisition needs an 8-digit commodity code and a net weight." Paslaugų prekėms šių duomenų nereikia.
 6. Intrastat ataskaitoje prekės eilutė be CN kodo, kilmės šalies ar papildomo vieneto koeficiento praleidžiama ir įrašoma į įspėjimų sąrašą.
-7. Šių laukų prekės detalių puslapyje nėra, juos keisti galima tik per `(UI: Edit)` dialogą sąraše.
+7. Šie laukai rodomi ir prekės detalių puslapyje, skiltyje `(UI: Intrastat)`; jei ko nors trūksta, prie skilties rodoma žyma `(UI: Data missing)`. Detalių puslapis skirtas tik skaitymui: laukus keiskite per `(UI: Edit)` dialogą sąraše arba keliom prekėm iš karto, žr. [P-21](P-21-intrastat-atvykimai.md).
+
+![Prekės detalių puslapis su Intrastat skiltimi](../img/warehouse/admin-item-detail-intrastat.png)
 
 ### 3. Prekės detalės, nuotraukos ir kainos pagal grupes
 1. Sąraše pasirinkite eilutės meniu `(UI: Actions)` ir `(UI: Details)` arba paspauskite SKU. Atsidaro puslapis `(UI: Item Details)` su mygtuku `(UI: Back to list)`.

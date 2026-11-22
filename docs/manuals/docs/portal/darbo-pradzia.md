@@ -72,7 +72,7 @@ Kol paieškos laukas tuščias, lange rodomi (UI: Recently opened), iki 5 paskut
 
 Paieška rodo tik tai, ką pats naudotojas gali atidaryti. Sales duomenys rodomi tik naudotojo filialų, kaip ir Sales užsakymų sąraše. Jei naudotojas neturi teisių į modulį, to modulio grupių nėra.
 
-![Bendros paieškos langas su sugrupuotais rezultatais](../img/portal/paieska.png)
+![Bendros paieškos langas su įvestu tekstu „sand“ ir sugrupuotais rezultatais](../img/portal/paieska.png)
 
 ### 7. Atsijungti
 1. Viršutiniame dešiniajame kampe, po vardu, paspauskite (UI: Logout) (lietuviškai „Atsijungti“).
