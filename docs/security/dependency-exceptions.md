@@ -38,4 +38,9 @@ It cannot detect a dictionary-keyed LINQ filter or a runtime constant in a `Sele
 
 ## Removed / resolved in the same review
 
-For reference, these were resolved by upgrades or pins in `Directory.Packages.props` (transitive pinning is enabled with `CentralPackageTransitivePinningEnabled`): Npgsql, System.Text.Json, System.Security.Cryptography.Pkcs, System.Net.Http / System.Security.Cryptography.X509Certificates (pulled by FsCheck -> FSharp.Core 4.2.3, now FSharp.Core 8), SSH.NET, SixLabors.ImageSharp, OpenTelemetry.*, MySqlConnector (pulled by EFCore.BulkExtensions -> Pomelo, unused at runtime) and the deprecated OpenTelemetry.Exporter.Jaeger (replaced by the OTLP exporter).
+For reference, these were resolved by upgrades or pins in `Directory.Packages.props` (transitive pinning is enabled with `CentralPackageTransitivePinningEnabled`): Npgsql, System.Text.Json, System.Security.Cryptography.Pkcs, System.Net.Http / System.Security.Cryptography.X509Certificates (pulled by FsCheck -> FSharp.Core 4.2.3, now FSharp.Core 8), SSH.NET, SixLabors.ImageSharp (3.1.11; see below), OpenTelemetry.*, MySqlConnector (pulled by EFCore.BulkExtensions -> Pomelo, unused at runtime) and the deprecated OpenTelemetry.Exporter.Jaeger (replaced by the OTLP exporter).
+## SixLabors.ImageSharp 3.1.11: GHSA-wmxv-xphr-5c9g (moderate)
+
+BigTIFF IFD count can keep a decoder thread in a loop; fixed only in 3.2.0. ImageSharp 3.2.0 fails the build without a Six Labors licence key (`SixLaborsLicenseKey` / `sixlabors.lic`), so buying a licence is an owner decision.
+Mitigation: every decode of an uploaded image goes through `SafeImageDecoding.Options` (Warehouse Api), which registers only the JPEG, PNG and WebP decoders, so TIFF data is rejected as an unknown format before any TIFF code runs. `SafeImageDecodingTests` checks this. 3.1.11 fixes the GIF advisory GHSA-rxmq-m78w-7wmc.
+Rule for reviewers: never call `Image.Load*` / `Image.Identify*` on uploaded data without these options.

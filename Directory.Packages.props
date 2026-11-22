@@ -62,7 +62,7 @@
     <PackageVersion Include="SSH.NET" Version="2026.0.0" />
     <PackageVersion Include="StackExchange.Redis" Version="2.8.24" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.5.0" />
-    <PackageVersion Include="SixLabors.ImageSharp" Version="3.2.0" />
+    <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.11" />
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="8.0.2" />
     <PackageVersion Include="System.Text.Json" Version="8.0.6" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="3.6.0" />

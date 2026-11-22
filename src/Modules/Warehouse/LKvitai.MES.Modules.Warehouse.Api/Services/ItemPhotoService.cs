@@ -546,7 +546,7 @@ public sealed class ItemPhotoService : IItemPhotoService
     private static async Task<MemoryStream> BuildThumbnailAsync(byte[] originalBytes, CancellationToken cancellationToken)
     {
         await using var source = new MemoryStream(originalBytes, writable: false);
-        using var image = await Image.LoadAsync(source, cancellationToken);
+        using var image = await Image.LoadAsync(SafeImageDecoding.Options, source, cancellationToken);
         image.Mutate(x =>
             x.AutoOrient()
                 .Resize(new ResizeOptions
