@@ -48,6 +48,9 @@ public partial class NewOrderWorkspace
     private int? _employeeId, _employeeDutyId;
     private bool HeaderDirty => _order?.LegacyId is not null && JsonSerializer.Serialize(HeaderInput()) != _headerSaved;
     private DateOnly SavedOrderDate => string.IsNullOrEmpty(_headerSaved) ? _order!.Date : JsonSerializer.Deserialize<OrderHeaderInput>(_headerSaved)!.Date;
+    /// <summary>The "More" menu of the product editor header (duplicate, return, warranty, delete).</summary>
+    private bool _productMoreOpen;
+    private void CloseProductMoreOnEscape(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs args) { if (args.Key == "Escape") _productMoreOpen = false; }
     private bool ProductDirty => _configuringLine is not null && ProductState(_configuringLine) != _productSaved;
     private bool CanEnterManualPrice => ConfiguredType?.CanEnterManualPrice == true;
 
