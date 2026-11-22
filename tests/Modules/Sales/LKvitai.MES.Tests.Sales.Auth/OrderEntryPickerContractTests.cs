@@ -34,6 +34,13 @@ public sealed class OrderEntryPickerContractTests
         Assert.Contains($"s.Kons_DarbuotojoID AND ISNULL({consultant}.bHideInApplicationFlag,0)=0", source, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void A_product_without_a_chosen_material_shows_the_placeholder_not_the_code_of_component_zero()
+    {
+        var workspace = Source("src/Modules/Sales/LKvitai.MES.Modules.Sales.WebUI/Components/NewOrderWorkspace.razor.cs");
+        Assert.Contains("ColourId=item.ColourId==0 ? (int?)null : item.ColourId, ColourCode=item.ColourId==0 ? \"\" : item.ColourCode ?? \"\"", workspace, StringComparison.Ordinal);
+    }
+
     private static string Source(string relativePath)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

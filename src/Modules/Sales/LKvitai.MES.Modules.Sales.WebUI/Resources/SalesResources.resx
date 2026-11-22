@@ -898,7 +898,7 @@
     <value>Reserved</value>
   </data>
   <data name="Material.Search" xml:space="preserve">
-    <value>Search material code or name</value>
+    <value>Choose material / colour</value>
   </data>
   <data name="Material.ShowMaterials" xml:space="preserve">
     <value>Show materials</value>
