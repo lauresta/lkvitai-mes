@@ -14,7 +14,13 @@
 // With an empty box the panel shows what this user opened and searched last (kept in localStorage,
 // which may be unavailable: every access is guarded and the panel works without it).
 
-import { askManuals } from './manual-search.js';
+// Loaded with this module's own ?v= query (the build version) so a deploy is not hidden behind a cached
+// copy: static assets are cached by the browser and Cloudflare for hours.
+let manualSearch = null;
+function askManuals(...args) {
+    manualSearch ??= import('./manual-search.js' + new URL(import.meta.url).search);
+    return manualSearch.then(m => m.askManuals(...args));
+}
 
 const KIND_ORDER = ['order', 'customer', 'item', 'supplier', 'location', 'document', 'screen', 'manual'];
 const RECENT_LIMIT = 5;
