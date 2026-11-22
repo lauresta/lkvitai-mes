@@ -2200,4 +2200,16 @@
   <data name="Workspace.ReadOnly" xml:space="preserve">
     <value>Užsakymą galima tik peržiūrėti: jo įrašyti negalima.</value>
   </data>
+  <data name="Product.More" xml:space="preserve">
+    <value>Daugiau</value>
+  </data>
+  <data name="Product.Stock" xml:space="preserve">
+    <value>Atsargos</value>
+  </data>
+  <data name="Product.OrderTotalShort" xml:space="preserve">
+    <value>Užsakymas</value>
+  </data>
+  <data name="Product.ControlPlaceholderShort" xml:space="preserve">
+    <value>K / D / kita</value>
+  </data>
 </root>

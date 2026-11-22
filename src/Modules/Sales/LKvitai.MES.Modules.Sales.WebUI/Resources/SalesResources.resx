@@ -2200,4 +2200,16 @@
   <data name="Workspace.ReadOnly" xml:space="preserve">
     <value>Read-only order: saving is not available for this order.</value>
   </data>
+  <data name="Product.More" xml:space="preserve">
+    <value>More</value>
+  </data>
+  <data name="Product.Stock" xml:space="preserve">
+    <value>Stock</value>
+  </data>
+  <data name="Product.OrderTotalShort" xml:space="preserve">
+    <value>Order</value>
+  </data>
+  <data name="Product.ControlPlaceholderShort" xml:space="preserve">
+    <value>K / D / other</value>
+  </data>
 </root>

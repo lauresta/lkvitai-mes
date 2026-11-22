@@ -1,5 +1,13 @@
 # Sales product picker change log
 
+## 2026-11-22 — compact product editor with a sticky action bar (designer handoff 1b)
+
+- Header: title and actions share one row; Duplicate, Return from production, Warranty repair and Delete moved under **Daugiau ▾**.
+- Main parameters: Control, Width, Height and Quantity in one row with 38 px steppers of capped width; Colour and Price in one row.
+- Additional parameters, accessories and product info use tighter cards.
+- Right column keeps Live preview and a new Stock panel and sticks to the top above 1100 px.
+- New sticky bar at the bottom of the page: product, dimensions, save state, saved product / accessories / order amounts, saved total and the Save-and-back button. The amounts, the total and the button left the right column.
+
 ## 2026-11-22 — click selects, hover only highlights
 
 - A category is selected by click, arrow keys or Enter from search. Hover no longer selects: moving the pointer from a category to the type grid crossed neighbouring rows and switched the list (issue 363).

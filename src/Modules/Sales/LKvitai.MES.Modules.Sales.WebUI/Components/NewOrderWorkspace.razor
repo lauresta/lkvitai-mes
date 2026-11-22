@@ -385,16 +385,28 @@
             <div class="demo-product-page demo-product-page--editor" aria-label="@L["Product.Editor"].Value">
                 <CustomerPrivacyNotice IsRestricted="IsPrivacyRestricted" OnBack="CloseAsync" />
                 <header class="demo-product-page__header">
-                    <div><nav class="demo-breadcrumb" aria-label="@L["Product.Breadcrumb"].Value"><button type="button" @onclick="CloseAsync">@L["Common.Home"].Value</button><span>/</span><button type="button" @onclick="CloseConfigurator">@L["Common.Orders"].Value</button><span>/</span><button type="button" @onclick="CloseConfigurator">@_order.Number</button><span>/</span><strong>@_configuringLine.Name</strong></nav><div class="eyebrow mono">@L["Product.ForOrder", _order.Number].Value</div><div class="demo-product-page__title"><h1>@_configuringLine.Name</h1><span>@_configuringLine.Category</span><span class="chip chip--entered">@(IsLive ? _configuringLine.StateName : L["Workspace.StageEntered"].Value)</span></div></div>
+                    <nav class="demo-breadcrumb" aria-label="@L["Product.Breadcrumb"].Value"><button type="button" @onclick="CloseAsync">@L["Common.Home"].Value</button><span>/</span><button type="button" @onclick="CloseConfigurator">@L["Common.Orders"].Value</button><span>/</span><button type="button" @onclick="CloseConfigurator">@_order.Number</button><span>/</span><strong>@_configuringLine.Name</strong></nav>
+                    <div class="demo-product-page__headrow">
+                    <div><div class="eyebrow mono">@L["Product.ForOrder", _order.Number].Value</div><div class="demo-product-page__title"><h1>@_configuringLine.Name</h1><span>@_configuringLine.Category</span><span class="chip chip--entered">@(IsLive ? _configuringLine.StateName : L["Workspace.StageEntered"].Value)</span></div></div>
                     <div class="demo-product-page__actions">
                         <button class="btn btn--ghost" type="button" disabled="@(!IsLive)" @onclick="CheckLiveParametersAsync">@L["Product.CheckParameters"].Value</button>
                         <button class="btn btn--ghost" type="button" disabled="@(!IsLive || !_configuringLine.CanEdit || !_order.WritesAllowed)" @onclick="LookupLivePriceAsync">@L["Product.PriceFromList"].Value</button>
-                        <button class="btn btn--ghost" type="button" disabled="@(!IsLive || !_configuringLine.CanEdit || !_order.WritesAllowed)" @onclick="DuplicateLiveProductAsync">@L["Product.Duplicate"].Value</button>
                         <button class="btn btn--ghost" type="button" disabled="@(!IsLive)" @onclick="RefreshLiveProductAsync">@L["Common.Refresh"].Value</button>
-                        <button class="btn btn--ghost" type="button" disabled title="@L["Product.ReturnOutside"].Value">@L["Product.ReturnProduction"].Value</button>
-                        <button class="btn btn--ghost" type="button" disabled title="@L["Product.WarrantyOutside"].Value">@L["Product.Warranty"].Value</button>
-                        <button class="btn btn--ghost demo-danger-action" type="button" disabled="@(!IsLive || !_configuringLine.CanDelete || !_order.WritesAllowed)" @onclick="() => DeleteLiveProductAsync(_configuringLine)">@L["Common.Delete"].Value</button>
+                        <button class="btn btn--ghost demo-product-more__toggle @(_productMoreOpen ? "is-open" : "")" type="button" aria-haspopup="menu" aria-expanded="@(_productMoreOpen ? "true" : "false")" @onclick="() => _productMoreOpen = !_productMoreOpen" @onkeydown="CloseProductMoreOnEscape">@L["Product.More"].Value ▾</button>
+                        @if (_productMoreOpen)
+                        {
+                            @* Rarely used actions. The backdrop closes the menu on an outside click. *@
+                            <div class="demo-product-more__backdrop" @onclick="() => _productMoreOpen = false"></div>
+                            <div class="demo-product-more" role="menu" @onkeydown="CloseProductMoreOnEscape">
+                                <button type="button" role="menuitem" disabled="@(!IsLive || !_configuringLine.CanEdit || !_order.WritesAllowed)" @onclick="async () => { _productMoreOpen = false; await DuplicateLiveProductAsync(); }">@L["Product.Duplicate"].Value</button>
+                                <button type="button" role="menuitem" disabled title="@L["Product.ReturnOutside"].Value">@L["Product.ReturnProduction"].Value</button>
+                                <button type="button" role="menuitem" disabled title="@L["Product.WarrantyOutside"].Value">@L["Product.Warranty"].Value</button>
+                                <div class="demo-product-more__divider" role="separator"></div>
+                                <button type="button" role="menuitem" class="demo-danger-action" disabled="@(!IsLive || !_configuringLine.CanDelete || !_order.WritesAllowed)" @onclick="async () => { _productMoreOpen = false; await DeleteLiveProductAsync(_configuringLine); }">@L["Common.Delete"].Value</button>
+                            </div>
+                        }
                         <button class="btn btn--ghost" type="button" @onclick="BackToOrderAsync">@L["Product.BackOrderArrow"].Value</button>
+                    </div>
                     </div>
                 </header>
                 <div class="demo-product-page__grid demo-product-page__grid--editor">
@@ -411,17 +423,11 @@
                         <section class="panel demo-product-editor__main">
                             <div class="panel__head"><h2>@L["Product.MainParameters"].Value</h2><ProductTypeSelect Value="_configuringLine.TypeId" SavedName="@_configuringLine.Name" Types="@(ConfiguredCategory?.Types ?? [])" Changed="ChangeConfiguredType" /></div>
                             <div class="demo-product-editor__body">
-                                @if (_configuringLine.Kind == "Product")
+                                @if (_configuringLine.Kind == "Product" && !IsLive)
                                 {
                                     <div class="demo-product-editor__control">
                                         <label class="demo-label" id="config-control-label">@L["Product.Control"].Value</label>
                                         <div class="demo-product-editor__control-entry">
-                                            @if (IsLive)
-                                            {
-                                                <datalist id="legacy-control-values"><option value="K">K</option><option value="D">D</option></datalist><input id="config-control" aria-invalid="@(ProductError("control") is not null ? "true" : "false")" aria-describedby="config-control-error" data-select-on-focus list="legacy-control-values" class="demo-input @ProductFieldClass("control")" maxlength="10" aria-label="@L["Product.Control"].Value" @bind="_configuringLine.ControlType" placeholder="@L["Product.ControlPlaceholder"].Value" readonly="@(!_configuringLine.CanEdit)" />@ProductFieldError("control")
-                                            }
-                                            else
-                                            {
                                             <div class="demo-product-editor__control-options" aria-labelledby="config-control-label">
                                                 <button type="button" class="@(_configuringLine.ControlType == "Chain left" ? "is-selected" : "")" @onclick="SetControlLeft">@L["Product.ChainLeft"].Value</button>
                                                 <button type="button" class="@(_configuringLine.ControlType == "Chain right" ? "is-selected" : "")" @onclick="SetControlRight">@L["Product.ChainRight"].Value</button>
@@ -429,11 +435,14 @@
                                                 <button type="button" class="@(IsOtherControl ? "is-selected" : "")" @onclick="SetControlOther">@L["Product.OtherControlButton"].Value</button>
                                             </div>
                                             @if (IsOtherControl) { <input id="config-control" aria-invalid="@(ProductError("control") is not null ? "true" : "false")" aria-describedby="config-control-error" data-select-on-focus class="demo-input @ProductFieldClass("control")" aria-label="@L["Product.OtherControl"].Value" @bind="_configuringLine.ControlType" @bind:event="oninput" placeholder="@L["Product.OtherControl"].Value" /> }
-                                            }
                                         </div>
                                     </div>
                                 }
-                                <div class="demo-product-editor__dimensions">
+                                <div class="demo-product-editor__dimensions @(_configuringLine.Kind == "Product" && IsLive ? "demo-product-editor__dimensions--control" : "")">
+                                    @if (_configuringLine.Kind == "Product" && IsLive)
+                                    {
+                                        <div class="demo-product-editor__control-cell"><label class="demo-label" for="config-control">@L["Product.Control"].Value</label><datalist id="legacy-control-values"><option value="K">K</option><option value="D">D</option></datalist><input id="config-control" aria-invalid="@(ProductError("control") is not null ? "true" : "false")" aria-describedby="config-control-error" data-select-on-focus list="legacy-control-values" class="demo-input @ProductFieldClass("control")" maxlength="10" @bind="_configuringLine.ControlType" placeholder="@L["Product.ControlPlaceholderShort"].Value" readonly="@(!_configuringLine.CanEdit)" />@ProductFieldError("control")</div>
+                                    }
                                     @if (_configuringLine.Kind == "Product")
                                     {
                                         <div><label class="demo-label" for="config-width">@L["Product.Width"].Value</label><div class="lk-stepper @ProductFieldClass("width") @(InvalidWidth ? "is-invalid" : "")"><button type="button" tabindex="-1" aria-label="@L["Product.DecreaseWidth"].Value" @onclick="() => StepWidth(-10)">−</button><input id="config-width" type="text" inputmode="decimal" data-select-on-focus aria-invalid="@(ProductError("width") is not null ? "true" : "false")" aria-describedby="config-width-error" min="@(IsLive ? 1 : 200)" step="10" @bind="_configuringLine.WidthMm" @bind:culture="CultureInfo.InvariantCulture" @bind:event="oninput" @bind:after="RecalculateConfiguredParameters" /><span class="unit">mm</span><button type="button" tabindex="-1" aria-label="@L["Product.IncreaseWidth"].Value" @onclick="() => StepWidth(10)">+</button></div>@if (InvalidWidth) { <div class="lk-field-error">@L["Product.PositiveWidth"].Value</div> }@ProductFieldError("width")</div>
@@ -489,7 +498,7 @@
                         }
                         <section class="panel demo-product-editor__info">
                             <div class="panel__head"><h2>@L["Product.Info"].Value</h2></div>
-                            <div class="demo-product-info"><div><label class="demo-label" for="config-note">@L["Common.Notes"].Value</label><textarea id="config-note" aria-invalid="@(ProductError("note") is not null ? "true" : "false")" aria-describedby="config-note-error" class="demo-textarea @ProductFieldClass("note")" @bind="_configuringLine.Note" placeholder="@L["Product.NotesExample"].Value"></textarea>@ProductFieldError("note")</div><div><div class="demo-label">@(IsLive ? L["Product.CurrentState"].Value : L["Product.StateHistory"].Value)</div><div class="demo-state-history"><span class="demo-state-history__dot"></span><div><span class="chip chip--entered">@(IsLive ? _configuringLine.StateName : L["Workspace.StageEntered"].Value)</span><small class="mono">@(IsLive ? L["Product.Saved"].Value : L["Product.LocalDraftAt", DraftCreatedAtLabel].Value)</small></div></div></div></div>
+                            <div class="demo-product-info"><div><label class="demo-label" for="config-note">@L["Common.Notes"].Value</label><textarea id="config-note" aria-invalid="@(ProductError("note") is not null ? "true" : "false")" aria-describedby="config-note-error" class="demo-textarea @ProductFieldClass("note")" @bind="_configuringLine.Note" placeholder="@L["Product.NotesExample"].Value"></textarea>@ProductFieldError("note")</div><div><div class="demo-label">@(IsLive ? L["Product.CurrentState"].Value : L["Product.StateHistory"].Value)</div><div class="demo-state-history"><span class="chip chip--entered">@(IsLive ? _configuringLine.StateName : L["Workspace.StageEntered"].Value)</span><small class="mono">@(IsLive ? L["Product.Saved"].Value : L["Product.LocalDraftAt", DraftCreatedAtLabel].Value)</small></div></div></div>
                         </section>
                         </fieldset>
                     </main>
@@ -499,16 +508,25 @@
                             <LiveProductPreview Category="@_configuringLine.Category" TypeName="@_configuringLine.Name" WidthMm="@_configuringLine.WidthMm" HeightMm="@_configuringLine.HeightMm" Quantity="@_configuringLine.Quantity" ControlType="@_configuringLine.ControlType" />
                             <div class="demo-product-preview__caption">@PreviewCaption</div>
                         </section>
-                        <section class="panel demo-product-preview__totals">
-                            <div class="panel__head"><h2>@L["Product.PriceStock"].Value</h2></div>
+                        <section class="panel demo-product-preview__stock">
+                            <div class="panel__head"><h2>@L["Product.Stock"].Value</h2></div>
                             <div class="lk-stock"><div>@L["Product.FabricNeeded"].Value <span class="mono">@(_requiredMaterial?.ToString("0.###",CultureInfo.InvariantCulture) ?? "—")</span><span class="lk-stock__free mono" title="@L["Product.AvailableHelp"].Value">@(IsLive ? L["Product.AvailableForProduct", _availableMaterial?.ToString("0.###",CultureInfo.InvariantCulture) ?? "—", _materialUnit ?? ""].Value : L["Product.FreeUnknown"].Value)</span></div><div class="bar"><i style="width:@StockPercent;background:@(_isMaterialShort==true ? "var(--warn-dot)" : "var(--accent-500)")"></i></div>@if(IsLive) { <small>@StockMessage</small> }</div>
-                            <div class="demo-receipt__row"><span>@(IsLive ? L["Product.ProductSaved"].Value : L["Product.Kind"].Value)</span><strong class="mono">@OrderFormat.Money(IsLive ? _configuringLine.ServerAmount ?? 0 : _configuringLine.Quantity * _configuringLine.Price)</strong></div>
-                            <div class="demo-receipt__row"><span>@L["Product.Accessories"].Value</span><strong class="mono">@OrderFormat.Money(IsLive ? _configuringLine.ServerAccessoryAmount ?? _configuringLine.Accessories.Sum(x => x.Total) : _configuringLine.Accessories.Sum(x => x.Total))</strong></div>
-                            <div class="lk-total"><div class="label">@(IsLive ? L["Product.TotalSaved"].Value : L["Product.Total"].Value)</div><div class="value">@(IsLive && _configuringLine.ServerAmount is null ? "—" : OrderFormat.Money(_configuringLine.Total))</div></div>
-                            <p>@(IsLive ? L["Product.SaveChecks"].Value : L["Product.MilestoneHelp"].Value)</p>
-                            <button class="btn btn--primary" type="button" disabled="@_busy" @onclick="CloseConfigurator">@(IsLive && ProductDirty ? L["Product.SaveBackOrder"].Value : L["Product.BackOrder"].Value)</button>
                         </section>
                     </aside>
+                </div>
+                @* Always visible: what is saved, whether there are unsaved changes, and the way back to the order. *@
+                <div class="sales-product-bar">
+                    <div class="sales-product-bar__inner">
+                        <div class="sales-product-bar__product"><strong>@_configuringLine.Name</strong><span class="mono">@LineDimensions(_configuringLine)</span><span class="sales-product-bar__state @(IsLive && ProductDirty ? "is-dirty" : "")">@(IsLive && ProductDirty ? L["Workspace.UnsavedChanges"].Value : IsLive ? L["Product.Saved"].Value : L["Workspace.StageEntered"].Value)</span></div>
+                        <div class="sales-product-bar__spacer"></div>
+                        <div class="sales-product-bar__amounts">
+                            <span>@(IsLive ? L["Product.ProductSaved"].Value : L["Product.Kind"].Value) <strong class="mono">@OrderFormat.Money(IsLive ? _configuringLine.ServerAmount ?? 0 : _configuringLine.Quantity * _configuringLine.Price)</strong></span>
+                            <span>@L["Product.Accessories"].Value <strong class="mono">@OrderFormat.Money(IsLive ? _configuringLine.ServerAccessoryAmount ?? _configuringLine.Accessories.Sum(x => x.Total) : _configuringLine.Accessories.Sum(x => x.Total))</strong></span>
+                            <span>@L["Product.OrderTotalShort"].Value <strong class="mono">@OrderFormat.Money(_order.BeforeDiscount)</strong></span>
+                        </div>
+                        <div class="sales-product-bar__total"><span>@(IsLive ? L["Product.TotalSaved"].Value : L["Product.Total"].Value)</span><strong class="mono">@(IsLive && _configuringLine.ServerAmount is null ? "—" : OrderFormat.Money(_configuringLine.Total))</strong></div>
+                        <button class="btn btn--primary" type="button" disabled="@_busy" title="@(IsLive ? L["Product.SaveChecks"].Value : L["Product.MilestoneHelp"].Value)" @onclick="CloseConfigurator">@(IsLive && ProductDirty ? L["Product.SaveBackOrder"].Value : L["Product.BackOrder"].Value)</button>
+                    </div>
                 </div>
             </div>
         }
@@ -1178,6 +1196,7 @@
     }
     private async Task OpenConfigurator(DemoOrderLine line)
     {
+        _productMoreOpen = false;
         if (IsLive && !await LeaveProductAsync()) return;
         _selectingProduct = false;
         if(IsLive && line.LegacyId is not null) line=_order?.Lines.FirstOrDefault(x=>x.LegacyId==line.LegacyId) ?? line;
@@ -1187,7 +1206,7 @@
         if(!IsLive) await RecalculateConfiguredParameters();
         else { _requiredMaterial=null;_availableMaterial=null;_freeMaterial=null;_shortageDisposition=null;_isMaterialShort=null;await UpdateLivePreviewAsync(false); }
     }
-    private async Task CloseConfigurator() { if (IsLive && !await SaveLiveProductAsync()) return; _configuringLine = null; }
+    private async Task CloseConfigurator() { if (IsLive && !await SaveLiveProductAsync()) return; _productMoreOpen = false; _configuringLine = null; }
     private void SetControlLeft() { if (_configuringLine is not null) _configuringLine.ControlType = "Chain left"; }
     private void SetControlRight() { if (_configuringLine is not null) _configuringLine.ControlType = "Chain right"; }
     private void SetControlMotor() { if (_configuringLine is not null) _configuringLine.ControlType = "Motor"; }
