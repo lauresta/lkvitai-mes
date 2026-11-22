@@ -184,7 +184,9 @@ public partial class NewOrderWorkspace
                 Category=item.CategoryName ?? "", Name=item.TypeName ?? $"#{item.TypeId}",
                 Kind=category?.Name is "Priedai" or "Be gaminių" ? "Priedai" : category?.Name=="Paslaugos" ? "Service" : "Product",
                 WidthMm=item.WidthMm ?? 0, HeightMm=item.HeightMm ?? 0, Quantity=item.Quantity ?? 0,
-                ColourId=item.ColourId, ColourCode=item.ColourCode ?? "", ControlType=item.Control ?? "",
+                // Spalva=0 is the legacy "no material chosen" value; its component row carries the code RSR816,
+                // which must not be shown as if somebody had picked it. The field stays empty with its placeholder.
+                ColourId=item.ColourId==0 ? (int?)null : item.ColourId, ColourCode=item.ColourId==0 ? "" : item.ColourCode ?? "", ControlType=item.Control ?? "",
                 Price=item.UnitPrice ?? 0, Note=item.Note ?? "", CanEdit=item.CanEdit && !h.Cancelled, CanDelete=item.CanDelete && !h.Cancelled,
                 StateName=item.StateName ?? "", StateId=item.StateId, IsManufactured=item.IsManufactured, HasStoredPrice=item.UnitPrice is not null, HasStoredDimensions=item.WidthMm is not null && item.HeightMm is not null, ServerAmount=item.Amount, ServerAccessoryAmount=item.AccessoryAmount, Discountable=category?.DiscountAllowed == true,
                 UseListPrice=false, RecalculateParameters=false

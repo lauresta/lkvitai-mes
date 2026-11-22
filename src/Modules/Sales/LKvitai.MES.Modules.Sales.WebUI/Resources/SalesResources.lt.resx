@@ -898,7 +898,7 @@
     <value>Rezervuota</value>
   </data>
   <data name="Material.Search" xml:space="preserve">
-    <value>Ieškoti pagal medžiagos kodą ar pavadinimą</value>
+    <value>Pasirinkite medžiagą / spalvą</value>
   </data>
   <data name="Material.ShowMaterials" xml:space="preserve">
     <value>Rodyti medžiagas</value>
