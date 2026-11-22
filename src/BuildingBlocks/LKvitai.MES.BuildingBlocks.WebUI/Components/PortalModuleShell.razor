@@ -303,8 +303,11 @@
 
         try
         {
+            // The assembly MVID alone does not change when only the static JS changes, and the scripts are
+            // cached for hours (browser + Cloudflare): add the build version (it carries the commit).
             var version = typeof(PortalModuleShell).Assembly.ManifestModule.ModuleVersionId.ToString("N");
-            _searchModule = await JS.InvokeAsync<IJSObjectReference>("import", $"{SearchModulePath}?v={version}");
+            var build = Uri.EscapeDataString(Version ?? string.Empty);
+            _searchModule = await JS.InvokeAsync<IJSObjectReference>("import", $"{SearchModulePath}?v={version}&b={build}");
             await _searchModule.InvokeVoidAsync("init", _searchButton, _searchPanel, new
             {
                 endpoints = ResolvedSearchEndpoints,
