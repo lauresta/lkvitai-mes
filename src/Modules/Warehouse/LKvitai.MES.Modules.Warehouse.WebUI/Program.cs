@@ -108,6 +108,9 @@ app.MapGet("/health", () => Results.Ok());
 
 app.MapPortalLogout();
 
+// Portal "Search everything" (#375): same-origin relay to GET /api/warehouse/v1/search for the signed-in user.
+app.MapWarehouseShellSearch();
+
 // Photo proxy: in production nginx routes /api/* to the API directly.
 // In local dev the browser resolves relative /api/* URLs against the WebUI port,
 // so this endpoint forwards those requests to the backend API and streams the response.

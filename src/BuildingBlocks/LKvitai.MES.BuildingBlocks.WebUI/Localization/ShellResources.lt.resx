@@ -12,7 +12,17 @@
   <data name="Shell.Search.Placeholder" xml:space="preserve"><value>Ieškoti visur…</value></data>
   <data name="Shell.Search.Label" xml:space="preserve"><value>Atidaryti bendrą paiešką</value></data>
   <data name="Shell.Search.PopoverTitle" xml:space="preserve"><value>Bendra paieška</value></data>
-  <data name="Shell.Search.PopoverBody" xml:space="preserve"><value>Paieška tarp užsakymų, audinių, modulių ir kt. — jau netrukus. Kol kas naudokite filtrus kiekviename modulyje.</value></data>
+  <data name="Shell.Search.Hint" xml:space="preserve"><value>Įveskite bent 2 simbolius: ieškoma užsakymų, klientų, prekių, tiekėjų ir langų.</value></data>
+  <data name="Shell.Search.Loading" xml:space="preserve"><value>Ieškoma…</value></data>
+  <data name="Shell.Search.Empty" xml:space="preserve"><value>Nieko nerasta.</value></data>
+  <data name="Shell.Search.Partial" xml:space="preserve"><value>Dalies rezultatų nepavyko gauti.</value></data>
+  <data name="Shell.Search.Keys" xml:space="preserve"><value>↑↓ – pasirinkti, Enter – atidaryti, Esc – uždaryti</value></data>
+  <data name="Shell.Search.Kind.Order" xml:space="preserve"><value>Užsakymai</value></data>
+  <data name="Shell.Search.Kind.Customer" xml:space="preserve"><value>Klientai</value></data>
+  <data name="Shell.Search.Kind.Item" xml:space="preserve"><value>Prekės</value></data>
+  <data name="Shell.Search.Kind.Supplier" xml:space="preserve"><value>Tiekėjai</value></data>
+  <data name="Shell.Search.Kind.Screen" xml:space="preserve"><value>Langai ir nustatymai</value></data>
+  <data name="Shell.Search.Kind.Other" xml:space="preserve"><value>Kita</value></data>
   <data name="Shell.Dismiss" xml:space="preserve"><value>Uždaryti</value></data>
   <data name="Shell.Logout" xml:space="preserve"><value>Atsijungti</value></data>
   <data name="Shell.SignedIn" xml:space="preserve"><value>Prisijungęs</value></data>

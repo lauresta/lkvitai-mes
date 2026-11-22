@@ -1,6 +1,9 @@
 @namespace LKvitai.MES.BuildingBlocks.WebUI.Components
 @inject NavigationManager Navigation
 @inject IConfiguration Configuration
+@using Microsoft.JSInterop
+@inject IJSRuntime JS
+@implements IAsyncDisposable
 @inject Microsoft.Extensions.Localization.IStringLocalizer<LKvitai.MES.BuildingBlocks.WebUI.Localization.ShellResources> L
 
 @*
@@ -18,10 +21,11 @@
             key consumers already use to build cross-module redirects)
          3. "/" — safe local fallback (works in dev, in tests, and inside the
             Portal WebUI itself where the home IS this app's root).
-     * Universal search is a PLACEHOLDER button styled to look like a search
-       input. Clicking opens a small "coming soon" popover instead of doing
-       module-only filtering, matching the Outlook 365-style universal-search
-       intent in the Portal dashboard plan.
+     * Universal search (Issue #375): the button opens a search panel under
+       the topbar. The panel markup is rendered here once; everything after
+       that (debounce, parallel calls to each module's {PathBase}/shell/search
+       relay, grouping, keyboard) is done by wwwroot/js/shell-search.js in the
+       browser, with the user's Portal cookie and without circuit round trips.
      * User name / initials come from ClaimsPrincipal with a layered fallback
        chain (display_name claim → GivenName+Surname → ClaimTypes.Name →
        Identity.Name → "Signed in" / "U"). No more hardcoded "Lukas" / "RM".
@@ -88,19 +92,19 @@
 
         <div class="topbar__separator" aria-hidden="true"></div>
 
-        @* Universal-search placeholder. Rendered as a button so it cannot
-           accidentally pretend to be a real input — clicking opens a small
-           "coming soon" popover anchored to the topbar. Real cross-module
-           search lands in a future issue. *@
+        @* Universal-search entry point. Still a button (not an input) in the
+           topbar so the header stays compact; it opens the search panel below.
+           aria-expanded is owned by shell-search.js after the first render. *@
         <button class="portal-search portal-search--placeholder"
                 type="button"
+                @ref="_searchButton"
                 aria-label="@(SearchLabel ?? L["Shell.Search.Label"])"
                 aria-haspopup="dialog"
-                aria-expanded="@(_searchOpen ? "true" : "false")"
-                @onclick="ToggleSearchPlaceholder">
+                aria-controls="shell-search-panel"
+                aria-expanded="false">
             <span class="portal-search__icon" aria-hidden="true"></span>
             <span class="portal-search__placeholder">@(SearchPlaceholder ?? L["Shell.Search.Placeholder"])</span>
-            <span class="portal-search__hint mono" aria-hidden="true">⌘K</span>
+            <span class="portal-search__hint mono" aria-hidden="true" data-shell-search-hint>⌘K</span>
         </button>
 
         <div class="topbar__spacer"></div>
@@ -129,24 +133,41 @@
         </div>
     </header>
 
-    @* Universal-search "coming soon" popover. Plain inline panel rather than
-       a full <dialog> — keeps the shell SSR-safe (no JS interop) and small
-       enough that consumers don't need to opt in to extra script. *@
-    @if (_searchOpen)
-    {
-        <div class="universal-search-popover" role="dialog" aria-label="@L["Shell.Search.PopoverTitle"]">
-            <div class="universal-search-popover__head">
-                <strong>@L["Shell.Search.PopoverTitle"]</strong>
+    @* Universal-search panel (Issue #375). Rendered once, hidden; opened,
+       filled and closed by shell-search.js. Blazor never re-renders the
+       results container, so the script owns its children. *@
+    <div class="shell-search-anchor">
+        <div class="shell-search"
+             id="shell-search-panel"
+             role="dialog"
+             aria-label="@L["Shell.Search.PopoverTitle"]"
+             @ref="_searchPanel"
+             hidden>
+            <div class="shell-search__bar">
+                <span class="portal-search__icon" aria-hidden="true"></span>
+                <input class="shell-search__input"
+                       type="search"
+                       data-shell-search-input
+                       role="combobox"
+                       aria-expanded="true"
+                       aria-controls="shell-search-results"
+                       aria-autocomplete="list"
+                       aria-label="@L["Shell.Search.PopoverTitle"]"
+                       placeholder="@(SearchPlaceholder ?? L["Shell.Search.Placeholder"])"
+                       maxlength="100"
+                       autocomplete="off"
+                       autocapitalize="off"
+                       spellcheck="false" />
                 <button type="button"
-                        class="link-button universal-search-popover__close"
-                        @onclick="CloseSearchPlaceholder"
+                        class="link-button shell-search__close"
+                        data-shell-search-close
                         aria-label="@L["Shell.Dismiss"]">×</button>
             </div>
-            <p class="universal-search-popover__body">
-                @L["Shell.Search.PopoverBody"]
-            </p>
+            <div class="shell-search__results" id="shell-search-results" role="listbox"
+                 aria-label="@L["Shell.Search.PopoverTitle"]" data-shell-search-results></div>
+            <div class="shell-search__status" role="status" aria-live="polite" data-shell-search-status>@L["Shell.Search.Hint"]</div>
         </div>
-    }
+    </div>
 
     @ChildContent
 </div>
@@ -195,11 +216,10 @@
     [Parameter] public string? MobileNavigationTargetId { get; set; }
 
     /// <summary>
-    /// Placeholder copy for the universal-search button. Outlook 365-style
-    /// "search everything" entry point — never module-scoped, because the
-    /// placeholder itself does not perform any filtering and module-scoped
-    /// search lives inside the module page (e.g. Sales has its own "Search
-    /// orders" input). Modules SHOULD NOT override this — keeping the copy
+    /// Placeholder copy for the universal-search button and input. Outlook
+    /// 365-style "search everything" entry point — never module-scoped:
+    /// module-scoped search lives inside the module page (e.g. Sales has its
+    /// own "Search orders" input). Modules SHOULD NOT override this — keeping the copy
     /// identical across Portal/Sales/Frontline is what teaches users the
     /// search button is a global entry point and not "Search this module".
     /// Was "Search…" / "Find fabric, module, customer…" pre-#92 — both
@@ -208,6 +228,24 @@
     [Parameter] public string? SearchPlaceholder { get; set; }
 
     [Parameter] public string? SearchLabel { get; set; }
+
+    /// <summary>
+    /// Same-origin paths of the module search relays the panel asks in
+    /// parallel (Issue #375). Null falls back to <c>Shell:Search:Endpoints</c>
+    /// in configuration, then to <see cref="DefaultSearchEndpoints"/> — the
+    /// path-based layout of deploy/traefik/dynamic. A module the user cannot
+    /// use answers 401/403 and simply contributes no group.
+    /// </summary>
+    [Parameter] public IReadOnlyList<string>? SearchEndpoints { get; set; }
+
+    /// <summary>Module relays known to the first version of the universal search.</summary>
+    public static IReadOnlyList<string> DefaultSearchEndpoints { get; } =
+        ["/sales/shell/search", "/warehouse/shell/search"];
+
+    public const int SearchMinLength = 2;
+    public const int SearchDebounceMs = 250;
+    public const int SearchModuleTimeoutMs = 2000;
+    public const int SearchLimitPerKind = 8;
 
     /// <summary>
     /// POST target for logout. Defaults to the relative <c>auth/logout</c>
@@ -223,7 +261,88 @@
 
     private string ResolvedBannerNote => BannerNote ?? L["Shell.BannerNote.Shared"].Value;
 
-    private bool _searchOpen;
+    private const string SearchModulePath = "./_content/LKvitai.MES.BuildingBlocks.WebUI/js/shell-search.js";
+
+    private ElementReference _searchButton;
+    private ElementReference _searchPanel;
+    private IJSObjectReference? _searchModule;
+
+    private IReadOnlyList<string> ResolvedSearchEndpoints
+    {
+        get
+        {
+            if (SearchEndpoints is not null) return SearchEndpoints;
+
+            var configured = Configuration.GetSection("Shell:Search:Endpoints").GetChildren()
+                .Select(x => x.Value)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x!)
+                .ToArray();
+            return configured.Length > 0 ? configured : DefaultSearchEndpoints;
+        }
+    }
+
+    /// <summary>
+    /// Wires the search panel once the circuit is interactive. Any failure
+    /// here (script not served, circuit gone) must never take the module
+    /// down with it — the panel then just stays closed.
+    /// </summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        try
+        {
+            var version = typeof(PortalModuleShell).Assembly.ManifestModule.ModuleVersionId.ToString("N");
+            _searchModule = await JS.InvokeAsync<IJSObjectReference>("import", $"{SearchModulePath}?v={version}");
+            await _searchModule.InvokeVoidAsync("init", _searchButton, _searchPanel, new
+            {
+                endpoints = ResolvedSearchEndpoints,
+                minLength = SearchMinLength,
+                debounceMs = SearchDebounceMs,
+                timeoutMs = SearchModuleTimeoutMs,
+                limit = SearchLimitPerKind,
+                text = new
+                {
+                    hint = L["Shell.Search.Hint"].Value,
+                    loading = L["Shell.Search.Loading"].Value,
+                    empty = L["Shell.Search.Empty"].Value,
+                    partial = L["Shell.Search.Partial"].Value,
+                    keys = L["Shell.Search.Keys"].Value,
+                    otherKind = L["Shell.Search.Kind.Other"].Value,
+                    kinds = new Dictionary<string, string>
+                    {
+                        ["order"] = L["Shell.Search.Kind.Order"].Value,
+                        ["customer"] = L["Shell.Search.Kind.Customer"].Value,
+                        ["item"] = L["Shell.Search.Kind.Item"].Value,
+                        ["supplier"] = L["Shell.Search.Kind.Supplier"].Value,
+                        ["screen"] = L["Shell.Search.Kind.Screen"].Value,
+                    },
+                },
+            });
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException
+            or InvalidOperationException or OperationCanceledException)
+        {
+            _searchModule = null;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_searchModule is null) return;
+
+        try
+        {
+            await _searchModule.InvokeVoidAsync("dispose", _searchButton);
+            await _searchModule.DisposeAsync();
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException
+            or InvalidOperationException or OperationCanceledException)
+        {
+            // The circuit is already gone; the browser drops the listeners with the page.
+        }
+    }
 
     private string EnvironmentLabel => (EnvironmentName ?? "Development").ToUpperInvariant();
 
@@ -331,9 +450,6 @@
 
         return "localhost";
     }
-
-    private void ToggleSearchPlaceholder() => _searchOpen = !_searchOpen;
-    private void CloseSearchPlaceholder() => _searchOpen = false;
 
     private async Task HandleMobileNavigationKeyDown(KeyboardEventArgs args)
     {

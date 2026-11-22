@@ -34,7 +34,7 @@
                 <ul class="nav-section-items" id="@sectionId" role="list">
                     @foreach (var item in grp.Items)
                     {
-                        var href = item.Href == "__hangfire__"
+                        var href = item.Href == WarehouseNavigation.HangfireHref
                             ? (Configuration["Hangfire:DashboardUrl"] ?? "#")
                             : item.Href;
                         <li>
@@ -72,8 +72,12 @@
     private record NavItem(string Href, string Icon, string Label, bool External = false);
     private record NavSection(string Key, string Label, string Icon, NavItem[] Items);
 
+    private NavSection[] _sections = [];
+
     protected override void OnInitialized()
     {
+        // Built once per circuit: the UI language is fixed for the lifetime of the component.
+        _sections = BuildSections();
         _currentPath = Navigation.ToBaseRelativePath(Navigation.Uri);
         Navigation.LocationChanged += OnLocationChanged;
         _openSection = FindSectionForPath(_currentPath);
@@ -109,102 +113,11 @@
         Navigation.LocationChanged -= OnLocationChanged;
     }
 
-    private NavSection[] _sections =>
-    [
-        new("stock", L["Nav.Section.Stock"].Value, "bi-box-seam", [
-            new("available-stock", "bi-box-seam", L["Nav.AvailableStock"].Value),
-            new("search-by-image", "bi-camera", L["Nav.SearchByImage"].Value),
-            new("stock/dashboard", "bi-grid", L["Nav.StockDashboard"].Value),
-            new("stock/location-balance", "bi-columns-gap", L["Nav.LocationBalance"].Value),
-            new("stock/adjustments", "bi-journal-minus", L["Nav.Adjustments"].Value),
-            new("reservations", "bi-clipboard-check", L["Nav.Reservations"].Value),
-        ]),
-
-        new("inbound", L["Nav.Section.Inbound"].Value, "bi-box-arrow-in-down", [
-            new("inbound/shipments", "bi-box-arrow-in-down", L["Nav.InboundShipments"].Value),
-            new("inbound/qc", "bi-clipboard2-pulse", L["Nav.ReceivingQC"].Value),
-            new("putaway", "bi-box-arrow-up-right", L["Nav.Putaway"].Value),
-            new("production-issues", "bi-box-arrow-right", L["Nav.ProductionIssues"].Value),
-        ]),
-
-        new("outbound", L["Nav.Section.Outbound"].Value, "bi-box-arrow-right", [
-            new("sales/orders", "bi-file-earmark-text", L["Nav.SalesOrders"].Value),
-            new("sales/allocations", "bi-sliders", L["Nav.Allocations"].Value),
-            new("outbound/orders", "bi-box-arrow-right", L["Nav.OutboundOrders"].Value),
-            new("outbound/dispatch", "bi-truck", L["Nav.Dispatch"].Value),
-            new("waves", "bi-layers", L["Nav.WavePicking"].Value),
-            new("picking/tasks", "bi-list-task", L["Nav.PickingTasks"].Value),
-            new("labels", "bi-upc-scan", L["Nav.Labels"].Value),
-            new("cross-dock", "bi-arrow-left-right", L["Nav.CrossDock"].Value),
-            new("rmas", "bi-arrow-counterclockwise", L["Nav.RMAs"].Value),
-        ]),
-
-        new("operations", L["Nav.Section.Operations"].Value, "bi-gear", [
-            new("transfers", "bi-arrow-left-right", L["Nav.Transfers"].Value),
-            new("cycle-counts", "bi-clipboard-check", L["Nav.CycleCounts"].Value),
-            new("visualization/3d", "bi-bounding-box-circles", L["Nav.WarehouseMap"].Value),
-            new("projections", "bi-database-gear", L["Nav.Projections"].Value),
-        ]),
-
-        new("finance", L["Nav.Section.Finance"].Value, "bi-cash-stack", [
-            new("valuation/dashboard", "bi-cash-stack", L["Nav.Valuation"].Value),
-            new("valuation/opening-balances", "bi-box-seam", L["Nav.OpeningBalances"].Value),
-            new("valuation/intrastat", "bi-globe-europe-africa", L["Nav.Intrastat"].Value),
-            new("valuation/month-end", "bi-calendar-check", L["Nav.MonthEnd"].Value),
-            new("agnum/config", "bi-journal-text", L["Nav.AgnumConfig"].Value),
-            new("agnum/accounting", "bi-diagram-3", L["Nav.AgnumAccounting"].Value),
-            new("agnum/outbox", "bi-send-check", L["Nav.AgnumOutbox"].Value),
-            new("additional-costs", "bi-receipt", L["Nav.AdditionalCosts"].Value),
-            new("agnum/balances", "bi-boxes", L["Nav.AgnumBalances"].Value),
-            new("agnum/reconcile", "bi-calculator", L["Nav.AgnumReconcile"].Value),
-        ]),
-
-        new("admin", L["Nav.Section.Admin"].Value, "bi-shield-lock", [
-            new("admin/users", "bi-people", L["Nav.Users"].Value),
-            new("admin/settings", "bi-sliders", L["Nav.AdminSettings"].Value),
-            new("admin/reason-codes", "bi-list-check", L["Nav.ReasonCodes"].Value),
-            new("admin/approval-rules", "bi-ui-checks-grid", L["Nav.ApprovalRules"].Value),
-            new("admin/roles", "bi-person-gear", L["Nav.Roles"].Value),
-            new("admin/api-keys", "bi-key", L["Nav.APIKeys"].Value),
-            new("admin/gdpr-erasure", "bi-shield-exclamation", L["Nav.GDPRErasure"].Value),
-            new("admin/audit-logs", "bi-journal-text", L["Nav.AuditLogs"].Value),
-            new("admin/retention-policies", "bi-hourglass-split", L["Nav.RetentionPolicies"].Value),
-            new("admin/serial-numbers", "bi-upc-scan", L["Nav.SerialNumbers"].Value),
-            new("admin/lots", "bi-box2", L["Nav.Lots"].Value),
-            new("admin/uom", "bi-rulers", L["Nav.UnitsOfMeasure"].Value),
-            new("admin/items", "bi-boxes", L["Nav.Items"].Value),
-            new("admin/suppliers", "bi-truck", L["Nav.Suppliers"].Value),
-            new("admin/supplier-mappings", "bi-link-45deg", L["Nav.SupplierMappings"].Value),
-            new("admin/customers", "bi-person-badge", L["Nav.Customers"].Value),
-            new("admin/locations", "bi-geo-alt", L["Nav.Locations"].Value),
-            new("admin/slots", "bi-grid-3x3-gap", L["Nav.Slots"].Value),
-            new("admin/warehouses", "bi-building", L["Nav.Warehouses"].Value),
-            new("admin/categories", "bi-diagram-3", L["Nav.Categories"].Value),
-            new("admin/price-groups", "bi-currency-euro", L["Nav.PriceGroups"].Value),
-            new("admin/import", "bi-upload", L["Nav.ImportWizard"].Value),
-            new("admin/layout-editor", "bi-layout-text-window-reverse", L["Nav.LayoutEditor"].Value),
-        ]),
-
-        new("reports", L["Nav.Section.Reports"].Value, "bi-clipboard-data", [
-            new("reports/stock-level", "bi-clipboard-data", L["Nav.StockLevel"].Value),
-            new("reports/supplier-stock", "bi-truck", L["Nav.SupplierStock"].Value),
-            new("reports/receiving-history", "bi-box-arrow-in-down", L["Nav.ReceivingHistory"].Value),
-            new("reports/pick-history", "bi-list-check", L["Nav.PickHistory"].Value),
-            new("reports/dispatch-history", "bi-truck-flatbed", L["Nav.DispatchHistory"].Value),
-            new("reports/stock-movements", "bi-arrow-repeat", L["Nav.StockMovements"].Value),
-            new("reports/traceability", "bi-diagram-3", L["Nav.Traceability"].Value),
-            new("compliance/lot-trace", "bi-diagram-3-fill", L["Nav.LotTraceability"].Value),
-            new("reports/compliance-audit", "bi-shield-check", L["Nav.ComplianceAudit"].Value),
-            new("compliance/dashboard", "bi-clock-history", L["Nav.ComplianceDashboard"].Value),
-        ]),
-
-        new("analytics", L["Nav.Section.Analytics"].Value, "bi-graph-up-arrow", [
-            new("analytics/fulfillment", "bi-graph-up-arrow", L["Nav.FulfillmentKPIs"].Value),
-            new("analytics/quality", "bi-shield-exclamation", L["Nav.QualityAnalytics"].Value),
-        ]),
-
-        new("system", L["Nav.Section.System"].Value, "bi-terminal", [
-            new("__hangfire__", "bi-clock-history", L["Nav.JobQueue"].Value, External: true),
-        ]),
-    ];
+    private NavSection[] BuildSections() => WarehouseNavigation.Sections
+        .Select(section => new NavSection(
+            section.Key,
+            L[section.LabelKey].Value,
+            section.Icon,
+            section.Items.Select(item => new NavItem(item.Href, item.Icon, L[item.LabelKey].Value, item.External)).ToArray()))
+        .ToArray();
 }

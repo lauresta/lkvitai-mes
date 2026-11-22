@@ -82,6 +82,8 @@ sales.MapGet("/ping", () => Results.Ok(new
 }));
 
 sales.MapOrdersEndpoints();
+// Portal "Search everything" (#375): a projection of the orders list above, same policy and SQL scope.
+sales.MapSearchEndpoints();
 if (liveReferencesConfigured)
 {
     sales.MapOrderEntryReferenceEndpoints();

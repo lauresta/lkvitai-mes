@@ -63,5 +63,4 @@ Portalo pradžios puslapyje modulių plytelių būsenos reiškia:
 - Skiltis „Operations preview“ turi užkoduotus pavyzdinius skaičius, kurie rodomi, kai tikri duomenys negaunami (užrašas „Sample data“).
 - Nuorodos (UI: All updates), (UI: Release notes), (UI: Documentation), (UI: Support) apačioje vedama į `#`, t. y. jos neatidaro jokio puslapio.
 - Apačioje esantis užrašas „v0.1.0“ yra pastovus tekstas, ne tikra versija. Tikra versija rodoma viršutinėje juostoje ir skiltyje „System status“.
-- Bendra paieška viršutinėje juostoje yra tik pranešimas „coming soon“.
 - Plytelių lauke „RequiredRoles“ (reikalingos rolės) pradžios puslapis plytelių pagal roles neslepia: rodomos visos matomos plytelės.

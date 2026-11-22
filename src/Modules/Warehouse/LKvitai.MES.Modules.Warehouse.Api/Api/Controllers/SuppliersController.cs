@@ -1,5 +1,6 @@
 using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.BuildingBlocks.SharedKernel;
@@ -37,16 +38,7 @@ public sealed class SuppliersController : ControllerBase
         if (!string.IsNullOrWhiteSpace(search))
         {
             var normalized = search.Trim().ToLowerInvariant();
-            query = query.Where(x =>
-                x.Code.ToLower().Contains(normalized) ||
-                x.Name.ToLower().Contains(normalized) ||
-                (x.ShortName != null && x.ShortName.ToLower().Contains(normalized)) ||
-                (x.CompanyCode != null && x.CompanyCode.ToLower().Contains(normalized)) ||
-                (x.VatCode != null && x.VatCode.ToLower().Contains(normalized)) ||
-                (x.Email != null && x.Email.ToLower().Contains(normalized)) ||
-                (x.Phone != null && x.Phone.ToLower().Contains(normalized)) ||
-                (x.Country != null && x.Country.ToLower().Contains(normalized)) ||
-                (x.City != null && x.City.ToLower().Contains(normalized)));
+            query = query.WhereMatches(normalized);
         }
 
         if (!string.IsNullOrWhiteSpace(country))

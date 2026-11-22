@@ -12,7 +12,17 @@
   <data name="Shell.Search.Placeholder" xml:space="preserve"><value>Search everything…</value></data>
   <data name="Shell.Search.Label" xml:space="preserve"><value>Open universal search</value></data>
   <data name="Shell.Search.PopoverTitle" xml:space="preserve"><value>Universal search</value></data>
-  <data name="Shell.Search.PopoverBody" xml:space="preserve"><value>Search across orders, fabrics, modules and more — coming soon. For now use module-level filters inside each section.</value></data>
+  <data name="Shell.Search.Hint" xml:space="preserve"><value>Type at least 2 characters to search orders, customers, items, suppliers and screens.</value></data>
+  <data name="Shell.Search.Loading" xml:space="preserve"><value>Searching…</value></data>
+  <data name="Shell.Search.Empty" xml:space="preserve"><value>Nothing found.</value></data>
+  <data name="Shell.Search.Partial" xml:space="preserve"><value>Some results could not be loaded.</value></data>
+  <data name="Shell.Search.Keys" xml:space="preserve"><value>↑↓ to move, Enter to open, Esc to close</value></data>
+  <data name="Shell.Search.Kind.Order" xml:space="preserve"><value>Orders</value></data>
+  <data name="Shell.Search.Kind.Customer" xml:space="preserve"><value>Customers</value></data>
+  <data name="Shell.Search.Kind.Item" xml:space="preserve"><value>Items</value></data>
+  <data name="Shell.Search.Kind.Supplier" xml:space="preserve"><value>Suppliers</value></data>
+  <data name="Shell.Search.Kind.Screen" xml:space="preserve"><value>Screens and settings</value></data>
+  <data name="Shell.Search.Kind.Other" xml:space="preserve"><value>Other</value></data>
   <data name="Shell.Dismiss" xml:space="preserve"><value>Dismiss</value></data>
   <data name="Shell.Logout" xml:space="preserve"><value>Logout</value></data>
   <data name="Shell.SignedIn" xml:space="preserve"><value>Signed in</value></data>
