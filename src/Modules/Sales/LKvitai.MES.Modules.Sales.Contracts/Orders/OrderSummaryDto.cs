@@ -42,4 +42,5 @@ public sealed record OrderSummaryDto(
     string StatusCode,
     string Store,
     string Address,
-    string? ProductsSearch = null);
+    string? ProductsSearch = null,
+    bool IsPrivacyRestricted = false);

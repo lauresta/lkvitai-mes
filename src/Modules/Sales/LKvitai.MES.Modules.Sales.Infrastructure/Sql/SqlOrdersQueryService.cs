@@ -296,7 +296,7 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
                 var itemId = ReadLongFromMaybeString(reader, "Id");
                 var name   = ReadString(reader, "Title",  string.Empty);
                 var side   = ReadString(reader, "Side",   string.Empty);
-                var color  = ReadString(reader, "Color",  string.Empty);
+                var color  = LegacyNoColour.Display(ReadString(reader, "Color",  string.Empty));
                 var notes  = ReadString(reader, "Notes",  string.Empty);
                 var width  = ReadDecimal(reader, "Width");
                 var height = ReadDecimal(reader, "Height");
@@ -474,7 +474,9 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
             // IsCancelled overrides the old workflow status. sImageKey is
             // retained only for legacy result-shape compatibility.
             Address:        ReadStringByOrdinal(reader, ordinal: 10, fallback: string.Empty),
-            ProductsSearch: ReadStringOrNullByOrdinal(reader, ordinal: 11));
+            ProductsSearch: ReadStringOrNullByOrdinal(reader, ordinal: 11),
+            IsPrivacyRestricted: reader.FieldCount > 13 && !reader.IsDBNull(13)
+                && Convert.ToBoolean(reader.GetValue(13), CultureInfo.InvariantCulture));
     }
 
     /// <summary>

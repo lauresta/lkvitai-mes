@@ -104,6 +104,14 @@
                         <label class="demo-label" for="demo-consultant">@L["Common.Consultant"].Value</label>
                         @if (IsLive) { @ReferenceSelect("demo-consultant", Catalog.Employees, _consultantId, value => { _consultantId=value; _consultant=ReferenceName(Catalog.Employees,value); }, existingLabel: _consultant) } else { <input id="demo-consultant" class="demo-input" @bind="_consultant" placeholder="@L["Common.Consultant"].Value" /> }
                     </div>
+                    @if (IsLive && MeasurerDuty is not null)
+                    {
+                        <div>
+                            <label class="demo-label" for="demo-measurer">@MeasurerDuty.Name</label>
+                            @ReferenceSelect("demo-measurer", Catalog.Employees, _measurerId, value => _measurerId = value)
+                            <small class="demo-field-hint">@L["Workspace.OtherDutiesLater"].Value</small>
+                        </div>
+                    }
                     <div>
                         <label class="demo-label" for="demo-date">@L["Common.OrderDate"].Value</label>
                         <input id="demo-date" type="date" class="demo-input mono" value="@_date" @onchange="e => _date = e.Value?.ToString() ?? _date" />

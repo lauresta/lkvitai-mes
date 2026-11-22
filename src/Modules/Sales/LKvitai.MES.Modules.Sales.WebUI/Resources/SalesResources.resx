@@ -978,6 +978,15 @@
   <data name="Orders.HasDebt" xml:space="preserve">
     <value>Has debt</value>
   </data>
+  <data name="Orders.PrivacyChip" xml:space="preserve">
+    <value>GDPR</value>
+  </data>
+  <data name="Orders.PrivacyRestricted" xml:space="preserve">
+    <value>Cancelled at the customer's request; personal data is restricted (GDPR)</value>
+  </data>
+  <data name="Workspace.OtherDutiesLater" xml:space="preserve">
+    <value>Other duties are added in the order after it is created.</value>
+  </data>
   <data name="Orders.HasNote" xml:space="preserve">
     <value>Has note</value>
   </data>

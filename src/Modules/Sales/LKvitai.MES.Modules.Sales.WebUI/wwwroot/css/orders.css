@@ -875,3 +875,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   .demo-product-page--editor .demo-product-editor__secondary { grid-template-columns: minmax(0, 1fr); }
   .sales-product-bar .btn--primary { flex: 1 1 100%; }
 }
+
+/* Orders list: GDPR-restricted order marker; new-order form hint */
+.chip--privacy { background: var(--n-50); color: var(--n-700); border-color: var(--n-300); margin-left: 4px; }
+.demo-field-hint { display: block; margin-top: 4px; font-size: 11px; color: var(--n-500); }
