@@ -35,7 +35,7 @@ public sealed class MonthEndClient
         var response = await _factory.CreateClient("WarehouseApi").GetAsync(url, ct);
         if (!response.IsSuccessStatusCode)
             throw new ApiException(await ProblemDetailsParser.ParseAsync(response), (int)response.StatusCode);
-        return await response.Content.ReadFromJsonAsync<T>(cancellationToken: ct) ?? throw new JsonException("Unable to read the month-end data.");
+        return await JsonBody.ReadRequiredAsync<T>(response, "the month-end data", ct: ct);
     }
 
     private async Task PostAsync(string url, object? body, CancellationToken ct)

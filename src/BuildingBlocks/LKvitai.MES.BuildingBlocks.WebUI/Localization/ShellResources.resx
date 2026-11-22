@@ -40,4 +40,6 @@
   <data name="Shell.HomeLink" xml:space="preserve"><value>Cikada.MES Portal home</value></data>
   <data name="Shell.HomeLink.Open" xml:space="preserve"><value>Open Cikada.MES Portal home</value></data>
   <data name="Shell.Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Scanning.InDevelopment.Title" xml:space="preserve"><value>This module is in development</value></data>
+  <data name="Scanning.InDevelopment.Body" xml:space="preserve"><value>Barcode scanning is not available yet. It will be enabled here when it is ready.</value></data>
 </root>

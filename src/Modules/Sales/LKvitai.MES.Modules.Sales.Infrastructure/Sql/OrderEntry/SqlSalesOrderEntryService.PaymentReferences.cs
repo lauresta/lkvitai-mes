@@ -49,7 +49,8 @@ public sealed partial class SqlSalesOrderEntryService
             FROM dbo.BankTransfersTable b WHERE
             """+" "+predicate+" ORDER BY b.Data DESC,b.NR DESC OFFSET @skip ROWS FETCH NEXT @take ROWS ONLY;",ct,
             ("@search",search),("@pattern",pattern),("@skip",((long)page-1)*pageSize),("@take",pageSize));
-        var currencyCode=options.PaymentCurrencyId is null?null:Convert.ToString(await Scalar(c,tx,"SELECT ValiutosKodas FROM dbo.Zinynas_valiutos WHERE ValiutosID=@id",ct,("@id",options.PaymentCurrencyId)));
+        var currencyRow=options.PaymentCurrencyId is null?null:(await Rows(c,tx,"SELECT ValiutosKodas,Kursas FROM dbo.Zinynas_valiutos WHERE ValiutosID=@id",ct,("@id",options.PaymentCurrencyId))).SingleOrDefault();
+        var currencyCode=currencyRow is null?null:LegacyCurrencyLabel.Display(S(currencyRow,"ValiutosKodas"),D(currencyRow,"Kursas"));
         var items=rows.Select(r=>BankReference(r,currencyCode)).ToArray();
         var selected=selectedId.HasValue?await PaymentBankReference(c,tx,selectedId.Value,currencyCode,ct):null;
         await tx.CommitAsync(ct);return new(items,count,page,pageSize,selected);
@@ -68,7 +69,7 @@ public sealed partial class SqlSalesOrderEntryService
         if(options.PaymentCurrencyId is null)return Unavailable("New-payment currency must be configured.");
         var currencyRow=(await Rows(c,tx,"SELECT ValiutosID,ValiutosKodas,Kursas FROM dbo.Zinynas_valiutos WHERE ValiutosID=@id",ct,("@id",options.PaymentCurrencyId))).SingleOrDefault();
         if(currencyRow is null||D(currencyRow,"Kursas") is null)return Unavailable("Configured payment currency is unavailable.");
-        var currency=new OrderPaymentCurrencyReference(I(currencyRow,"ValiutosID")!.Value,S(currencyRow,"ValiutosKodas")??$"currency #{options.PaymentCurrencyId}",D(currencyRow,"Kursas")!.Value);
+        var currency=new OrderPaymentCurrencyReference(I(currencyRow,"ValiutosID")!.Value,LegacyCurrencyLabel.Display(S(currencyRow,"ValiutosKodas"),D(currencyRow,"Kursas"))??$"currency #{options.PaymentCurrencyId}",D(currencyRow,"Kursas")!.Value);
         var orderCurrency=await Scalar(c,tx,"SELECT ValiutosID FROM dbo.Uzsakymai WHERE UzsakymasID=@order",ct,("@order",header.Id));
         if(orderCurrency is null||Convert.ToInt32(orderCurrency)!=currency.Id)return Unavailable("Configured new-payment currency does not match this order. Legacy amounts are not converted.",currency);
 

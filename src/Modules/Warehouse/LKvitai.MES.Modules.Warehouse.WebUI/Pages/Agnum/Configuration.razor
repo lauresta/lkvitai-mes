@@ -19,6 +19,11 @@
                  OnDismiss="DismissError" />
 }
 
+@if (_notConfigured)
+{
+    <div class="alert alert-info" role="status">@L["Agnum.Configuration.NotConfigured"]</div>
+}
+
 <div class="card shadow-sm position-relative">
     <LoadingSpinner IsLoading="_isLoading || _isSaving || _isTestingConnection" />
 
@@ -207,6 +212,7 @@
 
     private ApiException? _apiError;
     private bool _isLoading;
+    private bool _notConfigured;
     private bool _isSaving;
     private bool _isTestingConnection;
 
@@ -233,6 +239,7 @@
             _history.AddRange(historyTask.Result.OrderByDescending(x => x.ExportedAt).Take(50));
 
             var config = configTask.Result;
+            _notConfigured = config is null;
             if (config is null)
             {
                 _mappings.Clear();

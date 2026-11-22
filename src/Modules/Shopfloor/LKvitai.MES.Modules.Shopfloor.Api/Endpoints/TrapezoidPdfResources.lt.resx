@@ -12,9 +12,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
   </resheader>
-  <data name="testNote" xml:space="preserve">
-    <value>Šios aplinkos duomenys nėra gamybiniai ir gali būti išvalyti be įspėjimo.</value>
-  </data>
   <data name="search" xml:space="preserve">
     <value>Kodas, GU, GT arba užsakymas… (Enter)</value>
   </data>

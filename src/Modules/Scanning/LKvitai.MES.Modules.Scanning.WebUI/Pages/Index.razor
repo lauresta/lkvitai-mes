@@ -1,61 +1,81 @@
 @page "/"
 @using System.Net.Http.Json
+@using LKvitai.MES.BuildingBlocks.WebUI.Localization
+@using LKvitai.MES.BuildingBlocks.WebUI.Services
+@using Microsoft.Extensions.Localization
 @inject IHttpClientFactory HttpClientFactory
+@inject IWebHostEnvironment HostEnvironment
+@inject IStringLocalizer<ShellResources> L
 
-<PageTitle>Scanning · Hello</PageTitle>
+@if (!ShowScaffold)
+{
+    <PageTitle>@L["Scanning.InDevelopment.Title"]</PageTitle>
 
-<MudStack Spacing="4">
-    <MudText Typo="Typo.h3">Hello from Scanning.</MudText>
-
-    <MudText Typo="Typo.body1" Class="mud-text-secondary">
-        This is a scaffolded module. There is no business logic yet. Scanning is the
-        cross-cutting mobile barcode-lookup surface and is intentionally public for now.
-        Once the shared role model is in place this will switch to the portal auth scheme
-        and require a scanner identity.
-    </MudText>
-
-    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-        <MudChip T="string" Color="Color.Default" Icon="@Icons.Material.Filled.PersonOff">
-            anonymous
-        </MudChip>
+    <MudStack Spacing="4">
+        <MudText Typo="Typo.h4">@L["Scanning.InDevelopment.Title"]</MudText>
+        <MudText Typo="Typo.body1" Class="mud-text-secondary">@L["Scanning.InDevelopment.Body"]</MudText>
     </MudStack>
+}
+else
+{
+    <PageTitle>Scanning · Hello</PageTitle>
 
-    <MudDivider />
+    <MudStack Spacing="4">
+        <MudText Typo="Typo.h3">Hello from Scanning.</MudText>
 
-    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
-        <MudButton Variant="Variant.Filled"
-                   Color="Color.Primary"
-                   StartIcon="@Icons.Material.Filled.NetworkPing"
-                   OnClick="PingApi"
-                   Disabled="_isPinging">
-            @(_isPinging ? "Pinging…" : "Ping API")
-        </MudButton>
-        <MudText Typo="Typo.caption" Class="mud-text-secondary">
-            Calls <code>GET /api/scan/ping</code> on the Scanning API container.
+        <MudText Typo="Typo.body1" Class="mud-text-secondary">
+            This is a scaffolded module. There is no business logic yet. Scanning is the
+            cross-cutting mobile barcode-lookup surface and is intentionally public for now.
+            Once the shared role model is in place this will switch to the portal auth scheme
+            and require a scanner identity.
         </MudText>
+
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudChip T="string" Color="Color.Default" Icon="@Icons.Material.Filled.PersonOff">
+                anonymous
+            </MudChip>
+        </MudStack>
+
+        <MudDivider />
+
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.NetworkPing"
+                       OnClick="PingApi"
+                       Disabled="_isPinging">
+                @(_isPinging ? "Pinging…" : "Ping API")
+            </MudButton>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                Calls <code>GET /api/scan/ping</code> on the Scanning API container.
+            </MudText>
+        </MudStack>
+
+        @if (_lastResult is not null)
+        {
+            if (_lastResult.IsSuccess)
+            {
+                <MudAlert Severity="Severity.Success">
+                    <div>
+                        <strong>@_lastResult.ModuleName</strong> responded at
+                        <code>@_lastResult.Timestamp</code>.
+                    </div>
+                </MudAlert>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Error">
+                    Ping failed: @_lastResult.ErrorMessage
+                </MudAlert>
+            }
+        }
     </MudStack>
 
-    @if (_lastResult is not null)
-    {
-        if (_lastResult.IsSuccess)
-        {
-            <MudAlert Severity="Severity.Success">
-                <div>
-                    <strong>@_lastResult.ModuleName</strong> responded at
-                    <code>@_lastResult.Timestamp</code>.
-                </div>
-            </MudAlert>
-        }
-        else
-        {
-            <MudAlert Severity="Severity.Error">
-                Ping failed: @_lastResult.ErrorMessage
-            </MudAlert>
-        }
-    }
-</MudStack>
+}
 
 @code {
+    private bool ShowScaffold => EnvironmentChrome.ShowDiagnostics(HostEnvironment.EnvironmentName);
+
     private bool _isPinging;
     private PingResultView? _lastResult;
 

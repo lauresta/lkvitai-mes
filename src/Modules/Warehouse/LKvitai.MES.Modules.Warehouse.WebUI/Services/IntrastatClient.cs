@@ -16,8 +16,7 @@ public sealed class IntrastatClient
         var response = await _factory.CreateClient("WarehouseApi").GetAsync($"{Base}/arrivals?year={year}&month={month}", ct);
         if (!response.IsSuccessStatusCode)
             throw new ApiException(await ProblemDetailsParser.ParseAsync(response), (int)response.StatusCode);
-        return await response.Content.ReadFromJsonAsync<IntrastatReportDto>(cancellationToken: ct)
-               ?? throw new System.Text.Json.JsonException("Unable to read Intrastat report.");
+        return await JsonBody.ReadRequiredAsync<IntrastatReportDto>(response, "the Intrastat report", ct: ct);
     }
 
     public async Task<byte[]> GetCsvAsync(int year, int month, CancellationToken ct = default)
@@ -40,7 +39,7 @@ public sealed class IntrastatClient
     {
         var response = await Http.GetAsync($"{Base}/declarant", ct);
         await EnsureSuccessAsync(response);
-        return await response.Content.ReadFromJsonAsync<IntrastatDeclarantDto>(cancellationToken: ct) ?? new IntrastatDeclarantDto();
+        return await JsonBody.ReadOrDefaultAsync<IntrastatDeclarantDto>(response, ct: ct) ?? new IntrastatDeclarantDto();
     }
 
     public async Task SaveDeclarantAsync(IntrastatDeclarantDto declarant, CancellationToken ct = default)
@@ -58,7 +57,7 @@ public sealed class IntrastatClient
     {
         var response = await Http.GetAsync($"{Base}/xml-versions?year={year}&month={month}", ct);
         await EnsureSuccessAsync(response);
-        return await response.Content.ReadFromJsonAsync<List<IntrastatXmlVersionDto>>(cancellationToken: ct) ?? [];
+        return await JsonBody.ReadOrDefaultAsync<List<IntrastatXmlVersionDto>>(response, ct: ct) ?? [];
     }
 
     public async Task<byte[]> GetXmlVersionFileAsync(int id, CancellationToken ct = default)

@@ -40,14 +40,17 @@
 *@
 
 <div class="app-shell">
-    <div class="test-strip @(LiveProductionDataWarning ? "test-strip--live-production" : "")" role="status">
-        <div class="test-strip__main">
-            <span class="icon-warning" aria-hidden="true"></span>
-            <strong>@L["Shell.EnvironmentBanner", EnvironmentLabel]</strong>
-            <span class="test-strip__note">@ResolvedBannerNote</span>
+    @if (ShowEnvironmentStrip)
+    {
+        <div class="test-strip @(LiveProductionDataWarning ? "test-strip--live-production" : "")" role="status">
+            <div class="test-strip__main">
+                <span class="icon-warning" aria-hidden="true"></span>
+                <strong>@L["Shell.EnvironmentBanner", EnvironmentLabel]</strong>
+                <span class="test-strip__note">@ResolvedBannerNote</span>
+            </div>
+            <span class="mono test-strip__host">@DisplayHost</span>
         </div>
-        <span class="mono test-strip__host">@DisplayHost</span>
-    </div>
+    }
 
     <header class="topbar">
         @if (OnMobileNavigationToggle.HasDelegate)
@@ -261,6 +264,8 @@
     /// <summary>Test-strip note. Null falls back to the localized shared-environment copy.</summary>
     [Parameter] public string? BannerNote { get; set; }
     [Parameter] public bool LiveProductionDataWarning { get; set; }
+
+    private bool ShowEnvironmentStrip => LKvitai.MES.BuildingBlocks.WebUI.Services.EnvironmentChrome.ShowEnvironmentStrip(EnvironmentName);
 
     private string ResolvedBannerNote => BannerNote ?? L["Shell.BannerNote.Shared"].Value;
 

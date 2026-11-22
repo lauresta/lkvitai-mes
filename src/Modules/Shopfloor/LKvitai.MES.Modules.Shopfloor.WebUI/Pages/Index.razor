@@ -1,151 +1,191 @@
 @page "/"
 @page "/dashboard"
 @inject ShopfloorDatabaseStatusService DatabaseStatusService
+@inject IWebHostEnvironment HostEnvironment
 
 <PageTitle>Cikada.MES · @L["Shopfloor.DashboardTitle"]</PageTitle>
 
 <main class="shopfloor-page">
-    <section class="sf-head">
-        <div>
-            <div class="eyebrow mono">@L["Shopfloor.ShopfloorDashboard"]</div>
-            <h1>@L["Shopfloor.OperatorExecutionBoard"]</h1>
-            <p>@L["Shopfloor.WorkstationMenuScaffoldForProductionTasksWIPRoutingAndShiftControl"]</p>
-        </div>
-        <div class="sf-head__actions">
-            <MudButton Variant="Variant.Outlined" Class="lk-btn" Disabled="true">@L["Shopfloor.ScanBadge"]</MudButton>
-            <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" Disabled="true">@L["Shopfloor.StartTask"]</MudButton>
-        </div>
-    </section>
-
-    <section class="sf-kpis" aria-label="@L["Shopfloor.ShopfloorSummary"]">
-        @foreach (var metric in Metrics)
-        {
-            <MudPaper Outlined="true" Elevation="0" Class="panel kpi">
-                <span class="kpi__label mono">@L[metric.Label]</span>
-                <strong class="mono">@metric.Value</strong>
-                <span class="chip @metric.ChipClass">@L[metric.Status]</span>
-            </MudPaper>
-        }
-    </section>
-
-    <div class="sf-grid">
-        <MudPaper Outlined="true" Elevation="0" Class="panel">
-            <div class="panel__head">
-                <div>
-                    <h2>@L["Shopfloor.Menu"]</h2>
-                    <span>@L["Shopfloor.FutureShopfloorEntryPoints"]</span>
-                </div>
-                <span class="chip chip--info">@L["Shopfloor.Stub"]</span>
+    @if (!_showScaffold)
+    {
+        <section class="sf-head">
+            <div>
+                <div class="eyebrow mono">@L["Shopfloor.Live.Eyebrow"]</div>
+                <h1>@L["Shopfloor.Live.Title"]</h1>
+                <p>@L["Shopfloor.Live.Lead"]</p>
             </div>
+        </section>
+
+        <MudPaper Outlined="true" Elevation="0" Class="panel">
             <div class="menu-grid">
-                @foreach (var item in MenuItems)
+                @foreach (var link in LiveLinks)
                 {
-                    <button class="menu-tile" type="button" disabled>
-                        <span class="menu-tile__icon mono">@item.Code</span>
+                    <a class="menu-tile" href="@link.Href">
+                        <span class="menu-tile__icon mono">@link.Code</span>
                         <span>
-                            <strong>@L[item.Title]</strong>
-                            <small>@L[item.Description]</small>
+                            <strong>@L[link.Title]</strong>
+                            <small>@L[link.Description]</small>
                         </span>
-                    </button>
+                    </a>
                 }
             </div>
         </MudPaper>
+    }
+    else
+    {
+        <section class="sf-head">
+            <div>
+                <div class="eyebrow mono">@L["Shopfloor.ShopfloorDashboard"]</div>
+                <h1>@L["Shopfloor.OperatorExecutionBoard"]</h1>
+                <p>@L["Shopfloor.WorkstationMenuScaffoldForProductionTasksWIPRoutingAndShiftControl"]</p>
+            </div>
+            <div class="sf-head__actions">
+                <MudButton Variant="Variant.Outlined" Class="lk-btn" Disabled="true">@L["Shopfloor.ScanBadge"]</MudButton>
+                <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" Disabled="true">@L["Shopfloor.StartTask"]</MudButton>
+            </div>
+        </section>
 
-        <MudPaper Outlined="true" Elevation="0" Class="panel db-panel">
-            <div class="panel__head">
-                <div>
-                    <h2>@L["Shopfloor.Database"]</h2>
-                    <span>@L["Shopfloor.SamePostgreSQLDiagnostic"]</span>
+        <section class="sf-kpis" aria-label="@L["Shopfloor.ShopfloorSummary"]">
+            @foreach (var metric in Metrics)
+            {
+                <MudPaper Outlined="true" Elevation="0" Class="panel kpi">
+                    <span class="kpi__label mono">@L[metric.Label]</span>
+                    <strong class="mono">@metric.Value</strong>
+                    <span class="chip @metric.ChipClass">@L[metric.Status]</span>
+                </MudPaper>
+            }
+        </section>
+
+        <div class="sf-grid">
+            <MudPaper Outlined="true" Elevation="0" Class="panel">
+                <div class="panel__head">
+                    <div>
+                        <h2>@L["Shopfloor.Menu"]</h2>
+                        <span>@L["Shopfloor.FutureShopfloorEntryPoints"]</span>
+                    </div>
+                    <span class="chip chip--info">@L["Shopfloor.Stub"]</span>
                 </div>
+                <div class="menu-grid">
+                    @foreach (var item in MenuItems)
+                    {
+                        <button class="menu-tile" type="button" disabled>
+                            <span class="menu-tile__icon mono">@item.Code</span>
+                            <span>
+                                <strong>@L[item.Title]</strong>
+                                <small>@L[item.Description]</small>
+                            </span>
+                        </button>
+                    }
+                </div>
+            </MudPaper>
+
+            <MudPaper Outlined="true" Elevation="0" Class="panel db-panel">
+                <div class="panel__head">
+                    <div>
+                        <h2>@L["Shopfloor.Database"]</h2>
+                        <span>@L["Shopfloor.SamePostgreSQLDiagnostic"]</span>
+                    </div>
+                    @if (_dbStatus is null)
+                    {
+                        <span class="chip chip--slate">@L["Shopfloor.Loading"]</span>
+                    }
+                    else
+                    {
+                        <span class="chip @(_dbStatus.IsAvailable ? "chip--ok" : "chip--danger")">@_dbStatus.Message</span>
+                    }
+                </div>
+
                 @if (_dbStatus is null)
                 {
-                    <span class="chip chip--slate">@L["Shopfloor.Loading"]</span>
+                    <div class="db-lines">
+                        <span class="skeleton"></span>
+                        <span class="skeleton"></span>
+                        <span class="skeleton"></span>
+                    </div>
                 }
                 else
                 {
-                    <span class="chip @(_dbStatus.IsAvailable ? "chip--ok" : "chip--danger")">@_dbStatus.Message</span>
+                    <dl class="db-facts">
+                        <div>
+                            <dt>@L["Shopfloor.Database"]</dt>
+                            <dd class="mono">@(_dbStatus.Database ?? "n/a")</dd>
+                        </div>
+                        <div>
+                            <dt>@L["Shopfloor.Schema"]</dt>
+                            <dd class="mono">@(_dbStatus.Schema ?? "n/a")</dd>
+                        </div>
+                        <div>
+                            <dt>@L["Shopfloor.Endpoint"]</dt>
+                            <dd class="mono">@(_dbStatus.ServerEndpoint ?? "n/a")</dd>
+                        </div>
+                        <div>
+                            <dt>@L["Shopfloor.Checked"]</dt>
+                            <dd class="mono">@_dbStatus.CheckedAt.ToString("yyyy-MM-dd HH:mm:ss")</dd>
+                        </div>
+                    </dl>
+                    <div class="version-box mono">@(_dbStatus.ServerVersion ?? _dbStatus.Message)</div>
                 }
-            </div>
+            </MudPaper>
+        </div>
 
-            @if (_dbStatus is null)
-            {
-                <div class="db-lines">
-                    <span class="skeleton"></span>
-                    <span class="skeleton"></span>
-                    <span class="skeleton"></span>
+        <MudPaper Outlined="true" Elevation="0" Class="panel">
+            <div class="panel__head">
+                <div>
+                    <h2>@L["Shopfloor.WorkQueue"]</h2>
+                    <span>@L["Shopfloor.StaticScaffoldRowsForLayoutReview"]</span>
                 </div>
-            }
-            else
-            {
-                <dl class="db-facts">
-                    <div>
-                        <dt>@L["Shopfloor.Database"]</dt>
-                        <dd class="mono">@(_dbStatus.Database ?? "n/a")</dd>
-                    </div>
-                    <div>
-                        <dt>@L["Shopfloor.Schema"]</dt>
-                        <dd class="mono">@(_dbStatus.Schema ?? "n/a")</dd>
-                    </div>
-                    <div>
-                        <dt>@L["Shopfloor.Endpoint"]</dt>
-                        <dd class="mono">@(_dbStatus.ServerEndpoint ?? "n/a")</dd>
-                    </div>
-                    <div>
-                        <dt>@L["Shopfloor.Checked"]</dt>
-                        <dd class="mono">@_dbStatus.CheckedAt.ToString("yyyy-MM-dd HH:mm:ss")</dd>
-                    </div>
-                </dl>
-                <div class="version-box mono">@(_dbStatus.ServerVersion ?? _dbStatus.Message)</div>
-            }
-        </MudPaper>
-    </div>
-
-    <MudPaper Outlined="true" Elevation="0" Class="panel">
-        <div class="panel__head">
-            <div>
-                <h2>@L["Shopfloor.WorkQueue"]</h2>
-                <span>@L["Shopfloor.StaticScaffoldRowsForLayoutReview"]</span>
+                <fieldset class="sf-segmented" aria-label="@L["Shopfloor.QueuePeriod"]">
+                    <button class="is-active" type="button">@L["Shopfloor.Now"]</button>
+                    <button type="button" disabled>@L["Shopfloor.NextShift"]</button>
+                </fieldset>
             </div>
-            <fieldset class="sf-segmented" aria-label="@L["Shopfloor.QueuePeriod"]">
-                <button class="is-active" type="button">@L["Shopfloor.Now"]</button>
-                <button type="button" disabled>@L["Shopfloor.NextShift"]</button>
-            </fieldset>
-        </div>
 
-        <div class="table-wrap">
-            <table class="sf-table">
-                <thead>
-                    <tr>
-                        <th>@L["Shopfloor.Task"]</th>
-                        <th>@L["Shopfloor.Description"]</th>
-                        <th>@L["Shopfloor.Station"]</th>
-                        <th>@L["Shopfloor.Order"]</th>
-                        <th>@L["Shopfloor.Operator"]</th>
-                        <th>@L["Shopfloor.Status"]</th>
-                        <th>@L["Shopfloor.Target"]</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in QueueRows)
-                    {
+            <div class="table-wrap">
+                <table class="sf-table">
+                    <thead>
                         <tr>
-                            <td class="mono">@row.Task</td>
-                            <td>@L["Shopfloor.Fixture." + row.Description]</td>
-                            <td>@L["Shopfloor.Fixture." + row.Station]</td>
-                            <td class="mono">@row.Order</td>
-                            <td>@row.Operator</td>
-                            <td><span class="chip @row.ChipClass">@L["Shopfloor.Fixture." + row.Status]</span></td>
-                            <td class="mono">@row.Target</td>
+                            <th>@L["Shopfloor.Task"]</th>
+                            <th>@L["Shopfloor.Description"]</th>
+                            <th>@L["Shopfloor.Station"]</th>
+                            <th>@L["Shopfloor.Order"]</th>
+                            <th>@L["Shopfloor.Operator"]</th>
+                            <th>@L["Shopfloor.Status"]</th>
+                            <th>@L["Shopfloor.Target"]</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </MudPaper>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in QueueRows)
+                        {
+                            <tr>
+                                <td class="mono">@row.Task</td>
+                                <td>@L["Shopfloor.Fixture." + row.Description]</td>
+                                <td>@L["Shopfloor.Fixture." + row.Station]</td>
+                                <td class="mono">@row.Order</td>
+                                <td>@row.Operator</td>
+                                <td><span class="chip @row.ChipClass">@L["Shopfloor.Fixture." + row.Status]</span></td>
+                                <td class="mono">@row.Target</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </MudPaper>
+    }
 </main>
 
 @code {
     private ShopfloorDatabaseStatus? _dbStatus;
+
+    // Sample stats, the sample work queue and the database diagnostic are scaffold content for Development and Test only.
+    private bool _showScaffold;
+
+    private static readonly IReadOnlyList<(string Code, string Href, string Title, string Description)> LiveLinks =
+    [
+        ("GA", "gamyba", "Shopfloor.Live.Gamyba.Title", "Shopfloor.Live.Gamyba.Description"),
+        ("RO", "roletai", "Shopfloor.Live.Roletai.Title", "Shopfloor.Live.Roletai.Description"),
+        ("OQ", "operator-work-queue", "Shopfloor.Live.Queue.Title", "Shopfloor.Live.Queue.Description"),
+        ("WF", "workflows", "Shopfloor.Live.Workflows.Title", "Shopfloor.Live.Workflows.Description"),
+    ];
 
     private static readonly IReadOnlyList<(string Label, string Value, string Status, string ChipClass)> Metrics =
     [
@@ -176,6 +216,10 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _dbStatus = await DatabaseStatusService.GetStatusAsync();
+        _showScaffold = EnvironmentChrome.ShowDiagnostics(HostEnvironment.EnvironmentName);
+        if (_showScaffold)
+        {
+            _dbStatus = await DatabaseStatusService.GetStatusAsync();
+        }
     }
 }

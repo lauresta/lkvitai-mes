@@ -252,9 +252,6 @@
   <data name="Gamyba.DocumentHeadingSFOR" xml:space="preserve">
     <value>DOKUMENTAI GU</value>
   </data>
-  <data name="Gamyba.DataInThisEnvironmentIsNotProductionDataAnd" xml:space="preserve">
-    <value>Šios aplinkos duomenys nėra gamybiniai ir gali būti ištrinti be įspėjimo.</value>
-  </data>
   <data name="Gamyba.DataPilot" xml:space="preserve">
     <value>Duomenų bandymas</value>
   </data>
@@ -2130,9 +2127,6 @@
   <data name="Roletai.PublishFailed" xml:space="preserve"><value>Versija nepaskelbta. Atnaujinkite šabloną.</value></data>
   <data name="Roletai.ColumnsCount" xml:space="preserve"><value>{0} st.</value></data>
   <data name="Roletai.LinesCount" xml:space="preserve"><value>{0} eil.</value></data>
-  <data name="Trapezoid.testNote" xml:space="preserve">
-    <value>Šios aplinkos duomenys nėra gamybiniai ir gali būti išvalyti be įspėjimo.</value>
-  </data>
   <data name="Trapezoid.search" xml:space="preserve">
     <value>Kodas, GU, GT arba užsakymas… (Enter)</value>
   </data>
@@ -2712,5 +2706,38 @@
   <data name="Roletai.Paperless.SignFailed" xml:space="preserve"><value>Pasirašymo išsaugoti nepavyko. Patikrinkite ryšį ir bandykite dar kartą.</value></data>
   <data name="Gamyba.CurrentAccessStateIsCheckedAgainOnSave" xml:space="preserve">
     <value>Išsaugant dar kartą tikrinama dabartinė Access būsena.</value>
+  </data>
+  <data name="Shopfloor.Live.Eyebrow" xml:space="preserve">
+    <value>Gamyba</value>
+  </data>
+  <data name="Shopfloor.Live.Title" xml:space="preserve">
+    <value>Gamyba</value>
+  </data>
+  <data name="Shopfloor.Live.Lead" xml:space="preserve">
+    <value>Pasirinkite gamybos ekraną.</value>
+  </data>
+  <data name="Shopfloor.Live.Gamyba.Title" xml:space="preserve">
+    <value>Gamyba</value>
+  </data>
+  <data name="Shopfloor.Live.Gamyba.Description" xml:space="preserve">
+    <value>Gamybos užduotys, ataskaitos ir dokumentai</value>
+  </data>
+  <data name="Shopfloor.Live.Roletai.Title" xml:space="preserve">
+    <value>Roletai</value>
+  </data>
+  <data name="Shopfloor.Live.Roletai.Description" xml:space="preserve">
+    <value>Roletų gamybos lapai be popieriaus</value>
+  </data>
+  <data name="Shopfloor.Live.Queue.Title" xml:space="preserve">
+    <value>Operatoriaus užduočių eilė</value>
+  </data>
+  <data name="Shopfloor.Live.Queue.Description" xml:space="preserve">
+    <value>Operatoriams priskirtos užduotys</value>
+  </data>
+  <data name="Shopfloor.Live.Workflows.Title" xml:space="preserve">
+    <value>Darbo srautai</value>
+  </data>
+  <data name="Shopfloor.Live.Workflows.Description" xml:space="preserve">
+    <value>Gamybos darbo srautų aprašai</value>
   </data>
 </root>
