@@ -14,6 +14,17 @@ internal static class SalesOrderStatusMap
 {
     private static readonly Dictionary<string, string> Map = new(StringComparer.OrdinalIgnoreCase)
     {
+        // Labels exactly as dbo.Zinynas_busenos stores them (checked 2026-11-22).
+        ["Įvestas į programą"]   = OrderStatusCodes.Entered,
+        ["Nepriskirtas"]         = OrderStatusCodes.Entered,
+        ["Eilėje"]               = OrderStatusCodes.Approved,
+        ["Patvirtintas gamybai"] = OrderStatusCodes.Approved,
+        ["Garantinis remontas"]  = OrderStatusCodes.InProgress,
+        ["Trūksta audinio"]      = OrderStatusCodes.Paused,
+        ["Trūksta detalių"]      = OrderStatusCodes.Paused,
+        ["Išsiųstas į filialą"]  = OrderStatusCodes.Shipped,
+        ["Išduotas klientui"]    = OrderStatusCodes.Delivered,
+        // Short labels used by sample data and older procedures.
         ["Įvestas"]      = OrderStatusCodes.Entered,
         ["Patvirtintas"] = OrderStatusCodes.Approved,
         ["Gaminamas"]    = OrderStatusCodes.InProgress,
