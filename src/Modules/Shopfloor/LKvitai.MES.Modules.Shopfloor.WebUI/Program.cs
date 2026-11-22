@@ -1,8 +1,12 @@
 using LKvitai.MES.BuildingBlocks.WebUI.Localization;
 using LKvitai.MES.BuildingBlocks.ModuleStartup;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
+using LKvitai.MES.BuildingBlocks.Search;
 using LKvitai.MES.BuildingBlocks.WebUI.Services;
 using LKvitai.MES.Modules.Shopfloor.WebUI.Services;
+using LKvitai.MES.Modules.Shopfloor.WebUI.Resources;
+using LKvitai.MES.Modules.Shopfloor.WebUI.Shared;
+using Microsoft.Extensions.Localization;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -40,6 +44,9 @@ app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok());
 app.MapPortalLogout();
+// Portal "Search everything" (#375): this module's screens for the shared top bar.
+app.MapShellScreenSearch(context => ShopfloorNavigation.Screens(
+    context.RequestServices.GetRequiredService<IStringLocalizer<ShopfloorResources>>()));
 app.MapCikadaCultureEndpoint();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");

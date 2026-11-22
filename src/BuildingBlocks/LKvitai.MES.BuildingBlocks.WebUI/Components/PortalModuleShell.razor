@@ -163,6 +163,8 @@
                         data-shell-search-close
                         aria-label="@L["Shell.Dismiss"]">×</button>
             </div>
+            <div class="shell-search__scopes" role="toolbar" aria-label="@L["Shell.Search.Scope.Label"]"
+                 data-shell-search-scopes hidden></div>
             <div class="shell-search__results" id="shell-search-results" role="listbox"
                  aria-label="@L["Shell.Search.PopoverTitle"]" data-shell-search-results></div>
             <div class="shell-search__status" role="status" aria-live="polite" data-shell-search-status>@L["Shell.Search.Hint"]</div>
@@ -240,7 +242,8 @@
 
     /// <summary>Module relays known to the first version of the universal search.</summary>
     public static IReadOnlyList<string> DefaultSearchEndpoints { get; } =
-        ["/sales/shell/search", "/warehouse/shell/search"];
+        ["/sales/shell/search", "/warehouse/shell/search", "/portal/shell/search", "/shopfloor/shell/search",
+         "/finance/shell/search", "/frontline/shell/search"];
 
     public const int SearchMinLength = 2;
     public const int SearchDebounceMs = 250;
@@ -302,6 +305,8 @@
                 debounceMs = SearchDebounceMs,
                 timeoutMs = SearchModuleTimeoutMs,
                 limit = SearchLimitPerKind,
+                // History in the browser is kept per signed-in user.
+                user = User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? User?.Identity?.Name,
                 text = new
                 {
                     hint = L["Shell.Search.Hint"].Value,
@@ -310,12 +315,18 @@
                     partial = L["Shell.Search.Partial"].Value,
                     keys = L["Shell.Search.Keys"].Value,
                     otherKind = L["Shell.Search.Kind.Other"].Value,
+                    scopeAll = L["Shell.Search.Scope.All"].Value,
+                    recentOpened = L["Shell.Search.Recent.Opened"].Value,
+                    recentQueries = L["Shell.Search.Recent.Queries"].Value,
+                    recentClear = L["Shell.Search.Recent.Clear"].Value,
                     kinds = new Dictionary<string, string>
                     {
                         ["order"] = L["Shell.Search.Kind.Order"].Value,
                         ["customer"] = L["Shell.Search.Kind.Customer"].Value,
                         ["item"] = L["Shell.Search.Kind.Item"].Value,
                         ["supplier"] = L["Shell.Search.Kind.Supplier"].Value,
+                        ["location"] = L["Shell.Search.Kind.Location"].Value,
+                        ["document"] = L["Shell.Search.Kind.Document"].Value,
                         ["screen"] = L["Shell.Search.Kind.Screen"].Value,
                     },
                 },

@@ -347,6 +347,43 @@ body:has(.mud-drawer-overlay--open) {
 .shell-search__close:hover,
 .shell-search__close:focus-visible { color: var(--n-900); text-decoration: none; }
 
+/* Scope chips: limit the list to one kind. Neutral chip, teal when chosen. */
+.shell-search__scopes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--n-100);
+}
+
+.shell-search__scopes[hidden] { display: none; }
+
+.shell-search__scope {
+  padding: 3px 10px;
+  border: 1px solid var(--n-200);
+  border-radius: 999px;
+  background: var(--n-0);
+  color: var(--n-700);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.shell-search__scope:hover { border-color: var(--accent-400); }
+
+.shell-search__scope:focus-visible {
+  outline: 2px solid var(--accent-400);
+  outline-offset: 1px;
+}
+
+.shell-search__scope[aria-pressed="true"] {
+  border-color: var(--accent-500);
+  background: var(--accent-50);
+  color: var(--n-900);
+  font-weight: 600;
+}
+
 .shell-search__results {
   flex: 1;
   min-height: 0;
@@ -387,6 +424,27 @@ body:has(.mud-drawer-overlay--open) {
   color: var(--n-900);
   text-decoration: none;
 }
+
+/* A recent query is a <button> row: same look as a link row. */
+button.shell-search__item {
+  width: 100%;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.shell-search__clear {
+  display: block;
+  margin: 4px 14px 8px;
+  color: var(--n-500);
+}
+
+.shell-search__clear:hover,
+.shell-search__clear:focus { color: var(--n-900); }
 
 .shell-search__item.is-active {
   background: var(--accent-50);
@@ -436,6 +494,8 @@ body:has(.mud-drawer-overlay--open) {
   }
 
   .shell-search__subtitle { flex: none; }
+
+  .shell-search__scope { padding: 6px 12px; }
 }
 
 .env-badge {

@@ -10,7 +10,7 @@ status: veikia
 
 **Būsena:** veikia
 
-Prisijungimas, kalbos keitimas, aplinkos juosta, bendra paieška viršutinėje juostoje ir atsijungimas veikia. Bendra paieška kol kas randa užsakymus, klientus, prekes, tiekėjus ir modulių langus; kitų duomenų dar neieško.
+Prisijungimas, kalbos keitimas, aplinkos juosta, bendra paieška viršutinėje juostoje ir atsijungimas veikia. Bendra paieška randa užsakymus, klientus, prekes, tiekėjus, sandėlio vietas ir dokumentus bei modulių langus; žinynų puslapių ir kitų modulių duomenų dar neieško.
 
 ## Kam skirta
 Šis Portalo puslapis paaiškina, kaip prisijungti prie Cikada.MES, pakeisti kalbą, judėti tarp modulių ir atsijungti. Tai pirmas dalykas, kurį daro kiekvienas naujas naudotojas.
@@ -53,17 +53,22 @@ Bendra paieška yra viršutinėje Cikada.MES juostoje ir veikia vienodai kiekvie
 
 1. Paspauskite mygtuką (UI: Search everything…), lietuviškai „Ieškoti visur…“, arba klaviatūroje Ctrl+K („Mac“ kompiuteryje ⌘K). Po juosta atsidaro paieškos langas.
 2. Įveskite bent 2 simbolius. Rezultatai atsiranda rašant, mygtuko spausti nereikia.
-3. Rezultatai sugrupuoti: (UI: Orders) užsakymai, (UI: Customers) klientai, (UI: Items) prekės, (UI: Suppliers) tiekėjai, (UI: Screens and settings) langai ir nustatymai. Prie grupės pavadinimo rodomas rastų eilučių skaičius, vienoje grupėje rodoma iki 8 eilučių.
-4. Rodyklėmis ↑ ir ↓ pasirinkite eilutę ir spauskite Enter arba spustelėkite eilutę pele. Atsidaro įrašas ar langas savo modulyje.
-5. Langą uždaro Esc, mygtukas × arba spustelėjimas šalia lango.
+3. Rezultatai sugrupuoti: (UI: Orders) užsakymai, (UI: Customers) klientai, (UI: Items) prekės, (UI: Suppliers) tiekėjai, (UI: Locations) vietos, (UI: Documents) dokumentai, (UI: Screens and settings) langai ir nustatymai. Prie grupės pavadinimo rodomas rastų eilučių skaičius, vienoje grupėje rodoma iki 8 eilučių.
+4. Virš rezultatų rodomi mygtukai (UI: All) ir po vieną kiekvienai rastai grupei. Paspaudus grupės mygtuką lieka tik tos grupės rezultatai, (UI: All) vėl rodo visus. Klaviatūra mygtukus pasieksite klavišu Tab, tarp jų pereisite rodyklėmis ← ir →.
+5. Rodyklėmis ↑ ir ↓ pasirinkite eilutę ir spauskite Enter arba spustelėkite eilutę pele. Atsidaro įrašas ar langas savo modulyje.
+6. Langą uždaro Esc, mygtukas × arba spustelėjimas šalia lango.
 
 Ko galima ieškoti:
 
 - Užsakymo pagal numerį, pavyzdžiui „TS-123“, taip pat pagal klientą ar adresą. Atidaroma užsakymo kortelė Sales modulyje.
-- Kliento pagal pavadinimo dalį. Atidaromas Sales užsakymų sąrašas, jau atrinktas pagal tą klientą.
+- Kliento pagal pavadinimo dalį. Randami klientai, turintys bent vieną naudotojui matomą užsakymą. Atidaromas Sales užsakymų sąrašas, jau atrinktas pagal tą klientą.
 - Prekės pagal vidinį kodą, pavadinimą, visą brūkšninį kodą arba tiekėjo prekės kodą. Atidaroma prekės kortelė Sandėlyje.
 - Tiekėjo pagal kodą ar pavadinimą. Atidaromas Sandėlio tiekėjų sąrašas, atrinktas pagal tą tiekėją.
-- Lango pagal meniu pavadinimą lietuviškai arba angliškai, pavyzdžiui „Tiekėjų atitikmenys“ arba „Users“. Langų pavadinimus galima rašyti be lietuviškų raidžių: „tiekeju“ randa „Tiekėjų“.
+- Sandėlio vietos pagal kodą arba brūkšninį kodą. Atidaroma vietos kortelė Sandėlyje.
+- Sandėlio dokumento: gavimo (pirkimo) dokumento pagal jo numerį arba tiekėjo dokumento numerį, perkėlimo pagal numerį. Atidaromas tas dokumentas Sandėlyje.
+- Lango pagal meniu pavadinimą lietuviškai arba angliškai, pavyzdžiui „Tiekėjų atitikmenys“ arba „Users“. Ieškoma Portalo, Sales, Sandėlio, Gamybos cecho, Finansų ir Frontline languose, taip pat tarp Portalo modulių plytelių. Langų pavadinimus galima rašyti be lietuviškų raidžių: „tiekeju“ randa „Tiekėjų“.
+
+Kol paieškos laukas tuščias, lange rodomi (UI: Recently opened), iki 5 paskutinių iš paieškos atidarytų įrašų, ir (UI: Recent searches), iki 5 paskutinių paieškų. Paspaudus paskutinę paiešką ji pakartojama. Nuoroda (UI: Clear history) sąrašus ištrina. Ši istorija saugoma tik šioje naršyklėje ir atskirai kiekvienam naudotojui; kitame kompiuteryje jos nebus.
 
 Paieška rodo tik tai, ką pats naudotojas gali atidaryti. Sales duomenys rodomi tik naudotojo filialų, kaip ir Sales užsakymų sąraše. Jei naudotojas neturi teisių į modulį, to modulio grupių nėra.
 
