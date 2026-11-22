@@ -173,7 +173,7 @@
                                               Value="@context.Item"
                                               ValueChanged="@(v => OnLineItemChanged(context, v))"
                                               SearchFunc="SearchItemsAsync"
-                                              ToStringFunc="@(i => i is null ? string.Empty : $"{i.InternalSKU} - {i.Name}")"
+                                              ToStringFunc="@(i => i is null ? string.Empty : string.IsNullOrWhiteSpace(i.SupplierSku) ? $"{i.InternalSKU} - {i.Name}" : $"{i.InternalSKU} - {i.Name} ({i.SupplierSku})")"
                                               CoerceText="true"
                                               ResetValueOnEmptyText="true"
                                               Placeholder="@L["Common.SelectItem"]" />
@@ -498,7 +498,8 @@
     {
         try
         {
-            var result = await MasterDataAdminClient.GetItemsAsync(value, null, "Active", 1, 20);
+            // The chosen supplier's own item codes are searched and shown next to each item.
+            var result = await MasterDataAdminClient.GetItemsAsync(value, null, "Active", 1, 20, supplierId: _supplier?.Id);
             return result.Items;
         }
         catch (ApiException)

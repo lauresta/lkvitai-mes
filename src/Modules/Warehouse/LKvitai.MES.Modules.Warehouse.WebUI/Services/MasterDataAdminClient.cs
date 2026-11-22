@@ -29,7 +29,8 @@ public sealed class MasterDataAdminClient
         string? status,
         int pageNumber,
         int pageSize,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        int? supplierId = null)
     {
         var query = new List<string>
         {
@@ -40,6 +41,11 @@ public sealed class MasterDataAdminClient
         if (!string.IsNullOrWhiteSpace(search))
         {
             query.Add($"search={Uri.EscapeDataString(search)}");
+        }
+
+        if (supplierId.HasValue)
+        {
+            query.Add($"supplierId={supplierId.Value}");
         }
 
         if (categoryId.HasValue)

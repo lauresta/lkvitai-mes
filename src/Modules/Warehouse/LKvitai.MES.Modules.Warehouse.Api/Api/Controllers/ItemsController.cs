@@ -52,6 +52,7 @@ public sealed class ItemsController : ControllerBase
         [FromQuery] string? status,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 50,
+        [FromQuery] int? supplierId = null,
         CancellationToken cancellationToken = default)
     {
         pageSize = Math.Clamp(pageSize, 1, 500);
@@ -70,7 +71,9 @@ public sealed class ItemsController : ControllerBase
                 i.InternalSKU.ToLower().Contains(normalized) ||
                 i.Name.ToLower().Contains(normalized) ||
                 (i.PrimaryBarcode != null && i.PrimaryBarcode.ToLower() == normalized) ||
-                (i.Tags != null && i.Tags.ToLower().Contains(normalized.TrimStart('#'))));
+                (i.Tags != null && i.Tags.ToLower().Contains(normalized.TrimStart('#'))) ||
+                // The supplier's own code of the item, so a code read off a supplier invoice finds it.
+                _dbContext.SupplierItemMappings.Any(m => m.ItemId == i.Id && m.SupplierSKU.ToLower().Contains(normalized)));
         }
 
         if (categoryId.HasValue)
@@ -119,7 +122,8 @@ public sealed class ItemsController : ControllerBase
                 i.CostType,
                 i.CommodityCode,
                 i.NetWeightKg,
-                i.OriginCountry))
+                i.OriginCountry,
+                null))
             .ToListAsync(cancellationToken);
 
         if (items.Count > 0)
@@ -145,6 +149,25 @@ public sealed class ItemsController : ControllerBase
                     PrimaryPhotoId = photoId,
                     PrimaryThumbnailUrl = ItemPhotoService.BuildProxyUrl(row.Id, photoId, "thumb")
                 };
+            }
+        }
+
+        if (items.Count > 0 && (normalized is not null || supplierId.HasValue))
+        {
+            var pageItemIds = items.Select(x => x.Id).ToList();
+            var mappings = await _dbContext.SupplierItemMappings
+                .AsNoTracking()
+                .Where(x => pageItemIds.Contains(x.ItemId))
+                .Select(x => new { x.ItemId, x.SupplierId, x.SupplierSKU })
+                .ToListAsync(cancellationToken);
+            var byItem = mappings.ToLookup(x => x.ItemId, x => (x.SupplierId, x.SupplierSKU));
+            for (var i = 0; i < items.Count; i++)
+            {
+                var code = SupplierItemCodes.Pick(byItem[items[i].Id], supplierId, normalized);
+                if (code is not null)
+                {
+                    items[i] = items[i] with { SupplierSku = code };
+                }
             }
         }
 
@@ -991,7 +1014,8 @@ public sealed class ItemsController : ControllerBase
         string? CostType,
         string? CommodityCode = null,
         decimal? NetWeightKg = null,
-        string? OriginCountry = null);
+        string? OriginCountry = null,
+        string? SupplierSku = null);
 
     public sealed record ItemDetailDto(
         int Id,

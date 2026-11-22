@@ -38,6 +38,8 @@ public record InboundShipmentLineDetailDto
     public decimal? InvoiceQty { get; init; }
     public decimal? InvoiceUnitPrice { get; init; }
     public decimal? FinalValueEur { get; init; }
+    /// <summary>The supplier's own code of the item, as mapped for the document's supplier.</summary>
+    public string? SupplierSku { get; init; }
 
     public bool IsService => string.Equals(ItemType, "Service", StringComparison.OrdinalIgnoreCase);
 }
