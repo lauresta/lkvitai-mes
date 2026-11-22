@@ -42,11 +42,11 @@ jobs:
             docker network create "$DOCKER_NETWORK_NAME"
 
       - name: Pull manuals image
-        run: docker compose -f docker-compose.test.yml -f docker-compose.test.manuals.yml pull manuals
+        run: MANUALS_IMAGE_TAG=${IMAGE_TAG} docker compose -f docker-compose.test.yml pull manuals
 
       - name: Deploy manuals container
         run: |
-          IMAGE_TAG=${IMAGE_TAG} docker compose -f docker-compose.test.yml -f docker-compose.test.manuals.yml up -d manuals
+          MANUALS_IMAGE_TAG=${IMAGE_TAG} docker compose -f docker-compose.test.yml up -d --no-deps manuals
 
       - name: Wait for manuals health
         run: |
@@ -68,12 +68,12 @@ jobs:
           done
 
           echo "Manuals site failed to become healthy within 150s"
-          docker compose -f docker-compose.test.yml -f docker-compose.test.manuals.yml logs manuals --tail 50
+          MANUALS_IMAGE_TAG=${IMAGE_TAG} docker compose -f docker-compose.test.yml logs manuals --tail 50
           exit 1
 
       - name: Deployment summary
         run: |
           echo "## Manuals Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "- **Image tag:** ${{ env.IMAGE_TAG }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Manuals:** http://lkvitai-test:5002" >> $GITHUB_STEP_SUMMARY
-          docker compose -f docker-compose.test.yml -f docker-compose.test.manuals.yml ps manuals >> $GITHUB_STEP_SUMMARY
+          echo "- **Manuals:** https://cikada-test.lauresta.com/manuals/ (signed-in users; container bound to 127.0.0.1:5002)" >> $GITHUB_STEP_SUMMARY
+          MANUALS_IMAGE_TAG=${IMAGE_TAG} docker compose -f docker-compose.test.yml ps manuals >> $GITHUB_STEP_SUMMARY

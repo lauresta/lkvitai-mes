@@ -115,6 +115,7 @@ services:
       PortalApi__BaseUrl: "http://lkvitai-mes-portal-api:8080"
       WarehouseApi__BaseUrl: "http://lkvitai-mes-warehouse-api:8080"
       WarehouseWebUi__BaseUrl: "https://cikada-test.lauresta.com/warehouse"
+      Manuals__BaseUrl: "http://lkvitai-mes-manuals:80"
       PathBase: "/portal"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
       Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
@@ -465,6 +466,7 @@ services:
     environment:
       MCP_PORT: "8080"
       MCP_PUBLIC_URL: "https://cikada-test.lauresta.com"
+      MANUALS_BASE_URL: "https://cikada-test.lauresta.com/manuals"
       MCP_OAUTH_CLIENT_ID: "${CIKADA_MCP_CLIENT_ID:-}"
       SALES_API_URL: "http://lkvitai-mes-sales-api:8080"
       WAREHOUSE_API_URL: "http://lkvitai-mes-warehouse-api:8080"
@@ -483,6 +485,25 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  # User manuals: static MkDocs site (docs/manuals). Not published to the internet directly: the Portal
+  # WebUI streams it under /manuals/ for signed-in users (Manuals__BaseUrl), so the screenshots of internal
+  # screens stay behind the portal cookie. Test: rebuilt on docs changes (build-and-push-manuals.yml) and
+  # deployed separately (deploy-test-manuals.yml); prod: built and deployed with the release tag.
+  manuals:
+    image: ghcr.io/lauresta/lkvitai-mes-manuals:${MANUALS_IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-manuals
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5002:80"
+    networks:
+      - lkvitai-mes_default
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
 networks:
   lkvitai-mes_default:

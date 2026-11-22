@@ -1,4 +1,6 @@
 @inherits LayoutComponentBase
+@inject Microsoft.AspNetCore.Components.NavigationManager Navigation
+@inject LKvitai.MES.BuildingBlocks.WebUI.Services.IBuildVersionAccessor BuildVersionAccessor
 
 @*
     Portal MainLayout — wraps the page in the shared
@@ -16,11 +18,11 @@
         <footer class="footer">
             <div>
                 <span>&copy; 2026 UAB Lauresta &middot; Cikada.MES Portal</span>
-                <a href="#">Release notes</a>
-                <a href="#">Documentation</a>
-                <a href="#">Support</a>
+                <a href="@(Navigation.BaseUri)#news">Release notes</a>
+                <a href="/manuals/">Documentation</a>
+                <a href="@(Navigation.BaseUri)#support">Support</a>
             </div>
-            <span class="mono">v0.1.0</span>
+            <span class="mono">@BuildVersionAccessor.Get().DisplayVersion</span>
         </footer>
     </ChildContent>
     <NotAuthorizedContent>

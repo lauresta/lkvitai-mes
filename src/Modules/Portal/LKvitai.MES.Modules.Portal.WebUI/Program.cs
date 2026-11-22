@@ -1,5 +1,6 @@
 using LKvitai.MES.BuildingBlocks.WebUI.Localization;
 using System.Security.Claims;
+using LKvitai.MES.BuildingBlocks.Manuals;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.BuildingBlocks.Search;
 using LKvitai.MES.BuildingBlocks.WebUI.Services;
@@ -85,6 +86,8 @@ builder.Services.AddHttpClient("PortalApi", (sp, client) =>
     client.Timeout = TimeSpan.FromSeconds(30);
 })
 .AddHttpMessageHandler<PortalApiAuthHandler>();
+// User manuals (static MkDocs container) are streamed under /manuals behind the portal cookie.
+builder.Services.AddManualsProxy(builder.Configuration);
 builder.Services.AddHttpClient("WarehouseApi", (sp, client) =>
 {
     var configuration = sp.GetRequiredService<IConfiguration>();
@@ -133,9 +136,12 @@ app.Use(async (context, next) =>
     }
 
     var returnUrl = context.Request.PathBase + context.Request.Path + context.Request.QueryString;
+    // /manuals is served at the host root (no /portal path base), so the sign-in pages are addressed
+    // through the configured path base instead.
+    var loginBase = context.Request.PathBase.HasValue ? context.Request.PathBase : ResolvePathBase(app.Configuration);
     context.Response.Redirect(ssoEnabled
-        ? BuildLocalUrl(context, PortalOidcDefaults.LoginPath, $"returnUrl={Uri.EscapeDataString(returnUrl)}")
-        : BuildLocalUrl(context, "/login.html", $"returnUrl={Uri.EscapeDataString(returnUrl)}"));
+        ? BuildUrlUnder(loginBase, PortalOidcDefaults.LoginPath, $"returnUrl={Uri.EscapeDataString(returnUrl)}")
+        : BuildUrlUnder(loginBase, "/login.html", $"returnUrl={Uri.EscapeDataString(returnUrl)}"));
 });
 
 if (ssoEnabled)
@@ -291,6 +297,7 @@ app.MapPost("/auth/login", async (
 }).AllowAnonymous();
 
 app.MapPortalLogout();
+app.MapManualsProxy();
 // Portal "Search everything" (#375): Portal pages and module tiles for the shared top bar.
 app.MapShellScreenSearch(PortalShellSearch.ScreensAsync);
 if (ssoEnabled)
@@ -357,9 +364,12 @@ static PathString ResolvePathBase(IConfiguration configuration)
     return string.IsNullOrWhiteSpace(configured) ? PathString.Empty : new PathString(configured.TrimEnd('/'));
 }
 
-static string BuildLocalUrl(HttpContext context, string path, string? query = null)
+static string BuildLocalUrl(HttpContext context, string path, string? query = null) =>
+    BuildUrlUnder(context.Request.PathBase, path, query);
+
+static string BuildUrlUnder(PathString pathBase, string path, string? query = null)
 {
-    var localPath = $"{context.Request.PathBase}{path}";
+    var localPath = $"{pathBase}{path}";
     return string.IsNullOrWhiteSpace(query) ? localPath : $"{localPath}?{query}";
 }
 

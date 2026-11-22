@@ -68,4 +68,4 @@ mkdocs build
 
 ### Test aplinka
 
-- Manuals svetaine test aplinkoje pasiekiama adresu: `http://<test-host>:5002/`.
+- Manuals svetaine pasiekiama po programos adresu, prisijungusiems naudotojams: test `https://cikada-test.lauresta.com/manuals/`, produkcijoje `https://cikada.lauresta.com/manuals/` (Portal WebUI patikrina prisijungimo slapuka ir perduoda turini is manuals konteinerio; tiesioginio vieso porto nera).

@@ -2,6 +2,10 @@ site_name: "Cikada.MES - Naudotojo gidas"
 site_description: "Cikada.MES (LKvitai.MES) naudotojo vadovas: Portalas, Pardavimai, Gamyba, Sandėlis, Frontline, Finansai, AI asistentas"
 docs_dir: docs
 site_dir: site
+# Served under /manuals/ of the app host (Portal WebUI proxy). No site_url on purpose: the host differs per stand
+# (cikada-test / cikada) and the Material theme emits only relative links, so the same image works on both
+# under any prefix; the search index (search/search_index.json) stores locations relative to the site root.
+use_directory_urls: true
 
 theme:
   name: material

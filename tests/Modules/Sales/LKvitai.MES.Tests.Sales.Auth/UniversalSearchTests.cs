@@ -212,7 +212,7 @@ public sealed class UniversalSearchTests
             var text = options.GetProperty("text");
             Assert.Equal(empty, text.GetProperty("empty").GetString());
             Assert.Equal(ordersHeading, text.GetProperty("kinds").GetProperty("order").GetString());
-            Assert.Equal(["order", "customer", "item", "supplier", "location", "document", "screen"], text.GetProperty("kinds").EnumerateObject().Select(p => p.Name).ToArray());
+            Assert.Equal(["order", "customer", "item", "supplier", "location", "document", "screen", "manual"], text.GetProperty("kinds").EnumerateObject().Select(p => p.Name).ToArray());
             Assert.Contains("data-shell-search-scopes", html);
             Assert.True(options.TryGetProperty("user", out _));
             foreach (var key in new[] { "hint", "loading", "partial", "keys", "otherKind", "scopeAll", "recentOpened", "recentQueries", "recentClear" }) Assert.False(string.IsNullOrWhiteSpace(text.GetProperty(key).GetString()));

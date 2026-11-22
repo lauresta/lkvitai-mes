@@ -2,7 +2,7 @@
 
 Production is `https://cikada.lauresta.com`: the same path-based layout as the test
 stand (`/portal`, `/warehouse`, `/sales`, `/shopfloor`, `/finance`, `/frontline`,
-`/scan`, `/mcp`).
+`/scan`, `/mcp`, `/manuals`).
 
 | Piece | Where |
 | --- | --- |
@@ -25,6 +25,25 @@ rolled back by this.
 
 Nothing is deployed to production on push to `main`. The Traefik files are the
 exception: they are installed on the VPS on every push that changes them.
+
+## User manuals (`/manuals/`)
+
+The MkDocs manuals (`docs/manuals`) are served on both stands under the app host:
+`https://cikada.lauresta.com/manuals/` and `https://cikada-test.lauresta.com/manuals/`.
+
+- The static site is an nginx container (`lkvitai-mes-manuals`, image `lkvitai-mes-manuals`) with no
+  Traefik route and no public port. The Portal WebUI streams it under `/manuals/{**path}` after checking
+  the shared portal cookie (`Manuals__BaseUrl`), because the pages contain screenshots of internal
+  screens. Not signed in: redirected to the sign-in page; the search index answers with that redirect.
+- Traefik: router `cikada-manuals` (prod) / `mes-test-manuals` (test) sends `PathPrefix(/manuals)` to the
+  Portal WebUI. The route is installed on the VPS when the Traefik file is merged; until the Portal image
+  with the endpoint is deployed it leads to the portal sign-in, not to an error page.
+- Prod: the image is built by `release-prod.yml` with the release tag and started by `deploy-prod.yml`
+  with the rest of the stack. Test: `build-and-push-manuals.yml` rebuilds it when `docs/manuals` changes
+  and `deploy-test-manuals.yml` replaces the container (tag `MANUALS_IMAGE_TAG`, default `latest`).
+- The MCP server returns links from `MANUALS_BASE_URL` (`https://<host>/manuals`) and the portal search
+  box reads `/manuals/search/search_index.json` in the browser (group "Manuals" / "Instrukcijos").
+- `mkdocs.yml` has no `site_url`: the theme emits relative links, so one image serves both hosts.
 
 ## GitHub Environment `prod`
 
