@@ -2097,6 +2097,7 @@
   <data name="Intrastat.Item.CommodityCodeHelp" xml:space="preserve"><value>8 skaitmenys; reikalingas pirkimams iš ES</value></data>
   <data name="Intrastat.Item.NetWeightKg" xml:space="preserve"><value>Neto masė vienetui, kg</value></data>
   <data name="Intrastat.Item.OriginCountry" xml:space="preserve"><value>Kilmės šalis (ISO, 2 raidės)</value></data>
+  <data name="Intrastat.NothingDeclarable" xml:space="preserve"><value>Kol nepataisytos išvardytos eilutės, nieko deklaruoti negalima. Šio mėnesio nenurodykite kaip nulinės ataskaitos.</value></data>
   <data name="Intrastat.OriginCountry" xml:space="preserve"><value>Kilmės šalis</value></data>
   <data name="Intrastat.Nature" xml:space="preserve"><value>Pobūdis</value></data>
   <data name="Intrastat.Terms" xml:space="preserve"><value>Sąlygos</value></data>

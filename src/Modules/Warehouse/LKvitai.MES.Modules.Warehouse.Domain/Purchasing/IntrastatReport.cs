@@ -111,7 +111,7 @@ public static class IntrastatReport
             || string.IsNullOrWhiteSpace(item.OriginCountry)
             || string.IsNullOrWhiteSpace(nature)
             || string.IsNullOrWhiteSpace(header.DeliveryTerms)
-            || string.IsNullOrWhiteSpace(header.TransportMode)
+            || string.IsNullOrWhiteSpace(IntrastatCodes.NormalizeTransportMode(header.TransportMode))
             || (unit is not null && item.SupplementaryUnitFactor is not > 0m)
             || value is null)
         {
@@ -121,8 +121,12 @@ public static class IntrastatReport
 
         lines.Add(new IntrastatLineInput(
             item.CommodityCode, header.DispatchCountry, item.OriginCountry, nature, header.DeliveryTerms,
-            header.TransportMode, unit, qty, item.SupplementaryUnitFactor, value.Value, item.NetWeightKg, landed, isReturn));
+            IntrastatCodes.NormalizeTransportMode(header.TransportMode)!, unit, qty, item.SupplementaryUnitFactor, value.Value, item.NetWeightKg, landed, isReturn));
     }
+
+    /// <summary>A zero report is shown only when nothing is declared, nothing was skipped and there are no return rows.</summary>
+    public static bool IsZeroReport(IReadOnlyCollection<IntrastatRow> rows, IReadOnlyCollection<string> warnings)
+        => rows.Count == 0 && warnings.Count == 0;
 
     public static IReadOnlyList<IntrastatRow> Build(IEnumerable<IntrastatLineInput> lines)
         => lines

@@ -17,6 +17,13 @@ public static class IntrastatCodeLists
         }
     }
 
+    /// <summary>Legacy two-digit transport values such as 30 are read as 3 (same rule as the posting check).</summary>
+    public static string? NormalizeTransportMode(string? code)
+    {
+        var c = code?.Trim();
+        return c is { Length: 2 } && c[1] == '0' && TransportModes.Any(o => o.Code == c[..1]) ? c[..1] : c;
+    }
+
     /// <summary>Nature of transaction (valid since 2022). Common codes carry a description, the rest show the code only.</summary>
     public static readonly IReadOnlyList<CodeOption> NatureOfTransaction =
     [

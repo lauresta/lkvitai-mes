@@ -427,7 +427,7 @@
             _manualReason = shipment.Purchase?.ManualReason;
             _defaultVatTreatment = shipment.Purchase?.DefaultVatTreatment;
             _deliveryTerms = shipment.Purchase?.DeliveryTerms;
-            _transportMode = shipment.Purchase?.TransportMode;
+            _transportMode = IntrastatCodeLists.NormalizeTransportMode(shipment.Purchase?.TransportMode);
             _dispatchCountry = shipment.Purchase?.DispatchCountry;
             _transactionNature = shipment.Purchase?.TransactionNature ?? "11";
 

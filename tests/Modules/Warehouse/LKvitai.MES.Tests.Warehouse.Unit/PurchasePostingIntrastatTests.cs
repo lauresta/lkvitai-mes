@@ -70,7 +70,15 @@ public sealed class PurchasePostingIntrastatTests
         => Validate((s, _) => s.TransportMode = code).Should().BeEmpty();
 
     [Theory]
-    [InlineData("0"), InlineData("6"), InlineData("30"), InlineData("x")]
+    [InlineData("10", "1"), InlineData("30", "3"), InlineData("90", "9"), InlineData(" 40 ", "4"), InlineData("3", "3")]
+    public void LegacyTwoDigitTransportMode_IsNormalisedNotBlocked(string stored, string expected)
+    {
+        Validate((s, _) => s.TransportMode = stored).Should().BeEmpty();
+        IntrastatCodes.NormalizeTransportMode(stored).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("0"), InlineData("6"), InlineData("60"), InlineData("00"), InlineData("31"), InlineData("x")]
     public void InvalidTransportMode_Blocks(string code)
         => Validate((s, _) => s.TransportMode = code).Should().ContainSingle(p => p.Code == "IntrastatCodeInvalid");
 

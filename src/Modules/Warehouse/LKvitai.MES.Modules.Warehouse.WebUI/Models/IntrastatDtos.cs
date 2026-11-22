@@ -27,5 +27,6 @@ public record IntrastatReportDto
     public decimal TotalNetMassKg { get; init; }
     public decimal TotalQuantity { get; init; }
     public decimal TotalReturnValueEur { get; init; }
+    public bool IsZeroReport { get; init; }
     public IReadOnlyList<string> Warnings { get; init; } = [];
 }

@@ -180,6 +180,23 @@ public sealed class IntrastatReportTests
     }
 
     [Fact]
+    public void ZeroReport_OnlyWhenNoRowsNoWarnings()
+    {
+        IntrastatReport.IsZeroReport([], []).Should().BeTrue();
+        IntrastatReport.IsZeroReport([], ["A|SKU"]).Should().BeFalse("skipped lines mean nothing can be declared yet");
+        IntrastatReport.IsZeroReport(IntrastatReport.Build([Line(isReturn: true, nature: "21")]), []).Should().BeFalse("return rows exist");
+    }
+
+    [Fact]
+    public void LegacyTransportMode_IsNormalisedInTheReport()
+    {
+        var shipment = Shipment(Stock());
+        shipment.TransportMode = "30";
+
+        Collect(shipment).Lines.Single().TransportMode.Should().Be("3");
+    }
+
+    [Fact]
     public void EmptyMonth_GivesNoRows()
     {
         IntrastatReport.Build(Collect().Lines).Should().BeEmpty();

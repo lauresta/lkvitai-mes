@@ -78,7 +78,7 @@ Neužregistravus rodomi tokie pranešimai (jie rodomi raudonu sąrašu):
 - „Every stock item of an EU acquisition needs an 8-digit commodity code and a net weight.“ – papildykite prekių kortelę.
 - „Every stock item of an EU acquisition needs a country of origin (ISO 3166 alpha-2 code).“ – prekės kortelėje nurodykite kilmės šalį.
 - „A supplementary unit and its factor (above zero) must be set together on the item.“ – prekės kortelėje užpildykite abu papildomo vieneto laukus arba abu išvalykite.
-- „Intrastat transaction nature, transport mode or delivery terms is not in the code list.“ – pasirinkite reikšmę iš sąrašo (senose dokumentuose įrašyta kita reikšmė, pvz. transportas 30, turi būti pakeista).
+- „Intrastat transaction nature, transport mode or delivery terms is not in the code list.“ – pasirinkite reikšmę iš sąrašo (senose dokumentuose įrašyti dviženkliai transporto kodai, pvz. 30, automatiškai skaitomi kaip 3).
 - „The exchange rate for today is not published yet.“ ir „There is no exchange rate for the document date.“ – palaukite paskelbimo arba įveskite rankinį kursą.
 - „A manual rate needs a reason.“, „The rate differs from the last saved rate by more than 1.5 times.“ – ištaisykite rankinį kursą.
 - „The month of this document is closed; nothing dated in it can be posted or un-posted.“ – buhalteris turi atidaryti mėnesį (P-22).

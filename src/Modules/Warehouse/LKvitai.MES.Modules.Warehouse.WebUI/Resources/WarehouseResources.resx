@@ -2097,6 +2097,7 @@
   <data name="Intrastat.Item.CommodityCodeHelp" xml:space="preserve"><value>8 digits; needed for EU purchases</value></data>
   <data name="Intrastat.Item.NetWeightKg" xml:space="preserve"><value>Net weight per unit, kg</value></data>
   <data name="Intrastat.Item.OriginCountry" xml:space="preserve"><value>Country of origin (ISO, 2 letters)</value></data>
+  <data name="Intrastat.NothingDeclarable" xml:space="preserve"><value>Nothing can be declared until the listed lines are fixed. Do not file this month as a zero report.</value></data>
   <data name="Intrastat.OriginCountry" xml:space="preserve"><value>Origin country</value></data>
   <data name="Intrastat.Nature" xml:space="preserve"><value>Nature</value></data>
   <data name="Intrastat.Terms" xml:space="preserve"><value>Terms</value></data>

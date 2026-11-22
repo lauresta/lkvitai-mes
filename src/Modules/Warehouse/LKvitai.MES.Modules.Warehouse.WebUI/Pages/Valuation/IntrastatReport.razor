@@ -49,7 +49,11 @@
         </div>
     }
 
-    @if (_report.Rows.Count == 0)
+    @if (_report.Rows.Count == 0 && !_report.IsZeroReport)
+    {
+        <div class="alert alert-danger" data-testid="intrastat-nothing-declarable">@L["Intrastat.NothingDeclarable"]</div>
+    }
+    else if (_report.Rows.Count == 0)
     {
         <div class="alert alert-info" data-testid="intrastat-zero-report">@L["Intrastat.Empty"]</div>
     }

@@ -24,9 +24,19 @@ public static class IntrastatCodes
         "EXW", "FCA", "CPT", "CIP", "DAP", "DPU", "DDP", "FAS", "FOB", "CFR", "CIF"
     };
 
+    /// <summary>
+    /// Older documents hold two-digit customs-style transport codes such as "30". A value whose second digit is 0 and
+    /// whose first digit is a valid mode is read as that mode ("30" -> "3"); anything else is returned trimmed.
+    /// </summary>
+    public static string? NormalizeTransportMode(string? code)
+    {
+        var c = code?.Trim();
+        return c is { Length: 2 } && c[1] == '0' && TransportModes.Contains(c[..1]) ? c[..1] : c;
+    }
+
     public static bool IsNature(string? code) => code is not null && NatureOfTransaction.Contains(code.Trim());
 
-    public static bool IsTransportMode(string? code) => code is not null && TransportModes.Contains(code.Trim());
+    public static bool IsTransportMode(string? code) => NormalizeTransportMode(code) is { } c && TransportModes.Contains(c);
 
     public static bool IsDeliveryTerms(string? code)
         => code is not null && DeliveryTerms.Contains(code.Trim().ToUpperInvariant());

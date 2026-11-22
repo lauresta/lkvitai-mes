@@ -10,7 +10,8 @@ namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 
 public sealed record IntrastatReportDto(
     int Year, int Month, IReadOnlyList<IntrastatRow> Rows, decimal TotalValueEur, decimal TotalNetMassKg,
-    decimal TotalQuantity, IReadOnlyList<string> Warnings, decimal TotalReturnValueEur);
+    decimal TotalQuantity, IReadOnlyList<string> Warnings, decimal TotalReturnValueEur,
+    bool IsZeroReport);
 
 /// <summary>Blueprint 4.9 Intrastat arrivals report (posted EU acquisitions of a calendar month by invoice date, invoice value; supplier returns as separate rows).</summary>
 [ApiController]
@@ -68,6 +69,7 @@ public sealed class IntrastatController : ControllerBase
         var rows = IntrastatReport.Build(collected.Lines);
         var arrivals = rows.Where(r => !r.IsReturn).ToList();
         return new IntrastatReportDto(year, month, rows, arrivals.Sum(r => r.ValueEur), arrivals.Sum(r => r.NetMassKg),
-            arrivals.Sum(r => r.Quantity), collected.Warnings, rows.Where(r => r.IsReturn).Sum(r => r.ValueEur));
+            arrivals.Sum(r => r.Quantity), collected.Warnings, rows.Where(r => r.IsReturn).Sum(r => r.ValueEur),
+            IntrastatReport.IsZeroReport(rows, collected.Warnings));
     }
 }
