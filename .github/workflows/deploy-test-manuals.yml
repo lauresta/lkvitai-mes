@@ -21,7 +21,10 @@ jobs:
       # bin/obj folders in the shared workspace; checkout cannot remove them and fails.
       - name: Clean workspace (fix root-owned files from Docker)
         run: |
-          docker run --rm \n            -v "$GITHUB_WORKSPACE":/workspace \n            alpine:3 \n            sh -c "rm -rf /workspace/*"
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE":/workspace \
+            alpine:3 \
+            sh -c "rm -rf /workspace/*"
 
       - name: Checkout code
         uses: actions/checkout@v4
