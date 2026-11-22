@@ -1,170 +1,23 @@
 http:
   routers:
-    # Scaffolded modules (Sales / Frontline / Scanning) route path-based on
-    # mes.lauresta.com — this matches the test topology exactly so /sales/,
-    # /frontline/, /scan/ links produced by the Portal tiles work in both
-    # environments. They take precedence over mes-portal-root because the
-    # PathPrefix rule is more specific. The existing Warehouse/Portal
-    # subdomain routers are kept untouched.
-    mes-sales:
-      rule: "Host(`mes.lauresta.com`) && PathPrefix(`/sales`)"
+    # Old production address. Production lives at https://cikada.lauresta.com
+    # (cikada.yml). Every request to the old hosts is redirected there
+    # permanently with its path and query kept, so old bookmarks keep working
+    # and these hosts no longer reach the production containers directly.
+    # portal./warehouse./api.mes.lauresta.com have no DNS; they are listed so
+    # nothing on this Traefik serves them either.
+    mes-legacy-redirect:
+      rule: "Host(`mes.lauresta.com`) || Host(`portal.mes.lauresta.com`) || Host(`warehouse.mes.lauresta.com`) || Host(`api.mes.lauresta.com`)"
       entryPoints: [websecure]
-      service: mes-sales-webui
-      priority: 100
-      tls:
-        certResolver: letsencrypt
-
-    mes-frontline:
-      rule: "Host(`mes.lauresta.com`) && PathPrefix(`/frontline`)"
-      entryPoints: [websecure]
-      service: mes-frontline-webui
-      priority: 100
-      tls:
-        certResolver: letsencrypt
-
-    mes-scan:
-      rule: "Host(`mes.lauresta.com`) && PathPrefix(`/scan`)"
-      entryPoints: [websecure]
-      service: mes-scanning-webui
-      priority: 100
-      tls:
-        certResolver: letsencrypt
-
-    mes-api-sales:
-      rule: "Host(`mes.lauresta.com`) && PathPrefix(`/api/sales`)"
-      entryPoints: [websecure]
-      service: mes-sales-api
-      priority: 200
-      tls:
-        certResolver: letsencrypt
-
-    mes-api-frontline:
-      rule: "Host(`mes.lauresta.com`) && PathPrefix(`/api/frontline`)"
-      entryPoints: [websecure]
-      service: mes-frontline-api
-      priority: 200
-      tls:
-        certResolver: letsencrypt
-
-    mes-api-scan:
-      rule: "Host(`mes.lauresta.com`) && PathPrefix(`/api/scan`)"
-      entryPoints: [websecure]
-      service: mes-scanning-api
-      priority: 200
-      tls:
-        certResolver: letsencrypt
-
-    mes-portal-root:
-      rule: "Host(`mes.lauresta.com`)"
-      entryPoints: [websecure]
-      service: mes-portal-webui
-      # Explicit low priority so the scaffolded /sales, /frontline, /scan and
-      # /api/<module>/* routers above always win. Mirrors mes-test-portal-root.
-      priority: 10
-      tls:
-        certResolver: letsencrypt
-
-    mes-portal:
-      rule: "Host(`portal.mes.lauresta.com`)"
-      entryPoints: [websecure]
-      service: mes-portal-webui
-      tls:
-        certResolver: letsencrypt
-
-    mes-warehouse:
-      rule: "Host(`warehouse.mes.lauresta.com`)"
-      entryPoints: [websecure]
-      service: mes-warehouse-webui
-      tls:
-        certResolver: letsencrypt
-
-    mes-api-portal:
-      rule: "Host(`api.mes.lauresta.com`) && PathPrefix(`/portal`)"
-      entryPoints: [websecure]
-      middlewares: [mes-strip-api-portal]
-      service: mes-portal-api
-      priority: 100
-      tls:
-        certResolver: letsencrypt
-
-    mes-api-warehouse:
-      rule: "Host(`api.mes.lauresta.com`) && PathPrefix(`/warehouse`)"
-      entryPoints: [websecure]
-      middlewares: [mes-strip-api-warehouse]
-      service: mes-warehouse-api
-      priority: 100
+      middlewares: [mes-legacy-to-cikada]
+      service: noop@internal
+      priority: 1000
       tls:
         certResolver: letsencrypt
 
   middlewares:
-    mes-strip-api-portal:
-      stripPrefix:
-        prefixes: [/portal]
-
-    mes-strip-api-warehouse:
-      stripPrefix:
-        prefixes: [/warehouse]
-
-    # Sales / Frontline / Scanning APIs do NOT strip — the apps themselves use
-    # app.MapGroup("/api/<module>") so they receive the full path unchanged.
-
-  services:
-    mes-portal-webui:
-      loadBalancer:
-        passHostHeader: true
-        servers:
-          - url: "http://10.11.12.9:5010"
-
-    mes-warehouse-webui:
-      loadBalancer:
-        passHostHeader: true
-        servers:
-          - url: "http://10.11.12.9:5000"
-
-    mes-portal-api:
-      loadBalancer:
-        passHostHeader: true
-        servers:
-          - url: "http://10.11.12.9:5011"
-
-    mes-warehouse-api:
-      loadBalancer:
-        passHostHeader: true
-        servers:
-          - url: "http://10.11.12.9:5001"
-
-    mes-sales-webui:
-      loadBalancer:
-        passHostHeader: true
-        servers:
-          - url: "http://10.11.12.9:5020"
-
-    mes-sales-api:
-      loadBalancer:
-        passHostHeader: true
-        servers:
-          - url: "http://10.11.12.9:5021"
-
-    mes-frontline-webui:
-      loadBalancer:
-        passHostHeader: true
-        servers:
-          - url: "http://10.11.12.9:5030"
-
-    mes-frontline-api:
-      loadBalancer:
-        passHostHeader: true
-        servers:
-          - url: "http://10.11.12.9:5031"
-
-    mes-scanning-webui:
-      loadBalancer:
-        passHostHeader: true
-        servers:
-          - url: "http://10.11.12.9:5040"
-
-    mes-scanning-api:
-      loadBalancer:
-        passHostHeader: true
-        servers:
-          - url: "http://10.11.12.9:5041"
+    mes-legacy-to-cikada:
+      redirectRegex:
+        regex: "^https?://[^/]+(.*)$"
+        replacement: "https://cikada.lauresta.com${1}"
+        permanent: true
