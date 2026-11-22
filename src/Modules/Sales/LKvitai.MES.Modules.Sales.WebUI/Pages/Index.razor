@@ -139,7 +139,7 @@
                                     @if (o.HasNote) { <span class="cust__flag cust__flag--note" title="@L["Orders.HasNote"]">!</span> }
                                 </span>
                             </td>
-                            <td><span class="chip @OrderFormat.StatusChip(o.StatusCode)">@LocalizedStatus(o.StatusCode, o.Status)</span></td>
+                            <td><span class="chip @OrderFormat.StatusChip(o.StatusCode)">@LocalizedStatus(o.StatusCode, o.Status)</span> @if (o.IsPrivacyRestricted) { <span class="chip chip--privacy" title="@L["Orders.PrivacyRestricted"]">@L["Orders.PrivacyChip"]</span> }</td>
                             <td>@o.Store</td>
                             <td>@o.Address</td>
                         </tr>
@@ -166,6 +166,7 @@
                            target="_blank"
                            @onclick:stopPropagation>@o.Number &#8599;</a>
                         <span class="chip @OrderFormat.StatusChip(o.StatusCode)">@LocalizedStatus(o.StatusCode, o.Status)</span>
+                        @if (o.IsPrivacyRestricted) { <span class="chip chip--privacy" title="@L["Orders.PrivacyRestricted"]">@L["Orders.PrivacyChip"]</span> }
                     </div>
                     <div class="mobile-card__cust">@o.Customer</div>
                     <div class="mobile-card__meta">
@@ -274,7 +275,8 @@
         string   Status,
         string   StatusCode,
         string   Store,
-        string   Address);
+        string   Address,
+        bool     IsPrivacyRestricted = false);
 
     /// <summary>Always-shown date preset list (Date filter is intentionally
     /// disabled in S-1; kept so the toolbar grid stays aligned).</summary>
@@ -422,13 +424,13 @@
     private static PersistedOrderRow ToPersisted(OrderSummaryDto o) => new(
         o.Id, o.Number, o.Date, o.Price, o.Debt, o.IsOverdue,
         o.Customer, o.HasDebt, o.IsVip, o.HasNote,
-        o.Status, o.StatusCode, o.Store, o.Address);
+        o.Status, o.StatusCode, o.Store, o.Address, o.IsPrivacyRestricted);
 
     private static OrderSummaryDto FromPersisted(PersistedOrderRow r) => new(
         r.Id, r.Number, r.Date, r.Price, r.Debt, r.IsOverdue,
         r.Customer, r.HasDebt, r.IsVip, r.HasNote,
         r.Status, r.StatusCode, r.Store, r.Address,
-        ProductsSearch: null);
+        ProductsSearch: null, IsPrivacyRestricted: r.IsPrivacyRestricted);
 
     private async Task LoadFilterOptionsAsync()
     {

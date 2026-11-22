@@ -978,6 +978,15 @@
   <data name="Orders.HasDebt" xml:space="preserve">
     <value>Yra skola</value>
   </data>
+  <data name="Orders.PrivacyChip" xml:space="preserve">
+    <value>BDAR</value>
+  </data>
+  <data name="Orders.PrivacyRestricted" xml:space="preserve">
+    <value>Anuliuotas kliento prašymu; asmens duomenys ribojami (BDAR)</value>
+  </data>
+  <data name="Workspace.OtherDutiesLater" xml:space="preserve">
+    <value>Kitos pareigos priskiriamos užsakyme, kai jis sukurtas.</value>
+  </data>
   <data name="Orders.HasNote" xml:space="preserve">
     <value>Yra pastaba</value>
   </data>

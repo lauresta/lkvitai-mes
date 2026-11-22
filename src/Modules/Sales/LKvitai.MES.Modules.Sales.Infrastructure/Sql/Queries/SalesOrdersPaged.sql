@@ -153,7 +153,10 @@
             END, 'N/A'
         )                                                                                 AS Address,
         N''                                                                               AS ProductsSearch,
-        p.TotalRows                                                                       AS TotalRows
+        p.TotalRows                                                                       AS TotalRows,
+        -- Kept last: the reader addresses the columns above by ordinal.
+        CASE WHEN LTRIM(RTRIM(u.sNotes)) = N'Kliento prasymu anuliuotas'
+             THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END                                  AS IsPrivacyRestricted
     FROM #PageIds p
     INNER JOIN dbo.Uzsakymai                  u  ON u.UzsakymasID    = p.Id
     INNER JOIN dbo.Zinynas_UzsakymoSerijos    us ON u.UzsakymoSerija = us.UzsakymoSerijaID

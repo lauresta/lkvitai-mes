@@ -46,6 +46,8 @@ public partial class NewOrderWorkspace
     private ElementReference _catalogSearchElement;
     private bool _pickerFocusPending;
     private int? _employeeId, _employeeDutyId;
+    private int? _measurerId;
+    private LiveNamedReferenceDto? MeasurerDuty => _duties.FirstOrDefault(x => (x.Name ?? "").Trim().StartsWith("Matuot", StringComparison.OrdinalIgnoreCase));
     private bool HeaderDirty => _order?.LegacyId is not null && JsonSerializer.Serialize(HeaderInput()) != _headerSaved;
     private DateOnly SavedOrderDate => string.IsNullOrEmpty(_headerSaved) ? _order!.Date : JsonSerializer.Deserialize<OrderHeaderInput>(_headerSaved)!.Date;
     /// <summary>The "More" menu of the product editor header (duplicate, return, warranty, delete).</summary>
@@ -233,6 +235,12 @@ public partial class NewOrderWorkspace
         {
             var header=new OrderHeaderInput(seriesRow.Id,number,date,due,_customerId.Value,_storeId.Value,_managerId,_consultantId);
             var result=await Entry.CreateAsync(new CreateOrderCommand(Guid.NewGuid(),header));
+            if(_measurerId is { } measurerId && MeasurerDuty is { } measurerDuty)
+            {
+                // The order already exists; a refused assignment must not block opening it. It can be added in the order.
+                try { await Entry.SaveDutyAsync(result.Order.Header.Id,new SaveOrderDutyCommand(Guid.NewGuid(),result.Order.Revision,new OrderDutyInput(measurerDuty.Id,measurerId,date,null))); }
+                catch(SalesOrderEntryFailure) { }
+            }
             _leaving=true;
             Navigation.NavigateTo($"entry/{result.Order.Header.Id}",replace:true);
         }
