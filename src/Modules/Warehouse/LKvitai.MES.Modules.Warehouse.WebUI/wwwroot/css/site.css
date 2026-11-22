@@ -1301,6 +1301,12 @@ td.is-num strong { font-weight: 700; }
   margin-bottom: 12px;
 }
 
+.items-detail-title__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .items-detail-title h3 {
   margin-bottom: 4px;
 }

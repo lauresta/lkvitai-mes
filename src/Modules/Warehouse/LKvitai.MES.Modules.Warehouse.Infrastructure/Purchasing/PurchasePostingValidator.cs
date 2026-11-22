@@ -5,8 +5,9 @@ using LKvitai.MES.Modules.Warehouse.Infrastructure.Fx;
 
 namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Purchasing;
 
-/// <summary>A blocking message. <see cref="Code"/> maps to a localized text in the UI; <see cref="Text"/> is the English fallback.</summary>
-public sealed record PostingProblem(string Code, string Text);
+/// <summary>A blocking message. <see cref="Code"/> maps to a localized text in the UI; <see cref="Text"/> is the English fallback.
+/// <see cref="Detail"/> lists what the message is about (for example the offending items) and is language neutral.</summary>
+public sealed record PostingProblem(string Code, string Text, string? Detail = null);
 
 public sealed record PostingRate(FxRateStatus Status, decimal? UnitsPerEur, DateOnly? RateDate, string? Source, string? ManualReason);
 
@@ -53,6 +54,49 @@ public static class PurchasePostingValidator
 
     public static bool IsCommodityCode(string? code)
         => code is { Length: 8 } && code.All(char.IsAsciiDigit);
+
+    /// <summary>Most items named in one blocking message; the rest is summarised as "and N more".</summary>
+    public const int MaxListedItems = 5;
+
+    /// <summary>"SKU Name" of each distinct line item, at most <see cref="MaxListedItems"/>, then the overflow
+    /// formatted by <paramref name="more"/> (receives the number of items left out).</summary>
+    public static string? DescribeItems(IEnumerable<InboundShipmentLine> lines, Func<int, string> more)
+    {
+        var distinct = lines.GroupBy(l => l.ItemId).Select(g => g.First()).ToList();
+        if (distinct.Count == 0) return null;
+        var text = string.Join(", ", distinct.Take(MaxListedItems).Select(DescribeItem));
+        return distinct.Count > MaxListedItems ? $"{text} {more(distinct.Count - MaxListedItems)}" : text;
+    }
+
+    private static string DescribeItem(InboundShipmentLine line)
+    {
+        if (line.Item is null) return $"#{line.ItemId}";
+        return string.IsNullOrWhiteSpace(line.Item.Name) ? line.Item.InternalSKU : $"{line.Item.InternalSKU} {line.Item.Name}";
+    }
+
+    private static PostingProblem WithItems(string code, string text, List<InboundShipmentLine> lines)
+    {
+        var english = DescribeItems(lines, n => $"and {n} more");
+        // The detail is language neutral ("(+N)" for the overflow); the UI puts it behind the localized sentence.
+        var neutral = DescribeItems(lines, n => $"(+{n})");
+        return new(code, english is null ? text : $"{text.TrimEnd('.')}: {english}.", neutral);
+    }
+
+    private static void AddIntrastatItemProblems(List<InboundShipmentLine> stockLines, List<PostingProblem> problems)
+    {
+        var noGoodsData = stockLines.Where(l => l.Item is null || !IsCommodityCode(l.Item.CommodityCode) || l.Item.NetWeightKg is not > 0m).ToList();
+        if (noGoodsData.Count > 0)
+            problems.Add(WithItems("IntrastatItemDataMissing", "Every stock item of an EU acquisition needs an 8-digit commodity code and a net weight.", noGoodsData));
+
+        var noOrigin = stockLines.Where(l => l.Item is not null && !IntrastatCodes.IsCountryCode(l.Item.OriginCountry)).ToList();
+        if (noOrigin.Count > 0)
+            problems.Add(WithItems("IntrastatOriginCountryMissing", "Every stock item of an EU acquisition needs a country of origin (ISO 3166 alpha-2 code).", noOrigin));
+
+        var badSupplementary = stockLines.Where(l => l.Item is not null
+            && !string.IsNullOrWhiteSpace(l.Item.SupplementaryUnit) != (l.Item.SupplementaryUnitFactor is > 0m)).ToList();
+        if (badSupplementary.Count > 0)
+            problems.Add(WithItems("IntrastatSupplementaryUnitInvalid", "A supplementary unit and its factor (above zero) must be set together on the item.", badSupplementary));
+    }
 
     public static List<PostingProblem> Validate(PurchasePostingInput input)
     {
@@ -129,13 +173,7 @@ public static class PurchasePostingValidator
             if (string.IsNullOrWhiteSpace(s.DeliveryTerms) || string.IsNullOrWhiteSpace(s.TransportMode)
                 || string.IsNullOrWhiteSpace(s.DispatchCountry) || string.IsNullOrWhiteSpace(s.TransactionNature))
                 problems.Add(new("IntrastatHeaderRequired", "Intrastat fields (delivery terms, transport mode, dispatch country, transaction nature) are required for an EU acquisition."));
-            if (stockLines.Any(l => l.Item is null || !IsCommodityCode(l.Item.CommodityCode) || l.Item.NetWeightKg is not > 0m))
-                problems.Add(new("IntrastatItemDataMissing", "Every stock item of an EU acquisition needs an 8-digit commodity code and a net weight."));
-            if (stockLines.Any(l => l.Item is not null && !IntrastatCodes.IsCountryCode(l.Item.OriginCountry)))
-                problems.Add(new("IntrastatOriginCountryMissing", "Every stock item of an EU acquisition needs a country of origin (ISO 3166 alpha-2 code)."));
-            if (stockLines.Any(l => l.Item is not null
-                    && !string.IsNullOrWhiteSpace(l.Item.SupplementaryUnit) != (l.Item.SupplementaryUnitFactor is > 0m)))
-                problems.Add(new("IntrastatSupplementaryUnitInvalid", "A supplementary unit and its factor (above zero) must be set together on the item."));
+            AddIntrastatItemProblems(stockLines, problems);
 
             var invalid = new List<string>();
             if (!string.IsNullOrWhiteSpace(s.TransactionNature) && !IntrastatCodes.IsNature(s.TransactionNature)) invalid.Add("transaction nature");

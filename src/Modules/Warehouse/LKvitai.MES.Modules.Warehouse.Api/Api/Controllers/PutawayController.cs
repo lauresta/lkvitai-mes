@@ -126,8 +126,8 @@ public sealed class PutawayController : ControllerBase
             return ValidationFailure("Putaway source location must be RECEIVING.");
         }
 
-        if (!PhysicalLocation.IsPhysical(toLocation))
-            return ValidationFailure("Putaway destination must be a physical storage location.");
+        if (!PhysicalLocation.IsStorageLocation(toLocation))
+            return ValidationFailure($"Location '{toLocation.Code}' is not a storage location. Putaway destination must be a physical storage location (not RECEIVING, QC hold, quarantine, shipping, transit or another virtual location).");
 
         await using var balanceLock = await _balanceLocks.CreateAsync(cancellationToken);
         await balanceLock.AcquireAsync([StockLockKey.ForLocation(DefaultWarehouseId, "RECEIVING", item.InternalSKU)], cancellationToken);

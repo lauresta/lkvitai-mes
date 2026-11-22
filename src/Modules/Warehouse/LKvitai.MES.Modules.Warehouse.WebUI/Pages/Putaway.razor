@@ -112,7 +112,7 @@
             _fromReceivingLocationId = rows.FirstOrDefault(x => string.Equals(x.Code, "RECEIVING", StringComparison.OrdinalIgnoreCase))?.Id ?? 0;
 
             _toLocations.Clear();
-            _toLocations.AddRange(rows.Where(x => !string.Equals(x.Code, "RECEIVING", StringComparison.OrdinalIgnoreCase)));
+            _toLocations.AddRange(rows.Where(PutawayDestinations.IsStorage));
         }
         catch (ApiException ex)
         {

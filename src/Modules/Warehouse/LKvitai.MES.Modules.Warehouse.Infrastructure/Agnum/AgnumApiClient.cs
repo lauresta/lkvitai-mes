@@ -123,7 +123,7 @@ public sealed class AgnumApiClient : IAgnumApiClient
                 return null;
             }
 
-            var content = await response.Content.ReadAsStringAsync(ct);
+            var content = await AgnumResponseText.ReadAsync(response.Content, ct);
             var products = JsonSerializer.Deserialize<IReadOnlyList<AgnumProductDto>>(content, JsonOptions);
             if (products is null)
             {
@@ -199,7 +199,7 @@ public sealed class AgnumApiClient : IAgnumApiClient
                 return Array.Empty<AgnumClientDto>();
             }
 
-            var content = await response.Content.ReadAsStringAsync(ct);
+            var content = await AgnumResponseText.ReadAsync(response.Content, ct);
             var clients = JsonSerializer.Deserialize<IReadOnlyList<AgnumClientDto>>(content, JsonOptions);
             if (clients is null)
             {

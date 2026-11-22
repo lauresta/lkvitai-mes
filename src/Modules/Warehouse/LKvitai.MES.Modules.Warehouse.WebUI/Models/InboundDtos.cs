@@ -186,6 +186,8 @@ public record PostingProblemDto
 {
     public string Code { get; init; } = string.Empty;
     public string Text { get; init; } = string.Empty;
+    /// <summary>Language neutral list of what the problem is about (e.g. item SKUs and names), shown after the localized text.</summary>
+    public string? Detail { get; init; }
 }
 
 public record PurchaseDocumentDto
