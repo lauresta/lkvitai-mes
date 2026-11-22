@@ -25,12 +25,6 @@ public static class MasterDataSearchQueries
             dbContext.SupplierItemMappings.Any(m => m.ItemId == i.Id && m.SupplierSKU.ToLower().Contains(normalized)));
     }
 
-    /// <summary>Exact SKU matches first, then SKU prefix matches, then the rest by SKU.</summary>
-    public static IOrderedQueryable<Item> OrderBySkuRelevance(this IQueryable<Item> query, string normalized)
-        => query
-            .OrderBy(i => i.InternalSKU.ToLower() == normalized ? 0 : i.InternalSKU.ToLower().StartsWith(normalized) ? 1 : 2)
-            .ThenBy(i => i.InternalSKU);
-
     /// <summary>Suppliers by code, names, company/VAT code, contact and place, as the supplier list searches.</summary>
     public static IQueryable<Supplier> WhereMatches(this IQueryable<Supplier> query, string normalized)
         => query.Where(x =>
@@ -43,4 +37,10 @@ public static class MasterDataSearchQueries
             (x.Phone != null && x.Phone.ToLower().Contains(normalized)) ||
             (x.Country != null && x.Country.ToLower().Contains(normalized)) ||
             (x.City != null && x.City.ToLower().Contains(normalized)));
+
+    /// <summary>Exact SKU matches first, then SKU prefix matches, then the rest by SKU.</summary>
+    public static IOrderedQueryable<Item> OrderBySkuRelevance(this IQueryable<Item> query, string normalized)
+        => query
+            .OrderBy(i => i.InternalSKU.ToLower() == normalized ? 0 : i.InternalSKU.ToLower().StartsWith(normalized) ? 1 : 2)
+            .ThenBy(i => i.InternalSKU);
 }

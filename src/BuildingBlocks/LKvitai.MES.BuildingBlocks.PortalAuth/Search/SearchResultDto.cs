@@ -74,24 +74,3 @@ public static class SearchRequest
         return prefix + "/" + url.TrimStart('/');
     }
 }
-
-/// <summary>Helpers for a module WebUI relaying its API's hits to the shell.</summary>
-public static class ShellSearchRelay
-{
-    /// <summary>
-    /// Makes module-relative urls absolute under the WebUI path base and drops hits that are not
-    /// well formed (empty kind/title, or a url that is not a plain relative path).
-    /// </summary>
-    public static IReadOnlyList<SearchResultDto> Rebase(IEnumerable<SearchResultDto?>? hits, string? pathBase)
-    {
-        var result = new List<SearchResultDto>();
-        foreach (var hit in hits ?? [])
-        {
-            if (hit is null || string.IsNullOrWhiteSpace(hit.Kind) || string.IsNullOrWhiteSpace(hit.Title)) continue;
-            var url = SearchRequest.ToAbsolutePath(pathBase, hit.Url);
-            if (url is not null) result.Add(hit with { Url = url });
-        }
-
-        return result;
-    }
-}

@@ -226,8 +226,12 @@ public sealed class UniversalSearchTests
     {
         var shell = new PortalModuleShell();
         typeof(PortalModuleShell).GetProperty("JS", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(shell, new FailingJs());
-        await (Task)typeof(PortalModuleShell).GetMethod("OnAfterRenderAsync", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(shell, [true])!;
-        await shell.DisposeAsync();
+        var failure = await Record.ExceptionAsync(async () =>
+        {
+            await (Task)typeof(PortalModuleShell).GetMethod("OnAfterRenderAsync", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(shell, [true])!;
+            await shell.DisposeAsync();
+        });
+        Assert.Null(failure);
     }
 
     private static async Task<WebApplication> RelayHostAsync(Transport transport)

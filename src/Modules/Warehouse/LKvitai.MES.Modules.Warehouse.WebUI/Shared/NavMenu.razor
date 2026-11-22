@@ -72,8 +72,12 @@
     private record NavItem(string Href, string Icon, string Label, bool External = false);
     private record NavSection(string Key, string Label, string Icon, NavItem[] Items);
 
+    private NavSection[] _sections = [];
+
     protected override void OnInitialized()
     {
+        // Built once per circuit: the UI language is fixed for the lifetime of the component.
+        _sections = BuildSections();
         _currentPath = Navigation.ToBaseRelativePath(Navigation.Uri);
         Navigation.LocationChanged += OnLocationChanged;
         _openSection = FindSectionForPath(_currentPath);
@@ -109,7 +113,7 @@
         Navigation.LocationChanged -= OnLocationChanged;
     }
 
-    private NavSection[] _sections => WarehouseNavigation.Sections
+    private NavSection[] BuildSections() => WarehouseNavigation.Sections
         .Select(section => new NavSection(
             section.Key,
             L[section.LabelKey].Value,

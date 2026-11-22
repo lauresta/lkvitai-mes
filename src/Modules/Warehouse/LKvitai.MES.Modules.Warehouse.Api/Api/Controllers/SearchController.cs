@@ -64,13 +64,12 @@ public sealed class SearchController : ControllerBase
 
             foreach (var item in items)
             {
-                var sku = item.InternalSKU.ToLowerInvariant();
                 results.Add(new SearchResultDto(
                     SearchKinds.Item,
                     item.Name,
                     JoinNonEmpty(item.InternalSKU, item.PrimaryBarcode, SupplierItemCodes.Pick(byItem[item.Id], null, normalized)),
                     $"admin/items/{item.Id}",
-                    sku == normalized ? 1 : sku.StartsWith(normalized, StringComparison.Ordinal) ? 0.9 : 0.6));
+                    SkuScore(item.InternalSKU, normalized)));
             }
         }
 
@@ -93,6 +92,13 @@ public sealed class SearchController : ControllerBase
         }
 
         return Ok(results);
+    }
+
+    private static double SkuScore(string internalSku, string normalized)
+    {
+        var sku = internalSku.ToLowerInvariant();
+        if (sku == normalized) return 1;
+        return sku.StartsWith(normalized, StringComparison.Ordinal) ? 0.9 : 0.6;
     }
 
     private static string? JoinNonEmpty(params string?[] parts)

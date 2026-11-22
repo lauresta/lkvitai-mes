@@ -210,6 +210,12 @@ export function init(button, panel, options) {
                 hits.push(...answer.hits);
                 failed = failed || answer.failed;
                 settle();
+            }).catch(() => {
+                // Drawing an answer failed: finish this module as "could not be loaded".
+                if (mine !== sequence) return;
+                failed = true;
+                panel.removeAttribute('aria-busy');
+                setStatus(text.partial);
             });
         }
     }
