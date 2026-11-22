@@ -40,7 +40,10 @@ public static class ManualsProxy
     {
         ArgumentNullException.ThrowIfNull(endpoints);
 
-        endpoints.MapGet(RoutePrefix + "/{**path}", ServeAsync).RequireAuthorization();
+        // No RequireAuthorization(): its cookie challenge would redirect to /login.html at the host root
+        // (/manuals has no /portal path base). The host sends anonymous users to its own sign-in first;
+        // ServeAsync still refuses them.
+        endpoints.MapGet(RoutePrefix + "/{**path}", ServeAsync);
         return endpoints;
     }
 
@@ -77,6 +80,8 @@ public static class ManualsProxy
 
     private static async Task<IResult> ServeAsync(HttpContext context, IHttpClientFactory factory, ILoggerFactory loggers, string? path)
     {
+        if (context.User.Identity?.IsAuthenticated != true) return Results.Unauthorized();
+
         if (context.Request.Path.Value?.EndsWith('/') == false && string.IsNullOrEmpty(path))
         {
             return Results.Redirect($"{context.Request.PathBase}{RoutePrefix}/{context.Request.QueryString}");
