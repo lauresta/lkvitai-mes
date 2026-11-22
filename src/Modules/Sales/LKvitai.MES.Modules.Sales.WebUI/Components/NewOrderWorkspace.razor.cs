@@ -69,7 +69,11 @@ public partial class NewOrderWorkspace
             {
                 Entry.SetOrderScope(LegacyOrderId);
                 if(!await RefreshLiveCatalogAsync(true))throw new SalesOrderEntryFailure(_liveError);
-                if (LegacyOrderId is { } id) ApplySnapshot(await Entry.ReadAsync(id));
+                if (LegacyOrderId is { } id)
+                {
+                    ApplySnapshot(await Entry.ReadAsync(id));
+                    if (Navigation.Uri.Contains("measurer=failed", StringComparison.Ordinal)) { _saveIsError = true; _saveMessage = L["Workspace.MeasurerNotAssigned"].Value; }
+                }
             }
         }
         catch (Exception ex) when (ex is SalesOrderEntryFailure or HttpRequestException)
@@ -235,14 +239,15 @@ public partial class NewOrderWorkspace
         {
             var header=new OrderHeaderInput(seriesRow.Id,number,date,due,_customerId.Value,_storeId.Value,_managerId,_consultantId);
             var result=await Entry.CreateAsync(new CreateOrderCommand(Guid.NewGuid(),header));
+            var measurerFailed=false;
             if(_measurerId is { } measurerId && MeasurerDuty is { } measurerDuty)
             {
                 // The order already exists; a refused assignment must not block opening it. It can be added in the order.
                 try { await Entry.SaveDutyAsync(result.Order.Header.Id,new SaveOrderDutyCommand(Guid.NewGuid(),result.Order.Revision,new OrderDutyInput(measurerDuty.Id,measurerId,date,null))); }
-                catch(SalesOrderEntryFailure) { }
+                catch(SalesOrderEntryFailure) { measurerFailed=true; }
             }
             _leaving=true;
-            Navigation.NavigateTo($"entry/{result.Order.Header.Id}",replace:true);
+            Navigation.NavigateTo($"entry/{result.Order.Header.Id}{(measurerFailed ? "?measurer=failed" : "")}",replace:true);
         }
         catch(SalesOrderEntryFailure ex) { _formError=ex.Message;_liveError=ex.Message; }
         finally { if(!_leaving)_busy=false; }

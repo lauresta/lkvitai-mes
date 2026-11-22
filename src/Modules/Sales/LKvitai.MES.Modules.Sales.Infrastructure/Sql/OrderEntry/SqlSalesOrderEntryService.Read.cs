@@ -29,7 +29,7 @@ public sealed partial class SqlSalesOrderEntryService
         var productRows=await Rows(c,tx,"""
             SELECT pg.*,t.TipoPavadinimas TypeName,t.Rusis CategoryId,r.RusiesPavadinimas CategoryName,
                 t.Gamininamas IsManufactured,t.KainosMatas PriceUnitId,
-                colour.sCodeInternal ColourCode,state.Busena ProductStateName,
+                CASE WHEN colour.iComponentID=0 THEN NULL ELSE colour.sCodeInternal END ColourCode,state.Busena ProductStateName,
                 state.bAllowEditBlindFlag ProductCanEdit,state.GalimaRedaguotiGamini ProductCanDelete
             FROM dbo.ParduotiGaminiai pg WITH(UPDLOCK,HOLDLOCK)
             LEFT JOIN dbo.Zinynas_tipai t ON t.TipoID=pg.ParduotoGaminioTipoID

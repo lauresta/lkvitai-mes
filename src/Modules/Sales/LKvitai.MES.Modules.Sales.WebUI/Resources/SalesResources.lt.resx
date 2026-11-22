@@ -984,6 +984,9 @@
   <data name="Orders.PrivacyRestricted" xml:space="preserve">
     <value>Anuliuotas kliento prašymu; asmens duomenys ribojami (BDAR)</value>
   </data>
+  <data name="Workspace.MeasurerNotAssigned" xml:space="preserve">
+    <value>Užsakymas sukurtas, bet matuotojas nepriskirtas. Priskirkite matuotoją skiltyje „Atsakingi darbuotojai“.</value>
+  </data>
   <data name="Workspace.OtherDutiesLater" xml:space="preserve">
     <value>Kitos pareigos priskiriamos užsakyme, kai jis sukurtas.</value>
   </data>

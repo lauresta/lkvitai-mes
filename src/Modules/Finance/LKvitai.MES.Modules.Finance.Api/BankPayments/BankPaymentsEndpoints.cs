@@ -38,6 +38,13 @@ internal sealed class BankImportSessions
 }
 internal sealed class BankOperationException(int status, string message) : Exception(message) { public int Status { get; } = status; }
 
+internal static class BankPaymentWrites
+{
+    public static bool IsWrite(string method, string? path) =>
+        HttpMethods.IsDelete(method) ||
+        HttpMethods.IsPost(method) && (path ?? "").TrimEnd('/').EndsWith("/bank-payments", StringComparison.OrdinalIgnoreCase);
+}
+
 internal static class BankPaymentsEndpoints
 {
     public static void MapBankPayments(this WebApplication app)
@@ -60,6 +67,11 @@ internal static class BankPaymentsEndpoints
                 var actor = await http.RequestServices.GetRequiredService<FinanceAccess>()
                     .ResolveAsync(http.User, http.RequestAborted);
                 if (actor is null) return Results.Problem(statusCode: 403, title: "Finance access required.");
+                // Imports and deletions change live legacy payments and cannot be limited to a test branch,
+                // so a stand has to opt in (production does; the test stand does not).
+                if (BankPaymentWrites.IsWrite(http.Request.Method, http.Request.Path) &&
+                    !http.RequestServices.GetRequiredService<IConfiguration>().GetValue("Finance:BankPayments:WritesEnabled", false))
+                    return Results.Problem(statusCode: 409, title: "Bank payment import and deletion are switched off on this stand. Parsing and preview still work.");
                 http.Items[typeof(FinanceActor)] = actor;
                 return await next(context);
             }
