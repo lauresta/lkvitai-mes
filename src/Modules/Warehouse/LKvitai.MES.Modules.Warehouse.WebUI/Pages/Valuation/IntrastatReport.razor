@@ -29,13 +29,39 @@
             <div class="col-12 col-md-8 d-flex gap-2">
                 <button class="btn btn-primary" type="button" disabled="@_busy" @onclick="LoadAsync">@L["Intrastat.Show"]</button>
                 <button class="btn btn-outline-primary" type="button" disabled="@(_busy || _report is null)" @onclick="DownloadAsync">@L["Intrastat.DownloadCsv"]</button>
+                <button class="btn btn-primary" type="button" data-testid="intrastat-download-xml" disabled="@(_busy || _report is null)" @onclick="DownloadXmlAsync">@L["Intrastat.DownloadXml"]</button>
             </div>
         </div>
     </div>
 </div>
 
+<details class="card shadow-sm mb-4" open="@(!_declarant.IsComplete)">
+    <summary class="card-header">@L["Intrastat.Declarant.Title"]</summary>
+    <div class="card-body">
+        @if (!_declarant.IsComplete)
+        {
+            <div class="alert alert-warning" data-testid="intrastat-declarant-missing">@L["Intrastat.Declarant.Missing"]</div>
+        }
+        <div class="row g-3">
+            <div class="col-12 col-md-4"><label class="form-label">@L["Intrastat.Declarant.VatCode"]</label><input class="form-control" maxlength="14" @bind="_declarant.VatCode" /></div>
+            <div class="col-12 col-md-8"><label class="form-label">@L["Intrastat.Declarant.Name"]</label><input class="form-control" maxlength="1000" @bind="_declarant.Title" /></div>
+            <div class="col-12 col-md-8"><label class="form-label">@L["Intrastat.Declarant.Street"]</label><input class="form-control" maxlength="60" @bind="_declarant.Street" /></div>
+            <div class="col-12 col-md-4"><label class="form-label">@L["Intrastat.Declarant.ZipCode"]</label><input class="form-control" maxlength="20" @bind="_declarant.ZipCode" /></div>
+            <div class="col-12 col-md-4"><label class="form-label">@L["Intrastat.Declarant.ContactPerson"]</label><input class="form-control" maxlength="60" @bind="_declarant.ContactPerson" /></div>
+            <div class="col-12 col-md-4"><label class="form-label">@L["Intrastat.Declarant.Email"]</label><input class="form-control" maxlength="45" @bind="_declarant.Email" /></div>
+            <div class="col-12 col-md-4"><label class="form-label">@L["Intrastat.Declarant.Phone"]</label><input class="form-control" maxlength="15" @bind="_declarant.Phone" /></div>
+        </div>
+        <button class="btn btn-primary mt-3" type="button" @onclick="SaveDeclarantAsync">@L["Intrastat.Declarant.Save"]</button>
+    </div>
+</details>
+
 @if (_report is not null)
 {
+    @if (_report.TotalReturnValueEur != 0m)
+    {
+        <div class="alert alert-info" data-testid="intrastat-returns-note">@L["Intrastat.Xml.ReturnsNote"]</div>
+    }
+
     @if (_report.Warnings.Count > 0)
     {
         <div class="alert alert-warning">
@@ -119,14 +145,157 @@
     }
 }
 
+@if (_versions.Count > 0)
+{
+    <h2 class="h5 mt-4">@L["Intrastat.Versions.Title"]</h2>
+    <p class="text-muted">@L["Intrastat.Versions.Help"]</p>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle" data-testid="intrastat-versions">
+            <thead>
+                <tr>
+                    <th>@L["Intrastat.Versions.Version"]</th>
+                    <th>@L["Intrastat.Versions.GeneratedAt"]</th>
+                    <th>@L["Intrastat.Versions.GeneratedBy"]</th>
+                    <th class="text-end">@L["Intrastat.Versions.Rows"]</th>
+                    <th class="text-end">@L["Intrastat.ValueEur"]</th>
+                    <th class="text-end">@L["Intrastat.NetMass"]</th>
+                    <th>@L["Intrastat.Versions.Hash"]</th>
+                    <th>@L["Intrastat.Versions.Filed"]</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var v in _versions)
+                {
+                    <tr>
+                        <td class="mono">v@(v.Version)@(v.IsZeroReport ? " (0)" : "")</td>
+                        <td>@v.GeneratedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm", Inv)</td>
+                        <td>@v.GeneratedBy</td>
+                        <td class="text-end mono">@v.RowCount</td>
+                        <td class="text-end mono">@v.TotalValueEur.ToString("N2", Inv)</td>
+                        <td class="text-end mono">@v.TotalNetMassKg.ToString("N3", Inv)</td>
+                        <td class="mono">@v.Sha256[..8]</td>
+                        <td>@(v.FiledAt is null ? "-" : v.FiledAt.Value.ToLocalTime().ToString("yyyy-MM-dd", Inv) + " " + v.FiledBy)</td>
+                        <td class="text-nowrap">
+                            <button class="btn btn-sm btn-outline-primary" type="button" @onclick="() => DownloadVersionAsync(v)">@L["Intrastat.Versions.Download"]</button>
+                            @if (v.FiledAt is null)
+                            {
+                                <button class="btn btn-sm btn-outline-secondary" type="button" @onclick="() => MarkFiledAsync(v)">@L["Intrastat.Versions.MarkFiled"]</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
 @code {
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
     private DateTime _month = new(DateTime.Today.Year, DateTime.Today.Month, 1);
     private IntrastatReportDto? _report;
     private bool _busy;
     private ApiException? _apiError;
+    private IntrastatDeclarantDto _declarant = new();
+    private IReadOnlyList<IntrastatXmlVersionDto> _versions = [];
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDeclarantAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadDeclarantAsync()
+    {
+        try
+        {
+            _declarant = await Client.GetDeclarantAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
+    }
+
+    private async Task SaveDeclarantAsync()
+    {
+        try
+        {
+            await Client.SaveDeclarantAsync(_declarant);
+            await LoadDeclarantAsync();
+            ToastService.ShowSuccess(L["Intrastat.Declarant.Saved"].Value);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(ex.Message);
+        }
+    }
+
+    private async Task DownloadXmlAsync()
+    {
+        if (!_declarant.IsComplete)
+        {
+            ToastService.ShowError(L["Intrastat.Declarant.Missing"].Value);
+            return;
+        }
+
+        try
+        {
+            _apiError = null;
+            var bytes = await Client.GenerateXmlAsync(_month.Year, _month.Month);
+            await LoadVersionsAsync();
+            var latest = _versions.Count > 0 ? _versions[0].Version : 1;
+            await JavaScript.InvokeVoidAsync("csvExport.downloadBytes",
+                $"intrastat-arrivals-{_month:yyyy-MM}-v{latest}.xml", "application/xml", Convert.ToBase64String(bytes));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(ex.Message);
+        }
+    }
+
+    private async Task DownloadVersionAsync(IntrastatXmlVersionDto version)
+    {
+        try
+        {
+            var bytes = await Client.GetXmlVersionFileAsync(version.Id);
+            await JavaScript.InvokeVoidAsync("csvExport.downloadBytes",
+                $"intrastat-arrivals-{version.Year:0000}-{version.Month:00}-v{version.Version}.xml", "application/xml", Convert.ToBase64String(bytes));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(ex.Message);
+        }
+    }
+
+    private async Task MarkFiledAsync(IntrastatXmlVersionDto version)
+    {
+        try
+        {
+            await Client.MarkXmlFiledAsync(version.Id);
+            await LoadVersionsAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(ex.Message);
+        }
+    }
+
+    private async Task LoadVersionsAsync()
+    {
+        try
+        {
+            _versions = await Client.GetXmlVersionsAsync(_month.Year, _month.Month);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
+    }
 
     private async Task LoadAsync()
     {
@@ -135,6 +304,7 @@
         {
             _apiError = null;
             _report = await Client.GetAsync(_month.Year, _month.Month);
+            _versions = await Client.GetXmlVersionsAsync(_month.Year, _month.Month);
         }
         catch (ApiException ex)
         {

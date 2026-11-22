@@ -321,6 +321,7 @@ builder.Services.AddScoped<IWarehouseConsolidationService, WarehouseConsolidatio
 builder.Services.AddScoped<ICycleCountAdjustmentWriter, CycleCountAdjustmentWriter>();
 builder.Services.AddScoped<IAdvancedWarehouseStore, DatabaseWarehouseStore>();
 builder.Services.AddScoped<IWarehouseSettingsService, WarehouseSettingsService>();
+builder.Services.AddScoped<IntrastatService>();
 builder.Services.AddScoped<IReasonCodeService, ReasonCodeService>();
 builder.Services.AddScoped<IApprovalRuleService, ApprovalRuleService>();
 builder.Services.AddScoped<IRoleManagementService, RoleManagementService>();

@@ -50,6 +50,8 @@ public class WarehouseDbContext : DbContext
     public DbSet<AccountingConfigAuditEntry> AccountingConfigAudit => Set<AccountingConfigAuditEntry>();
     public DbSet<AgnumDocumentOutbox> AgnumOutbox => Set<AgnumDocumentOutbox>();
     public DbSet<AgnumSendingSettings> AgnumSendingSettings => Set<AgnumSendingSettings>();
+    public DbSet<IntrastatDeclarant> IntrastatDeclarants => Set<IntrastatDeclarant>();
+    public DbSet<IntrastatXmlExport> IntrastatXmlExports => Set<IntrastatXmlExport>();
     public DbSet<AccountingPeriod> AccountingPeriods => Set<AccountingPeriod>();
     public DbSet<MonthEndSnapshot> MonthEndSnapshots => Set<MonthEndSnapshot>();
     public DbSet<AgnumReconciliationFinding> AgnumReconciliationFindings => Set<AgnumReconciliationFinding>();
@@ -541,6 +543,34 @@ public class WarehouseDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.ReportJson).HasColumnType("jsonb").IsRequired();
             entity.HasIndex(e => new { e.Year, e.Month }).IsUnique();
+        });
+
+        modelBuilder.Entity<IntrastatDeclarant>(entity =>
+        {
+            entity.ToTable("intrastat_declarant");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.VatCode).HasMaxLength(14);
+            entity.Property(e => e.Title).HasMaxLength(1000);
+            entity.Property(e => e.Street).HasMaxLength(60);
+            entity.Property(e => e.ZipCode).HasMaxLength(20);
+            entity.Property(e => e.ContactPerson).HasMaxLength(60);
+            entity.Property(e => e.Email).HasMaxLength(45);
+            entity.Property(e => e.Phone).HasMaxLength(15);
+            entity.Property(e => e.UpdatedBy).HasMaxLength(200);
+        });
+
+        modelBuilder.Entity<IntrastatXmlExport>(entity =>
+        {
+            entity.ToTable("intrastat_xml_exports");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.GeneratedBy).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.FiledBy).HasMaxLength(200);
+            entity.Property(e => e.Sha256).HasMaxLength(64).IsRequired();
+            entity.Property(e => e.Xml).IsRequired();
+            entity.Property(e => e.TotalValueEur).HasPrecision(18, 2);
+            entity.Property(e => e.TotalNetMassKg).HasPrecision(18, 3);
+            entity.HasIndex(e => new { e.Year, e.Month, e.Version }).IsUnique();
         });
 
         modelBuilder.Entity<AgnumSendingSettings>(entity =>
