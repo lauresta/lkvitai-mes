@@ -8,7 +8,6 @@ on:
       - docs/manuals/**
       - docs/manuals/Dockerfile
       - .github/workflows/build-and-push-manuals.yml
-      - docker-compose.test.manuals.yml
   workflow_dispatch:
 
 permissions:

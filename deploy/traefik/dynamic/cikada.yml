@@ -25,6 +25,17 @@ http:
       tls:
         certResolver: letsencrypt
 
+    # User manuals: served by the Portal WebUI (/manuals/{**path}), which checks the portal cookie and
+    # streams the static MkDocs site from its container. Not a direct route to the manuals container:
+    # the pages show screenshots of internal screens. No path is stripped.
+    cikada-manuals:
+      rule: "Host(`cikada.lauresta.com`) && PathPrefix(`/manuals`)"
+      entryPoints: [websecure]
+      service: cikada-portal-webui
+      priority: 100
+      tls:
+        certResolver: letsencrypt
+
     cikada-warehouse:
       rule: "Host(`cikada.lauresta.com`) && PathPrefix(`/warehouse`)"
       entryPoints: [websecure]

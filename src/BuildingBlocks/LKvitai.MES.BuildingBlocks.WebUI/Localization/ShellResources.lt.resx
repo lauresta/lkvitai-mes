@@ -23,6 +23,7 @@
   <data name="Shell.Search.Kind.Supplier" xml:space="preserve"><value>Tiekėjai</value></data>
   <data name="Shell.Search.Kind.Screen" xml:space="preserve"><value>Langai ir nustatymai</value></data>
   <data name="Shell.Search.Kind.Location" xml:space="preserve"><value>Vietos</value></data>
+  <data name="Shell.Search.Kind.Manual" xml:space="preserve"><value>Instrukcijos</value></data>
   <data name="Shell.Search.Kind.Document" xml:space="preserve"><value>Dokumentai</value></data>
   <data name="Shell.Search.Scope.Label" xml:space="preserve"><value>Rodyti tik</value></data>
   <data name="Shell.Search.Scope.All" xml:space="preserve"><value>Visi</value></data>

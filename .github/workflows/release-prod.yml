@@ -68,6 +68,11 @@ jobs:
           - name: mcp
             dockerfile: src/Mcp/Cikada.Mcp/Dockerfile
             image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-mcp
+          # User manuals (MkDocs -> nginx). Its Dockerfile builds from docs/manuals, so this one has its own context.
+          - name: manuals
+            dockerfile: docs/manuals/Dockerfile
+            context: docs/manuals
+            image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-manuals
 
     steps:
       - name: Validate release tag
@@ -119,7 +124,7 @@ jobs:
       - name: Build and push ${{ matrix.name }} image
         uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25
         with:
-          context: .
+          context: ${{ matrix.context || '.' }}
           file: ${{ matrix.dockerfile }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}

@@ -9,8 +9,12 @@
 // timeout, treat 401/403 (and a redirect to the sign-in page) as "no access, no group", and report
 // other failures as one quiet note while still showing what the other modules returned.
 //
+// The 'manual' kind is searched in the browser over the MkDocs index (manual-search.js), not by a relay.
+//
 // With an empty box the panel shows what this user opened and searched last (kept in localStorage,
 // which may be unavailable: every access is guarded and the panel works without it).
+
+import { askManuals } from './manual-search.js';
 
 const KIND_ORDER = ['order', 'customer', 'item', 'supplier', 'location', 'document', 'screen', 'manual'];
 const RECENT_LIMIT = 5;
@@ -209,6 +213,7 @@ export function init(button, panel, options) {
     if (!input || !status || !results) return;
 
     const endpoints = Array.isArray(options?.endpoints) ? options.endpoints.filter(isSafeUrl) : [];
+    const manualsIndexUrl = isSafeUrl(options?.manualsIndexUrl) ? options.manualsIndexUrl : null;
     const minLength = options?.minLength ?? 2;
     const debounceMs = options?.debounceMs ?? 250;
     const timeoutMs = options?.timeoutMs ?? 5000;
@@ -338,7 +343,9 @@ export function init(button, panel, options) {
         const mine = sequence;
         const hits = [];
         let failed = false;
-        let pending = endpoints.length;
+        const sources = endpoints.map(endpoint => controller => askModule(endpoint, query, limit, timeoutMs, controller));
+        if (manualsIndexUrl) sources.push(() => askManuals(manualsIndexUrl, query, limit, timeoutMs));
+        let pending = sources.length;
         panel.setAttribute('aria-busy', 'true');
         // Rows of the previous query stay visible until the first answer, but Enter must not open one.
         setActive(-1, false);
@@ -354,10 +361,10 @@ export function init(button, panel, options) {
         };
 
         if (pending === 0) { finish(render(hits), false); return; }
-        for (const endpoint of endpoints) {
+        for (const source of sources) {
             const controller = new AbortController();
             controllers.push(controller);
-            askModule(endpoint, query, limit, timeoutMs, controller)
+            source(controller)
                 .then(settle)
                 // Drawing an answer failed: count this module as "could not be loaded".
                 .catch(() => settle({ hits: [], failed: true }));

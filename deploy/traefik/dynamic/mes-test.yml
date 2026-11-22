@@ -41,6 +41,17 @@ http:
       tls:
         certResolver: letsencrypt
 
+    # User manuals: served by the Portal WebUI (/manuals/{**path}), which checks the portal cookie and
+    # streams the static MkDocs site from its container. Not a direct route to the manuals container:
+    # the pages show screenshots of internal screens. No path is stripped.
+    mes-test-manuals:
+      rule: "(Host(`cikada-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/manuals`)"
+      entryPoints: [websecure]
+      service: mes-test-portal-webui
+      priority: 100
+      tls:
+        certResolver: letsencrypt
+
     mes-test-warehouse:
       rule: "(Host(`cikada-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/warehouse`)"
       entryPoints: [websecure]

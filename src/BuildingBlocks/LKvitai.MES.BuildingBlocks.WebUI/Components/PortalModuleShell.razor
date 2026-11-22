@@ -269,6 +269,8 @@
 
     private string ResolvedBannerNote => BannerNote ?? L["Shell.BannerNote.Shared"].Value;
 
+    private const string DefaultManualsIndexUrl = "/manuals/search/search_index.json";
+
     private const string SearchModulePath = "./_content/LKvitai.MES.BuildingBlocks.WebUI/js/shell-search.js";
 
     private ElementReference _searchButton;
@@ -306,6 +308,8 @@
             await _searchModule.InvokeVoidAsync("init", _searchButton, _searchPanel, new
             {
                 endpoints = ResolvedSearchEndpoints,
+                // Manuals (MkDocs index, same origin); empty value switches the manuals group off.
+                manualsIndexUrl = Configuration["Shell:Search:ManualsIndexUrl"] ?? DefaultManualsIndexUrl,
                 minLength = SearchMinLength,
                 debounceMs = SearchDebounceMs,
                 timeoutMs = SearchModuleTimeoutMs,
@@ -333,6 +337,7 @@
                         ["location"] = L["Shell.Search.Kind.Location"].Value,
                         ["document"] = L["Shell.Search.Kind.Document"].Value,
                         ["screen"] = L["Shell.Search.Kind.Screen"].Value,
+                        ["manual"] = L["Shell.Search.Kind.Manual"].Value,
                     },
                 },
             });

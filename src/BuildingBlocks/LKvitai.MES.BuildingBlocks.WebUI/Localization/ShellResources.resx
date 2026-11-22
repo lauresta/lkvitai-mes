@@ -23,6 +23,7 @@
   <data name="Shell.Search.Kind.Supplier" xml:space="preserve"><value>Suppliers</value></data>
   <data name="Shell.Search.Kind.Screen" xml:space="preserve"><value>Screens and settings</value></data>
   <data name="Shell.Search.Kind.Location" xml:space="preserve"><value>Locations</value></data>
+  <data name="Shell.Search.Kind.Manual" xml:space="preserve"><value>Manuals</value></data>
   <data name="Shell.Search.Kind.Document" xml:space="preserve"><value>Documents</value></data>
   <data name="Shell.Search.Scope.Label" xml:space="preserve"><value>Limit results to</value></data>
   <data name="Shell.Search.Scope.All" xml:space="preserve"><value>All</value></data>
