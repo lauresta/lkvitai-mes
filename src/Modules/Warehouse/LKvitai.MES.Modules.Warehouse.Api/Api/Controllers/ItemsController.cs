@@ -123,7 +123,8 @@ public sealed class ItemsController : ControllerBase
                 i.CommodityCode,
                 i.NetWeightKg,
                 i.OriginCountry,
-                null))
+                null,
+                i.MinQty))
             .ToListAsync(cancellationToken);
 
         if (items.Count > 0)
@@ -180,6 +181,11 @@ public sealed class ItemsController : ControllerBase
         [FromBody] CreateItemRequestDto request,
         CancellationToken cancellationToken = default)
     {
+        if (request.MinQty is < 0m)
+        {
+            return ValidationFailure("Field 'minQty' must be greater than or equal to 0.");
+        }
+
         if (string.IsNullOrWhiteSpace(request.Name))
         {
             return ValidationFailure("Field 'name' is required.");
@@ -225,6 +231,7 @@ public sealed class ItemsController : ControllerBase
             Tags = SerializeTags(request.Tags),
             BasePrice = request.BasePrice,
             PurchasePrice = request.PurchasePrice,
+            MinQty = request.MinQty,
             ItemType = itemType,
             CostType = itemType == ItemType.Service && !string.IsNullOrWhiteSpace(request.CostType)
                 ? request.CostType.Trim()
@@ -306,7 +313,8 @@ public sealed class ItemsController : ControllerBase
             item.CostType,
             item.CommodityCode,
             item.NetWeightKg,
-            item.OriginCountry);
+            item.OriginCountry,
+            item.MinQty);
 
         await Cache.SetAsync(cacheKey, dto, TimeSpan.FromHours(1), cancellationToken);
         return Ok(dto);
@@ -319,6 +327,11 @@ public sealed class ItemsController : ControllerBase
         [FromBody] UpdateItemRequestDto request,
         CancellationToken cancellationToken = default)
     {
+        if (request.MinQty is < 0m)
+        {
+            return ValidationFailure("Field 'minQty' must be greater than or equal to 0.");
+        }
+
         var item = await _dbContext.Items.FirstOrDefaultAsync(i => i.Id == id, cancellationToken);
         if (item is null)
         {
@@ -372,6 +385,7 @@ public sealed class ItemsController : ControllerBase
         item.Tags = SerializeTags(request.Tags);
         item.BasePrice = request.BasePrice;
         item.PurchasePrice = request.PurchasePrice;
+        item.MinQty = request.MinQty;
         item.ItemType = itemType;
         item.CostType = itemType == ItemType.Service && !string.IsNullOrWhiteSpace(request.CostType)
             ? request.CostType.Trim()
@@ -963,7 +977,8 @@ public sealed class ItemsController : ControllerBase
         string? CostType = null,
         string? CommodityCode = null,
         decimal? NetWeightKg = null,
-        string? OriginCountry = null);
+        string? OriginCountry = null,
+        decimal? MinQty = null);
 
     public sealed record UpdateItemRequestDto(
         string Name,
@@ -984,7 +999,8 @@ public sealed class ItemsController : ControllerBase
         string? CostType = null,
         string? CommodityCode = null,
         decimal? NetWeightKg = null,
-        string? OriginCountry = null);
+        string? OriginCountry = null,
+        decimal? MinQty = null);
 
     public sealed record ItemCreatedDto(int Id, string InternalSKU, string Name, DateTimeOffset CreatedAt);
     public sealed record ItemUpdatedDto(int Id, string InternalSKU, string Name, string Status, DateTimeOffset? UpdatedAt);
@@ -1015,7 +1031,8 @@ public sealed class ItemsController : ControllerBase
         string? CommodityCode = null,
         decimal? NetWeightKg = null,
         string? OriginCountry = null,
-        string? SupplierSku = null);
+        string? SupplierSku = null,
+        decimal? MinQty = null);
 
     public sealed record ItemDetailDto(
         int Id,
@@ -1043,7 +1060,8 @@ public sealed class ItemsController : ControllerBase
         string? CostType,
         string? CommodityCode = null,
         decimal? NetWeightKg = null,
-        string? OriginCountry = null);
+        string? OriginCountry = null,
+        decimal? MinQty = null);
 
     public sealed record AddBarcodeRequest(string Barcode, string BarcodeType, bool IsPrimary);
     public sealed record ItemBarcodeDto(int Id, string Barcode, string BarcodeType, bool IsPrimary);

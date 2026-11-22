@@ -154,6 +154,14 @@
                              AdornmentText="€"
                              @bind-Value="_model.PurchasePrice" />
 
+            <LkDecimalField T="decimal?"
+                             Label="@L["AdminItemEditorDialog.MinQty"]"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0m"
+                             Format="0.###"
+                             @bind-Value="_model.MinQty" />
+
             <MudTextField T="string"
                           Label="@L["AdminItemEditorDialog.ProductConfig"]"
                           Variant="Variant.Outlined"
@@ -258,6 +266,7 @@
             _model.Volume = Item.Volume;
             _model.BasePrice = Item.BasePrice;
             _model.PurchasePrice = Item.PurchasePrice;
+            _model.MinQty = Item.MinQty;
             _model.RequiresLotTracking = Item.RequiresLotTracking;
             _model.RequiresQC = Item.RequiresQC;
             _model.Status = Item.Status;
@@ -463,6 +472,7 @@
         public decimal? Volume { get; set; }
         public decimal? BasePrice { get; set; }
         public decimal? PurchasePrice { get; set; }
+        public decimal? MinQty { get; set; }
         public bool RequiresLotTracking { get; set; }
         public bool RequiresQC { get; set; }
         public string Status { get; set; } = "Active";
@@ -486,6 +496,7 @@
             Volume = Volume,
             BasePrice = BasePrice,
             PurchasePrice = PurchasePrice,
+            MinQty = MinQty,
             RequiresLotTracking = RequiresLotTracking,
             RequiresQC = RequiresQC,
             Status = string.IsNullOrWhiteSpace(Status) ? "Active" : Status.Trim(),

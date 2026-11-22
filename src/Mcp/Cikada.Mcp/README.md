@@ -78,6 +78,8 @@ Warehouse (reads always on):
 | `suppliers_search` | Warehouse `GET /suppliers` |
 | `inbound_shipments_list`, `inbound_shipment_get` | Warehouse `GET /inbound-shipments[/{id}]` |
 | `transfers_list`, `transfer_get` | Warehouse `GET /transfers[/{id}]` |
+| `production_issues_list` | Warehouse `GET /production-issues` |
+| `supplier_stock_report` | Warehouse `GET /reports/supplier-stock` |
 
 Warehouse entry (only with `MCP_ENABLE_WAREHOUSE_ENTRY=true`; GitHub variable `CIKADA_MCP_WAREHOUSE_ENTRY`):
 
@@ -87,6 +89,7 @@ Warehouse entry (only with `MCP_ENABLE_WAREHOUSE_ENTRY=true`; GitHub variable `C
 | `inbound_shipment_create` | Warehouse `POST /inbound-shipments` (a supplier invoice with its lines) |
 | `inbound_shipment_receive` | Warehouse `POST /inbound-shipments/{id}/receive` |
 | `inbound_shipment_post` | Warehouse `POST /inbound-shipments/{id}/post` (destructive: accounting post) |
+| `production_issue_create` | Warehouse `POST /production-issues` (destructive: cannot be undone here) |
 | `putaway_move` | Warehouse `POST /putaway` (RECEIVING to a storage location) |
 | `transfer_create`, `transfer_advance` | Warehouse `POST /transfers`, `POST /transfers/{id}/submit|approve|execute` |
 

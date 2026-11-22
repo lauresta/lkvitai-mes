@@ -35,6 +35,12 @@ public sealed class Item : AuditableEntity
     public string? Tags { get; set; }
     public decimal? BasePrice { get; set; }
     public decimal? PurchasePrice { get; set; }
+
+    /// <summary>
+    /// The quantity that should always be on hand, in the base unit. The supplier stock report shows what is
+    /// missing to reach it; without a value the warehouse-wide reorder point is used.
+    /// </summary>
+    public decimal? MinQty { get; set; }
     public ItemType ItemType { get; set; } = ItemType.Stock;
 
     /// <summary>

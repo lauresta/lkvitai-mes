@@ -2347,6 +2347,10 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(20)")
                         .HasDefaultValue("Stock");
 
+                    b.Property<decimal?>("MinQty")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("numeric(18,3)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -2423,6 +2427,8 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                     b.ToTable("items", "public", t =>
                         {
                             t.HasCheckConstraint("ck_items_base_price", "\"BasePrice\" IS NULL OR \"BasePrice\" >= 0");
+
+                            t.HasCheckConstraint("ck_items_min_qty", "\"MinQty\" IS NULL OR \"MinQty\" >= 0");
 
                             t.HasCheckConstraint("ck_items_purchase_price", "\"PurchasePrice\" IS NULL OR \"PurchasePrice\" >= 0");
 

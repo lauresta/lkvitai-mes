@@ -87,6 +87,8 @@ nav:
     - "Auditas, duomenų saugojimas, GDPR, atsarginės kopijos ir avarinio atkūrimo bandymai": procesai/P-31-auditas-saugojimas-gdpr-kopijos.md
     - "Prekių pagrindiniai duomenys - prekės, kategorijos, matavimo vienetai, partijos, serijos numeriai": procesai/P-32-prekiu-pagrindiniai-duomenys.md
     - "Sandėliai, sandėlio vietos, slotai ir sandėlio maketas": procesai/P-33-sandeliai-vietos-slotai-maketas.md
+    - "Išdavimas į gamybą (Issue to Production)": procesai/P-34-isdavimas-i-gamyba.md
+    - "Atsargos pagal tiekėją (Stock by Supplier)": procesai/P-35-atsargos-pagal-tiekeja.md
 
   - "Sandėlis (Warehouse) – rolės":
     - "Sandėlio vadovas ir buhalteris": roles/gamybos-vadovas.md

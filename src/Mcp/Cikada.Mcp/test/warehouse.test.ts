@@ -8,7 +8,7 @@ import { chunkPage, imagesOf } from '../src/docs-chunker.js';
 import { DocsSearch } from '../src/docs-search.js';
 import { fakeJwt, mockFetch, rpc, running, testConfig } from './helpers.js';
 
-const WAREHOUSE_WRITES = ['location_create', 'inbound_shipment_create', 'inbound_shipment_receive', 'inbound_shipment_post', 'putaway_move', 'transfer_create', 'transfer_advance'];
+const WAREHOUSE_WRITES = ['location_create', 'inbound_shipment_create', 'inbound_shipment_receive', 'inbound_shipment_post', 'putaway_move', 'production_issue_create', 'transfer_create', 'transfer_advance'];
 
 test('warehouse writes are offered only with MCP_ENABLE_WAREHOUSE_ENTRY, independently of order entry', async () => {
   const off = await running(testConfig({ MCP_ENABLE_ORDER_ENTRY: 'true' }));
@@ -26,7 +26,7 @@ test('warehouse writes are offered only with MCP_ENABLE_WAREHOUSE_ENTRY, indepen
       const tool = onTools.find((t) => t.name === name);
       assert.ok(tool, name);
       assert.equal(tool.annotations.readOnlyHint, false, name);
-      assert.equal(tool.annotations.destructiveHint, name === 'inbound_shipment_post', name);
+      assert.equal(tool.annotations.destructiveHint, name === 'inbound_shipment_post' || name === 'production_issue_create', name);
     }
     assert.ok(!onTools.some((t) => t.name === 'order_create'));
   } finally {

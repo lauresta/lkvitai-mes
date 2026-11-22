@@ -24,6 +24,7 @@ public record AdminItemDto
     public decimal? Volume { get; init; }
     public decimal? BasePrice { get; init; }
     public decimal? PurchasePrice { get; init; }
+    public decimal? MinQty { get; init; }
     public string? ProductConfigId { get; init; }
     public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
     public DateTimeOffset CreatedAt { get; init; }
@@ -66,6 +67,7 @@ public record ItemDetailsDto
     public decimal? Volume { get; init; }
     public decimal? BasePrice { get; init; }
     public decimal? PurchasePrice { get; init; }
+    public decimal? MinQty { get; init; }
     public bool RequiresLotTracking { get; init; }
     public bool RequiresQC { get; init; }
     public string Status { get; init; } = string.Empty;
@@ -115,6 +117,7 @@ public record CreateOrUpdateItemRequest
     public decimal? Volume { get; init; }
     public decimal? BasePrice { get; init; }
     public decimal? PurchasePrice { get; init; }
+    public decimal? MinQty { get; init; }
     public bool RequiresLotTracking { get; init; }
     public bool RequiresQC { get; init; }
     public string? Status { get; init; }

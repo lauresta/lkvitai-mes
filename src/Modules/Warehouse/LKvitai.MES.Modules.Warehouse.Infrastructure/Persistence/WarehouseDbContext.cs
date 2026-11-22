@@ -256,6 +256,7 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.Tags).HasMaxLength(500);
             entity.Property(e => e.BasePrice).HasPrecision(18, 2);
             entity.Property(e => e.PurchasePrice).HasPrecision(18, 2);
+            entity.Property(e => e.MinQty).HasPrecision(18, 3);
             entity.Property(e => e.ItemType).HasConversion<string>().HasMaxLength(20).IsRequired().HasDefaultValue(ItemType.Stock);
             entity.Property(e => e.CostType).HasMaxLength(50);
             entity.Property(e => e.CommodityCode).HasMaxLength(8);
@@ -276,6 +277,7 @@ public class WarehouseDbContext : DbContext
                 t.HasCheckConstraint("ck_items_volume", "\"Volume\" IS NULL OR \"Volume\" > 0");
                 t.HasCheckConstraint("ck_items_base_price", "\"BasePrice\" IS NULL OR \"BasePrice\" >= 0");
                 t.HasCheckConstraint("ck_items_purchase_price", "\"PurchasePrice\" IS NULL OR \"PurchasePrice\" >= 0");
+                t.HasCheckConstraint("ck_items_min_qty", "\"MinQty\" IS NULL OR \"MinQty\" >= 0");
                 t.HasCheckConstraint("ck_items_type", "\"ItemType\" IN ('Stock','Service')");
             });
         });
