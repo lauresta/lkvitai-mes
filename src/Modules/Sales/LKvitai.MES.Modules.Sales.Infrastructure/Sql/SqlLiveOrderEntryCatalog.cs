@@ -60,8 +60,8 @@ public sealed class SqlLiveOrderEntryCatalog(SalesSqlOptions options, ILegacySql
             FROM dbo.Zinynas_UzsakymoSerijos s
             LEFT JOIN dbo.Zinynas_uzsakovai c ON c.UzsakovoID=s.UzaskovoID AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=c.PriskirtasFilialui)
             LEFT JOIN dbo.Zinynas_vieta v ON v.VietaID=s.VietaID AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=v.Filialas)
-            LEFT JOIN dbo.Zinynas_darbuotojai m ON m.DarbuotojoID=s.Vad_DarbuotojasID AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=m.FilialasID)
-            LEFT JOIN dbo.Zinynas_darbuotojai k ON k.DarbuotojoID=s.Kons_DarbuotojoID AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=k.FilialasID)
+            LEFT JOIN dbo.Zinynas_darbuotojai m ON m.DarbuotojoID=s.Vad_DarbuotojasID AND ISNULL(m.bHideInApplicationFlag,0)=0 AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=m.FilialasID)
+            LEFT JOIN dbo.Zinynas_darbuotojai k ON k.DarbuotojoID=s.Kons_DarbuotojoID AND ISNULL(k.bHideInApplicationFlag,0)=0 AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=k.FilialasID)
             WHERE ISNULL(s.bHideInApplicationFlag,0)=0 AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=s.FilialoID) ORDER BY s.UzsakymoSerijaPav,s.UzsakymoSerijaID
             """,r=>new LiveSeriesDto(I(r,0),S(r,1)??"",NI(r,2),NI(r,3),S(r,4),NI(r,5),S(r,6),NI(r,7),S(r,8),NI(r,9),S(r,10)));
         var categories=await Read("""

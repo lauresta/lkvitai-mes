@@ -49,8 +49,8 @@ public sealed class SqlSalesOrderEntryReferences : ISalesOrderEntryReferences
             FROM dbo.Zinynas_UzsakymoSerijos s
             LEFT JOIN dbo.Zinynas_uzsakovai customer ON customer.UzsakovoID=s.UzaskovoID AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=customer.PriskirtasFilialui)
             LEFT JOIN dbo.Zinynas_vieta place ON place.VietaID=s.VietaID AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=place.Filialas)
-            LEFT JOIN dbo.Zinynas_darbuotojai manager ON manager.DarbuotojoID=s.Vad_DarbuotojasID AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=manager.FilialasID)
-            LEFT JOIN dbo.Zinynas_darbuotojai consultant ON consultant.DarbuotojoID=s.Kons_DarbuotojoID AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=consultant.FilialasID)
+            LEFT JOIN dbo.Zinynas_darbuotojai manager ON manager.DarbuotojoID=s.Vad_DarbuotojasID AND ISNULL(manager.bHideInApplicationFlag,0)=0 AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=manager.FilialasID)
+            LEFT JOIN dbo.Zinynas_darbuotojai consultant ON consultant.DarbuotojoID=s.Kons_DarbuotojoID AND ISNULL(consultant.bHideInApplicationFlag,0)=0 AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=consultant.FilialasID)
             WHERE EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=s.FilialoID)
               AND (@IncludeHidden = 1 OR s.bHideInApplicationFlag = 0)
               AND (@Search IS NULL OR s.UzsakymoSerijaPav LIKE @Search ESCAPE N'\')

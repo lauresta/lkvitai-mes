@@ -121,6 +121,25 @@ public sealed class ReferenceAutocompleteTests
         Assert.Contains("detach", second.Js.Calls);
     }
 
+    [Fact]
+    public async Task A_pointer_choice_reported_by_the_browser_selects_by_id_even_after_the_list_was_rendered_again()
+    {
+        await using var view = await Mounted.Create(Items());
+        await view.Event("onfocus", new FocusEventArgs());
+        // The list is rendered again between press and release; the choice is by record id, not by a row's click handler.
+        await view.Render();
+        Assert.Equal(3, view.OptionIds.Count);
+        var component = Assert.IsType<DotNetObjectReference<ReferenceAutocomplete>>(view.Js.AttachArguments![1]).Value;
+        await view.Invoke(() => component.SelectFromBrowser(2));
+        Assert.Equal(2, view.Selected);
+        Assert.Equal("Beta salon", view.Input("value"));
+        Assert.Equal("false", view.Input("aria-expanded"));
+        await view.Invoke(() => component.SelectFromBrowser(99));
+        Assert.Equal(2, view.Selected);
+        await view.Invoke(() => { component.OpenFromBrowser(); return Task.CompletedTask; });
+        Assert.Equal("true", view.Input("aria-expanded"));
+    }
+
     private static LiveNamedReferenceDto[] Items() => [new(1, "Alpha salon"), new(2, "Beta salon"), new(3, "Gamma salon")];
 
     private sealed class Mounted : IAsyncDisposable
@@ -161,6 +180,8 @@ public sealed class ReferenceAutocompleteTests
             var frames = Frames; var index = Array.FindIndex(frames, frame => frame.FrameType == RenderTreeFrameType.Element && frame.ElementName == "input");
             for (var i = index + 1; i < frames.Length && frames[i].FrameType == RenderTreeFrameType.Attribute; i++) yield return frames[i];
         }
+        public IReadOnlyList<object?> OptionIds => Frames.Where(frame => frame.FrameType == RenderTreeFrameType.Attribute && frame.AttributeName == "data-option-id").Select(frame => frame.AttributeValue).ToArray();
+        public async Task Invoke(Func<Task> work) { await _renderer.Dispatcher.InvokeAsync(work); await Render(); }
         public int OptionCount => Frames.Count(frame => frame.FrameType == RenderTreeFrameType.Attribute && frame.AttributeName == "role" && Equals(frame.AttributeValue, "option"));
         public async Task Event(string name, EventArgs args)
         {
@@ -185,10 +206,12 @@ public sealed class ReferenceAutocompleteTests
     private sealed class FakeJs : IJSRuntime, IJSObjectReference
     {
         public readonly List<string> Calls = [];
+        public object?[]? AttachArguments;
         public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => InvokeAsync<TValue>(identifier, default, args);
         public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args)
         {
             Calls.Add(identifier);
+            if (identifier == "attach") AttachArguments = args;
             return ValueTask.FromResult(identifier == "import" ? (TValue)(object)this : default!);
         }
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;

@@ -1,6 +1,6 @@
 import { attach as attachKeys, detach as detachKeys, scrollActive } from './reference-autocomplete.js';
 export { scrollActive };
-export function attach(input) { attachKeys(input); }
+export function attach(input, component) { attachKeys(input, component); }
 export function detach(input, instanceId) { detachKeys(input); latestRequest.delete(instanceId); }
 
 // Optional thumbnails reuse the existing same-origin photo metadata API. Only
