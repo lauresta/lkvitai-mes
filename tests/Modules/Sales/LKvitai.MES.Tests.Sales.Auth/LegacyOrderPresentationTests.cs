@@ -15,6 +15,19 @@ public sealed class LegacyOrderPresentationTests
         => Assert.Equal(OrderStatusCodes.Cancelled, SalesOrderStatusMap.ToStatusCode(label));
 
     [Theory]
+    [InlineData("Įvestas į programą", OrderStatusCodes.Entered)]
+    [InlineData("Patvirtintas gamybai", OrderStatusCodes.Approved)]
+    [InlineData("Eilėje", OrderStatusCodes.Approved)]
+    [InlineData("Gaminamas", OrderStatusCodes.InProgress)]
+    [InlineData("Trūksta audinio", OrderStatusCodes.Paused)]
+    [InlineData("Pagamintas", OrderStatusCodes.Made)]
+    [InlineData("Išsiųstas į filialą", OrderStatusCodes.Shipped)]
+    [InlineData(" Išduotas klientui ", OrderStatusCodes.Delivered)]
+    [InlineData("SKIRTINGAI", OrderStatusCodes.MultiStatus)]
+    public void Legacy_status_labels_map_to_their_presentation_code(string label, string expected)
+        => Assert.Equal(expected, SalesOrderStatusMap.ToStatusCode(label));
+
+    [Theory]
     [InlineData("Kliento prasymu anuliuotas", true)]
     [InlineData(" KLIENTO PRASYMU ANULIUOTAS ", true)]
     [InlineData(null, false)]
