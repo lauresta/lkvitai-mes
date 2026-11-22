@@ -211,7 +211,7 @@ export function init(button, panel, options) {
     const endpoints = Array.isArray(options?.endpoints) ? options.endpoints.filter(isSafeUrl) : [];
     const minLength = options?.minLength ?? 2;
     const debounceMs = options?.debounceMs ?? 250;
-    const timeoutMs = options?.timeoutMs ?? 2000;
+    const timeoutMs = options?.timeoutMs ?? 5000;
     const limit = options?.limit ?? 8;
     const text = options?.text ?? {};
     const kindLabels = text.kinds ?? {};
