@@ -50,6 +50,9 @@ public static class CikadaLocalization
         new("lt", "LT", "Lietuvių")
     ];
 
+    /// <summary>Codes of <see cref="Languages"/>, e.g. for matching menu labels in every UI language.</summary>
+    public static IReadOnlyList<string> LanguageCodes { get; } = Languages.Select(x => x.Code).ToArray();
+
     public static string CookieName => CookieRequestCultureProvider.DefaultCookieName;
 
     public static IServiceCollection AddCikadaLocalization(

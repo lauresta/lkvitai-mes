@@ -22,6 +22,16 @@
   <data name="Shell.Search.Kind.Item" xml:space="preserve"><value>Items</value></data>
   <data name="Shell.Search.Kind.Supplier" xml:space="preserve"><value>Suppliers</value></data>
   <data name="Shell.Search.Kind.Screen" xml:space="preserve"><value>Screens and settings</value></data>
+  <data name="Shell.Search.Kind.Location" xml:space="preserve"><value>Locations</value></data>
+  <data name="Shell.Search.Kind.Document" xml:space="preserve"><value>Documents</value></data>
+  <data name="Shell.Search.Scope.Label" xml:space="preserve"><value>Limit results to</value></data>
+  <data name="Shell.Search.Scope.All" xml:space="preserve"><value>All</value></data>
+  <data name="Shell.Search.Recent.Opened" xml:space="preserve"><value>Recently opened</value></data>
+  <data name="Shell.Search.Recent.Queries" xml:space="preserve"><value>Recent searches</value></data>
+  <data name="Shell.Search.Recent.Clear" xml:space="preserve"><value>Clear history</value></data>
+  <data name="Shell.Search.Screen.Frontline" xml:space="preserve"><value>Frontline</value></data>
+  <data name="Shell.Search.Screen.Frontline.FabricLookup" xml:space="preserve"><value>Fabric availability</value></data>
+  <data name="Shell.Search.Screen.Frontline.LowStock" xml:space="preserve"><value>Low-stock materials</value></data>
   <data name="Shell.Search.Kind.Other" xml:space="preserve"><value>Other</value></data>
   <data name="Shell.Dismiss" xml:space="preserve"><value>Dismiss</value></data>
   <data name="Shell.Logout" xml:space="preserve"><value>Logout</value></data>

@@ -32,6 +32,10 @@ public static class SearchKinds
     public const string Customer = "customer";
     public const string Item = "item";
     public const string Supplier = "supplier";
+    public const string Location = "location";
+
+    /// <summary>A warehouse document: an inbound shipment (purchase document) or a transfer.</summary>
+    public const string Document = "document";
     public const string Screen = "screen";
 }
 

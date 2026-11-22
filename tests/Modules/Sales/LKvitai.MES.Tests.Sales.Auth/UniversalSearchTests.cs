@@ -206,14 +206,16 @@ public sealed class UniversalSearchTests
 
             Assert.StartsWith("./_content/LKvitai.MES.BuildingBlocks.WebUI/js/shell-search.js?v=", Assert.IsType<string>(js.ImportArgs![0]));
             var options = JsonSerializer.SerializeToElement(js.Module.InitArgs![2]);
-            Assert.Equal(["/sales/shell/search", "/warehouse/shell/search"], options.GetProperty("endpoints").EnumerateArray().Select(x => x.GetString()).ToArray());
+            Assert.Equal(["/sales/shell/search", "/warehouse/shell/search", "/portal/shell/search", "/shopfloor/shell/search", "/finance/shell/search", "/frontline/shell/search"], options.GetProperty("endpoints").EnumerateArray().Select(x => x.GetString()).ToArray());
             Assert.Equal(2, options.GetProperty("minLength").GetInt32()); Assert.Equal(250, options.GetProperty("debounceMs").GetInt32());
             Assert.Equal(2000, options.GetProperty("timeoutMs").GetInt32()); Assert.InRange(options.GetProperty("limit").GetInt32(), 5, 8);
             var text = options.GetProperty("text");
             Assert.Equal(empty, text.GetProperty("empty").GetString());
             Assert.Equal(ordersHeading, text.GetProperty("kinds").GetProperty("order").GetString());
-            Assert.Equal(["order", "customer", "item", "supplier", "screen"], text.GetProperty("kinds").EnumerateObject().Select(p => p.Name).ToArray());
-            foreach (var key in new[] { "hint", "loading", "partial", "keys", "otherKind" }) Assert.False(string.IsNullOrWhiteSpace(text.GetProperty(key).GetString()));
+            Assert.Equal(["order", "customer", "item", "supplier", "location", "document", "screen"], text.GetProperty("kinds").EnumerateObject().Select(p => p.Name).ToArray());
+            Assert.Contains("data-shell-search-scopes", html);
+            Assert.True(options.TryGetProperty("user", out _));
+            foreach (var key in new[] { "hint", "loading", "partial", "keys", "otherKind", "scopeAll", "recentOpened", "recentQueries", "recentClear" }) Assert.False(string.IsNullOrWhiteSpace(text.GetProperty(key).GetString()));
 
             await shell.DisposeAsync();
             Assert.True(js.Module.Disposed);

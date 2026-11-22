@@ -1,8 +1,11 @@
 using LKvitai.MES.BuildingBlocks.ModuleStartup;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
+using LKvitai.MES.BuildingBlocks.Search;
 using LKvitai.MES.BuildingBlocks.WebUI.Localization;
 using LKvitai.MES.BuildingBlocks.WebUI.Services;
+using LKvitai.MES.Modules.Finance.WebUI.Resources;
 using Microsoft.Extensions.Http;
+using Microsoft.Extensions.Localization;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,6 +38,14 @@ app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok());
 app.MapPortalLogout();
+// Portal "Search everything" (#375): this module's one screen for the shared top bar.
+app.MapShellScreenSearch(context =>
+{
+    var text = context.RequestServices.GetRequiredService<IStringLocalizer<FinanceResources>>();
+    IReadOnlyList<ScreenEntry> screens =
+        [ScreenEntry.FromResource(text, "bank-payments", "Bank.Title", text["Finance.Title"].Value, CikadaLocalization.LanguageCodes)];
+    return screens;
+});
 app.MapCikadaCultureEndpoint();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");

@@ -19,7 +19,7 @@
     ],
     "fullPage": false,
     "blur": ["#shell-search-kind-order ~ .shell-search__item", "#shell-search-kind-customer ~ .shell-search__item"],
-    "note": "Atidarytas bendros paieškos langas po viršutine juosta: įvesta „tiekeju“, matomos grupės su tiekėjais ir Sandėlio langais (Tiekėjai, Tiekėjų atitikmenys). Reikalinga prisijungusi sesija su Sandėlio teisėmis. Užsakymų ir klientų eilutės, jei jų būtų, užtemdomos."
+    "note": "Atidarytas bendros paieškos langas po viršutine juosta: įvesta „tiekeju“, virš rezultatų matomi grupių mygtukai (All, Suppliers, Screens and settings), žemiau grupės su tiekėjais ir Sandėlio langais (Tiekėjai, Tiekėjų atitikmenys). Reikalinga prisijungusi sesija su Sandėlio teisėmis. Užsakymų ir klientų eilutės, jei jų būtų, užtemdomos."
   },
   {
     "file": "img/portal/plyteliu-valdymas.png",

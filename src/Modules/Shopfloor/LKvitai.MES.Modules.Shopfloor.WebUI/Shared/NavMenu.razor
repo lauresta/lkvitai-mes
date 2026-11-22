@@ -57,9 +57,6 @@
 
     private bool IsDashboardActive => string.IsNullOrWhiteSpace(_currentPath) || IsActive("dashboard");
 
-    private record NavItem(string Href, string Icon, string Label);
-    private record NavSection(string Key, string Label, string Icon, NavItem[] Items);
-
     protected override void OnInitialized()
     {
         _currentPath = TrimPath(Navigation.ToBaseRelativePath(Navigation.Uri));
@@ -109,23 +106,5 @@
         Navigation.LocationChanged -= OnLocationChanged;
     }
 
-    private static readonly NavSection[] _sections =
-    [
-        new("workflows", "Shopfloor.Workflows", "bi-diagram-3", [
-            new("workflows", "bi-diagram-2", "Shopfloor.ProductionFamilies"),
-            new("workflow-editor", "bi-diagram-3", "Shopfloor.WorkflowEditor"),
-        ]),
-        new("reference", "Shopfloor.ReferenceData", "bi-grid-3x3-gap", [
-            new("ref/work-centers", "bi-buildings", "Shopfloor.WorkCenters"),
-            new("ref/stations", "bi-pc-display", "Shopfloor.WorkStations"),
-        ]),
-        new("mappings", "Shopfloor.Mappings", "bi-link-45deg", [
-            new("map/product-types", "bi-tags", "Shopfloor.LegacyTypesCoverage"),
-        ]),
-        new("execution", "Shopfloor.Execution", "bi-kanban", [
-            new("gamyba", "bi-tools", "Shopfloor.Gamyba"),
-            new("operator-work-queue", "bi-list-check", "Shopfloor.OperatorQueue"),
-            new("roletai", "bi-file-earmark-check", "Roletai.Paperless.Nav"),
-        ]),
-    ];
+    private static IReadOnlyList<ShopfloorNavigation.NavSection> _sections => ShopfloorNavigation.Sections;
 }

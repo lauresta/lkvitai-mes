@@ -1,6 +1,7 @@
 using LKvitai.MES.BuildingBlocks.WebUI.Localization;
 using System.Security.Claims;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
+using LKvitai.MES.BuildingBlocks.Search;
 using LKvitai.MES.BuildingBlocks.WebUI.Services;
 using LKvitai.MES.Modules.Portal.WebUI.Auth;
 using LKvitai.MES.Modules.Portal.WebUI.Services;
@@ -290,6 +291,8 @@ app.MapPost("/auth/login", async (
 }).AllowAnonymous();
 
 app.MapPortalLogout();
+// Portal "Search everything" (#375): Portal pages and module tiles for the shared top bar.
+app.MapShellScreenSearch(PortalShellSearch.ScreensAsync);
 if (ssoEnabled)
 {
     app.MapPortalOidcLogin();

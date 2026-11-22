@@ -41,6 +41,7 @@ public class UniversalSearchTests
             .Should().Be(new SearchResultDto("screen", "T", null, "x"));
         new[] { SearchKinds.Order, SearchKinds.Customer, SearchKinds.Item, SearchKinds.Supplier, SearchKinds.Screen }
             .Should().Equal("order", "customer", "item", "supplier", "screen");
+        new[] { SearchKinds.Location, SearchKinds.Document }.Should().Equal("location", "document");
     }
 
     [Theory]
@@ -236,7 +237,71 @@ public class UniversalSearchTests
         byDefault.Count(x => x.Kind == SearchKinds.Item).Should().Be(SearchRequest.DefaultLimit);
         byDefault.Count(x => x.Kind == SearchKinds.Supplier).Should().Be(SearchRequest.DefaultLimit);
         (await SearchAsync(db, "bulk", 100)).Should().HaveCount(2 * SearchRequest.MaxLimit);
+        typeof(LocationsController).GetMethod("GetAsync")!.GetCustomAttribute<AuthorizeAttribute>()!.Policy
+            .Should().Be(typeof(SearchController).GetMethod("GetAsync")!.GetCustomAttribute<AuthorizeAttribute>()!.Policy);
         byDefault.Select(x => x.Kind).Distinct().Should().Equal(SearchKinds.Item, SearchKinds.Supplier);
+    }
+
+    [Fact]
+    public async Task Endpoint_ShouldFindLocationsByCodeOrBarcode()
+    {
+        await using var db = CreateDb();
+        db.Locations.Add(new Location { Id = 7, Code = "A-01-02", Barcode = "LOC000712", Type = "Bin", Status = "Active" });
+        db.Locations.Add(new Location { Id = 8, Code = "A-01", Barcode = "LOC000800", Type = "Aisle", Status = "Active" });
+        db.Locations.Add(new Location { Id = 9, Code = "B-09-01", Barcode = "LOC000900", Type = "Bin", Status = "Blocked" });
+        await db.SaveChangesAsync();
+
+        var byCode = (await SearchAsync(db, "a-01")).Where(x => x.Kind == SearchKinds.Location).ToList();
+        byCode.Select(x => x.Title).Should().Equal("A-01", "A-01-02");
+        byCode[0].Should().BeEquivalentTo(new { Subtitle = "Aisle · Active", Url = "locations/8", Score = 1.0 });
+        (await SearchAsync(db, "loc0009")).Should().ContainSingle().Which.Url.Should().Be("locations/9");
+    }
+
+    [Fact]
+    public async Task Endpoint_ShouldFindInboundShipmentsAndTransfersAsDocuments()
+    {
+        await using var db = CreateDb();
+        db.Suppliers.Add(new Supplier { Id = 1, Code = "S-01", Name = "Vendor one" });
+        db.InboundShipments.Add(new InboundShipment { Id = 3, ReferenceNumber = "ISH-0003", SupplierId = 1, InvoiceNumber = "DOC-778", Status = "Draft" });
+        db.InboundShipments.Add(new InboundShipment { Id = 4, ReferenceNumber = "ISH-0004", SupplierId = 1, Status = "Posted" });
+        var transferId = Guid.NewGuid();
+        db.Transfers.Add(new Transfer { Id = transferId, TransferNumber = "TRF-0042", FromWarehouse = "MAIN", ToWarehouse = "SHOP" });
+        await db.SaveChangesAsync();
+
+        var byNumber = (await SearchAsync(db, "ish-000")).Where(x => x.Kind == SearchKinds.Document).ToList();
+        byNumber.Select(x => x.Url).Should().Equal("inbound/shipments/4", "inbound/shipments/3");
+        var bySupplierDocument = (await SearchAsync(db, "doc-778")).Should().ContainSingle().Subject;
+        bySupplierDocument.Should().BeEquivalentTo(new
+        {
+            Kind = SearchKinds.Document,
+            Title = "ISH-0003",
+            Subtitle = "DOC-778 · Vendor one · Draft",
+            Url = "inbound/shipments/3",
+        });
+        var transfer = (await SearchAsync(db, "trf-00")).Should().ContainSingle().Subject;
+        transfer.Should().BeEquivalentTo(new
+        {
+            Kind = SearchKinds.Document,
+            Title = "TRF-0042",
+            Subtitle = "MAIN → SHOP · Draft",
+            Url = $"transfers/{transferId}/execute",
+        });
+    }
+
+    [Fact]
+    public void Screens_ShouldKeepRootedUrlsAndReadLabelsThroughADelegate()
+    {
+        var original = CultureInfo.CurrentUICulture;
+        var seen = new List<string>();
+        var labels = ScreenLabels.InCultures(() => { seen.Add(CultureInfo.CurrentUICulture.Name); return seen.Count == 1 ? "Warehouse" : "Sandėlis"; }, ["en", "lt"]);
+
+        labels.Should().Equal("Warehouse", "Sandėlis");
+        seen.Should().Equal("en", "lt");
+        CultureInfo.CurrentUICulture.Should().Be(original);
+        ScreenSearch.Match([new ScreenEntry("/warehouse/", "Warehouse", null, labels, Rooted: true)], "sandel", 8, "/portal")
+            .Should().ContainSingle().Which.Url.Should().Be("/warehouse/");
+        ScreenSearch.Match([new ScreenEntry("//elsewhere.example/", "Warehouse", null, labels, Rooted: true)], "sandel", 8, "/portal")
+            .Should().BeEmpty();
     }
 
     private static async Task<IReadOnlyList<SearchResultDto>> SearchAsync(WarehouseDbContext db, string? q, int? limit = null)

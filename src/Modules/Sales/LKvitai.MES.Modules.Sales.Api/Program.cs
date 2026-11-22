@@ -33,6 +33,7 @@ if (liveReferencesConfigured)
         client.Timeout=TimeSpan.FromSeconds(10);
     }).ConfigurePrimaryHttpMessageHandler(()=>new HttpClientHandler{AllowAutoRedirect=false});
     builder.Services.AddScoped<ISalesOrderEntryReferences, SqlSalesOrderEntryReferences>();
+    builder.Services.AddScoped<ISalesCustomerSearch, SqlSalesCustomerSearch>();
     builder.Services.AddScoped<ISalesReports, SqlSalesReports>();
     builder.Services.AddScoped<ISalesListReports, SqlSalesListReports>();
     builder.Services.AddScoped<ISalesUnitPriceLookup, SqlSalesUnitPriceLookup>();

@@ -22,6 +22,16 @@
   <data name="Shell.Search.Kind.Item" xml:space="preserve"><value>Prekės</value></data>
   <data name="Shell.Search.Kind.Supplier" xml:space="preserve"><value>Tiekėjai</value></data>
   <data name="Shell.Search.Kind.Screen" xml:space="preserve"><value>Langai ir nustatymai</value></data>
+  <data name="Shell.Search.Kind.Location" xml:space="preserve"><value>Vietos</value></data>
+  <data name="Shell.Search.Kind.Document" xml:space="preserve"><value>Dokumentai</value></data>
+  <data name="Shell.Search.Scope.Label" xml:space="preserve"><value>Rodyti tik</value></data>
+  <data name="Shell.Search.Scope.All" xml:space="preserve"><value>Visi</value></data>
+  <data name="Shell.Search.Recent.Opened" xml:space="preserve"><value>Neseniai atidaryti</value></data>
+  <data name="Shell.Search.Recent.Queries" xml:space="preserve"><value>Paskutinės paieškos</value></data>
+  <data name="Shell.Search.Recent.Clear" xml:space="preserve"><value>Išvalyti istoriją</value></data>
+  <data name="Shell.Search.Screen.Frontline" xml:space="preserve"><value>Frontline</value></data>
+  <data name="Shell.Search.Screen.Frontline.FabricLookup" xml:space="preserve"><value>Audinių likučiai</value></data>
+  <data name="Shell.Search.Screen.Frontline.LowStock" xml:space="preserve"><value>Mažo likučio medžiagos</value></data>
   <data name="Shell.Search.Kind.Other" xml:space="preserve"><value>Kita</value></data>
   <data name="Shell.Dismiss" xml:space="preserve"><value>Uždaryti</value></data>
   <data name="Shell.Logout" xml:space="preserve"><value>Atsijungti</value></data>
