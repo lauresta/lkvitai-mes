@@ -2123,7 +2123,7 @@
   <data name="Intrastat.LandedCostEur" xml:space="preserve"><value>Landed cost, EUR (info only)</value></data>
   <data name="Intrastat.Return" xml:space="preserve"><value>Return</value></data>
   <data name="Intrastat.ReturnsTotal" xml:space="preserve"><value>Returns to supplier, EUR (not subtracted)</value></data>
-  <data name="Intrastat.Item.SupplementaryUnit" xml:space="preserve"><value>Supplementary unit code (3 characters, customs measurement unit classifier)</value></data>
+  <data name="Intrastat.Item.SupplementaryUnit" xml:space="preserve"><value>Supplementary unit code (3 chars)</value></data>
   <data name="Intrastat.Item.SupplementaryUnitHelp" xml:space="preserve"><value>Only for commodity codes that require a supplementary unit</value></data>
   <data name="Intrastat.Item.SupplementaryUnitFactor" xml:space="preserve"><value>Supplementary units per one stock unit</value></data>
   <data name="Purchase.Problem.IntrastatOriginCountryMissing" xml:space="preserve"><value>Every stock item of an EU acquisition needs a country of origin (ISO 3166 alpha-2 code).</value></data>

@@ -2123,7 +2123,7 @@
   <data name="Intrastat.LandedCostEur" xml:space="preserve"><value>Savikaina su išlaidomis, EUR (tik informacijai)</value></data>
   <data name="Intrastat.Return" xml:space="preserve"><value>Grąžinimas</value></data>
   <data name="Intrastat.ReturnsTotal" xml:space="preserve"><value>Grąžinimai tiekėjui, EUR (neatskaityta)</value></data>
-  <data name="Intrastat.Item.SupplementaryUnit" xml:space="preserve"><value>Papildomo vieneto kodas (3 simboliai, muitinės matavimo vienetų klasifikatorius)</value></data>
+  <data name="Intrastat.Item.SupplementaryUnit" xml:space="preserve"><value>Papildomo vieneto kodas (3 simb.)</value></data>
   <data name="Intrastat.Item.SupplementaryUnitHelp" xml:space="preserve"><value>Tik prekių kodams, kuriems reikalingas papildomas vienetas</value></data>
   <data name="Intrastat.Item.SupplementaryUnitFactor" xml:space="preserve"><value>Papildomų vienetų viename sandėlio vienete</value></data>
   <data name="Purchase.Problem.IntrastatOriginCountryMissing" xml:space="preserve"><value>Kiekviena ES įsigijimo prekė turi turėti kilmės šalį (ISO 3166 dviejų raidžių kodas).</value></data>
