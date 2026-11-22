@@ -17,6 +17,15 @@ jobs:
       COMPOSE_PROJECT_NAME: lkvitai-mes
 
     steps:
+      # The application deploy on this runner builds in a root container and leaves root-owned
+      # bin/obj folders in the shared workspace; checkout cannot remove them and fails.
+      - name: Clean workspace (fix root-owned files from Docker)
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE":/workspace \
+            alpine:3 \
+            sh -c "rm -rf /workspace/*"
+
       - name: Checkout code
         uses: actions/checkout@v4
 
