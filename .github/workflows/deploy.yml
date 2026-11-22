@@ -14,7 +14,7 @@ jobs:
   docker-gated-integration-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
@@ -33,7 +33,7 @@ jobs:
     env:
       WAREHOUSE_DB_CONNECTION: ${{ secrets.WAREHOUSE_DB_CONNECTION }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Skip schema validation when secret is missing
         if: ${{ env.WAREHOUSE_DB_CONNECTION == '' }}
         run: echo "WAREHOUSE_DB_CONNECTION is not configured. Skipping schema validation."
