@@ -2107,12 +2107,35 @@
   <data name="Intrastat.LandedCostEur" xml:space="preserve"><value>Landed cost, EUR (info only)</value></data>
   <data name="Intrastat.Return" xml:space="preserve"><value>Return</value></data>
   <data name="Intrastat.ReturnsTotal" xml:space="preserve"><value>Returns to supplier, EUR (not subtracted)</value></data>
-  <data name="Intrastat.Item.SupplementaryUnit" xml:space="preserve"><value>Supplementary unit (for example m2, p/st)</value></data>
+  <data name="Intrastat.Item.SupplementaryUnit" xml:space="preserve"><value>Supplementary unit code (3 characters, customs measurement unit classifier)</value></data>
   <data name="Intrastat.Item.SupplementaryUnitHelp" xml:space="preserve"><value>Only for commodity codes that require a supplementary unit</value></data>
   <data name="Intrastat.Item.SupplementaryUnitFactor" xml:space="preserve"><value>Supplementary units per one stock unit</value></data>
   <data name="Purchase.Problem.IntrastatOriginCountryMissing" xml:space="preserve"><value>Every stock item of an EU acquisition needs a country of origin (ISO 3166 alpha-2 code).</value></data>
   <data name="Purchase.Problem.IntrastatSupplementaryUnitInvalid" xml:space="preserve"><value>A supplementary unit and its factor (above zero) must be set together on the item.</value></data>
   <data name="Purchase.Problem.IntrastatCodeInvalid" xml:space="preserve"><value>Intrastat transaction nature, transport mode or delivery terms is not in the code list.</value></data>
+  <data name="Intrastat.DownloadXml" xml:space="preserve"><value>Download XML</value></data>
+  <data name="Intrastat.Declarant.Title" xml:space="preserve"><value>Declarant (VAT payer)</value></data>
+  <data name="Intrastat.Declarant.Missing" xml:space="preserve"><value>The declarant is not set. Enter the VAT payer code and name below and save before downloading the XML file.</value></data>
+  <data name="Intrastat.Declarant.VatCode" xml:space="preserve"><value>VAT payer code (with country letters)</value></data>
+  <data name="Intrastat.Declarant.Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Intrastat.Declarant.Street" xml:space="preserve"><value>Address (street, house, city)</value></data>
+  <data name="Intrastat.Declarant.ZipCode" xml:space="preserve"><value>Postal code</value></data>
+  <data name="Intrastat.Declarant.ContactPerson" xml:space="preserve"><value>Person who prepares the report</value></data>
+  <data name="Intrastat.Declarant.Email" xml:space="preserve"><value>E-mail</value></data>
+  <data name="Intrastat.Declarant.Phone" xml:space="preserve"><value>Phone</value></data>
+  <data name="Intrastat.Declarant.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Intrastat.Declarant.Saved" xml:space="preserve"><value>Declarant saved.</value></data>
+  <data name="Intrastat.Xml.ReturnsNote" xml:space="preserve"><value>Returns to suppliers are not included in the XML file: the filling instruction has no rule for them. Declare them together with the accountant.</value></data>
+  <data name="Intrastat.Versions.Title" xml:space="preserve"><value>XML versions of the month</value></data>
+  <data name="Intrastat.Versions.Help" xml:space="preserve"><value>Each changed file is the next version, which is how a correction is submitted. An unchanged file does not create a new version. Mark a version as filed after it has been uploaded to the customs portal.</value></data>
+  <data name="Intrastat.Versions.Version" xml:space="preserve"><value>Version</value></data>
+  <data name="Intrastat.Versions.GeneratedAt" xml:space="preserve"><value>Generated</value></data>
+  <data name="Intrastat.Versions.GeneratedBy" xml:space="preserve"><value>By</value></data>
+  <data name="Intrastat.Versions.Rows" xml:space="preserve"><value>Rows</value></data>
+  <data name="Intrastat.Versions.Hash" xml:space="preserve"><value>Hash</value></data>
+  <data name="Intrastat.Versions.Filed" xml:space="preserve"><value>Filed</value></data>
+  <data name="Intrastat.Versions.Download" xml:space="preserve"><value>Download</value></data>
+  <data name="Intrastat.Versions.MarkFiled" xml:space="preserve"><value>Mark as filed</value></data>
   <data name="Intrastat.Item.CommodityCodeInvalid" xml:space="preserve"><value>Commodity code must be 8 digits.</value></data>
   <data name="Intrastat.Item.NetWeightInvalid" xml:space="preserve"><value>Net weight must be greater than zero.</value></data>
   <data name="Purchase.Problem.IntrastatHeaderRequired" xml:space="preserve"><value>Intrastat fields (delivery terms, transport mode, dispatch country, transaction nature) are required for an EU acquisition.</value></data>

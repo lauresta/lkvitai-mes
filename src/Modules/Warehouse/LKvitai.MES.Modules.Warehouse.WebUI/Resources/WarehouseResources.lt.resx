@@ -2107,12 +2107,35 @@
   <data name="Intrastat.LandedCostEur" xml:space="preserve"><value>Savikaina su išlaidomis, EUR (tik informacijai)</value></data>
   <data name="Intrastat.Return" xml:space="preserve"><value>Grąžinimas</value></data>
   <data name="Intrastat.ReturnsTotal" xml:space="preserve"><value>Grąžinimai tiekėjui, EUR (neatskaityta)</value></data>
-  <data name="Intrastat.Item.SupplementaryUnit" xml:space="preserve"><value>Papildomas matavimo vienetas (pvz., m2, p/st)</value></data>
+  <data name="Intrastat.Item.SupplementaryUnit" xml:space="preserve"><value>Papildomo vieneto kodas (3 simboliai, muitinės matavimo vienetų klasifikatorius)</value></data>
   <data name="Intrastat.Item.SupplementaryUnitHelp" xml:space="preserve"><value>Tik prekių kodams, kuriems reikalingas papildomas vienetas</value></data>
   <data name="Intrastat.Item.SupplementaryUnitFactor" xml:space="preserve"><value>Papildomų vienetų viename sandėlio vienete</value></data>
   <data name="Purchase.Problem.IntrastatOriginCountryMissing" xml:space="preserve"><value>Kiekviena ES įsigijimo prekė turi turėti kilmės šalį (ISO 3166 dviejų raidžių kodas).</value></data>
   <data name="Purchase.Problem.IntrastatSupplementaryUnitInvalid" xml:space="preserve"><value>Prekės papildomas vienetas ir jo koeficientas (didesnis už nulį) nurodomi kartu.</value></data>
   <data name="Purchase.Problem.IntrastatCodeInvalid" xml:space="preserve"><value>Intrastat sandorio pobūdis, transporto rūšis arba pristatymo sąlygos nėra kodų sąraše.</value></data>
+  <data name="Intrastat.DownloadXml" xml:space="preserve"><value>Atsisiųsti XML</value></data>
+  <data name="Intrastat.Declarant.Title" xml:space="preserve"><value>Deklaruotojas (PVM mokėtojas)</value></data>
+  <data name="Intrastat.Declarant.Missing" xml:space="preserve"><value>Deklaruotojas nenurodytas. Žemiau įveskite PVM mokėtojo kodą ir pavadinimą ir išsaugokite prieš siųsdamiesi XML failą.</value></data>
+  <data name="Intrastat.Declarant.VatCode" xml:space="preserve"><value>PVM mokėtojo kodas (su šalies raidėmis)</value></data>
+  <data name="Intrastat.Declarant.Name" xml:space="preserve"><value>Pavadinimas</value></data>
+  <data name="Intrastat.Declarant.Street" xml:space="preserve"><value>Adresas (gatvė, namas, miestas)</value></data>
+  <data name="Intrastat.Declarant.ZipCode" xml:space="preserve"><value>Pašto kodas</value></data>
+  <data name="Intrastat.Declarant.ContactPerson" xml:space="preserve"><value>Ataskaitą rengiantis asmuo</value></data>
+  <data name="Intrastat.Declarant.Email" xml:space="preserve"><value>El. paštas</value></data>
+  <data name="Intrastat.Declarant.Phone" xml:space="preserve"><value>Telefonas</value></data>
+  <data name="Intrastat.Declarant.Save" xml:space="preserve"><value>Išsaugoti</value></data>
+  <data name="Intrastat.Declarant.Saved" xml:space="preserve"><value>Deklaruotojas išsaugotas.</value></data>
+  <data name="Intrastat.Xml.ReturnsNote" xml:space="preserve"><value>Grąžinimai tiekėjams į XML failą neįtraukiami: pildymo instrukcijoje jiems taisyklės nėra. Deklaruokite juos kartu su buhalteriu.</value></data>
+  <data name="Intrastat.Versions.Title" xml:space="preserve"><value>Mėnesio XML versijos</value></data>
+  <data name="Intrastat.Versions.Help" xml:space="preserve"><value>Kiekvienas pasikeitęs failas yra kita versija, taip teikiamas patikslinimas. Nepasikeitęs failas naujos versijos nesukuria. Versiją pažymėkite pateikta, kai ją įkėlėte į muitinės portalą.</value></data>
+  <data name="Intrastat.Versions.Version" xml:space="preserve"><value>Versija</value></data>
+  <data name="Intrastat.Versions.GeneratedAt" xml:space="preserve"><value>Sugeneruota</value></data>
+  <data name="Intrastat.Versions.GeneratedBy" xml:space="preserve"><value>Kas</value></data>
+  <data name="Intrastat.Versions.Rows" xml:space="preserve"><value>Eilutės</value></data>
+  <data name="Intrastat.Versions.Hash" xml:space="preserve"><value>Maiša</value></data>
+  <data name="Intrastat.Versions.Filed" xml:space="preserve"><value>Pateikta</value></data>
+  <data name="Intrastat.Versions.Download" xml:space="preserve"><value>Atsisiųsti</value></data>
+  <data name="Intrastat.Versions.MarkFiled" xml:space="preserve"><value>Pažymėti pateikta</value></data>
   <data name="Intrastat.Item.CommodityCodeInvalid" xml:space="preserve"><value>Prekės kodą turi sudaryti 8 skaitmenys.</value></data>
   <data name="Intrastat.Item.NetWeightInvalid" xml:space="preserve"><value>Neto masė turi būti didesnė už nulį.</value></data>
   <data name="Purchase.Problem.IntrastatHeaderRequired" xml:space="preserve"><value>ES įsigijimui privalomi Intrastat laukai (pristatymo sąlygos, transporto rūšis, išsiuntimo šalis, sandorio pobūdis).</value></data>

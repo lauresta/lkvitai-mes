@@ -20,7 +20,7 @@ Sandėlio modulio ekranas (UI: Intrastat arrivals) skirtas parengti mėnesio Int
 - Į ataskaitą patenka tik paskelbti (UI: Posted) pirkimo dokumentai. Nepaskelbti dokumentai neįtraukiami.
 - Pirkimo dokumentas turi būti su PVM režimu (UI: EU acquisition) (arba tiekėjas ES tipo) ir užpildytais Intrastat laukais, žr. [P-16](P-16-pirkimo-dokumentas.md). Pristatymo sąlygos, transporto rūšis ir sandorio pobūdis pasirenkami iš kodų sąrašų (Incoterms 2020; transportas 1, 2, 3, 4, 5, 7, 8, 9; sandorio pobūdis 11, 12, 21, 22, 23, 31-34, 41, 42, 51, 52, 71, 72, 80, 91, 99); kitos reikšmės registruojant atmetamos.
 - Kiekviena atsargų prekė turi turėti 8 skaitmenų prekės kodą (UI: Commodity code (CN)), neto svorį vienetui (UI: Net weight per unit, kg) ir kilmės šalį (UI: Country of origin (ISO, 2 letters)) – (UI: Admin > Items) > (UI: Edit), žr. [P-32](P-32-prekiu-pagrindiniai-duomenys.md). Be jų ES įsigijimo užregistruoti neleidžiama.
-- Jei prekės kodui reikalingas papildomas vienetas, prekės kortelėje užpildykite (UI: Supplementary unit (for example m2, p/st)) ir (UI: Supplementary units per one stock unit).
+- Jei prekės kodui reikalingas papildomas vienetas, prekės kortelėje užpildykite (UI: Supplementary unit code (3 characters, customs measurement unit classifier)) ir (UI: Supplementary units per one stock unit).
 
 ## Žingsniai
 ### 1. Parodyti mėnesio ataskaitą
@@ -35,8 +35,23 @@ Sandėlio modulio ekranas (UI: Intrastat arrivals) skirtas parengti mėnesio Int
 ### 2. Parsisiųsti CSV
 Spauskite (UI: Download CSV). Failas vadinasi `intrastat-arrivals-YYYY-MM.csv`. Stulpeliai: CommodityCode, DispatchCountry, OriginCountry, NatureOfTransaction, DeliveryTerms, TransportMode, SupplementaryUnit, Return (1 – grąžinimas), NetMassKg, SupplementaryQuantity, Quantity, InvoiceValueEur, LandedCostEur.
 
-### 3. Tuščias mėnuo
-Jei per mėnesį ES įsigijimų nebuvo, ekrane rodomas pranešimas, kad nulinė ataskaita muitinei vis tiek turi būti pateikta. Mėnuo be prekybos taip pat deklaruojamas.
+### 3. Deklaruotojo duomenys
+Prieš pirmą XML sugeneravimą puslapio viršuje atidarykite bloką (UI: Declarant (VAT payer)) ir įveskite PVM mokėtojo kodą su šalies raidėmis (pvz. LT123456789) bei pavadinimą; adresas, ataskaitą rengiančio asmens vardas, el. paštas ir telefonas neprivalomi. Spauskite (UI: Save). Kol kodas ir pavadinimas nenurodyti, XML failo sugeneruoti neleidžiama.
+
+### 4. Atsisiųsti XML ir įkelti į IDAIS
+1. Parodykite mėnesio ataskaitą ir spauskite (UI: Download XML). Failas vadinasi `intrastat-arrivals-YYYY-MM-vN.xml`.
+2. Failas nesudaromas, kol yra praleistų eilučių (įspėjimų sąraše): deklaracija būtų nepilna. Pirmiausia papildykite trūkstamus duomenis. Papildomo vieneto kodas prekės kortelėje turi būti 3 simbolių muitinės matavimo vieneto klasifikatoriaus kodas.
+3. Grąžinimai tiekėjams į XML failą neįtraukiami (instrukcijoje jiems taisyklės nėra); ekrane rodoma pastaba. Mėnuo, kuriame yra tik grąžinimai, taip pat neeksportuojamas, tokį atvejį spręskite su buhalteriu.
+4. Prisijunkite prie muitinės IDAIS portalo (https://intrastatas.muitine.lt, prisijungimas per BAP), pasirinkite Intrastato ataskaitos teikimą XML failu, pasirinkite atvykimus (IMPORT) ir to mėnesio failą ir įkelkite.
+5. Sėkmingai įkėlę, lentelėje (UI: XML versions of the month) prie versijos spauskite (UI: Mark as filed). Žyma nustatoma tik ranka.
+
+Struktūra paimta iš muitinės pildymo instrukcijos v1.00; XSD schema sistemoje dar nepatikrinta, todėl pirmą kartą failą verta įkelti anksčiau nei artėja terminas (10-a darbo diena kitą mėnesį).
+
+### 5. Versijos ir patikslinimas
+Versija yra sugeneruotas to mėnesio XML failas. Pirmas failas yra versija 1. Jei po to duomenys pasikeitė (pvz. pataisyta prekės kortelė) ir XML sugeneruojamas iš naujo, sukuriama versija 2 – tai patikslinta ataskaita, kurią įkeliate kaip kitą to paties mėnesio versiją. Jei duomenys nepasikeitė, naujos versijos nekuriama ir atsiunčiama ta pati. Lentelėje saugoma kiekvienos versijos data, autorius, eilučių skaičius, vertė, neto masė ir failo maiša; seną versiją galima atsisiųsti iš naujo (UI: Download). Patikslinimo nereikia, jei masė, kiekis ar vertė eilutėje skiriasi ne daugiau kaip 5 %.
+
+### 6. Tuščias mėnuo
+Jei per mėnesį ES įsigijimų nebuvo, ekrane rodomas pranešimas, kad nulinė ataskaita muitinei vis tiek turi būti pateikta. Mėnuo be prekybos taip pat deklaruojamas: (UI: Download XML) sugeneruoja failą su prekybos nevykdymo žyma ir be prekių sąrašo. Jei mėnesyje yra praleistų eilučių, nulinis failas nesudaromas.
 
 ## Dažnos klaidos
 - „No EU acquisitions in this month. A zero report must still be filed with customs for this month.“ – mėnesį pagal sąskaitos datą nėra paskelbtų ES įsigijimų; pateikiama nulinė ataskaita.
@@ -45,7 +60,7 @@ Jei per mėnesį ES įsigijimų nebuvo, ekrane rodomas pranešimas, kad nulinė 
 - Rodomi tik sąskaitos tipo dokumentai ir paskelbti grąžinimai; kreditinės sąskaitos tik dėl kainos į eilutes neįtraukiamos.
 
 ## Dar neįgyvendinta
-Deklaracijos XML failas muitinės portalui dar negeneruojamas: duomenys įvedami portale rankiniu būdu iš šios ataskaitos arba CSV.
+XML nepatikrintas pagal muitinės XSD schemą (jos viešai paskelbtame šaltinyje nėra). Išvežimo (EXPORT) ataskaita ir tiesioginis perdavimas į IDAIS neįgyvendinti.
 
 ## Susiję procesai
 - [P-16 Pirkimo dokumentas](P-16-pirkimo-dokumentas.md)
