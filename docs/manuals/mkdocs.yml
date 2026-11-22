@@ -118,6 +118,7 @@ nav:
     - "Prisijungimas iš ChatGPT ir Claude": mcp/prisijungimas.md
     - "Ką galima klausti – užsakymai, klientai, kainos, atsargos": mcp/uzsakymai-klientai-atsargos.md
     - "Užsakymų įvedimas per AI asistentą (pagal nutylėjimą išjungta)": mcp/uzsakymu-ivedimas.md
+    - "Sandėlis per AI asistentą – vietos, pirkimo dokumentai, perkėlimai": mcp/sandelis.md
 
 extra:
   version:

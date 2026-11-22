@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { NOT_DEPLOYED } from '../src/tools-order-entry.js';
 import { fakeJwt, mockFetch, rpc, running, testConfig } from './helpers.js';
 
-const READ_TOOLS = ['whoami', 'orders_search', 'order_get', 'orders_filters', 'customers_search', 'customer_get', 'price_groups_list', 'items_search', 'stock_get', 'report_production', 'report_work', 'report_payments', 'report_dimensions', 'production_queue', 'materials_popularity', 'stopped_products', 'unpaid_orders', 'made_not_delivered', 'customer_debt', 'orders_find', 'bank_payments_list', 'bank_payments_preview'];
+const READ_TOOLS = ['whoami', 'orders_search', 'order_get', 'orders_filters', 'customers_search', 'customer_get', 'price_groups_list', 'items_search', 'stock_get', 'warehouses_list', 'locations_search', 'location_stock', 'item_cost', 'suppliers_search', 'inbound_shipments_list', 'inbound_shipment_get', 'transfers_list', 'transfer_get', 'report_production', 'report_work', 'report_payments', 'report_dimensions', 'production_queue', 'materials_popularity', 'stopped_products', 'unpaid_orders', 'made_not_delivered', 'customer_debt', 'orders_find', 'bank_payments_list', 'bank_payments_preview'];
 const WRITE_TOOLS = ['order_create', 'order_update', 'order_product_add', 'order_product_update', 'order_product_remove', 'order_address_set', 'order_confirm', 'order_cancel'];
 const DESTRUCTIVE = ['order_product_remove', 'order_confirm', 'order_cancel'];
 
@@ -13,7 +13,7 @@ test('tools/list: the read tools by default, read-only annotated; order entry on
   try {
     const token = fakeJwt();
     const listed = (await rpc(off.base, token, 'tools/list')).body.result.tools as { name: string; annotations: Record<string, unknown> }[];
-    assert.deepEqual(listed.map((t) => t.name), [...READ_TOOLS, 'bank_payments_import', 'docs_search', 'docs_get']);
+    assert.deepEqual(listed.map((t) => t.name), [...READ_TOOLS, 'bank_payments_import', 'docs_search', 'docs_get', 'docs_image']);
     for (const tool of listed.filter((t) => t.name !== 'bank_payments_import')) assert.equal(tool.annotations.readOnlyHint, true, tool.name);
     assert.equal(listed.find((t) => t.name === 'bank_payments_import')?.annotations.destructiveHint, true);
 

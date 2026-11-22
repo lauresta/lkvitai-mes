@@ -16,7 +16,7 @@ AI asistentas „Cikada MCP“ leidžia ChatGPT arba Claude pokalbyje užduoti k
 ## Prieš pradedant
 - Reikia Lauresta SSO paskyros (`sso.lauresta.com`) ir Cikada rolių (žr. [Kam kokios teisės reikia](#kam-kokios-teises-reikia)).
 - ChatGPT arba Claude paskyros, kurioje leidžiama jungti savo MCP serverį. Prisijungimo žingsniai: [Prisijungimas](prisijungimas.md).
-- Adresas testinėje aplinkoje: `https://cikada-test.lauresta.com/mcp`.
+- Adresas: darbinėje aplinkoje `https://cikada.lauresta.com/mcp`, testinėje – `https://cikada-test.lauresta.com/mcp`.
 
 ## Puslapiai
 | Puslapis | Apie ką |
@@ -26,6 +26,7 @@ AI asistentas „Cikada MCP“ leidžia ChatGPT arba Claude pokalbyje užduoti k
 | [Vadovų ataskaitos ir sąrašai](ataskaitos.md) | Gamyba, darbai, mokėjimai, skolos |
 | [Banko pavedimai ir išrašų įkėlimas](bankas.md) | Peržiūra ir importas |
 | [Užsakymų įvedimas per asistentą](uzsakymu-ivedimas.md) | Pagal nutylėjimą išjungta |
+| [Sandėlis per asistentą](sandelis.md) | Vietos, atsargų savikaina, pirkimo dokumentai, perkėlimai |
 
 ## Kam kokios teisės reikia
 Asistentas naudoja jūsų tapatybę, todėl jis negali daugiau nei jūs ekrane. Pagal kodą:
@@ -38,6 +39,8 @@ Asistentas naudoja jūsų tapatybę, todėl jis negali daugiau nei jūs ekrane. 
 | Vadovų ataskaitos ir sąrašai (gamyba, darbai, mokėjimai, skolos ir kt.) | `SalesAdmin` arba `Reports` ir jūsų senosios sistemos SQL teisės |
 | Banko pavedimai (sąrašas, peržiūra, importas) | Finansų prieiga: jūsų SQL prisijungimas įtrauktas į leidžiamų sąrašą; rolės nėra |
 | Užsakymų įvedimas | Įjungtas serverio jungiklis ir senosios sistemos SQL teisės įrašyti |
+| Sandėlio įvedimas (vietos, pirkimo dokumentai, priėmimas, perkėlimai) | Įjungtas serverio jungiklis; `QCInspector`, `WarehouseManager` arba `WarehouseAdmin` (vietos kūrimui – `WarehouseManager` arba `WarehouseAdmin`) |
+| Instrukcijų ekranų paveikslėliai (`docs_image`) | Bet kuris prisijungęs naudotojas |
 
 Jei asistentas atsako 403 – trūksta rolės. Paprašykite asistento: „Parodyk, kas aš esu“ (įrankis `whoami`): jis išvardija jūsų roles.
 

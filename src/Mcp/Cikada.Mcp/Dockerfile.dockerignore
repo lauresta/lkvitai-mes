@@ -6,3 +6,4 @@
 !src/Mcp/Cikada.Mcp/src
 !src/Mcp/Cikada.Mcp/test
 !docs/manuals/docs/**/*.md
+!docs/manuals/docs/img/**/*.png

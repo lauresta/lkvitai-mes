@@ -68,6 +68,7 @@ jobs:
       SALES_PRODUCTION_DOCUMENT_PREFIX: ${{ vars.SALES_PRODUCTION_DOCUMENT_PREFIX }}
       SHOPFLOOR_TASK_WRITE_ENABLED: ${{ vars.SHOPFLOOR_TASK_WRITE_ENABLED }}
       CIKADA_MCP_ORDER_ENTRY: ${{ vars.CIKADA_MCP_ORDER_ENTRY }}
+      CIKADA_MCP_WAREHOUSE_ENTRY: ${{ vars.CIKADA_MCP_WAREHOUSE_ENTRY }}
       # Agnum is not connected on production yet. Leave these unset until it is.
       Agnum__Api__BaseUrl: ${{ vars.AGNUM__API__BASEURL }}
       Agnum__PriceSync__Enabled: ${{ vars.AGNUM__PRICESYNC__ENABLED }}
@@ -242,6 +243,7 @@ jobs:
             echo "- **Order entry (Sales):** ${SALES_ORDER_ENTRY_ENABLED:-false}"
             echo "- **Task write (Shopfloor):** ${SHOPFLOOR_TASK_WRITE_ENABLED:-false}"
             echo "- **Order entry (MCP):** ${CIKADA_MCP_ORDER_ENTRY:-false}"
+            echo "- **Warehouse entry (MCP):** ${CIKADA_MCP_WAREHOUSE_ENTRY:-false}"
             echo '```'
             docker compose ps --format 'table {{.Service}}\t{{.Status}}\t{{.Image}}' 2>/dev/null || true
             echo '```'

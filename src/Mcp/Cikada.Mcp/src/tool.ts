@@ -16,6 +16,8 @@ export interface ToolResult {
   /** A few lines a person can read; the model gets the details from `data`. */
   text: string;
   data: Record<string, unknown>;
+  /** Pictures for the model and the user (base64), sent as MCP image content after the text. */
+  images?: { data: string; mimeType: string }[];
 }
 
 export interface ToolContext {
@@ -29,6 +31,8 @@ export interface ToolContext {
   docs?: import('./docs-search.js').DocsSearch;
   /** MANUALS_BASE_URL without a trailing slash: docs_search / docs_get then return absolute URLs. */
   manualsBaseUrl?: string;
+  /** Folder with the manual screenshots (<module>/<name>.png); tests inject one, otherwise docs-images.ts finds it. */
+  docsImageDir?: string;
   user?: { username?: string; name?: string; email?: string; roles: string[] };
 }
 
@@ -40,6 +44,8 @@ export interface ToolDef {
   annotations: Omit<Annotations, 'title'>;
   /** Offered only when MCP_ENABLE_ORDER_ENTRY=true. */
   orderEntry?: boolean;
+  /** Offered only when MCP_ENABLE_WAREHOUSE_ENTRY=true. */
+  warehouseEntry?: boolean;
   handler: (args: Record<string, unknown>, ctx: ToolContext) => Promise<ToolResult>;
 }
 

@@ -45,6 +45,7 @@ jobs:
       # Cikada MCP order entry tools (writes). Off unless the variable is "true";
       # turn on once the order entry API (PR #224) is deployed.
       CIKADA_MCP_ORDER_ENTRY: ${{ vars.CIKADA_MCP_ORDER_ENTRY }}
+      CIKADA_MCP_WAREHOUSE_ENTRY: ${{ vars.CIKADA_MCP_WAREHOUSE_ENTRY }}
 
     steps:
       - name: Fail fast if required env vars are missing or invalid

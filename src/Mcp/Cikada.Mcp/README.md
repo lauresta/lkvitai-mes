@@ -64,7 +64,31 @@ User manuals (always on, no backend call, any signed-in user; the manuals are Li
 | Tool | Source |
 |---|---|
 | `docs_search` | In-process BM25 search over the manual chunks (diacritics folded, title / heading boost, light prefix match for Lithuanian endings); filter by `module`, `limit` 1-15 (default 6). Returns id, module, page title, heading path, status, url and a snippet per hit, plus the total |
-| `docs_get` | The full text of one chunk (`id`) or of every chunk of a page in order (`page`), with module, status (`laikina` = stub), routes, roles and url |
+| `docs_get` | The full text of one chunk (`id`) or of every chunk of a page in order (`page`), with module, status (`laikina` = stub), routes, roles, url and `images` (the screenshots the chunk shows) |
+| `docs_image` | One manual screenshot (`img/<module>/<name>.png`) as MCP image content; with `marks` (up to 6 frames in percent of the image size) it draws a coloured frame per mark: red, blue, green, orange, purple, cyan. The screenshots are copied into the image at build time (`data/docs-img`) |
+
+Warehouse (reads always on):
+
+| Tool | Source |
+|---|---|
+| `warehouses_list` | Warehouse `GET /api/warehouse/v1/warehouses` |
+| `locations_search` | Warehouse `GET /locations` |
+| `location_stock` | Warehouse `GET /stock/available` by `locationId` / `location` |
+| `item_cost` | Warehouse `GET /valuation/on-hand-value` |
+| `suppliers_search` | Warehouse `GET /suppliers` |
+| `inbound_shipments_list`, `inbound_shipment_get` | Warehouse `GET /inbound-shipments[/{id}]` |
+| `transfers_list`, `transfer_get` | Warehouse `GET /transfers[/{id}]` |
+
+Warehouse entry (only with `MCP_ENABLE_WAREHOUSE_ENTRY=true`; GitHub variable `CIKADA_MCP_WAREHOUSE_ENTRY`):
+
+| Tool | Source |
+|---|---|
+| `location_create` | Warehouse `POST /locations` |
+| `inbound_shipment_create` | Warehouse `POST /inbound-shipments` (a supplier invoice with its lines) |
+| `inbound_shipment_receive` | Warehouse `POST /inbound-shipments/{id}/receive` |
+| `inbound_shipment_post` | Warehouse `POST /inbound-shipments/{id}/post` (destructive: accounting post) |
+| `putaway_move` | Warehouse `POST /putaway` (RECEIVING to a storage location) |
+| `transfer_create`, `transfer_advance` | Warehouse `POST /transfers`, `POST /transfers/{id}/submit|approve|execute` |
 
 Prompts: `production_status`, `debt_review`, `management_report`, `daily_orders_review`, `take_new_order`.
 
@@ -117,6 +141,8 @@ Prompts: `daily_orders_review`, `take_new_order` (order entry only).
 | `WAREHOUSE_API_URL` | yes | | e.g. `http://lkvitai-mes-warehouse-api:8080` |
 | `FINANCE_API_URL` | yes | | e.g. `http://lkvitai-mes-finance-api:8080` |
 | `MCP_ENABLE_ORDER_ENTRY` | no | `false` | `true` offers the order entry tools |
+| `MCP_ENABLE_WAREHOUSE_ENTRY` | no | `false` | `true` offers the warehouse write tools |
+| `DOCS_IMAGE_DIR` | no | `data/docs-img` next to `dist/` | Folder with the manual screenshots for `docs_image` |
 | `MANUALS_BASE_URL` | no | | Where the MkDocs manuals site is served; with it `docs_search` / `docs_get` return absolute links, without it the site path (`procesai/P-01-.../#anchor`) |
 | `DOCS_INDEX_PATH` | no | `data/docs-index.json` next to `dist/` | Override the generated index file |
 | `MCP_PORT` | no | `8080` | |

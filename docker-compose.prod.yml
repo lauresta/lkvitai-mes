@@ -10,7 +10,8 @@
 #     switched off with a variable of GitHub Environment "prod" set to "false":
 #       SALES_ORDER_ENTRY_ENABLED, SALES_ORDER_ENTRY_PAYMENTS_ENABLED,
 #       SALES_PRODUCTION_CONFIRMATION_ENABLED, SHOPFLOOR_TASK_WRITE_ENABLED;
-#     order entry through the assistant (CIKADA_MCP_ORDER_ENTRY) stays off until set;
+#     order entry and warehouse entry through the assistant (CIKADA_MCP_ORDER_ENTRY,
+#     CIKADA_MCP_WAREHOUSE_ENTRY) stay off until set;
 #   * no Agnum API on production yet (Agnum__Api__BaseUrl is a placeholder).
 #
 # When a service is added to docker-compose.test.yml, add it here as well.
@@ -510,6 +511,7 @@ services:
       WAREHOUSE_API_URL: "http://lkvitai-mes-warehouse-api-prod:8080"
       FINANCE_API_URL: "http://lkvitai-mes-finance-api-prod:8080"
       MCP_ENABLE_ORDER_ENTRY: "${CIKADA_MCP_ORDER_ENTRY:-false}"
+      MCP_ENABLE_WAREHOUSE_ENTRY: "${CIKADA_MCP_WAREHOUSE_ENTRY:-false}"
     networks:
       - lkvitai-mes_prod
     depends_on:
