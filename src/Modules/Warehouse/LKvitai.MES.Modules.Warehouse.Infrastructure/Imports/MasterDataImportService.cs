@@ -4,6 +4,7 @@ using EFCore.BulkExtensions;
 using LKvitai.MES.Modules.Warehouse.Application.Models;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
+using LKvitai.MES.Modules.Warehouse.Domain.Purchasing;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -70,7 +71,7 @@ public sealed class MasterDataImportService : IMasterDataImportService
             _ => throw new ArgumentOutOfRangeException(nameof(entityType), $"Unsupported import entity '{entityType}'.")
         };
 
-        ValidateHeaders(sheet, headers, errors);
+        ValidateHeaders(sheet, headers, errors, normalized == "items" ? ExcelTemplateService.ItemRequiredHeaderCount : headers.Length);
         if (errors.Count > 0)
         {
             return BuildResult(0, 0, 0, dryRun, false, errors, startedAt);
@@ -297,6 +298,8 @@ public sealed class MasterDataImportService : IMasterDataImportService
                     errors.Add(new ImportErrorReport(row.RowNumber, "InternalSKU", sku, "Duplicate SKU in file."));
                 }
             }
+
+            ParseIntrastat(row, errors);
         }
 
         if (errors.Count > 0)
@@ -348,6 +351,7 @@ public sealed class MasterDataImportService : IMasterDataImportService
                     PrimaryBarcode = row.Get("PrimaryBarcode"),
                     ProductConfigId = row.Get("ProductConfigId")
                 });
+                ApplyIntrastat(toInsert[^1], row);
             }
             else
             {
@@ -362,6 +366,7 @@ public sealed class MasterDataImportService : IMasterDataImportService
                 existing.Status = string.IsNullOrWhiteSpace(row.Get("Status")) ? existing.Status : row.Get("Status")!;
                 existing.PrimaryBarcode = row.Get("PrimaryBarcode");
                 existing.ProductConfigId = row.Get("ProductConfigId");
+                ApplyIntrastat(existing, row);
                 toUpdate.Add(existing);
             }
         }
@@ -734,6 +739,74 @@ public sealed class MasterDataImportService : IMasterDataImportService
         return BuildResult(toInsert.Count, toUpdate.Count, 0, dryRun, false, errors, startedAt);
     }
 
+    /// <summary>
+    /// Validates the Intrastat cells of an item row with the rules the API uses (see <see cref="IntrastatItemRules"/>).
+    /// Empty cells are not checked: they leave the existing value unchanged.
+    /// </summary>
+    private static IntrastatCells? ParseIntrastat(RowData row, ICollection<ImportErrorReport> errors)
+    {
+        var problems = new List<ImportErrorReport>();
+        var netWeight = ParseNumberCell(row, "NetWeightKg", true, "Net weight must be a number greater than zero.", problems);
+        var factor = ParseNumberCell(row, "SupplementaryUnitFactor", false, "Supplementary unit factor must be a number.", problems);
+        var factorUnreadable = row.Get("SupplementaryUnitFactor") is not null && factor is null;
+
+        var code = row.Get("CommodityCode");
+        var country = row.Get("OriginCountry");
+        var unit = row.Get("SupplementaryUnit");
+        foreach (var p in IntrastatItemRules.Validate(code, country, unit, factor))
+        {
+            if (factorUnreadable && p.Field == "SupplementaryUnitFactor")
+            {
+                continue;
+            }
+
+            problems.Add(new ImportErrorReport(row.RowNumber, p.Field, row.Get(p.Field), p.Message));
+        }
+
+        foreach (var problem in problems)
+        {
+            errors.Add(problem);
+        }
+
+        return problems.Count > 0 ? null : new IntrastatCells(code, netWeight, country, unit, factor);
+    }
+
+    private static decimal? ParseNumberCell(
+        RowData row, string column, bool mustBePositive, string message, ICollection<ImportErrorReport> problems)
+    {
+        var text = row.Get(column);
+        if (text is null)
+        {
+            return null;
+        }
+
+        if (IntrastatItemRules.TryParseDecimal(text, out var value) && (!mustBePositive || value > 0m))
+        {
+            return value;
+        }
+
+        problems.Add(new ImportErrorReport(row.RowNumber, column, text, message));
+        return null;
+    }
+
+    private static void ApplyIntrastat(Item item, RowData row)
+    {
+        var cells = ParseIntrastat(row, new List<ImportErrorReport>());
+        if (cells is null)
+        {
+            return;
+        }
+
+        IntrastatItemRules.Apply(item, cells.CommodityCode, cells.OriginCountry, cells.SupplementaryUnit, cells.SupplementaryUnitFactor);
+        if (cells.NetWeightKg is not null)
+        {
+            item.NetWeightKg = cells.NetWeightKg;
+        }
+    }
+
+    private sealed record IntrastatCells(
+        string? CommodityCode, decimal? NetWeightKg, string? OriginCountry, string? SupplementaryUnit, decimal? SupplementaryUnitFactor);
+
     private static List<RowData> ReadRows(IXLWorksheet sheet, IReadOnlyList<string> headers)
     {
         var rows = new List<RowData>();
@@ -765,11 +838,17 @@ public sealed class MasterDataImportService : IMasterDataImportService
     private static void ValidateHeaders(
         IXLWorksheet sheet,
         IReadOnlyList<string> expected,
-        ICollection<ImportErrorReport> errors)
+        ICollection<ImportErrorReport> errors,
+        int requiredCount)
     {
         for (var i = 0; i < expected.Count; i++)
         {
             var current = sheet.Cell(1, i + 1).GetString()?.Trim();
+            if (i >= requiredCount && string.IsNullOrEmpty(current))
+            {
+                continue;
+            }
+
             if (!string.Equals(current, expected[i], StringComparison.OrdinalIgnoreCase))
             {
                 errors.Add(new ImportErrorReport(1, expected[i], current, $"Expected column '{expected[i]}'."));

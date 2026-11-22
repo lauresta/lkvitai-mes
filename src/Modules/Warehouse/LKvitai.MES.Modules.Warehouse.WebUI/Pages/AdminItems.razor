@@ -56,6 +56,9 @@
                     <MudSelectItem T="string" Value="@("Obsolete")">@L["AdminItems.Obsolete"]</MudSelectItem>
                 </MudSelect>
             </div>
+            <div class="lk-field--filter lots-field items-filter__intrastat" data-testid="admin-items-intrastat-missing">
+                <MudCheckBox T="bool" Dense="true" @bind-Value="_intrastatMissing" Label="@L["Intrastat.Items.FilterMissing"]" />
+            </div>
             <div class="lk-field--filter lots-field items-filter__page-size">
                 <div data-testid="admin-items-page-size">
                     <MudSelect T="int"
@@ -89,6 +92,12 @@
                            UserAttributes="@ItemsCreateAttributes">
                     @L["Common.Create"]
                 </MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           OnClick="OpenIntrastatBulkAsync"
+                           UserAttributes="@ItemsIntrastatBulkAttributes">
+                    @L["Intrastat.Bulk.Button", _selected.Count]
+                </MudButton>
             </div>
         </div>
 
@@ -108,9 +117,13 @@
                      FixedHeader="true"
                      RowsPerPage="@_pageSize"
                      Loading="@_isLoading"
+                     MultiSelection="true"
+                     SelectedItems="_selected"
+                     SelectedItemsChanged="OnSelectedItemsChanged"
                      Class="lk-grid lots-grid items-grid"
                      @attributes="@ItemsGridAttributes">
             <Columns>
+                <SelectColumn T="AdminItemDto" />
                 <TemplateColumn Title="@L["AdminItems.Image"]" Sortable="false">
                     <CellTemplate>
                         <button type="button"
@@ -198,6 +211,14 @@
                         <span class="@StatusChipClass(context.Item.Status)">@WarehouseStatusText.Get(L, context.Item.Status)</span>
                     </CellTemplate>
                 </TemplateColumn>
+                <TemplateColumn Title="Intrastat" Sortable="false">
+                    <CellTemplate>
+                        @if (IsIntrastatMissing(context.Item))
+                        {
+                            <span class="chip chip--locked" title="@L["Intrastat.Items.MissingHint"]">@L["Intrastat.Items.Missing"]</span>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
                 <TemplateColumn Title="@L["Common.Lot"]">
                     <CellTemplate>
                         <span class="@BoolChipClass(context.Item.RequiresLotTracking)">@(context.Item.RequiresLotTracking ? L["AdminItems.Lot"] : L["Common.No"])</span>
@@ -279,6 +300,9 @@
     private string? _appliedSearch;
     private string? _appliedStatus;
     private int? _appliedCategoryId;
+    private bool _intrastatMissing;
+    private bool _appliedIntrastatMissing;
+    private HashSet<AdminItemDto> _selected = [];
     private int _pageSize = 50;
     private int _totalCount;
     private int _currentPage = 1;
@@ -309,6 +333,14 @@
     private static readonly Dictionary<string, object> ItemsSearchButtonAttributes = new() { ["data-testid"] = "admin-items-search-btn" };
     private static readonly Dictionary<string, object> ItemsRefreshAttributes = new() { ["data-testid"] = "admin-items-refresh" };
     private static readonly Dictionary<string, object> ItemsCreateAttributes = new() { ["data-testid"] = "admin-items-create" };
+    private static readonly Dictionary<string, object> ItemsIntrastatBulkAttributes = new() { ["data-testid"] = "admin-items-intrastat-bulk" };
+
+    private static readonly DialogOptions BulkDialogOptions = new()
+    {
+        MaxWidth = MaxWidth.Small,
+        FullWidth = true,
+        CloseButton = true
+    };
 
     private string DeactivateMessage => _deactivateTarget is null
         ? string.Empty
@@ -317,7 +349,8 @@
     private bool HasAppliedFilters =>
         !string.IsNullOrWhiteSpace(_appliedSearch) ||
         !string.IsNullOrWhiteSpace(_appliedStatus) ||
-        _appliedCategoryId.HasValue;
+        _appliedCategoryId.HasValue ||
+        _appliedIntrastatMissing;
 
     protected override async Task OnInitializedAsync()
     {
@@ -360,6 +393,8 @@
         _appliedSearch = string.IsNullOrWhiteSpace(_search) ? null : _search.Trim();
         _appliedStatus = string.IsNullOrWhiteSpace(_status) ? null : _status;
         _appliedCategoryId = int.TryParse(_categoryFilter, out var categoryId) ? categoryId : null;
+        _appliedIntrastatMissing = _intrastatMissing;
+        _selected = [];
         _gridRenderKey++;
         await InvokeAsync(StateHasChanged);
     }
@@ -376,9 +411,12 @@
         _search = string.Empty;
         _status = string.Empty;
         _categoryFilter = string.Empty;
+        _intrastatMissing = false;
         _appliedSearch = null;
         _appliedStatus = null;
         _appliedCategoryId = null;
+        _appliedIntrastatMissing = false;
+        _selected = [];
         _gridRenderKey++;
         await InvokeAsync(StateHasChanged);
     }
@@ -409,7 +447,8 @@
                 _appliedCategoryId,
                 _appliedStatus,
                 state.Page + 1,
-                requestedPageSize);
+                requestedPageSize,
+                intrastatMissing: _appliedIntrastatMissing);
 
             _totalCount = result.TotalCount;
             return new GridData<AdminItemDto>
@@ -441,6 +480,76 @@
         finally
         {
             _isLoading = false;
+        }
+    }
+
+    private void OnSelectedItemsChanged(HashSet<AdminItemDto> items) => _selected = items;
+
+    private static bool IsIntrastatMissing(AdminItemDto item)
+        => !item.IsService
+           && (string.IsNullOrWhiteSpace(item.CommodityCode)
+               || item.NetWeightKg is not > 0m
+               || string.IsNullOrWhiteSpace(item.OriginCountry));
+
+    private async Task OpenIntrastatBulkAsync()
+    {
+        var parameters = new DialogParameters
+        {
+            ["SelectedCount"] = _selected.Count,
+            ["FilterCount"] = _totalCount,
+            ["FilterIsNarrowed"] = HasAppliedFilters
+        };
+
+        var dialog = await DialogService.ShowAsync<AdminItemsIntrastatBulkDialog>(L["Intrastat.Bulk.Title"].Value, parameters, BulkDialogOptions);
+        var result = await dialog.Result;
+        if (result.Canceled || result.Data is not IntrastatBulkChoice choice)
+        {
+            return;
+        }
+
+        await ApplyIntrastatBulkAsync(choice);
+    }
+
+    private BulkIntrastatRequest BuildBulkRequest(IntrastatBulkChoice choice, bool dryRun) => new()
+    {
+        ItemIds = choice.UseFilter ? null : _selected.Select(x => x.Id).ToList(),
+        Filter = choice.UseFilter ? new ItemSelectionFilterDto(_appliedSearch, _appliedCategoryId, _appliedStatus, _appliedIntrastatMissing) : null,
+        CommodityCode = choice.CommodityCode,
+        OriginCountry = choice.OriginCountry,
+        SupplementaryUnit = choice.SupplementaryUnit,
+        SupplementaryUnitFactor = choice.SupplementaryUnitFactor,
+        DryRun = dryRun
+    };
+
+    private async Task ApplyIntrastatBulkAsync(IntrastatBulkChoice choice)
+    {
+        try
+        {
+            var preview = await AdminClient.SetItemsIntrastatAsync(BuildBulkRequest(choice, dryRun: true));
+            if (preview.Changed == 0)
+            {
+                ToastService.ShowWarning(L["Intrastat.Bulk.NothingToChange", preview.Matched].Value);
+                return;
+            }
+
+            var confirmed = await DialogService.ShowMessageBox(
+                L["Intrastat.Bulk.Title"].Value,
+                L["Intrastat.Bulk.Confirm", preview.Changed, preview.Matched].Value,
+                yesText: L["Common.Apply"].Value,
+                cancelText: L["Common.Cancel"].Value);
+            if (confirmed != true)
+            {
+                return;
+            }
+
+            var applied = await AdminClient.SetItemsIntrastatAsync(BuildBulkRequest(choice, dryRun: false));
+            ToastService.ShowSuccess(L["Intrastat.Bulk.Done", applied.Changed].Value);
+            _selected = [];
+            await RefreshAsync();
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(BuildErrorMessage(ex));
         }
     }
 

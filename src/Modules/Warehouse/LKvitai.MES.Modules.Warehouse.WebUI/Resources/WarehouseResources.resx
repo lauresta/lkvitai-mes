@@ -2097,6 +2097,22 @@
   <data name="Intrastat.Item.CommodityCodeHelp" xml:space="preserve"><value>8 digits; needed for EU purchases</value></data>
   <data name="Intrastat.Item.NetWeightKg" xml:space="preserve"><value>Net weight per unit, kg</value></data>
   <data name="Intrastat.Item.OriginCountry" xml:space="preserve"><value>Country of origin (ISO, 2 letters)</value></data>
+  <data name="Intrastat.Items.FilterMissing" xml:space="preserve"><value>Intrastat data missing</value></data>
+  <data name="Intrastat.Items.Missing" xml:space="preserve"><value>Intrastat missing</value></data>
+  <data name="Intrastat.Items.MissingHint" xml:space="preserve"><value>Commodity code, net weight or country of origin is not filled</value></data>
+  <data name="Intrastat.Bulk.Button" xml:space="preserve"><value>Set Intrastat data ({0} selected)</value></data>
+  <data name="Intrastat.Bulk.Title" xml:space="preserve"><value>Set Intrastat data for several items</value></data>
+  <data name="Intrastat.Bulk.Help" xml:space="preserve"><value>Only the fields you fill in are applied; empty fields leave the items unchanged. Net weight is set per item.</value></data>
+  <data name="Intrastat.Bulk.ScopeSelected" xml:space="preserve"><value>Selected items on this page ({0})</value></data>
+  <data name="Intrastat.Bulk.ScopeFilter" xml:space="preserve"><value>All items in the current filter ({0})</value></data>
+  <data name="Intrastat.Bulk.ScopeAll" xml:space="preserve"><value>All items ({0})</value></data>
+  <data name="Intrastat.Bulk.Continue" xml:space="preserve"><value>Continue</value></data>
+  <data name="Intrastat.Bulk.NothingFilled" xml:space="preserve"><value>Fill in at least one field.</value></data>
+  <data name="Intrastat.Bulk.CountryInvalid" xml:space="preserve"><value>Country of origin must be a 2-letter ISO code.</value></data>
+  <data name="Intrastat.Bulk.UnitInvalid" xml:space="preserve"><value>The supplementary unit must be 3 characters and needs a factor above zero.</value></data>
+  <data name="Intrastat.Bulk.Confirm" xml:space="preserve"><value>{0} of {1} items will change. Apply?</value></data>
+  <data name="Intrastat.Bulk.NothingToChange" xml:space="preserve"><value>Nothing to change: the {0} chosen items already have these values.</value></data>
+  <data name="Intrastat.Bulk.Done" xml:space="preserve"><value>Intrastat data updated on {0} items.</value></data>
   <data name="Intrastat.NothingDeclarable" xml:space="preserve"><value>Nothing can be declared until the listed lines are fixed. Do not file this month as a zero report.</value></data>
   <data name="Intrastat.OriginCountry" xml:space="preserve"><value>Origin country</value></data>
   <data name="Intrastat.Nature" xml:space="preserve"><value>Nature</value></data>

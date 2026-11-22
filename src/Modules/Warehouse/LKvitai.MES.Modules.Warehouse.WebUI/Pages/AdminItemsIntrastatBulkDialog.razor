@@ -1,0 +1,111 @@
+<MudDialog>
+    <DialogContent>
+        @if (!string.IsNullOrWhiteSpace(_validationMessage))
+        {
+            <div class="lk-state lk-state--warn">@_validationMessage</div>
+        }
+
+        <p>@L["Intrastat.Bulk.Help"]</p>
+
+        <MudRadioGroup T="bool" @bind-Value="_useFilter">
+            <MudRadio T="bool" Value="false" Disabled="@(SelectedCount == 0)">@L["Intrastat.Bulk.ScopeSelected", SelectedCount]</MudRadio>
+            <MudRadio T="bool" Value="true">@(FilterIsNarrowed ? L["Intrastat.Bulk.ScopeFilter", FilterCount] : L["Intrastat.Bulk.ScopeAll", FilterCount])</MudRadio>
+        </MudRadioGroup>
+
+        <div class="admin-item-dialog__grid">
+            <MudTextField T="string"
+                          Label="@L["Intrastat.Item.CommodityCode"]"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          MaxLength="8"
+                          HelperText="@L["Intrastat.Item.CommodityCodeHelp"]"
+                          @bind-Value="_commodityCode" />
+
+            <MudTextField T="string"
+                          Label="@L["Intrastat.Item.OriginCountry"]"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          MaxLength="2"
+                          @bind-Value="_originCountry" />
+
+            <MudTextField T="string"
+                          Label="@L["Intrastat.Item.SupplementaryUnit"]"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          MaxLength="3"
+                          HelperText="@L["Intrastat.Item.SupplementaryUnitHelp"]"
+                          @bind-Value="_supplementaryUnit" />
+
+            <LkDecimalField T="decimal?"
+                             Label="@L["Intrastat.Item.SupplementaryUnitFactor"]"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0.000001m"
+                             @bind-Value="_supplementaryUnitFactor" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="Cancel">@L["Common.Cancel"]</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit">@L["Intrastat.Bulk.Continue"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public int SelectedCount { get; set; }
+    [Parameter] public int FilterCount { get; set; }
+    [Parameter] public bool FilterIsNarrowed { get; set; }
+
+    private bool _useFilter;
+    private string? _commodityCode;
+    private string? _originCountry;
+    private string? _supplementaryUnit;
+    private decimal? _supplementaryUnitFactor;
+    private string? _validationMessage;
+
+    protected override void OnInitialized() => _useFilter = SelectedCount == 0;
+
+    private static string? Normalize(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    /// <summary>First problem with the typed values, or null. The API repeats these checks and stays authoritative.</summary>
+    private string? FindProblem(string? code, string? country, string? unit)
+    {
+        if (code is null && country is null && unit is null)
+        {
+            return L["Intrastat.Bulk.NothingFilled"].Value;
+        }
+
+        if (code is not null && !(code.Length == 8 && code.All(char.IsAsciiDigit)))
+        {
+            return L["Intrastat.Item.CommodityCodeInvalid"].Value;
+        }
+
+        if (country is not null && !(country.Length == 2 && country.All(char.IsAsciiLetter)))
+        {
+            return L["Intrastat.Bulk.CountryInvalid"].Value;
+        }
+
+        return unit is not null && (unit.Length != 3 || _supplementaryUnitFactor is not > 0m)
+            ? L["Intrastat.Bulk.UnitInvalid"].Value
+            : null;
+    }
+
+    private void Submit()
+    {
+        var code = Normalize(_commodityCode);
+        var country = Normalize(_originCountry)?.ToUpperInvariant();
+        var unit = Normalize(_supplementaryUnit);
+
+        _validationMessage = FindProblem(code, country, unit);
+        if (_validationMessage is not null)
+        {
+            return;
+        }
+
+        MudDialog.Close(DialogResult.Ok(new IntrastatBulkChoice(
+            _useFilter, code, country, unit, unit is null ? null : _supplementaryUnitFactor)));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

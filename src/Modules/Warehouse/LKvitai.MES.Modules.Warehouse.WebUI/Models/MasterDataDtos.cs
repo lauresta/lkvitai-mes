@@ -8,6 +8,33 @@ public record PagedApiResponse<T>
     public int PageSize { get; init; }
 }
 
+/// <summary>Items chosen by the filter of the items list (used when "all in the current filter" is picked).</summary>
+public record ItemSelectionFilterDto(string? Search, int? CategoryId, string? Status, bool IntrastatMissing);
+
+/// <summary>What the bulk Intrastat dialog collected: the scope and the values to set (null = leave as is).</summary>
+public record IntrastatBulkChoice(
+    bool UseFilter, string? CommodityCode, string? OriginCountry, string? SupplementaryUnit, decimal? SupplementaryUnitFactor);
+
+/// <summary>Bulk set of Intrastat item data; only the filled fields are applied.</summary>
+public record BulkIntrastatRequest
+{
+    public IReadOnlyList<int>? ItemIds { get; init; }
+    public ItemSelectionFilterDto? Filter { get; init; }
+    public string? CommodityCode { get; init; }
+    public string? OriginCountry { get; init; }
+    public string? SupplementaryUnit { get; init; }
+    public decimal? SupplementaryUnitFactor { get; init; }
+    public bool DryRun { get; init; }
+}
+
+public record BulkIntrastatResult
+{
+    public int Matched { get; init; }
+    public int Changed { get; init; }
+    public int Unchanged { get; init; }
+    public bool DryRun { get; init; }
+}
+
 public record AdminItemDto
 {
     public int Id { get; init; }
