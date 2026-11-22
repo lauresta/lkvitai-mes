@@ -23,12 +23,13 @@ public static class OpenTelemetryConfiguration
                     .AddSource("Warehouse.*");
                 
                 // Configure exporter based on environment
-                if (configuration.GetValue<bool>("UseJaegerExporter"))
+                if (configuration.GetValue<bool>("UseOtlpExporter"))
                 {
-                    builder.AddJaegerExporter(options =>
+                    // OTLP/gRPC (Jaeger all-in-one accepts it on 4317); replaces the deprecated Jaeger exporter.
+                    builder.AddOtlpExporter(options =>
                     {
-                        options.AgentHost = configuration["Jaeger:AgentHost"] ?? "localhost";
-                        options.AgentPort = configuration.GetValue<int>("Jaeger:AgentPort", 6831);
+                        options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+                        options.Endpoint = new Uri(configuration["Otlp:Endpoint"] ?? "http://localhost:4317");
                     });
                 }
                 else

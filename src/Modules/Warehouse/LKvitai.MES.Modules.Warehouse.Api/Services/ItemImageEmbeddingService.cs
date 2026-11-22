@@ -69,7 +69,7 @@ public sealed class ItemImageEmbeddingService : IItemImageEmbeddingService
         CancellationToken cancellationToken)
     {
         await using var clipStream = new MemoryStream(imageBytes, writable: false);
-        using var image = await Image.LoadAsync<Rgb24>(clipStream, cancellationToken);
+        using var image = await Image.LoadAsync<Rgb24>(SafeImageDecoding.Options, clipStream, cancellationToken);
         image.Mutate(x =>
             x.AutoOrient()
                 .Resize(new ResizeOptions
@@ -120,7 +120,7 @@ public sealed class ItemImageEmbeddingService : IItemImageEmbeddingService
         CancellationToken cancellationToken)
     {
         await using var histogramStream = new MemoryStream(imageBytes, writable: false);
-        using var image = await Image.LoadAsync<Rgba32>(histogramStream, cancellationToken);
+        using var image = await Image.LoadAsync<Rgba32>(SafeImageDecoding.Options, histogramStream, cancellationToken);
         image.Mutate(x =>
             x.AutoOrient()
                 .Resize(new ResizeOptions
