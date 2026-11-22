@@ -120,6 +120,21 @@
                           MaxLength="2"
                           @bind-Value="_model.OriginCountry" />
 
+            <MudTextField T="string"
+                          Label="@L["Intrastat.Item.SupplementaryUnit"]"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          MaxLength="10"
+                          HelperText="@L["Intrastat.Item.SupplementaryUnitHelp"]"
+                          @bind-Value="_model.SupplementaryUnit" />
+
+            <LkDecimalField T="decimal?"
+                             Label="@L["Intrastat.Item.SupplementaryUnitFactor"]"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0.000001m"
+                             @bind-Value="_model.SupplementaryUnitFactor" />
+
             <LkDecimalField T="decimal?"
                              Label="@L["Common.Weight"]"
                              Variant="Variant.Outlined"
@@ -277,6 +292,8 @@
             _model.CommodityCode = Item.CommodityCode;
             _model.NetWeightKg = Item.NetWeightKg;
             _model.OriginCountry = Item.OriginCountry;
+            _model.SupplementaryUnit = Item.SupplementaryUnit;
+            _model.SupplementaryUnitFactor = Item.SupplementaryUnitFactor;
             _model.Tags.Clear();
             _model.Tags.AddRange(Item.Tags.Select(NormalizeTag).Where(x => !string.IsNullOrWhiteSpace(x)));
             return;
@@ -483,6 +500,8 @@
         public string? CommodityCode { get; set; }
         public decimal? NetWeightKg { get; set; }
         public string? OriginCountry { get; set; }
+        public string? SupplementaryUnit { get; set; }
+        public decimal? SupplementaryUnitFactor { get; set; }
         public List<string> Tags { get; } = [];
 
         public CreateOrUpdateItemRequest ToRequest(bool isEdit) => new()
@@ -506,6 +525,8 @@
             CommodityCode = Normalize(CommodityCode),
             NetWeightKg = NetWeightKg,
             OriginCountry = Normalize(OriginCountry)?.ToUpperInvariant(),
+            SupplementaryUnit = Normalize(SupplementaryUnit),
+            SupplementaryUnitFactor = Normalize(SupplementaryUnit) is null ? null : SupplementaryUnitFactor,
             ItemType = string.IsNullOrWhiteSpace(ItemType) ? "Stock" : ItemType.Trim(),
             CostType = string.Equals(ItemType, "Service", StringComparison.OrdinalIgnoreCase)
                 ? Normalize(CostType)

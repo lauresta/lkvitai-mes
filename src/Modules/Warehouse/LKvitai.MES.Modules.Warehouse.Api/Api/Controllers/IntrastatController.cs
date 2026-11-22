@@ -10,9 +10,9 @@ namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 
 public sealed record IntrastatReportDto(
     int Year, int Month, IReadOnlyList<IntrastatRow> Rows, decimal TotalValueEur, decimal TotalNetMassKg,
-    decimal TotalQuantity, IReadOnlyList<string> Warnings);
+    decimal TotalQuantity, IReadOnlyList<string> Warnings, decimal TotalReturnValueEur);
 
-/// <summary>Blueprint 4.9 Intrastat arrivals report (EU acquisitions of a calendar month, by invoice date).</summary>
+/// <summary>Blueprint 4.9 Intrastat arrivals report (posted EU acquisitions of a calendar month by invoice date, invoice value; supplier returns as separate rows).</summary>
 [ApiController]
 [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
 [Route("api/warehouse/v1/intrastat")]
@@ -49,34 +49,25 @@ public sealed class IntrastatController : ControllerBase
         var shipments = await _db.InboundShipments.AsNoTracking()
             .Include(s => s.Supplier)
             .Include(s => s.Lines).ThenInclude(l => l.Item)
-            .Where(s => s.InvoiceDate >= from && s.InvoiceDate < to && s.DocumentKind == "Invoice")
+            .Where(s => s.InvoiceDate >= from && s.InvoiceDate < to && s.DocumentKind == "Invoice" && s.PostingStatus == "Posted")
             .ToListAsync(ct);
 
-        var inputs = new List<IntrastatLineInput>();
-        var warnings = new List<string>();
-        foreach (var s in shipments)
-        {
-            var treatment = s.VatTreatment ?? (s.Supplier?.Kind == SupplierKind.Eu ? VatTreatment.EuAcquisition : null);
-            if (treatment != VatTreatment.EuAcquisition) continue;
-            var rate = s.Currency == "EUR" ? 1m
-                : s.RateUnitsPerEur is > 0m ? PurchaseMath.RateEurPerUnit(s.RateUnitsPerEur.Value) : (decimal?)null;
-            foreach (var l in s.Lines.Where(l => l.Item is { ItemType: ItemType.Stock }))
-            {
-                var qty = l.InvoiceQty ?? l.ExpectedQty;
-                var value = l.FinalValueEur
-                    ?? (rate is null ? (decimal?)null : PurchaseMath.ToEur(qty * (l.InvoiceUnitPrice ?? l.UnitPrice ?? 0m), rate.Value));
-                if (string.IsNullOrWhiteSpace(l.Item!.CommodityCode) || string.IsNullOrWhiteSpace(s.DispatchCountry) || value is null)
-                {
-                    warnings.Add($"{s.InvoiceNumber ?? s.ReferenceNumber}|{l.Item.InternalSKU}");
-                    continue;
-                }
+        var credits = await _db.SupplierCreditDocuments.AsNoTracking()
+            .Include(c => c.Lines).ThenInclude(l => l.Item)
+            .Where(c => c.CreditDate >= from && c.CreditDate < to && c.PostingStatus == "Posted")
+            .ToListAsync(ct);
+        var originalIds = credits.Select(c => c.OriginalShipmentId).Distinct().ToList();
+        var originals = originalIds.Count == 0
+            ? new Dictionary<int, InboundShipment>()
+            : await _db.InboundShipments.AsNoTracking()
+                .Include(s => s.Supplier)
+                .Where(s => originalIds.Contains(s.Id))
+                .ToDictionaryAsync(s => s.Id, ct);
 
-                inputs.Add(new IntrastatLineInput(l.Item.CommodityCode, s.DispatchCountry, qty, value.Value, l.Item.NetWeightKg));
-            }
-        }
-
-        var rows = IntrastatReport.Build(inputs);
-        return new IntrastatReportDto(year, month, rows, rows.Sum(r => r.ValueEur), rows.Sum(r => r.NetMassKg),
-            rows.Sum(r => r.Quantity), warnings);
+        var collected = IntrastatReport.Collect(shipments, credits, originals);
+        var rows = IntrastatReport.Build(collected.Lines);
+        var arrivals = rows.Where(r => !r.IsReturn).ToList();
+        return new IntrastatReportDto(year, month, rows, arrivals.Sum(r => r.ValueEur), arrivals.Sum(r => r.NetMassKg),
+            arrivals.Sum(r => r.Quantity), collected.Warnings, rows.Where(r => r.IsReturn).Sum(r => r.ValueEur));
     }
 }

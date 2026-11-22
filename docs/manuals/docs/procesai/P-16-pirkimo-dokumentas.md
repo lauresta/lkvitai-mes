@@ -27,7 +27,7 @@ Sandėlio modulio ekranai (UI: Create Inbound Shipment) ir (UI: Inbound Shipment
 3. Nurodykite (UI: Document currency) (trijų raidžių kodas, pvz. EUR, PLN, USD), (UI: Net amount) ir (UI: VAT amount) tiek, kiek parašyta sąskaitoje. (UI: Total with VAT) apskaičiuojamas pats.
 4. Pasirinkite (UI: VAT treatment): (UI: Domestic purchase), (UI: EU acquisition) arba (UI: Import). Jei nepasirinksite, taikomas režimas pagal tiekėjo tipą (vietinis, ES, ne ES); jei tipo nėra, registruojant reikės pasirinkti.
 5. Pasirinkite (UI: Accounting route): (UI: Send to Agnum) arba (UI: Entered manually in Agnum). Antruoju atveju privalomas laukas (UI: Reason for entering in Agnum manually); dokumentas užregistruojamas sandėlyje, bet į Agnum nesiunčiamas, o buhalteris jį įveda pats.
-6. Pasirinkus (UI: EU acquisition), atsiranda Intrastat laukai: (UI: Delivery terms) (pvz. DAP), (UI: Transport mode) (pvz. 30), (UI: Country of dispatch) (dviejų raidžių, pvz. PL) ir (UI: Transaction nature) (numatyta 11). Jie privalomi registruojant.
+6. Pasirinkus (UI: EU acquisition), atsiranda Intrastat laukai: (UI: Delivery terms) (pasirenkama iš Incoterms 2020 sąrašo, pvz. DAP), (UI: Transport mode) (pasirenkama iš sąrašo: 1 jūrų, 2 geležinkelių, 3 keliais, 4 oro, 5 pašto, 7 stacionarūs įrenginiai, 8 vidaus vandenų, 9 savaeigis), (UI: Country of dispatch) (dviejų raidžių, pvz. PL) ir (UI: Transaction nature) (pasirenkamas Intrastat sandorio pobūdžio kodas, numatyta 11). Jie privalomi registruojant.
 
 ![Pirkimo dokumento kūrimo forma](../img/warehouse/purchase-document-create.png)
 
@@ -76,6 +76,9 @@ Neužregistravus rodomi tokie pranešimai (jie rodomi raudonu sąrašu):
 - „Choose the VAT treatment.“ – pasirinkite (UI: VAT treatment).
 - „Intrastat fields (delivery terms, transport mode, dispatch country, transaction nature) are required for an EU acquisition.“ – užpildykite Intrastat laukus.
 - „Every stock item of an EU acquisition needs an 8-digit commodity code and a net weight.“ – papildykite prekių kortelę.
+- „Every stock item of an EU acquisition needs a country of origin (ISO 3166 alpha-2 code).“ – prekės kortelėje nurodykite kilmės šalį.
+- „A supplementary unit and its factor (above zero) must be set together on the item.“ – prekės kortelėje užpildykite abu papildomo vieneto laukus arba abu išvalykite.
+- „Intrastat transaction nature, transport mode or delivery terms is not in the code list.“ – pasirinkite reikšmę iš sąrašo (senose dokumentuose įrašyta kita reikšmė, pvz. transportas 30, turi būti pakeista).
 - „The exchange rate for today is not published yet.“ ir „There is no exchange rate for the document date.“ – palaukite paskelbimo arba įveskite rankinį kursą.
 - „A manual rate needs a reason.“, „The rate differs from the last saved rate by more than 1.5 times.“ – ištaisykite rankinį kursą.
 - „The month of this document is closed; nothing dated in it can be posted or un-posted.“ – buhalteris turi atidaryti mėnesį (P-22).

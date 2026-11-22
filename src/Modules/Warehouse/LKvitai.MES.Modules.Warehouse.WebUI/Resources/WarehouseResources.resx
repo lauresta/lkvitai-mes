@@ -2076,15 +2076,15 @@
   <data name="Credit.Problem.LineNotInOriginal" xml:space="preserve"><value>A line does not belong to the original document.</value></data>
   <data name="Nav.Intrastat" xml:space="preserve"><value>Intrastat arrivals</value></data>
   <data name="Intrastat.Title" xml:space="preserve"><value>Intrastat arrivals</value></data>
-  <data name="Intrastat.Intro" xml:space="preserve"><value>EU acquisitions of the month by invoice date, grouped by commodity code and dispatch country. Quantity is in the base unit of the item.</value></data>
+  <data name="Intrastat.Intro" xml:space="preserve"><value>Posted EU acquisitions of the month by invoice date, grouped by every declared field. The value is the invoice value (quantity x invoice price at the document rate), without freight and other costs. Quantity is in the base unit of the item. Supplier returns are listed separately and are not subtracted.</value></data>
   <data name="Intrastat.Month" xml:space="preserve"><value>Month</value></data>
   <data name="Intrastat.Show" xml:space="preserve"><value>Show</value></data>
   <data name="Intrastat.DownloadCsv" xml:space="preserve"><value>Download CSV</value></data>
-  <data name="Intrastat.Warnings" xml:space="preserve"><value>{0} lines are left out: commodity code, dispatch country or value is missing.</value></data>
-  <data name="Intrastat.Empty" xml:space="preserve"><value>No EU acquisitions in this month.</value></data>
+  <data name="Intrastat.Warnings" xml:space="preserve"><value>{0} lines are left out: commodity code, country of dispatch or origin, transaction nature, delivery terms, transport mode, supplementary unit factor or value is missing, or a price-only credit needs a correction of the declaration.</value></data>
+  <data name="Intrastat.Empty" xml:space="preserve"><value>No EU acquisitions in this month. A zero report must still be filed with customs for this month.</value></data>
   <data name="Intrastat.CommodityCode" xml:space="preserve"><value>Commodity code</value></data>
   <data name="Intrastat.Country" xml:space="preserve"><value>Dispatch country</value></data>
-  <data name="Intrastat.ValueEur" xml:space="preserve"><value>Value, EUR</value></data>
+  <data name="Intrastat.ValueEur" xml:space="preserve"><value>Invoice value, EUR</value></data>
   <data name="Intrastat.NetMass" xml:space="preserve"><value>Net mass, kg</value></data>
   <data name="Intrastat.Quantity" xml:space="preserve"><value>Quantity</value></data>
   <data name="Intrastat.Totals" xml:space="preserve"><value>Total</value></data>
@@ -2097,6 +2097,21 @@
   <data name="Intrastat.Item.CommodityCodeHelp" xml:space="preserve"><value>8 digits; needed for EU purchases</value></data>
   <data name="Intrastat.Item.NetWeightKg" xml:space="preserve"><value>Net weight per unit, kg</value></data>
   <data name="Intrastat.Item.OriginCountry" xml:space="preserve"><value>Country of origin (ISO, 2 letters)</value></data>
+  <data name="Intrastat.OriginCountry" xml:space="preserve"><value>Origin country</value></data>
+  <data name="Intrastat.Nature" xml:space="preserve"><value>Nature</value></data>
+  <data name="Intrastat.Terms" xml:space="preserve"><value>Terms</value></data>
+  <data name="Intrastat.Mode" xml:space="preserve"><value>Transport</value></data>
+  <data name="Intrastat.SuppUnit" xml:space="preserve"><value>Suppl. unit</value></data>
+  <data name="Intrastat.SuppQty" xml:space="preserve"><value>Suppl. quantity</value></data>
+  <data name="Intrastat.LandedCostEur" xml:space="preserve"><value>Landed cost, EUR (info only)</value></data>
+  <data name="Intrastat.Return" xml:space="preserve"><value>Return</value></data>
+  <data name="Intrastat.ReturnsTotal" xml:space="preserve"><value>Returns to supplier, EUR (not subtracted)</value></data>
+  <data name="Intrastat.Item.SupplementaryUnit" xml:space="preserve"><value>Supplementary unit (for example m2, p/st)</value></data>
+  <data name="Intrastat.Item.SupplementaryUnitHelp" xml:space="preserve"><value>Only for commodity codes that require a supplementary unit</value></data>
+  <data name="Intrastat.Item.SupplementaryUnitFactor" xml:space="preserve"><value>Supplementary units per one stock unit</value></data>
+  <data name="Purchase.Problem.IntrastatOriginCountryMissing" xml:space="preserve"><value>Every stock item of an EU acquisition needs a country of origin (ISO 3166 alpha-2 code).</value></data>
+  <data name="Purchase.Problem.IntrastatSupplementaryUnitInvalid" xml:space="preserve"><value>A supplementary unit and its factor (above zero) must be set together on the item.</value></data>
+  <data name="Purchase.Problem.IntrastatCodeInvalid" xml:space="preserve"><value>Intrastat transaction nature, transport mode or delivery terms is not in the code list.</value></data>
   <data name="Intrastat.Item.CommodityCodeInvalid" xml:space="preserve"><value>Commodity code must be 8 digits.</value></data>
   <data name="Intrastat.Item.NetWeightInvalid" xml:space="preserve"><value>Net weight must be greater than zero.</value></data>
   <data name="Purchase.Problem.IntrastatHeaderRequired" xml:space="preserve"><value>Intrastat fields (delivery terms, transport mode, dispatch country, transaction nature) are required for an EU acquisition.</value></data>
