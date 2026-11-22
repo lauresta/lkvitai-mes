@@ -487,9 +487,13 @@
         }
 
         // Figures and names come from the server text.
-        return problem.Code is "LinesTotalMismatch" or "SupplierNotPostable" or "PostingRuleMissing"
-            ? $"{localized.Value} ({problem.Text})"
-            : localized.Value;
+        if (problem.Code is "LinesTotalMismatch" or "SupplierNotPostable" or "PostingRuleMissing")
+        {
+            return $"{localized.Value} ({problem.Text})";
+        }
+
+        // The offending items come from the server detail (SKU and name, overflow as "(+N)").
+        return string.IsNullOrWhiteSpace(problem.Detail) ? localized.Value : $"{localized.Value} {problem.Detail}";
     }
 
     private async Task PostAsync()
@@ -511,8 +515,8 @@
         catch (ApiException ex) when (ex.StatusCode == 422 && ex.ProblemDetails?.Detail is { } detail && detail.Contains('|'))
         {
             _postProblems = detail.Split('\n', StringSplitOptions.RemoveEmptyEntries)
-                .Select(x => x.Split('|', 2))
-                .Select(p => new PostingProblemDto { Code = p[0], Text = p.Length > 1 ? p[1] : p[0] })
+                .Select(x => x.Split('|', 3))
+                .Select(p => new PostingProblemDto { Code = p[0], Text = p.Length > 1 ? p[1] : p[0], Detail = p.Length > 2 ? p[2] : null })
                 .ToList();
             ToastService.ShowError(L["Purchase.NotPostedToast"].Value);
         }

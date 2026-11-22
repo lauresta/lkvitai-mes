@@ -9,6 +9,13 @@ public static class PhysicalLocation
     public static bool IsPhysical(Location? location) =>
         location is { IsVirtual: false } && IsPhysicalCode(location.Code);
 
+    /// <summary>
+    /// Where stock may be put away: a physical cell. Receiving, QC hold, quarantine, shipping, transit and the
+    /// outside codes (customer, production, scrap, ...) are reached through their own flows, never by putaway.
+    /// </summary>
+    public static bool IsStorageLocation(Location? location) =>
+        IsPhysical(location) && !Aggregates.StockBoundary.IsKnownVirtual(location!.Code);
+
     public static bool IsPhysicalCode(string? code) =>
         !string.IsNullOrWhiteSpace(code) &&
         !code.Equals("AGNUM", StringComparison.OrdinalIgnoreCase) &&

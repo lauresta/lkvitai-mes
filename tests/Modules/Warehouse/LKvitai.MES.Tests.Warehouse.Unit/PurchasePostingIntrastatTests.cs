@@ -111,4 +111,74 @@ public sealed class PurchasePostingIntrastatTests
         Validate((_, i) => { i.SupplementaryUnit = "m2"; i.SupplementaryUnitFactor = 0m; })
             .Should().ContainSingle(p => p.Code == "IntrastatSupplementaryUnitInvalid");
     }
+
+    private static void AddLines(InboundShipment s, int count, Action<Item, int> configure)
+    {
+        for (var n = 1; n <= count; n++)
+        {
+            var item = new Item { Id = 100 + n, InternalSKU = "SKU-" + n.ToString(System.Globalization.CultureInfo.InvariantCulture), Name = "Item " + n.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                ItemType = ItemType.Stock, CommodityCode = "84713000", NetWeightKg = 0.5m, OriginCountry = "CN" };
+            configure(item, n);
+            s.Lines.Add(new InboundShipmentLine { Id = 100 + n, ItemId = item.Id, Item = item, ExpectedQty = 1m, UnitPrice = 0m });
+        }
+    }
+
+    [Fact]
+    public void MissingGoodsData_NamesTheOffendingItems_AndOnlyThose()
+    {
+        var problem = Validate((s, _) => AddLines(s, 2, (i, n) => { if (n == 2) i.CommodityCode = null; }))
+            .Single(p => p.Code == "IntrastatItemDataMissing");
+
+        problem.Detail.Should().Be("SKU-2 Item 2");
+        problem.Text.Should().Contain("SKU-2 Item 2").And.NotContain("SKU-1");
+    }
+
+    [Fact]
+    public void MissingOrigin_NamesTheOffendingItems()
+    {
+        var problem = Validate((s, _) => AddLines(s, 2, (i, _) => i.OriginCountry = null))
+            .Single(p => p.Code == "IntrastatOriginCountryMissing");
+
+        problem.Detail.Should().Be("SKU-1 Item 1, SKU-2 Item 2");
+    }
+
+    [Fact]
+    public void ManyOffendingItems_AreCappedAtFive_WithAnOverflowCount()
+    {
+        var problem = Validate((s, _) => AddLines(s, 8, (i, _) => i.NetWeightKg = null))
+            .Single(p => p.Code == "IntrastatItemDataMissing");
+
+        problem.Detail.Should().Be("SKU-1 Item 1, SKU-2 Item 2, SKU-3 Item 3, SKU-4 Item 4, SKU-5 Item 5 (+3)");
+        problem.Text.Should().EndWith("SKU-5 Item 5 and 3 more.");
+    }
+
+    [Fact]
+    public void ExactlyFiveOffendingItems_HaveNoOverflowSuffix()
+    {
+        var problem = Validate((s, _) => AddLines(s, 5, (i, _) => i.NetWeightKg = null))
+            .Single(p => p.Code == "IntrastatItemDataMissing");
+
+        problem.Detail.Should().NotContain("+");
+    }
+
+    [Fact]
+    public void SameItemOnSeveralLines_IsListedOnce()
+    {
+        var item = new Item { Id = 7, InternalSKU = "DUP", Name = "Twice", ItemType = ItemType.Stock };
+        var lines = new[]
+        {
+            new InboundShipmentLine { Id = 1, ItemId = 7, Item = item },
+            new InboundShipmentLine { Id = 2, ItemId = 7, Item = item }
+        };
+
+        PurchasePostingValidator.DescribeItems(lines, n => "+" + n).Should().Be("DUP Twice");
+    }
+
+    [Fact]
+    public void DescribeItems_ForNoLines_IsNull()
+        => PurchasePostingValidator.DescribeItems([], n => "+" + n).Should().BeNull();
+
+    [Fact]
+    public void CompleteItems_GiveNoDetail()
+        => Validate().Should().NotContain(p => p.Detail != null);
 }

@@ -1,6 +1,8 @@
 @page "/admin/items/{Id:int}"
 @inject MasterDataAdminClient AdminClient
 @inject ValuationClient ValuationClient
+@inject UomClient UomClient
+@inject IDialogService DialogService
 @inject ToastService ToastService
 @inject NavigationManager NavigationManager
 
@@ -18,12 +20,21 @@
                 </div>
             }
         </div>
-        <MudButton Variant="Variant.Outlined"
-                   Color="Color.Primary"
-                   OnClick="BackToList"
-                   data-testid="admin-item-detail-back">
-            @L["AdminItemDetail.BackToList"]
-        </MudButton>
+        <div class="items-detail-title__actions">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Disabled="@(_item is null || _isLoading)"
+                       OnClick="OpenEditDialogAsync"
+                       data-testid="admin-item-detail-edit">
+                @L["Common.Edit"]
+            </MudButton>
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Primary"
+                       OnClick="BackToList"
+                       data-testid="admin-item-detail-back">
+                @L["AdminItemDetail.BackToList"]
+            </MudButton>
+        </div>
     </div>
 
     @if (_apiError is not null)
@@ -91,6 +102,21 @@
                     <span>@L["Common.Description"]</span>
                     <strong>@FormatNullable(_item.Description)</strong>
                 </div>
+            </div>
+
+            <div class="panel__head" data-testid="admin-item-detail-intrastat">
+                <span class="panel__title">@L["Intrastat.Card.Title"]</span>
+                @if (IntrastatItemCheck.IsDataMissing(_item.ItemType, _item.CommodityCode, _item.NetWeightKg, _item.OriginCountry))
+                {
+                    <span class="chip chip--locked" title="@L["Intrastat.Items.MissingHint"]" data-testid="admin-item-detail-intrastat-missing">@L["Intrastat.Item.DataMissing"]</span>
+                }
+            </div>
+            <div class="items-detail-fields">
+                <AdminItemFieldBlock Label="@L["Intrastat.Item.CommodityCode"]" Value="@FormatNullable(_item.CommodityCode)" IsMono="true" />
+                <AdminItemFieldBlock Label="@L["Intrastat.Item.NetWeightKg"]" Value="@FormatDecimal(_item.NetWeightKg)" IsMono="true" />
+                <AdminItemFieldBlock Label="@L["Intrastat.Item.OriginCountry"]" Value="@FormatNullable(_item.OriginCountry)" IsMono="true" />
+                <AdminItemFieldBlock Label="@L["Intrastat.Item.SupplementaryUnit"]" Value="@FormatNullable(_item.SupplementaryUnit)" IsMono="true" />
+                <AdminItemFieldBlock Label="@L["Intrastat.Item.SupplementaryUnitFactor"]" Value="@FormatDecimal(_item.SupplementaryUnitFactor)" IsMono="true" />
             </div>
         }
     </MudPaper>
@@ -588,6 +614,55 @@
         finally
         {
             _isLoading = false;
+        }
+    }
+
+    private static readonly DialogOptions ItemDialogOptions = new()
+    {
+        MaxWidth = MaxWidth.Medium,
+        FullWidth = true,
+        CloseButton = true
+    };
+
+    private async Task OpenEditDialogAsync()
+    {
+        if (_item is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _apiError = null;
+            var categoriesTask = AdminClient.GetCategoriesAsync();
+            var unitsTask = UomClient.GetUnitsAsync(null, null);
+            var tagsTask = AdminClient.GetItemTagsAsync(limit: 100);
+            await Task.WhenAll(categoriesTask, unitsTask, tagsTask);
+
+            var parameters = new DialogParameters
+            {
+                ["IsEdit"] = true,
+                ["Item"] = _item,
+                ["Categories"] = categoriesTask.Result.OrderBy(x => x.Code, StringComparer.OrdinalIgnoreCase).ToList(),
+                ["Units"] = unitsTask.Result.OrderBy(x => x.Code, StringComparer.OrdinalIgnoreCase).ToList(),
+                ["ExistingTags"] = tagsTask.Result.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList()
+            };
+
+            var dialog = await DialogService.ShowAsync<AdminItemEditorDialog>(L["AdminItems.EditItem"].Value, parameters, ItemDialogOptions);
+            var result = await dialog.Result;
+            if (result.Canceled || result.Data is not CreateOrUpdateItemRequest request)
+            {
+                return;
+            }
+
+            await AdminClient.UpdateItemAsync(Id, request);
+            ToastService.ShowSuccess(L["AdminItems.Toast.ItemUpdated"].Value);
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
         }
     }
 

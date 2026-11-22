@@ -2080,7 +2080,6 @@
   <data name="Intrastat.Month" xml:space="preserve"><value>Mėnuo</value></data>
   <data name="Intrastat.Show" xml:space="preserve"><value>Rodyti</value></data>
   <data name="Intrastat.DownloadCsv" xml:space="preserve"><value>Atsisiųsti CSV</value></data>
-  <data name="Intrastat.Warnings" xml:space="preserve"><value>Praleistos eilutės: {0}. Trūksta prekės kodo, išsiuntimo ar kilmės šalies, sandorio pobūdžio, pristatymo sąlygų, transporto rūšies, papildomo vieneto koeficiento ar vertės, arba reikia koreguoti deklaraciją dėl tik kainos kreditinės sąskaitos.</value></data>
   <data name="Intrastat.Empty" xml:space="preserve"><value>Šį mėnesį ES įsigijimų nėra. Nulinė ataskaita už šį mėnesį muitinei vis tiek turi būti pateikta.</value></data>
   <data name="Intrastat.CommodityCode" xml:space="preserve"><value>Prekės kodas</value></data>
   <data name="Intrastat.Country" xml:space="preserve"><value>Išsiuntimo šalis</value></data>
@@ -2126,8 +2125,8 @@
   <data name="Intrastat.Item.SupplementaryUnit" xml:space="preserve"><value>Papildomo vieneto kodas (3 simb.)</value></data>
   <data name="Intrastat.Item.SupplementaryUnitHelp" xml:space="preserve"><value>Tik prekių kodams, kuriems reikalingas papildomas vienetas</value></data>
   <data name="Intrastat.Item.SupplementaryUnitFactor" xml:space="preserve"><value>Papildomų vienetų viename sandėlio vienete</value></data>
-  <data name="Purchase.Problem.IntrastatOriginCountryMissing" xml:space="preserve"><value>Kiekviena ES įsigijimo prekė turi turėti kilmės šalį (ISO 3166 dviejų raidžių kodas).</value></data>
-  <data name="Purchase.Problem.IntrastatSupplementaryUnitInvalid" xml:space="preserve"><value>Prekės papildomas vienetas ir jo koeficientas (didesnis už nulį) nurodomi kartu.</value></data>
+  <data name="Purchase.Problem.IntrastatOriginCountryMissing" xml:space="preserve"><value>Kiekviena ES įsigijimo prekė turi turėti kilmės šalį (ISO 3166 dviejų raidžių kodas):</value></data>
+  <data name="Purchase.Problem.IntrastatSupplementaryUnitInvalid" xml:space="preserve"><value>Prekės papildomas vienetas ir jo koeficientas (didesnis už nulį) nurodomi kartu:</value></data>
   <data name="Purchase.Problem.IntrastatCodeInvalid" xml:space="preserve"><value>Intrastat sandorio pobūdis, transporto rūšis arba pristatymo sąlygos nėra kodų sąraše.</value></data>
   <data name="Intrastat.DownloadXml" xml:space="preserve"><value>Atsisiųsti XML</value></data>
   <data name="Intrastat.Declarant.Title" xml:space="preserve"><value>Deklaruotojas (PVM mokėtojas)</value></data>
@@ -2155,7 +2154,7 @@
   <data name="Intrastat.Item.CommodityCodeInvalid" xml:space="preserve"><value>Prekės kodą turi sudaryti 8 skaitmenys.</value></data>
   <data name="Intrastat.Item.NetWeightInvalid" xml:space="preserve"><value>Neto masė turi būti didesnė už nulį.</value></data>
   <data name="Purchase.Problem.IntrastatHeaderRequired" xml:space="preserve"><value>ES įsigijimui privalomi Intrastat laukai (pristatymo sąlygos, transporto rūšis, išsiuntimo šalis, sandorio pobūdis).</value></data>
-  <data name="Purchase.Problem.IntrastatItemDataMissing" xml:space="preserve"><value>Kiekviena ES įsigijimo prekė turi turėti 8 skaitmenų prekės kodą ir neto masę.</value></data>
+  <data name="Purchase.Problem.IntrastatItemDataMissing" xml:space="preserve"><value>Kiekviena ES įsigijimo prekė turi turėti 8 skaitmenų prekės kodą ir neto masę:</value></data>
   <data name="Nav.MonthEnd" xml:space="preserve"><value>Mėnesio uždarymas</value></data>
   <data name="MonthEnd.Title" xml:space="preserve"><value>Mėnesio uždarymas</value></data>
   <data name="MonthEnd.Intro" xml:space="preserve"><value>Mėnesio atsargų vertės žiniaraštis, tiltas į Agnum ir aktai. Uždarymas užfiksuoja mėnesį.</value></data>
@@ -2263,4 +2262,10 @@
   <data name="AdminSupplierMappings.DeleteMapping" xml:space="preserve"><value>Ištrinti susiejimą</value></data>
   <data name="AdminSupplierMappings.DeleteConfirmation" xml:space="preserve"><value>Ištrinti susiejimą {0} – {1}?</value></data>
   <data name="AdminSupplierMappings.Toast.SupplierMappingDeleted" xml:space="preserve"><value>Tiekėjo susiejimas ištrintas.</value></data>
+  <data name="Intrastat.Card.Title" xml:space="preserve"><value>Intrastat</value></data>
+  <data name="Intrastat.Item.DataMissing" xml:space="preserve"><value>Trūksta duomenų</value></data>
+  <data name="Intrastat.Warnings.One" xml:space="preserve"><value>Praleista {0} eilutė. Trūksta prekės kodo, išsiuntimo ar kilmės šalies, sandorio pobūdžio, pristatymo sąlygų, transporto rūšies, papildomo vieneto koeficiento ar vertės, arba reikia koreguoti deklaraciją dėl tik kainos kreditinės sąskaitos.</value></data>
+  <data name="Intrastat.Warnings.Other" xml:space="preserve"><value>Praleistos {0} eilutės. Trūksta prekės kodo, išsiuntimo ar kilmės šalies, sandorio pobūdžio, pristatymo sąlygų, transporto rūšies, papildomo vieneto koeficiento ar vertės, arba reikia koreguoti deklaraciją dėl tik kainos kreditinės sąskaitos.</value></data>
+  <data name="Intrastat.Warnings.Few" xml:space="preserve"><value>Praleistos {0} eilutės. Trūksta prekės kodo, išsiuntimo ar kilmės šalies, sandorio pobūdžio, pristatymo sąlygų, transporto rūšies, papildomo vieneto koeficiento ar vertės, arba reikia koreguoti deklaraciją dėl tik kainos kreditinės sąskaitos.</value></data>
+  <data name="Intrastat.Warnings.Many" xml:space="preserve"><value>Praleista {0} eilučių. Trūksta prekės kodo, išsiuntimo ar kilmės šalies, sandorio pobūdžio, pristatymo sąlygų, transporto rūšies, papildomo vieneto koeficiento ar vertės, arba reikia koreguoti deklaraciją dėl tik kainos kreditinės sąskaitos.</value></data>
 </root>

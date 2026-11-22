@@ -19,8 +19,27 @@ public static class ActorLabel
             return true;
         }
 
-        return trimmed.Length >= 20
-            && trimmed.All(c => char.IsAsciiHexDigit(c) || c == '-' || c == '_');
+        if (trimmed.Length >= 20 && trimmed.All(c => char.IsAsciiHexDigit(c) || c == '-' || c == '_'))
+        {
+            return true;
+        }
+
+        // Subject ids of other providers (base64url style): long, one token, letters and at least one digit.
+        return trimmed.Length >= 24
+            && trimmed.All(c => char.IsAsciiLetterOrDigit(c) || c == '-' || c == '_')
+            && trimmed.Any(char.IsAsciiDigit);
+    }
+
+    /// <summary>The actor as shown in a table: a readable name as stored, an opaque id shortened through <paramref name="unknown"/>.</summary>
+    public static string Display(string? stored, Func<string, string> unknown)
+    {
+        if (string.IsNullOrWhiteSpace(stored))
+        {
+            return "-";
+        }
+
+        var value = stored.Trim();
+        return LooksLikeOpaqueId(value) ? unknown(Short(value)) : value;
     }
 
     /// <summary>Last six characters of an opaque id, lower-case.</summary>

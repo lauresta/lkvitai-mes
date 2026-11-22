@@ -100,6 +100,7 @@ public sealed class ProductionIssuesController : ControllerBase
         }
 
         var notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
+        var issuedBy = ActorName.Resolve(User, _currentUser.GetCurrentUserId());
         var evt = new StockMovedEvent
         {
             MovementId = Guid.NewGuid(),
@@ -109,7 +110,7 @@ public sealed class ProductionIssuesController : ControllerBase
             ToLocation = ProductionLocation,
             MovementType = MovementType.ProductionIssue,
             OperatorId = Guid.Empty,
-            Reason = ProductionIssueReason.Compose(reference, _currentUser.GetCurrentUserId(), notes),
+            Reason = ProductionIssueReason.Compose(reference, issuedBy, notes),
             Timestamp = DateTime.UtcNow
         };
 
@@ -128,7 +129,7 @@ public sealed class ProductionIssuesController : ControllerBase
 
         return Ok(new ProductionIssueDto(
             evt.MovementId, item.Id, item.InternalSKU, item.Name, request.Qty, item.BaseUoM,
-            fromLocation.Id, fromLocation.Code, reference, _currentUser.GetCurrentUserId(), notes, evt.Timestamp));
+            fromLocation.Id, fromLocation.Code, reference, issuedBy, notes, evt.Timestamp));
     }
 
     /// <summary>Issues to production, newest first: movements into PRODUCTION recorded by this endpoint.</summary>

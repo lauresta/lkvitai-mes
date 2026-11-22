@@ -90,7 +90,7 @@
                                 <td class="text-end is-num">@row.Qty.ToString("0.###") <span class="small text-muted">@row.BaseUoM</span></td>
                                 <td>@row.FromLocationCode</td>
                                 <td>@(row.Reference ?? "-")</td>
-                                <td>@(row.IssuedBy ?? "-")</td>
+                                <td>@ActorLabel.Display(row.IssuedBy, tail => L["Valuation.Dashboard.UnknownUser", tail].Value)</td>
                                 <td>@(row.Notes ?? "-")</td>
                             </tr>
                         }

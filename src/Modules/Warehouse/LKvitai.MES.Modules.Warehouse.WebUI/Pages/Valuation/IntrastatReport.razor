@@ -65,7 +65,7 @@
     @if (_report.Warnings.Count > 0)
     {
         <div class="alert alert-warning">
-            @string.Format(L["Intrastat.Warnings"].Value, _report.Warnings.Count)
+            @WarningsHeadline()
             <ul class="mb-0">
                 @foreach (var w in _report.Warnings)
                 {
@@ -192,6 +192,13 @@
 
 @code {
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
+
+    private string WarningsHeadline()
+    {
+        var count = _report?.Warnings.Count ?? 0;
+        var suffix = PluralForm.Suffix(count, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+        return string.Format(CultureInfo.CurrentCulture, L["Intrastat.Warnings." + suffix].Value, count);
+    }
     private DateTime _month = new(DateTime.Today.Year, DateTime.Today.Month, 1);
     private IntrastatReportDto? _report;
     private bool _busy;

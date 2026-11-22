@@ -28,6 +28,8 @@
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               @bind-Value="_search"
+                              Immediate="true"
+                              OnKeyUp="OnSearchKeyUpAsync"
                               Placeholder="@L["AdminItems.SKUNameBarcode"]"
                               InputAttributes="@ItemsSearchAttributes" />
             </div>
@@ -480,16 +482,23 @@
         finally
         {
             _isLoading = false;
+            // The summary above the grid is outside the grid component: re-render it with the new total.
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task OnSearchKeyUpAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ApplyFiltersAsync();
         }
     }
 
     private void OnSelectedItemsChanged(HashSet<AdminItemDto> items) => _selected = items;
 
     private static bool IsIntrastatMissing(AdminItemDto item)
-        => !item.IsService
-           && (string.IsNullOrWhiteSpace(item.CommodityCode)
-               || item.NetWeightKg is not > 0m
-               || string.IsNullOrWhiteSpace(item.OriginCountry));
+        => IntrastatItemCheck.IsDataMissing(item.ItemType, item.CommodityCode, item.NetWeightKg, item.OriginCountry);
 
     private async Task OpenIntrastatBulkAsync()
     {

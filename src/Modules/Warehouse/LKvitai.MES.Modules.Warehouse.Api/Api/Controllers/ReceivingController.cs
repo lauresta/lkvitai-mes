@@ -527,7 +527,7 @@ public sealed class ReceivingController : ControllerBase
         {
             try
             {
-                problems = (await _purchase.DryRunAsync(shipment.Id, ct)).Select(p => new PostingProblemDto(p.Code, p.Text)).ToList();
+                problems = (await _purchase.DryRunAsync(shipment.Id, ct)).Select(p => new PostingProblemDto(p.Code, p.Text, p.Detail)).ToList();
             }
             catch (Exception ex)
             {
@@ -580,7 +580,7 @@ public sealed class ReceivingController : ControllerBase
 
         if (!result.Posted)
         {
-            return UnprocessableFailure(string.Join("\n", result.Problems.Select(p => $"{p.Code}|{p.Text}")));
+            return UnprocessableFailure(string.Join("\n", result.Problems.Select(p => p.Detail is null ? $"{p.Code}|{p.Text}" : $"{p.Code}|{p.Text}|{p.Detail}")));
         }
 
         return await GetShipmentByIdAsync(id, cancellationToken);
@@ -1266,7 +1266,7 @@ public sealed class ReceivingController : ControllerBase
         IReadOnlyList<AdditionalCostDto> AdditionalCosts,
         PurchaseDocumentDto? Purchase = null);
 
-    public sealed record PostingProblemDto(string Code, string Text);
+    public sealed record PostingProblemDto(string Code, string Text, string? Detail = null);
 
     public sealed record PurchaseDocumentDto(
         string Currency,
