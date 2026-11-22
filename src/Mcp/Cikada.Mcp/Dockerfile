@@ -20,6 +20,8 @@ COPY --from=build --chown=node:node /repo/src/Mcp/Cikada.Mcp/package.json ./pack
 COPY --from=build --chown=node:node /repo/src/Mcp/Cikada.Mcp/node_modules ./node_modules
 COPY --from=build --chown=node:node /repo/src/Mcp/Cikada.Mcp/dist/src ./dist/src
 COPY --from=build --chown=node:node /repo/src/Mcp/Cikada.Mcp/data ./data
+# the manual screenshots behind docs_image
+COPY --from=build --chown=node:node /repo/docs/manuals/docs/img ./data/docs-img
 USER node
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

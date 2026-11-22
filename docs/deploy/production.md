@@ -64,6 +64,7 @@ write is on unless its variable is set to `false`:
 | `SHOPFLOOR_TASK_WRITE_ENABLED` | `true` | Issuing items into production tasks (GU) in Shopfloor |
 | `SALES_ORDER_ENTRY_ALL_BRANCHES`, `SHOPFLOOR_TASK_WRITE_ALL_BRANCHES` | `true` | `false` narrows production to the TESTAVIMAS branch, as on the test stand |
 | `CIKADA_MCP_ORDER_ENTRY` | off | Order entry tools of the assistant (MCP) |
+| `CIKADA_MCP_WAREHOUSE_ENTRY` | off | Warehouse write tools of the assistant (MCP): locations, purchase documents, receiving, putaway, transfers |
 
 Bank payment import in Finance is open to the logins listed in
 `Finance__AllowedLegacyLogins` in `docker-compose.prod.yml`.

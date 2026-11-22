@@ -2,7 +2,7 @@
 // index is built at image build time by build-docs-index.ts and never committed.
 
 import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { join, posix, relative, sep } from 'node:path';
 
 export interface DocChunk {
   /** Stable: "<relative path without .md>#<slug of the heading path>". */
@@ -17,6 +17,13 @@ export interface DocChunk {
   /** Path of the page on the MkDocs site plus #anchor. */
   url_path: string;
   text: string;
+  /** Screenshots the section shows, as paths under the docs folder ("img/<module>/<name>.png"); docs_image returns them. */
+  images?: DocImage[];
+}
+
+export interface DocImage {
+  path: string;
+  alt: string;
 }
 
 export interface FrontMatter {
@@ -99,6 +106,17 @@ export function cleanText(markdown: string): string {
     .replace(/[ \t]+$/gm, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+}
+
+/** The PNG screenshots a piece of markdown shows, resolved against the page's folder; anything outside img/ is left out. */
+export function imagesOf(page: string, markdown: string): DocImage[] {
+  const found: DocImage[] = [];
+  const pattern = /!\[([^\]]*)\]\(\s*([^)\s]+)[^)]*\)/g;
+  for (let match = pattern.exec(markdown); match; match = pattern.exec(markdown)) {
+    const path = posix.normalize(posix.join(posix.dirname(page), match[2] as string));
+    if (/^img\/[\w-]+\/[\w.-]+\.png$/i.test(path) && !found.some((image) => image.path === path)) found.push({ path, alt: (match[1] as string).trim() });
+  }
+  return found;
 }
 
 interface Heading {
@@ -203,18 +221,21 @@ export function chunkPage(pagePath: string, source: string): DocChunk[] {
   const introText = cleanText(intro.filter((line) => !STATUS_LINE.test(line)).join('\n'));
   const statusLine = STATUS_LINE.exec(intro.join('\n'))?.[0]?.trim();
   if (introText || statusLine) {
-    chunks.push({ id: unique(`${page}#intro`), ...base, heading_path: [], url_path: pageUrl, text: cleanText([statusLine, introText].filter(Boolean).join('\n\n')) });
+    const introImages = imagesOf(page, intro.join('\n'));
+    chunks.push({ id: unique(`${page}#intro`), ...base, heading_path: [], url_path: pageUrl, text: cleanText([statusLine, introText].filter(Boolean).join('\n\n')), ...(introImages.length ? { images: introImages } : {}) });
   }
   for (const part of parts) {
     const text = cleanText(part.lines.join('\n'));
     if (!text) continue;
     const last = part.path[part.path.length - 1] as Heading;
+    const images = imagesOf(page, part.lines.join('\n'));
     chunks.push({
       id: unique(`${page}#${part.path.map((h) => h.anchor || slugify(h.title)).join('--')}`),
       ...base,
       heading_path: part.path.map((h) => h.title),
       url_path: `${pageUrl}#${last.anchor}`,
       text,
+      ...(images.length ? { images } : {}),
     });
   }
   return chunks;
