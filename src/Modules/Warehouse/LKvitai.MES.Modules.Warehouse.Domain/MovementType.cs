@@ -23,6 +23,9 @@ public static class MovementType
     /// <summary>Pick movement — removing stock for production/order fulfillment.</summary>
     public const string Pick = "PICK";
 
+    /// <summary>Stock issued from a storage location to production in one step. TO is PRODUCTION.</summary>
+    public const string ProductionIssue = "PRODUCTION_ISSUE";
+
     /// <summary>
     /// Returns true if the movement type is inbound (no FROM-balance check required).
     /// </summary>

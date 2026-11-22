@@ -1,0 +1,185 @@
+@page "/production-issues"
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@using LKvitai.MES.Modules.Warehouse.WebUI.Models
+@using LKvitai.MES.Modules.Warehouse.WebUI.Services
+@inject SupplierStockClient SupplierStockClient
+@inject MasterDataAdminClient MasterDataAdminClient
+@inject ToastService ToastService
+
+<PageTitle>@L["ProductionIssue.PageTitle"]</PageTitle>
+
+<h1>@L["ProductionIssue.Title"]</h1>
+<p class="text-muted">@L["ProductionIssue.Intro"]</p>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)" TraceId="@_apiError.TraceId" OnRetry="LoadAsync" OnDismiss="@(() => _apiError = null)" />
+}
+
+<div class="card shadow-sm mb-3 position-relative">
+    <LoadingSpinner IsLoading="_isSubmitting" />
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <ItemSearchPicker Label="@L["Common.Item"]" @bind-ItemId="_itemId" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="production-issue-qty">@L["Common.Qty"]</label>
+                <input id="production-issue-qty" type="number" min="0" step="any" class="form-control" @bind="_qty" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="production-issue-from">@L["ProductionIssue.FromLocation"]</label>
+                <select id="production-issue-from" class="form-select" @bind="_fromLocationId">
+                    <option value="0">@L["ProductionIssue.ChooseLocation"]</option>
+                    @foreach (var location in _locations)
+                    {
+                        <option value="@location.Id">@location.Code</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="production-issue-reference">@L["ProductionIssue.Reference"]</label>
+                <input id="production-issue-reference" class="form-control" maxlength="100" @bind="_reference" placeholder="@L["ProductionIssue.ReferenceHint"]" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="production-issue-notes">@L["Common.Notes"]</label>
+                <input id="production-issue-notes" class="form-control" maxlength="500" @bind="_notes" />
+            </div>
+        </div>
+        <div class="mt-3">
+            <button class="btn btn-primary" @onclick="IssueAsync" disabled="@(!CanIssue || _isSubmitting)">@L["ProductionIssue.Issue"]</button>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading" />
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="mb-0">@L["ProductionIssue.Recent"]</h5>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync">@L["Common.Refresh"]</button>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>@L["ProductionIssue.IssuedAt"]</th>
+                        <th>@L["Common.Item"]</th>
+                        <th class="text-end">@L["Common.Qty"]</th>
+                        <th>@L["ProductionIssue.FromLocation"]</th>
+                        <th>@L["ProductionIssue.Reference"]</th>
+                        <th>@L["ProductionIssue.IssuedBy"]</th>
+                        <th>@L["Common.Notes"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_rows.Count == 0)
+                    {
+                        <tr><td colspan="7" class="text-muted">@L["ProductionIssue.NoRows"]</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var row in _rows)
+                        {
+                            <tr>
+                                <td>@row.IssuedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>
+                                    <div>@row.ItemSku</div>
+                                    <div class="small text-muted">@row.ItemName</div>
+                                </td>
+                                <td class="text-end is-num">@row.Qty.ToString("0.###") <span class="small text-muted">@row.BaseUoM</span></td>
+                                <td>@row.FromLocationCode</td>
+                                <td>@(row.Reference ?? "-")</td>
+                                <td>@(row.IssuedBy ?? "-")</td>
+                                <td>@(row.Notes ?? "-")</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly List<ProductionIssueDto> _rows = [];
+    private readonly List<AdminLocationDto> _locations = [];
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private bool _isSubmitting;
+    private int? _itemId;
+    private decimal _qty;
+    private int _fromLocationId;
+    private string _reference = string.Empty;
+    private string _notes = string.Empty;
+
+    private bool CanIssue => _itemId is > 0 && _qty > 0m && _fromLocationId > 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var locations = await MasterDataAdminClient.GetLocationsAsync(null, "Active", false, 1, 500);
+            _locations.AddRange(locations.Items.Where(x => !x.IsVirtual).OrderBy(x => x.Code, StringComparer.OrdinalIgnoreCase));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            var result = await SupplierStockClient.GetIssuesAsync(1, 100);
+            _rows.Clear();
+            _rows.AddRange(result.Items);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task IssueAsync()
+    {
+        if (!CanIssue) return;
+        _isSubmitting = true;
+        _apiError = null;
+        try
+        {
+            var issued = await SupplierStockClient.IssueAsync(new ProductionIssueRequestDto(
+                _itemId!.Value, _qty, _fromLocationId,
+                string.IsNullOrWhiteSpace(_reference) ? null : _reference.Trim(),
+                string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim()));
+            ToastService.ShowSuccess(L["ProductionIssue.Done", issued.Qty.ToString("0.###"), issued.ItemSku, issued.FromLocationCode].Value);
+            _qty = 0m;
+            _notes = string.Empty;
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private string BuildErrorMessage(ApiException ex)
+    {
+        var known = WarehouseErrorText.Get(L, ex);
+        return !string.IsNullOrWhiteSpace(known) ? known : ex.ProblemDetails?.Detail ?? ex.ProblemDetails?.Title ?? L["ProductionIssue.RequestFailed"].Value;
+    }
+}

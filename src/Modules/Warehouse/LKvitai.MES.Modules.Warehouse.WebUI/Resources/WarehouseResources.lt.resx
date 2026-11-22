@@ -2163,4 +2163,43 @@
   <data name="MonthEnd.Act.Shortage" xml:space="preserve"><value>Trūkumas</value></data>
   <data name="MonthEnd.Act.Surplus" xml:space="preserve"><value>Perteklius</value></data>
   <data name="Purchase.Problem.PeriodClosed" xml:space="preserve"><value>Dokumento mėnuo uždarytas; jame negalima tvirtinti ar atšaukti dokumentų.</value></data>
+  <data name="Nav.ProductionIssues" xml:space="preserve"><value>Išdavimas į gamybą</value></data>
+  <data name="Nav.SupplierStock" xml:space="preserve"><value>Atsargos pagal tiekėją</value></data>
+  <data name="AdminItemEditorDialog.MinQty" xml:space="preserve"><value>Minimalus kiekis</value></data>
+  <data name="AdminItemDetail.MinQty" xml:space="preserve"><value>Minimalus kiekis</value></data>
+  <data name="ProductionIssue.PageTitle" xml:space="preserve"><value>Išdavimas į gamybą - Cikada.MES</value></data>
+  <data name="ProductionIssue.Title" xml:space="preserve"><value>Išdavimas į gamybą</value></data>
+  <data name="ProductionIssue.Intro" xml:space="preserve"><value>Atsargos vienu žingsniu išduodamos iš saugojimo vietos į gamybą. Kiekis nurašomas iš sandėlio likučio ir įvertinamas kaip išdavimas.</value></data>
+  <data name="ProductionIssue.FromLocation" xml:space="preserve"><value>Iš vietos</value></data>
+  <data name="ProductionIssue.ChooseLocation" xml:space="preserve"><value>Pasirinkite vietą</value></data>
+  <data name="ProductionIssue.Reference" xml:space="preserve"><value>Gamybos užduotis / užsakymas</value></data>
+  <data name="ProductionIssue.ReferenceHint" xml:space="preserve"><value>pvz., GU-1234</value></data>
+  <data name="ProductionIssue.Issue" xml:space="preserve"><value>Išduoti į gamybą</value></data>
+  <data name="ProductionIssue.Recent" xml:space="preserve"><value>Paskutinių 30 dienų išdavimai</value></data>
+  <data name="ProductionIssue.IssuedAt" xml:space="preserve"><value>Išduota</value></data>
+  <data name="ProductionIssue.IssuedBy" xml:space="preserve"><value>Išdavė</value></data>
+  <data name="ProductionIssue.NoRows" xml:space="preserve"><value>Per šį laikotarpį į gamybą nieko neišduota.</value></data>
+  <data name="ProductionIssue.Done" xml:space="preserve"><value>Į gamybą išduota {0} prekės {1} iš vietos {2}.</value></data>
+  <data name="ProductionIssue.RequestFailed" xml:space="preserve"><value>Išduoti į gamybą nepavyko.</value></data>
+  <data name="SupplierStock.PageTitle" xml:space="preserve"><value>Atsargos pagal tiekėją - Cikada.MES</value></data>
+  <data name="SupplierStock.Title" xml:space="preserve"><value>Atsargos pagal tiekėją</value></data>
+  <data name="SupplierStock.Intro" xml:space="preserve"><value>Kiekvienai vieno tiekėjo prekei: kiek yra sandėlyje, kiek išduota per laikotarpį, kiek užsakyta ir dar laukiama, kainos ir kiek trūksta iki minimalaus kiekio.</value></data>
+  <data name="SupplierStock.Period" xml:space="preserve"><value>Išduota per</value></data>
+  <data name="SupplierStock.Months" xml:space="preserve"><value>{0} mėn.</value></data>
+  <data name="SupplierStock.OnlyShortage" xml:space="preserve"><value>Tik trūkstamos</value></data>
+  <data name="SupplierStock.ChooseSupplier" xml:space="preserve"><value>Pasirinkite tiekėją, kad pamatytumėte jo prekes.</value></data>
+  <data name="SupplierStock.NoRows" xml:space="preserve"><value>Šiam tiekėjui prekių nėra: jam nepriskirta nė viena prekė ir nėra pirkimo dokumentų.</value></data>
+  <data name="SupplierStock.Summary" xml:space="preserve"><value>Prekių: {0}, žemiau minimumo: {1}</value></data>
+  <data name="SupplierStock.OnHand" xml:space="preserve"><value>Sandėlyje</value></data>
+  <data name="SupplierStock.ToProduction" xml:space="preserve"><value>Į gamybą</value></data>
+  <data name="SupplierStock.Dispatched" xml:space="preserve"><value>Išsiųsta</value></data>
+  <data name="SupplierStock.WrittenOff" xml:space="preserve"><value>Nurašyta</value></data>
+  <data name="SupplierStock.PerMonth" xml:space="preserve"><value>Per mėnesį</value></data>
+  <data name="SupplierStock.Ordered" xml:space="preserve"><value>Užsakyta, laukiama</value></data>
+  <data name="SupplierStock.MinQty" xml:space="preserve"><value>Minimumas</value></data>
+  <data name="SupplierStock.CommonMinimum" xml:space="preserve"><value>bendras sandėlio</value></data>
+  <data name="SupplierStock.Shortage" xml:space="preserve"><value>Trūksta</value></data>
+  <data name="SupplierStock.SupplierPrice" xml:space="preserve"><value>Pirkimo kaina</value></data>
+  <data name="SupplierStock.LastInvoice" xml:space="preserve"><value>Paskutinė sąskaita</value></data>
+  <data name="SupplierStock.RequestFailed" xml:space="preserve"><value>Ataskaitos įkelti nepavyko.</value></data>
 </root>

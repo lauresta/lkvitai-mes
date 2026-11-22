@@ -2163,4 +2163,43 @@
   <data name="MonthEnd.Act.Shortage" xml:space="preserve"><value>Shortage</value></data>
   <data name="MonthEnd.Act.Surplus" xml:space="preserve"><value>Surplus</value></data>
   <data name="Purchase.Problem.PeriodClosed" xml:space="preserve"><value>The month of this document is closed; nothing dated in it can be posted or un-posted.</value></data>
+  <data name="Nav.ProductionIssues" xml:space="preserve"><value>Issue to Production</value></data>
+  <data name="Nav.SupplierStock" xml:space="preserve"><value>Stock by Supplier</value></data>
+  <data name="AdminItemEditorDialog.MinQty" xml:space="preserve"><value>Minimum quantity</value></data>
+  <data name="AdminItemDetail.MinQty" xml:space="preserve"><value>Minimum quantity</value></data>
+  <data name="ProductionIssue.PageTitle" xml:space="preserve"><value>Issue to Production - Cikada.MES</value></data>
+  <data name="ProductionIssue.Title" xml:space="preserve"><value>Issue to production</value></data>
+  <data name="ProductionIssue.Intro" xml:space="preserve"><value>Stock leaves a storage location for production in one step. The quantity is taken off the warehouse stock and valued as an issue.</value></data>
+  <data name="ProductionIssue.FromLocation" xml:space="preserve"><value>From location</value></data>
+  <data name="ProductionIssue.ChooseLocation" xml:space="preserve"><value>Choose a location</value></data>
+  <data name="ProductionIssue.Reference" xml:space="preserve"><value>Production task / order</value></data>
+  <data name="ProductionIssue.ReferenceHint" xml:space="preserve"><value>e.g. GU-1234</value></data>
+  <data name="ProductionIssue.Issue" xml:space="preserve"><value>Issue to production</value></data>
+  <data name="ProductionIssue.Recent" xml:space="preserve"><value>Issues of the last 30 days</value></data>
+  <data name="ProductionIssue.IssuedAt" xml:space="preserve"><value>Issued</value></data>
+  <data name="ProductionIssue.IssuedBy" xml:space="preserve"><value>Issued by</value></data>
+  <data name="ProductionIssue.NoRows" xml:space="preserve"><value>Nothing has been issued to production in this period.</value></data>
+  <data name="ProductionIssue.Done" xml:space="preserve"><value>Issued {0} of {1} from {2} to production.</value></data>
+  <data name="ProductionIssue.RequestFailed" xml:space="preserve"><value>The issue to production failed.</value></data>
+  <data name="SupplierStock.PageTitle" xml:space="preserve"><value>Stock by Supplier - Cikada.MES</value></data>
+  <data name="SupplierStock.Title" xml:space="preserve"><value>Stock by supplier</value></data>
+  <data name="SupplierStock.Intro" xml:space="preserve"><value>For every item of one supplier: what is on hand, what was issued in the period, what is ordered and still expected, the prices and what is missing to reach the minimum.</value></data>
+  <data name="SupplierStock.Period" xml:space="preserve"><value>Issued over</value></data>
+  <data name="SupplierStock.Months" xml:space="preserve"><value>{0} mo.</value></data>
+  <data name="SupplierStock.OnlyShortage" xml:space="preserve"><value>Only shortages</value></data>
+  <data name="SupplierStock.ChooseSupplier" xml:space="preserve"><value>Choose a supplier to see its items.</value></data>
+  <data name="SupplierStock.NoRows" xml:space="preserve"><value>No items for this supplier: nothing is mapped to it and it has no purchase documents.</value></data>
+  <data name="SupplierStock.Summary" xml:space="preserve"><value>{0} items, {1} below the minimum</value></data>
+  <data name="SupplierStock.OnHand" xml:space="preserve"><value>On hand</value></data>
+  <data name="SupplierStock.ToProduction" xml:space="preserve"><value>To production</value></data>
+  <data name="SupplierStock.Dispatched" xml:space="preserve"><value>Dispatched</value></data>
+  <data name="SupplierStock.WrittenOff" xml:space="preserve"><value>Written off</value></data>
+  <data name="SupplierStock.PerMonth" xml:space="preserve"><value>Per month</value></data>
+  <data name="SupplierStock.Ordered" xml:space="preserve"><value>Ordered, expected</value></data>
+  <data name="SupplierStock.MinQty" xml:space="preserve"><value>Minimum</value></data>
+  <data name="SupplierStock.CommonMinimum" xml:space="preserve"><value>warehouse default</value></data>
+  <data name="SupplierStock.Shortage" xml:space="preserve"><value>Missing</value></data>
+  <data name="SupplierStock.SupplierPrice" xml:space="preserve"><value>Purchase price</value></data>
+  <data name="SupplierStock.LastInvoice" xml:space="preserve"><value>Last invoice</value></data>
+  <data name="SupplierStock.RequestFailed" xml:space="preserve"><value>The report could not be loaded.</value></data>
 </root>

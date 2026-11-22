@@ -28,6 +28,8 @@ AI asistentas (Cikada MCP) atsako į sandėlio klausimus: kur guli prekė, kas g
 | „Po kiek parduodame ir po kiek pirkome šią prekę?“ | `items_search` |
 | „Parodyk šio tiekėjo pirkimo dokumentus“ | `suppliers_search`, `inbound_shipments_list`, `inbound_shipment_get` |
 | „Kokie perkėlimai laukia?“ | `transfers_list`, `transfer_get` |
+| „Ką reikia užsakyti iš šio tiekėjo?“ | `suppliers_search`, `supplier_stock_report` |
+| „Kas šią savaitę išduota į gamybą?“ | `production_issues_list` |
 
 ## Žingsniai
 ### 1. Sukurti sandėlio vietą
@@ -50,6 +52,11 @@ AI asistentas (Cikada MCP) atsako į sandėlio klausimus: kur guli prekė, kas g
 1. Parašykite, ką, kiek, iš kur ir į kur perkelti.
 2. Po „Taip“ asistentas sukuria perkėlimą (`transfer_create`); atsargos dar nejuda.
 3. Tada jį vykdo per `transfer_advance`: pateikia (submit), jei reikia – tvirtina (approve), ir įvykdo (execute). Tik įvykdžius atsargos persikelia.
+
+### 5. Išduoti į gamybą
+1. Parašykite, ką, kiek ir iš kurios vietos išduoti, ir gamybos užduoties numerį, jei jį turite.
+2. Asistentas suranda prekę ir vietą, parodo, ką įrašys, ir laukia aiškaus „Taip“.
+3. Po patvirtinimo iškviečia `production_issue_create`. Čia atšaukti negalima – klaida taisoma atsargų koregavimu. Plačiau: [Išdavimas į gamybą](../procesai/P-34-isdavimas-i-gamyba.md).
 
 ## Dažnos klaidos
 | Pranešimas | Priežastis | Ką daryti |

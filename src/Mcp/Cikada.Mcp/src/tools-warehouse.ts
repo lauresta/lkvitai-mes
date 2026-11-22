@@ -292,6 +292,71 @@ const transferGet: ToolDef = {
   },
 };
 
+const productionIssuesList: ToolDef = {
+  name: 'production_issues_list',
+  title: 'Issues to production',
+  description: 'Stock issued from the warehouse to production, newest first: item, quantity, source location, the production task or order it was for, who issued it and when. Default period: the last 30 days.',
+  inputSchema: obj({
+    itemId: int('Only this item (id from items_search).'),
+    from: DATE('Issued on or after'),
+    to: DATE('Issued on or before'),
+    limit: int('How many, default 50, at most 200.', { minimum: 1, maximum: 200 }),
+  }),
+  annotations: READ,
+  handler: async (args, { api }) => {
+    const to = asString(args.to);
+    const result = await api.json({
+      target: 'warehouse',
+      method: 'GET',
+      path: `${WAREHOUSE}/production-issues`,
+      query: { itemId: asNumber(args.itemId), from: asString(args.from), to: to ? `${to}T23:59:59Z` : undefined, pageSize: asNumber(args.limit) ?? 50 },
+    });
+    const list = items(result).map((i) => compact({ itemId: i.itemId, sku: i.itemSku, name: i.itemName, qty: i.qty, uom: i.baseUoM, from: i.fromLocationCode, reference: i.reference, issuedBy: i.issuedBy, notes: i.notes, issuedAt: i.issuedAt }));
+    return {
+      text: `${list.length} of ${total(result, list.length)} issues to production.${list.length ? `\n${list.map((i) => `${i.issuedAt} | ${i.sku} | ${i.qty} ${i.uom ?? ''} | from ${i.from}${i.reference ? ` | ${i.reference}` : ''}`).join('\n')}` : ''}`,
+      data: { total: total(result, list.length), issues: list },
+    };
+  },
+};
+
+const supplierStockReport: ToolDef = {
+  name: 'supplier_stock_report',
+  title: 'Stock by supplier',
+  description:
+    'For one supplier (supplierId from suppliers_search), every item it provides: on hand, issued in the last N months (to production, dispatched to customers, written off) with the monthly average, ordered and still expected with the next expected date, the item minimum and the shortage (minimum minus on hand and ordered), the supplier price, the last invoice price and the unit cost. Use it to answer what to order from a supplier. onlyShortage keeps the items below their minimum.',
+  inputSchema: obj(
+    {
+      supplierId: int('Supplier id from suppliers_search.'),
+      months: int('Period for issued quantities in months, default 3, at most 36.', { minimum: 1, maximum: 36 }),
+      onlyShortage: bool('Only items below their minimum.'),
+    },
+    ['supplierId'],
+  ),
+  annotations: READ,
+  handler: async (args, { api }) => {
+    const report = await api.json<Row>({
+      target: 'warehouse',
+      method: 'GET',
+      path: `${WAREHOUSE}/reports/supplier-stock`,
+      query: { supplierId: asNumber(args.supplierId), months: asNumber(args.months) ?? 3, onlyShortage: asBool(args.onlyShortage) },
+    });
+    const list = rows(report.rows).map((r) =>
+      compact({
+        itemId: r.itemId, sku: r.itemSku, name: r.itemName, uom: r.baseUoM, supplierCode: r.supplierSku,
+        onHand: r.onHand, toProduction: r.issuedToProduction, dispatched: r.dispatched, writtenOff: r.writtenOff, perMonth: r.averagePerMonth,
+        ordered: r.openInboundQty, nextExpected: r.nextExpectedDate, minQty: r.minQty, minQtyIsWarehouseDefault: r.minQty != null && r.minQtyIsItemOwn !== true ? true : undefined,
+        shortage: r.shortage, purchasePrice: r.purchasePrice, supplierPrice: r.supplierPrice,
+        lastInvoicePrice: r.lastInvoicePrice, lastInvoiceCurrency: r.lastInvoiceCurrency, lastInvoiceDate: r.lastInvoiceDate, unitCost: r.unitCost, leadTimeDays: r.leadTimeDays, minOrderQty: r.minOrderQty,
+      }),
+    );
+    const short = list.filter((r) => typeof r.shortage === 'number' && r.shortage > 0);
+    return {
+      text: `${report.supplierName ?? 'Supplier'}: ${list.length} item(s), ${short.length} below the minimum, issued over ${report.months} month(s).${short.length ? `\n${short.slice(0, 50).map((r) => `${r.sku} ${r.name ?? ''}: on hand ${r.onHand}, ordered ${r.ordered}, minimum ${r.minQty}, missing ${r.shortage}`).join('\n')}` : ''}`,
+      data: { supplier: compact({ id: report.supplierId, code: report.supplierCode, name: report.supplierName }), months: report.months, items: list },
+    };
+  },
+};
+
 // ---- writes -------------------------------------------------------------------------------------------------------------------------------------
 
 const locationCreate: ToolDef = {
@@ -499,6 +564,37 @@ const putawayMove: ToolDef = {
   },
 };
 
+const productionIssueCreate: ToolDef = {
+  name: 'production_issue_create',
+  title: 'Issue stock to production',
+  description:
+    'Issue stock from a storage location to production in one step: the quantity leaves the warehouse stock and is valued as an issue. fromLocationId is a physical location that holds the item (stock_get shows where it lies). Give the production task or order number as reference when the user names one. It cannot be undone here (a mistake is corrected with a stock adjustment): state the item, quantity, location and reference and get an explicit yes first.',
+  inputSchema: obj(
+    {
+      itemId: int('Item id from items_search.'),
+      qty: num('Quantity, in the item base unit.', { minimum: 0.0001 }),
+      fromLocationId: int('Id of the storage location to take from.'),
+      reference: str('Production task or order number, e.g. GU-1234.', { maxLength: 100 }),
+      notes: str('A note.', { maxLength: 500 }),
+    },
+    ['itemId', 'qty', 'fromLocationId'],
+  ),
+  annotations: write(true),
+  warehouseEntry: true,
+  handler: async (args, { api }) => {
+    const issued = await api.json<Row>({
+      target: 'warehouse',
+      method: 'POST',
+      path: `${WAREHOUSE}/production-issues`,
+      body: compact({ itemId: asNumber(args.itemId), qty: asNumber(args.qty), fromLocationId: asNumber(args.fromLocationId), reference: asString(args.reference), notes: asString(args.notes) }),
+    });
+    return {
+      text: `Issued ${issued.qty} ${issued.baseUoM ?? ''} of ${issued.itemSku} from ${issued.fromLocationCode} to production${issued.reference ? ` for ${issued.reference}` : ''}.`,
+      data: { issue: compact({ movementId: issued.movementId, itemId: issued.itemId, sku: issued.itemSku, qty: issued.qty, from: issued.fromLocationCode, reference: issued.reference, issuedAt: issued.issuedAt }) },
+    };
+  },
+};
+
 const transferCreate: ToolDef = {
   name: 'transfer_create',
   title: 'Create a stock transfer',
@@ -581,11 +677,14 @@ export const WAREHOUSE_TOOLS: readonly ToolDef[] = [
   inboundShipmentGet,
   transfersList,
   transferGet,
+  productionIssuesList,
+  supplierStockReport,
   locationCreate,
   inboundShipmentCreate,
   inboundShipmentReceive,
   inboundShipmentPost,
   putawayMove,
+  productionIssueCreate,
   transferCreate,
   transferAdvance,
 ];

@@ -1,0 +1,218 @@
+@page "/reports/supplier-stock"
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@using LKvitai.MES.Modules.Warehouse.WebUI.Models
+@using LKvitai.MES.Modules.Warehouse.WebUI.Services
+@inject SupplierStockClient SupplierStockClient
+@inject MasterDataAdminClient MasterDataAdminClient
+@inject IJSRuntime JavaScript
+@inject ToastService ToastService
+
+<PageTitle>@L["SupplierStock.PageTitle"]</PageTitle>
+
+<h1>@L["SupplierStock.Title"]</h1>
+<p class="text-muted">@L["SupplierStock.Intro"]</p>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)" TraceId="@_apiError.TraceId" OnRetry="LoadAsync" OnDismiss="@(() => _apiError = null)" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">@L["Common.Supplier"]</label>
+                <MudAutocomplete T="AdminSupplierDto"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Value="_supplier"
+                                 ValueChanged="OnSupplierChangedAsync"
+                                 SearchFunc="SearchSuppliersAsync"
+                                 ToStringFunc="@(s => s is null ? string.Empty : $"{s.Code} - {s.Name}")"
+                                 CoerceText="true"
+                                 ResetValueOnEmptyText="true" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="supplier-stock-months">@L["SupplierStock.Period"]</label>
+                <select id="supplier-stock-months" class="form-select" @bind="_months">
+                    @foreach (var option in MonthOptions)
+                    {
+                        <option value="@option">@L["SupplierStock.Months", option]</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <div class="form-check mb-2">
+                    <input id="supplier-stock-shortage" type="checkbox" class="form-check-input" @bind="_onlyShortage" />
+                    <label class="form-check-label" for="supplier-stock-shortage">@L["SupplierStock.OnlyShortage"]</label>
+                </div>
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <button class="btn btn-primary" @onclick="LoadAsync" disabled="@(_isLoading || _supplier is null)">@L["Common.Apply"]</button>
+                <button class="btn btn-outline-success ms-auto" @onclick="ExportCsvAsync" disabled="@(_isLoading || _supplier is null)">@L["Common.ExportCSV"]</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading" />
+    <div class="card-body">
+        @if (_report is null)
+        {
+            <div class="text-muted">@L["SupplierStock.ChooseSupplier"]</div>
+        }
+        else if (_report.Rows.Count == 0)
+        {
+            <div class="text-muted">@L["SupplierStock.NoRows"]</div>
+        }
+        else
+        {
+            <div class="small text-muted mb-2">@L["SupplierStock.Summary", _report.Rows.Count, _report.Rows.Count(x => x.Shortage > 0m)]</div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>@L["Common.Item"]</th>
+                            <th>@L["Common.SupplierSKU"]</th>
+                            <th class="text-end">@L["SupplierStock.OnHand"]</th>
+                            <th class="text-end">@L["SupplierStock.ToProduction"]</th>
+                            <th class="text-end">@L["SupplierStock.Dispatched"]</th>
+                            <th class="text-end">@L["SupplierStock.WrittenOff"]</th>
+                            <th class="text-end">@L["SupplierStock.PerMonth"]</th>
+                            <th class="text-end">@L["SupplierStock.Ordered"]</th>
+                            <th class="text-end">@L["SupplierStock.MinQty"]</th>
+                            <th class="text-end">@L["SupplierStock.Shortage"]</th>
+                            <th class="text-end">@L["SupplierStock.SupplierPrice"]</th>
+                            <th class="text-end">@L["SupplierStock.LastInvoice"]</th>
+                            <th class="text-end">@L["Pricing.Cost"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _report.Rows)
+                        {
+                            <tr class="@(row.Shortage > 0m ? "table-warning" : null)">
+                                <td>
+                                    <a href="admin/items/@row.ItemId">@row.ItemSku</a>
+                                    <div class="small text-muted">@row.ItemName</div>
+                                </td>
+                                <td class="mono">@(row.SupplierSku ?? "-")</td>
+                                <td class="text-end is-num">@Qty(row.OnHand) <span class="small text-muted">@row.BaseUoM</span></td>
+                                <td class="text-end is-num">@Qty(row.IssuedToProduction)</td>
+                                <td class="text-end is-num">@Qty(row.Dispatched)</td>
+                                <td class="text-end is-num">@Qty(row.WrittenOff)</td>
+                                <td class="text-end is-num">@Qty(row.AveragePerMonth)</td>
+                                <td class="text-end is-num">
+                                    @Qty(row.OpenInboundQty)
+                                    @if (row.NextExpectedDate is { } expected)
+                                    {
+                                        <div class="small text-muted">@expected.ToString("yyyy-MM-dd")</div>
+                                    }
+                                </td>
+                                <td class="text-end is-num">
+                                    @(row.MinQty is null ? "-" : Qty(row.MinQty.Value))
+                                    @if (row.MinQty is not null && !row.MinQtyIsItemOwn)
+                                    {
+                                        <div class="small text-muted">@L["SupplierStock.CommonMinimum"]</div>
+                                    }
+                                </td>
+                                <td class="text-end is-num fw-semibold">@(row.Shortage is > 0m ? Qty(row.Shortage.Value) : "-")</td>
+                                <td class="text-end is-money is-num">@Money.FormatUnit(row.SupplierPrice ?? row.PurchasePrice)</td>
+                                <td class="text-end is-num">
+                                    @if (row.LastInvoicePrice is { } last)
+                                    {
+                                        <span>@last.ToString("0.####") @row.LastInvoiceCurrency</span>
+                                        @if (row.LastInvoiceDate is { } date)
+                                        {
+                                            <div class="small text-muted">@date.ToString("yyyy-MM-dd")</div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </td>
+                                <td class="text-end is-money is-num">@Money.FormatUnit(row.UnitCost)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private static readonly int[] MonthOptions = [1, 3, 6, 12];
+    private SupplierStockReportDto? _report;
+    private AdminSupplierDto? _supplier;
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private bool _onlyShortage;
+    private int _months = 3;
+
+    private static string Qty(decimal value) => value.ToString("0.###");
+
+    private async Task OnSupplierChangedAsync(AdminSupplierDto? supplier)
+    {
+        _supplier = supplier;
+        _report = null;
+        if (supplier is not null)
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task<IEnumerable<AdminSupplierDto>> SearchSuppliersAsync(string value)
+    {
+        try
+        {
+            return (await MasterDataAdminClient.GetSuppliersAsync(value, 1, 20)).Items;
+        }
+        catch (ApiException)
+        {
+            return Array.Empty<AdminSupplierDto>();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        if (_supplier is null) return;
+        _isLoading = true;
+        _apiError = null;
+        try
+        {
+            _report = await SupplierStockClient.GetReportAsync(_supplier.Id, _months, _onlyShortage);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ExportCsvAsync()
+    {
+        if (_supplier is null) return;
+        try
+        {
+            var bytes = await SupplierStockClient.DownloadReportCsvAsync(_supplier.Id, _months, _onlyShortage);
+            await JavaScript.InvokeVoidAsync("csvExport.downloadBytes", $"supplier-stock-{_supplier.Code}-{DateTime.UtcNow:yyyyMMdd}.csv", "text/csv", Convert.ToBase64String(bytes));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private string BuildErrorMessage(ApiException ex)
+    {
+        var known = WarehouseErrorText.Get(L, ex);
+        return !string.IsNullOrWhiteSpace(known) ? known : ex.ProblemDetails?.Detail ?? ex.ProblemDetails?.Title ?? L["SupplierStock.RequestFailed"].Value;
+    }
+}

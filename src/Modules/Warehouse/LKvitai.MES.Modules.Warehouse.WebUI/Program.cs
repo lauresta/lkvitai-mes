@@ -86,6 +86,7 @@ builder.Services.AddScoped<CycleCountsClient>();
 builder.Services.AddScoped<AdvancedWarehouseClient>();
 builder.Services.AddScoped<AdjustmentsClient>();
 builder.Services.AddScoped<PutawayClient>();
+builder.Services.AddScoped<SupplierStockClient>();
 builder.Services.AddScoped<PickingTasksClient>();
 builder.Services.AddScoped<LabelsClient>();
 builder.Services.AddScoped<ToastService>();
