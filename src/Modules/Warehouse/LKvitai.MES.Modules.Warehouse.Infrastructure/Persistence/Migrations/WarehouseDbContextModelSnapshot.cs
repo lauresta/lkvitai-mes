@@ -2389,6 +2389,14 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(20)")
                         .HasDefaultValue("Active");
 
+                    b.Property<string>("SupplementaryUnit")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<decimal?>("SupplementaryUnitFactor")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
                     b.Property<string>("Tags")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -2433,6 +2441,8 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("ck_items_purchase_price", "\"PurchasePrice\" IS NULL OR \"PurchasePrice\" >= 0");
 
                             t.HasCheckConstraint("ck_items_status", "\"Status\" IN ('Active','Discontinued','Obsolete')");
+
+                            t.HasCheckConstraint("ck_items_supplementary_unit_factor", "\"SupplementaryUnitFactor\" IS NULL OR \"SupplementaryUnitFactor\" > 0");
 
                             t.HasCheckConstraint("ck_items_type", "\"ItemType\" IN ('Stock','Service')");
 

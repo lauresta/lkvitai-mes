@@ -131,6 +131,18 @@ public static class PurchasePostingValidator
                 problems.Add(new("IntrastatHeaderRequired", "Intrastat fields (delivery terms, transport mode, dispatch country, transaction nature) are required for an EU acquisition."));
             if (stockLines.Any(l => l.Item is null || !IsCommodityCode(l.Item.CommodityCode) || l.Item.NetWeightKg is not > 0m))
                 problems.Add(new("IntrastatItemDataMissing", "Every stock item of an EU acquisition needs an 8-digit commodity code and a net weight."));
+            if (stockLines.Any(l => l.Item is not null && !IntrastatCodes.IsCountryCode(l.Item.OriginCountry)))
+                problems.Add(new("IntrastatOriginCountryMissing", "Every stock item of an EU acquisition needs a country of origin (ISO 3166 alpha-2 code)."));
+            if (stockLines.Any(l => l.Item is not null
+                    && !string.IsNullOrWhiteSpace(l.Item.SupplementaryUnit) != (l.Item.SupplementaryUnitFactor is > 0m)))
+                problems.Add(new("IntrastatSupplementaryUnitInvalid", "A supplementary unit and its factor (above zero) must be set together on the item."));
+
+            var invalid = new List<string>();
+            if (!string.IsNullOrWhiteSpace(s.TransactionNature) && !IntrastatCodes.IsNature(s.TransactionNature)) invalid.Add("transaction nature");
+            if (!string.IsNullOrWhiteSpace(s.TransportMode) && !IntrastatCodes.IsTransportMode(s.TransportMode)) invalid.Add("transport mode");
+            if (!string.IsNullOrWhiteSpace(s.DeliveryTerms) && !IntrastatCodes.IsDeliveryTerms(s.DeliveryTerms)) invalid.Add("delivery terms");
+            if (invalid.Count > 0)
+                problems.Add(new("IntrastatCodeInvalid", $"Not a valid Intrastat code: {string.Join(", ", invalid)}."));
         }
 
         // Check 5 and 6: one stock account, a configured posting rule.

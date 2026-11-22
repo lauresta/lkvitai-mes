@@ -84,6 +84,8 @@ public record ItemDetailsDto
     public string? CommodityCode { get; init; }
     public decimal? NetWeightKg { get; init; }
     public string? OriginCountry { get; init; }
+    public string? SupplementaryUnit { get; init; }
+    public decimal? SupplementaryUnitFactor { get; init; }
 }
 
 public record ItemPhotosResponseDto
@@ -129,6 +131,8 @@ public record CreateOrUpdateItemRequest
     public string? CommodityCode { get; init; }
     public decimal? NetWeightKg { get; init; }
     public string? OriginCountry { get; init; }
+    public string? SupplementaryUnit { get; init; }
+    public decimal? SupplementaryUnitFactor { get; init; }
 }
 
 public record ItemTagsResponseDto

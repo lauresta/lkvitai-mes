@@ -49,9 +49,13 @@
         </div>
     }
 
-    @if (_report.Rows.Count == 0)
+    @if (_report.Rows.Count == 0 && !_report.IsZeroReport)
     {
-        <p class="text-muted">@L["Intrastat.Empty"]</p>
+        <div class="alert alert-danger" data-testid="intrastat-nothing-declarable">@L["Intrastat.NothingDeclarable"]</div>
+    }
+    else if (_report.Rows.Count == 0)
+    {
+        <div class="alert alert-info" data-testid="intrastat-zero-report">@L["Intrastat.Empty"]</div>
     }
     else
     {
@@ -61,30 +65,54 @@
                     <tr>
                         <th>@L["Intrastat.CommodityCode"]</th>
                         <th>@L["Intrastat.Country"]</th>
-                        <th class="text-end">@L["Intrastat.ValueEur"]</th>
+                        <th>@L["Intrastat.OriginCountry"]</th>
+                        <th>@L["Intrastat.Nature"]</th>
+                        <th>@L["Intrastat.Terms"]</th>
+                        <th>@L["Intrastat.Mode"]</th>
                         <th class="text-end">@L["Intrastat.NetMass"]</th>
+                        <th>@L["Intrastat.SuppUnit"]</th>
+                        <th class="text-end">@L["Intrastat.SuppQty"]</th>
                         <th class="text-end">@L["Intrastat.Quantity"]</th>
+                        <th class="text-end">@L["Intrastat.ValueEur"]</th>
+                        <th class="text-end text-muted">@L["Intrastat.LandedCostEur"]</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var r in _report.Rows)
                     {
-                        <tr>
-                            <td class="mono">@r.CommodityCode</td>
+                        <tr class="@(r.IsReturn ? "table-warning" : null)">
+                            <td class="mono">@r.CommodityCode @if (r.IsReturn) { <span class="badge text-bg-warning">@L["Intrastat.Return"]</span> }</td>
                             <td>@r.Country</td>
-                            <td class="text-end mono">@r.ValueEur.ToString("N2", Inv)</td>
+                            <td>@r.OriginCountry</td>
+                            <td class="mono">@r.Nature</td>
+                            <td class="mono">@r.DeliveryTerms</td>
+                            <td class="mono">@r.TransportMode</td>
                             <td class="text-end mono">@r.NetMassKg.ToString("N3", Inv)</td>
+                            <td>@r.SupplementaryUnit</td>
+                            <td class="text-end mono">@(r.SupplementaryQuantity?.ToString("0.###", Inv))</td>
                             <td class="text-end mono">@r.Quantity.ToString("0.####", Inv)</td>
+                            <td class="text-end mono">@r.ValueEur.ToString("N2", Inv)</td>
+                            <td class="text-end mono text-muted">@(r.LandedValueEur?.ToString("N2", Inv))</td>
                         </tr>
                     }
                 </tbody>
                 <tfoot>
                     <tr class="fw-bold">
-                        <td colspan="2">@L["Intrastat.Totals"]</td>
-                        <td class="text-end mono">@_report.TotalValueEur.ToString("N2", Inv)</td>
+                        <td colspan="6">@L["Intrastat.Totals"]</td>
                         <td class="text-end mono">@_report.TotalNetMassKg.ToString("N3", Inv)</td>
+                        <td colspan="2"></td>
                         <td class="text-end mono">@_report.TotalQuantity.ToString("0.####", Inv)</td>
+                        <td class="text-end mono">@_report.TotalValueEur.ToString("N2", Inv)</td>
+                        <td></td>
                     </tr>
+                    @if (_report.TotalReturnValueEur != 0m)
+                    {
+                        <tr>
+                            <td colspan="10">@L["Intrastat.ReturnsTotal"]</td>
+                            <td class="text-end mono">@_report.TotalReturnValueEur.ToString("N2", Inv)</td>
+                            <td></td>
+                        </tr>
+                    }
                 </tfoot>
             </table>
         </div>
