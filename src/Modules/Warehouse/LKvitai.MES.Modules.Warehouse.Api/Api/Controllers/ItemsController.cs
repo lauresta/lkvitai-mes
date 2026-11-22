@@ -197,6 +197,11 @@ public sealed class ItemsController : ControllerBase
             return ValidationFailure($"UoM '{request.BaseUoM}' does not exist.");
         }
 
+        if (NormalizeCode(request.SupplementaryUnit) is not null && request.SupplementaryUnitFactor is not > 0m)
+        {
+            return ValidationFailure("Supplementary unit factor must be greater than zero when a supplementary unit is set.");
+        }
+
         if (!TryParseItemType(request.ItemType, out var itemType))
         {
             return ValidationFailure($"Invalid itemType '{request.ItemType}'. Expected 'Stock' or 'Service'.");
@@ -230,7 +235,9 @@ public sealed class ItemsController : ControllerBase
                 : null,
             CommodityCode = NormalizeCode(request.CommodityCode),
             NetWeightKg = request.NetWeightKg,
-            OriginCountry = NormalizeCode(request.OriginCountry)?.ToUpperInvariant()
+            OriginCountry = NormalizeCode(request.OriginCountry)?.ToUpperInvariant(),
+            SupplementaryUnit = NormalizeCode(request.SupplementaryUnit),
+            SupplementaryUnitFactor = NormalizeCode(request.SupplementaryUnit) is null ? null : request.SupplementaryUnitFactor
         };
 
         _dbContext.Items.Add(item);
@@ -306,7 +313,9 @@ public sealed class ItemsController : ControllerBase
             item.CommodityCode,
             item.NetWeightKg,
             item.OriginCountry,
-            item.MinQty);
+            item.MinQty,
+            item.SupplementaryUnit,
+            item.SupplementaryUnitFactor);
 
         await Cache.SetAsync(cacheKey, dto, TimeSpan.FromHours(1), cancellationToken);
         return Ok(dto);
@@ -349,6 +358,11 @@ public sealed class ItemsController : ControllerBase
             return ValidationFailure($"UoM '{request.BaseUoM}' does not exist.");
         }
 
+        if (NormalizeCode(request.SupplementaryUnit) is not null && request.SupplementaryUnitFactor is not > 0m)
+        {
+            return ValidationFailure("Supplementary unit factor must be greater than zero when a supplementary unit is set.");
+        }
+
         if (!TryParseItemType(request.ItemType, out var itemType))
         {
             return ValidationFailure($"Invalid itemType '{request.ItemType}'. Expected 'Stock' or 'Service'.");
@@ -385,6 +399,8 @@ public sealed class ItemsController : ControllerBase
         item.CommodityCode = NormalizeCode(request.CommodityCode);
         item.NetWeightKg = request.NetWeightKg;
         item.OriginCountry = NormalizeCode(request.OriginCountry)?.ToUpperInvariant();
+        item.SupplementaryUnit = NormalizeCode(request.SupplementaryUnit);
+        item.SupplementaryUnitFactor = item.SupplementaryUnit is null ? null : request.SupplementaryUnitFactor;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         await Cache.RemoveAsync($"item:{id}", cancellationToken);
@@ -970,7 +986,9 @@ public sealed class ItemsController : ControllerBase
         string? CommodityCode = null,
         decimal? NetWeightKg = null,
         string? OriginCountry = null,
-        decimal? MinQty = null);
+        decimal? MinQty = null,
+        string? SupplementaryUnit = null,
+        decimal? SupplementaryUnitFactor = null);
 
     public sealed record UpdateItemRequestDto(
         string Name,
@@ -992,7 +1010,9 @@ public sealed class ItemsController : ControllerBase
         string? CommodityCode = null,
         decimal? NetWeightKg = null,
         string? OriginCountry = null,
-        decimal? MinQty = null);
+        decimal? MinQty = null,
+        string? SupplementaryUnit = null,
+        decimal? SupplementaryUnitFactor = null);
 
     public sealed record ItemCreatedDto(int Id, string InternalSKU, string Name, DateTimeOffset CreatedAt);
     public sealed record ItemUpdatedDto(int Id, string InternalSKU, string Name, string Status, DateTimeOffset? UpdatedAt);
@@ -1053,7 +1073,9 @@ public sealed class ItemsController : ControllerBase
         string? CommodityCode = null,
         decimal? NetWeightKg = null,
         string? OriginCountry = null,
-        decimal? MinQty = null);
+        decimal? MinQty = null,
+        string? SupplementaryUnit = null,
+        decimal? SupplementaryUnitFactor = null);
 
     public sealed record AddBarcodeRequest(string Barcode, string BarcodeType, bool IsPrimary);
     public sealed record ItemBarcodeDto(int Id, string Barcode, string BarcodeType, bool IsPrimary);

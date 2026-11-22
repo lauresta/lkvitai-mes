@@ -262,6 +262,8 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.CommodityCode).HasMaxLength(8);
             entity.Property(e => e.NetWeightKg).HasPrecision(18, 4);
             entity.Property(e => e.OriginCountry).HasMaxLength(2);
+            entity.Property(e => e.SupplementaryUnit).HasMaxLength(10);
+            entity.Property(e => e.SupplementaryUnitFactor).HasPrecision(18, 6);
             entity.HasIndex(e => e.InternalSKU).IsUnique();
             entity.HasIndex(e => e.CategoryId).HasDatabaseName("idx_items_category_id");
             entity.HasIndex(e => e.BaseUoM);
@@ -278,6 +280,7 @@ public class WarehouseDbContext : DbContext
                 t.HasCheckConstraint("ck_items_base_price", "\"BasePrice\" IS NULL OR \"BasePrice\" >= 0");
                 t.HasCheckConstraint("ck_items_purchase_price", "\"PurchasePrice\" IS NULL OR \"PurchasePrice\" >= 0");
                 t.HasCheckConstraint("ck_items_min_qty", "\"MinQty\" IS NULL OR \"MinQty\" >= 0");
+                t.HasCheckConstraint("ck_items_supplementary_unit_factor", "\"SupplementaryUnitFactor\" IS NULL OR \"SupplementaryUnitFactor\" > 0");
                 t.HasCheckConstraint("ck_items_type", "\"ItemType\" IN ('Stock','Service')");
             });
         });

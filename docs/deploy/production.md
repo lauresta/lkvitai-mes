@@ -67,7 +67,10 @@ write is on unless its variable is set to `false`:
 | `CIKADA_MCP_WAREHOUSE_ENTRY` | off | Warehouse write tools of the assistant (MCP): locations, purchase documents, receiving, putaway, transfers |
 
 Bank payment import in Finance is open to the logins listed in
-`Finance__AllowedLegacyLogins` in `docker-compose.prod.yml`.
+`Finance__AllowedLegacyLogins` in `docker-compose.prod.yml`. Import and deletion work
+only where `Finance__BankPayments__WritesEnabled` is `true` (set in
+`docker-compose.prod.yml`). The test stand leaves it off: these writes go to the live
+legacy database and cannot be limited to the test branch. Parsing and preview work everywhere.
 
 Agnum is not connected on production. The Agnum key secrets stay unset until it is.
 Warehouse API does not start without an Agnum address, so `AGNUM__API__BASEURL`

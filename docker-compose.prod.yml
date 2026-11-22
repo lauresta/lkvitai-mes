@@ -445,6 +445,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__LKvitaiDb: "${LKVITAI_MSACCESS_DB_CONNECTION}"
       CikadaUsers__BaseUrl: "http://lkvitai-mes-warehouse-api-prod:8080"
+      Finance__BankPayments__WritesEnabled: 'true'
       Finance__AllowedLegacyLogins__0: 'TERMINAL\d.bykovas'
       Finance__AllowedLegacyLogins__1: 'TERMINAL\v.stropus'
       # SQL logins without the Windows prefix on the new SQL Server (Ubuntu, no Windows auth)

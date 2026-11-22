@@ -56,6 +56,10 @@ public sealed class Item : AuditableEntity
     public decimal? NetWeightKg { get; set; }
     /// <summary>Intrastat: ISO 3166 alpha-2 country of origin.</summary>
     public string? OriginCountry { get; set; }
+    /// <summary>Intrastat: supplementary unit code required by some CN codes (for example m2, p/st).</summary>
+    public string? SupplementaryUnit { get; set; }
+    /// <summary>Intrastat: supplementary units per one base (stock) unit.</summary>
+    public decimal? SupplementaryUnitFactor { get; set; }
 
     public ItemCategory? Category { get; set; }
     public UnitOfMeasure? BaseUnit { get; set; }

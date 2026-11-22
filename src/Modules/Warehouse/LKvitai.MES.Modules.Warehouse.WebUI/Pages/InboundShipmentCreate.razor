@@ -124,13 +124,23 @@
                 <div class="lk-form-field">
                     <span class="lk-form-field__label">@L["Intrastat.DeliveryTerms"]</span>
                     <div class="lk-form-field__control">
-                        <MudTextField T="string" Variant="Variant.Text" MaxLength="3" @bind-Value="_deliveryTerms" Placeholder="DAP" />
+                        <MudSelect T="string" Variant="Variant.Text" Clearable="true" @bind-Value="_deliveryTerms">
+                            @foreach (var o in IntrastatCodeLists.DeliveryTerms)
+                            {
+                                <MudSelectItem T="string" Value="@o.Code">@o.Label</MudSelectItem>
+                            }
+                        </MudSelect>
                     </div>
                 </div>
                 <div class="lk-form-field">
                     <span class="lk-form-field__label">@L["Intrastat.TransportMode"]</span>
                     <div class="lk-form-field__control">
-                        <MudTextField T="string" Variant="Variant.Text" MaxLength="2" @bind-Value="_transportMode" Placeholder="30" />
+                        <MudSelect T="string" Variant="Variant.Text" Clearable="true" @bind-Value="_transportMode">
+                            @foreach (var o in IntrastatCodeLists.TransportModes)
+                            {
+                                <MudSelectItem T="string" Value="@o.Code">@o.Label</MudSelectItem>
+                            }
+                        </MudSelect>
                     </div>
                 </div>
                 <div class="lk-form-field">
@@ -142,7 +152,12 @@
                 <div class="lk-form-field">
                     <span class="lk-form-field__label">@L["Intrastat.TransactionNature"]</span>
                     <div class="lk-form-field__control">
-                        <MudTextField T="string" Variant="Variant.Text" MaxLength="2" @bind-Value="_transactionNature" />
+                        <MudSelect T="string" Variant="Variant.Text" @bind-Value="_transactionNature">
+                            @foreach (var o in IntrastatCodeLists.NatureOfTransaction)
+                            {
+                                <MudSelectItem T="string" Value="@o.Code">@o.Label</MudSelectItem>
+                            }
+                        </MudSelect>
                     </div>
                 </div>
             }
@@ -412,7 +427,7 @@
             _manualReason = shipment.Purchase?.ManualReason;
             _defaultVatTreatment = shipment.Purchase?.DefaultVatTreatment;
             _deliveryTerms = shipment.Purchase?.DeliveryTerms;
-            _transportMode = shipment.Purchase?.TransportMode;
+            _transportMode = IntrastatCodeLists.NormalizeTransportMode(shipment.Purchase?.TransportMode);
             _dispatchCountry = shipment.Purchase?.DispatchCountry;
             _transactionNature = shipment.Purchase?.TransactionNature ?? "11";
 

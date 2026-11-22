@@ -37,10 +37,11 @@ Sandėlio modulio (Warehouse) skiltyje `(UI: Admin)` tvarkomi prekių duomenys: 
 Prekės, kurios perkamos iš ES tiekėjų (ES įsigijimas, Intrastat), privalo turėti muitinės kodą ir neto svorį. Šie laukai yra tame pačiame dialoge `(UI: Create Item)` / `(UI: Edit Item)`:
 1. `(UI: Commodity code (CN))` - 8 skaitmenų kombinuotosios nomenklatūros kodas. Pagalbinis tekstas: „8 digits; needed for EU purchases". Jei įrašyta ne 8 skaitmenys, dialogas rodo „Commodity code must be 8 digits."
 2. `(UI: Net weight per unit, kg)` - vieno bazinio vieneto neto svoris kilogramais. Turi būti didesnis už 0, kitaip rodoma „Net weight must be greater than zero."
-3. `(UI: Country of origin (ISO, 2 letters))` - kilmės šalis dviem raidėmis (nebūtinas).
-4. Šie laukai nėra privalomi saugant prekę, bet pirkimo dokumento apskaitos metu serveris tikrina: kiekvienai atsargų (`(UI: Stock)`) prekei ES įsigijimo dokumente reikia 8 skaitmenų kodo ir neto svorio didesnio už 0, kitaip rodoma „Every stock item of an EU acquisition needs an 8-digit commodity code and a net weight." Paslaugų prekėms šių duomenų nereikia.
-5. Intrastat ataskaitoje prekės eilutė be CN kodo praleidžiama ir įrašoma į įspėjimų sąrašą.
-6. Šių laukų prekės detalių puslapyje nėra, juos keisti galima tik per `(UI: Edit)` dialogą sąraše.
+3. `(UI: Country of origin (ISO, 2 letters))` - kilmės šalis dviem raidėmis (ES įsigijimui privaloma).
+4. `(UI: Supplementary unit (for example m2, p/st))` ir `(UI: Supplementary units per one stock unit)` - papildomas Intrastat matavimo vienetas ir kiek tokių vienetų yra viename sandėlio vienete (pvz. m2 ir 1,5, jei vienas gaminys yra 1,5 m2). Užpildykite tik prekėms, kurių CN kodui reikia papildomo vieneto; abu laukai pildomi kartu, koeficientas didesnis už 0.
+5. Šie laukai nėra privalomi saugant prekę, bet pirkimo dokumento apskaitos metu serveris tikrina: kiekvienai atsargų (`(UI: Stock)`) prekei ES įsigijimo dokumente reikia 8 skaitmenų kodo, neto svorio didesnio už 0 ir kilmės šalies (kitaip rodoma pranešimas apie kilmės šalį), o taip pat, jei papildomas vienetas nurodytas, jo koeficiento. Dėl kodo ir svorio rodoma „Every stock item of an EU acquisition needs an 8-digit commodity code and a net weight." Paslaugų prekėms šių duomenų nereikia.
+6. Intrastat ataskaitoje prekės eilutė be CN kodo, kilmės šalies ar papildomo vieneto koeficiento praleidžiama ir įrašoma į įspėjimų sąrašą.
+7. Šių laukų prekės detalių puslapyje nėra, juos keisti galima tik per `(UI: Edit)` dialogą sąraše.
 
 ### 3. Prekės detalės, nuotraukos ir kainos pagal grupes
 1. Sąraše pasirinkite eilutės meniu `(UI: Actions)` ir `(UI: Details)` arba paspauskite SKU. Atsidaro puslapis `(UI: Item Details)` su mygtuku `(UI: Back to list)`.
