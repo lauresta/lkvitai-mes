@@ -68,6 +68,8 @@
   <data name="Bank.Failed401" xml:space="preserve"><value>Session expired. Sign in again.</value></data>
   <data name="Bank.Failed403" xml:space="preserve"><value>Finance access is not available for this account.</value></data>
   <data name="Bank.Failed409" xml:space="preserve"><value>The transfer already exists, changed, or was assigned. Refresh and review it.</value></data>
+  <data name="Bank.WritesDisabled" xml:space="preserve"><value>Not imported: importing bank payments is switched off on the test stand, nothing was saved. Use the production site cikada.lauresta.com/finance.</value></data>
+  <data name="Bank.WritesDisabledNotice" xml:space="preserve"><value>This is the test stand: importing and deleting bank payments is switched off here, nothing is saved. Import payments on the production site:</value></data>
   <data name="Bank.Failed400" xml:space="preserve"><value>Check the selected transfer data and try again.</value></data>
   <data name="Bank.Failed503" xml:space="preserve"><value>Finance service is temporarily unavailable.</value></data>
 </root>

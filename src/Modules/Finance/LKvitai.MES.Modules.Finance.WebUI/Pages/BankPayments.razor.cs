@@ -13,7 +13,7 @@ public partial class BankPayments
 {
     public sealed record PaymentRow(int Nr, DateOnly Date, string Firm, string Purpose, decimal Sum);
     public sealed record PaymentPage(IReadOnlyList<PaymentRow> Items, int Total, int CountryTotal,
-        DateOnly? LastDate, int Page, int PageSize);
+        DateOnly? LastDate, int Page, int PageSize, bool WritesEnabled = true);
     private sealed record PasteRow(int Line, DateOnly? Date, string Firm, string Purpose, decimal? Sum,
         string Status, string? Error, string Raw, bool Selected,
         int? MatchedNr, string? MatchedFirm);
@@ -120,9 +120,14 @@ public partial class BankPayments
         var marker = "finance-http:";
         var offset = error.Message.IndexOf(marker, StringComparison.Ordinal);
         var code = offset < 0 ? "" : new string(error.Message[(offset + marker.Length)..].TakeWhile(char.IsDigit).ToArray());
+        if (code == "409" && (error.Message.Contains("writes-disabled", StringComparison.Ordinal) || !WritesEnabled))
+            return L["Bank.WritesDisabled"].Value;
         return code is "400" or "401" or "403" or "409" or "503"
             ? L["Bank.Failed" + code].Value : L["Bank.ActionError"].Value;
     }
+    private const string ProductionUrl = "https://cikada.lauresta.com/finance/";
+    /// <summary>False on the test stand: it reads the live payments, so import and deletion are switched off there.</summary>
+    private bool WritesEnabled => _data?.WritesEnabled ?? true;
     private static string Money(decimal amount) => amount.ToString("N2", Lithuanian) + " €";
     private string Status(string code) => L["Bank." + code].Value;
     private string ErrorText(string? code) => L["Bank.Err" + code].Value;
