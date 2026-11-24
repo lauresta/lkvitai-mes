@@ -34,6 +34,7 @@
       </div>
     </div>
   }
+  @if (!WritesEnabled) { <div class="bp-notice" role="status">@L["Bank.WritesDisabledNotice"] <a href="@ProductionUrl">@ProductionUrl</a></div> }
   @if (!string.IsNullOrWhiteSpace(_error)) { <div class="bp-error" role="alert">@_error</div> }
   @if (_preview is not null)
   {
@@ -43,7 +44,7 @@
         <span class="bp-muted mono">@(SelectedRows().Count == 0 ? L["Bank.PreviewLatestNr", _preview.LatestNr] : L["Bank.PreviewNrRange", _preview.LatestNr, _preview.LatestNr + 1, _preview.LatestNr + SelectedRows().Count])</span>
         <span class="bp-muted">@L["Bank.SelectedSum", Money(SelectedRows().Sum(x => x.Sum!.Value))]</span>
         <button class="bp-ghost" type="button" @onclick="CancelPaste">@L["Bank.Cancel"]</button>
-        <button class="bp-primary" type="button" disabled="@(SelectedRows().Count == 0 || _busy)" @onclick="Import">@L["Bank.Import", SelectedRows().Count, _country]</button>
+        <button class="bp-primary" type="button" disabled="@(SelectedRows().Count == 0 || _busy || !WritesEnabled)" title="@(WritesEnabled ? null : L["Bank.WritesDisabledNotice"].Value)" @onclick="Import">@L["Bank.Import", SelectedRows().Count, _country]</button>
       </div>
       <div class="bp-preview-columns" aria-hidden="true">
         <span></span><span>@L["Bank.Status"]</span><span>@L["Bank.Date"]</span>
@@ -76,7 +77,7 @@
     </div>
     <div class="bp-table-body">
       @if (_loading) { <div class="bp-empty">@L["Bank.Loading"]</div> }
-      else if (_error is null)
+      else if (_error is null || _data is not null)
       {
         @if (_data?.Items.Count is null or 0) { <div class="bp-empty">@L["Bank.Empty"]</div> }
         else
@@ -89,7 +90,8 @@
               <strong title="@row.Firm">@row.Firm</strong>
               <span title="@row.Purpose">@row.Purpose</span>
               <span class="mono bp-money">@Money(row.Sum)</span>
-              <button type="button" class="bp-delete" aria-label="@L["Bank.Delete", row.Nr]" title="@L["Bank.Delete", row.Nr]" @onclick="() => Delete(row.Nr)">×</button>
+              @if (WritesEnabled) { <button type="button" class="bp-delete" aria-label="@L["Bank.Delete", row.Nr]" title="@L["Bank.Delete", row.Nr]" @onclick="() => Delete(row.Nr)">×</button> }
+              else { <span></span> }
             </div>
           }
         }

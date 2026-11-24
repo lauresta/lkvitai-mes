@@ -68,6 +68,8 @@
   <data name="Bank.Failed401" xml:space="preserve"><value>Prisijungimo sesija baigėsi. Prisijunkite iš naujo.</value></data>
   <data name="Bank.Failed403" xml:space="preserve"><value>Šiai paskyrai Finansų prieiga nesuteikta.</value></data>
   <data name="Bank.Failed409" xml:space="preserve"><value>Pavedimas jau yra, pasikeitė arba buvo priskirtas. Atnaujinkite ir patikrinkite.</value></data>
+  <data name="Bank.WritesDisabled" xml:space="preserve"><value>Neįkelta: testiniame stende mokėjimų įkėlimas išjungtas, niekas neišsaugota. Naudokite darbinę svetainę cikada.lauresta.com/finance.</value></data>
+  <data name="Bank.WritesDisabledNotice" xml:space="preserve"><value>Tai testinis stendas: mokėjimų įkėlimas ir trynimas čia išjungtas, niekas neišsaugoma. Mokėjimus įkelkite darbinėje svetainėje:</value></data>
   <data name="Bank.Failed400" xml:space="preserve"><value>Patikrinkite pasirinktų pavedimų duomenis ir bandykite dar kartą.</value></data>
   <data name="Bank.Failed503" xml:space="preserve"><value>Finansų paslauga laikinai nepasiekiama.</value></data>
 </root>

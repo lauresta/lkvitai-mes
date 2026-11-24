@@ -6,7 +6,11 @@ namespace LKvitai.MES.Modules.Finance.Api.BankPayments;
 
 public sealed record BankPaymentRow(int Nr, DateOnly Date, string Firm, string Purpose, decimal Sum);
 public sealed record BankPaymentPage(IReadOnlyList<BankPaymentRow> Items, int Total, int CountryTotal,
-    DateOnly? LastDate, int Page, int PageSize);
+    DateOnly? LastDate, int Page, int PageSize)
+{
+    /// <summary>False on a stand where import and deletion are switched off (the test stand), so the page can say so up front.</summary>
+    public bool WritesEnabled { get; init; } = true;
+}
 public sealed record BankPasteRequest(string Country, string Text);
 public sealed record BankPasteResult(Guid PreviewId, int LatestNr, IReadOnlyList<BankPasteRow> Rows);
 public sealed record BankStructuredRow(string Date, string Firm, string Purpose, string Sum);
@@ -38,11 +42,17 @@ internal sealed class BankImportSessions
 }
 internal sealed class BankOperationException(int status, string message) : Exception(message) { public int Status { get; } = status; }
 
-internal static class BankPaymentWrites
+public static class BankPaymentWrites
 {
+    public const string ConfigKey = "Finance:BankPayments:WritesEnabled";
+    /// <summary>Problem type of the 409 a stand without writes returns, so the page can tell it from a real conflict.</summary>
+    public const string DisabledProblemType = "urn:cikada:finance:bank-payments:writes-disabled";
+
     public static bool IsWrite(string method, string? path) =>
         HttpMethods.IsDelete(method) ||
         HttpMethods.IsPost(method) && (path ?? "").TrimEnd('/').EndsWith("/bank-payments", StringComparison.OrdinalIgnoreCase);
+
+    public static bool Enabled(IConfiguration configuration) => configuration.GetValue(ConfigKey, false);
 }
 
 internal static class BankPaymentsEndpoints
@@ -70,8 +80,9 @@ internal static class BankPaymentsEndpoints
                 // Imports and deletions change live legacy payments and cannot be limited to a test branch,
                 // so a stand has to opt in (production does; the test stand does not).
                 if (BankPaymentWrites.IsWrite(http.Request.Method, http.Request.Path) &&
-                    !http.RequestServices.GetRequiredService<IConfiguration>().GetValue("Finance:BankPayments:WritesEnabled", false))
-                    return Results.Problem(statusCode: 409, title: "Bank payment import and deletion are switched off on this stand. Parsing and preview still work.");
+                    !BankPaymentWrites.Enabled(http.RequestServices.GetRequiredService<IConfiguration>()))
+                    return Results.Problem(statusCode: 409, type: BankPaymentWrites.DisabledProblemType,
+                        title: "Bank payment import and deletion are switched off on this stand. Parsing and preview still work.");
                 http.Items[typeof(FinanceActor)] = actor;
                 return await next(context);
             }
@@ -82,9 +93,10 @@ internal static class BankPaymentsEndpoints
             catch (Exception ex) when (ex is HttpRequestException or UnauthorizedAccessException or System.Text.Json.JsonException)
             { return Results.Problem(statusCode: 503, title: "Finance access service is unavailable."); }
         });
-        group.MapGet("", (HttpContext http, BankRepository repo, string country, DateOnly? from, DateOnly? to,
-            string? q, string? sort, bool? desc, int? page) => repo.List(Actor(http), country, from, to, q,
-                sort, desc ?? true, page ?? 1, http.RequestAborted));
+        group.MapGet("", async (HttpContext http, BankRepository repo, IConfiguration configuration, string country,
+            DateOnly? from, DateOnly? to, string? q, string? sort, bool? desc, int? page) =>
+            await repo.List(Actor(http), country, from, to, q, sort, desc ?? true, page ?? 1, http.RequestAborted)
+                with { WritesEnabled = BankPaymentWrites.Enabled(configuration) });
         group.MapPost("/parse", (HttpContext http, BankRepository repo, BankPasteRequest request,
             IConfiguration configuration) => repo.Parse(Actor(http), request, configuration, http.RequestAborted));
         group.MapPost("/preview", (HttpContext http, BankRepository repo, BankStructuredPreviewRequest request,

@@ -10,7 +10,9 @@ window.financeBank = (() => {
     if (!response.ok) {
       let problem;
       try { problem = await response.json(); } catch { }
-      throw new Error(`finance-http:${response.status}`);
+      // The problem type tells a stand with writes switched off from a real conflict (both are 409).
+      const type = typeof problem?.type === 'string' ? ` type:${problem.type}` : '';
+      throw new Error(`finance-http:${response.status}${type}`);
     }
     return response.status === 204 ? '' : await response.text();
   }
