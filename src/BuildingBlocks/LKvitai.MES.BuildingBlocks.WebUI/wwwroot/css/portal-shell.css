@@ -1,3 +1,6 @@
+/* Hidden-by-default Blazor error bar, shared with modules that do not load this file (Scanning). */
+@import url("blazor-error-ui.css");
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -662,6 +665,30 @@ button.shell-search__item {
   background: var(--dark-2);
   color: #dfc07a;
   font-weight: 700;
+}
+
+/* Help link to the user manuals — a round "?" in the same dark chrome as the
+   language switcher. */
+.topbar__help {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--dark-line);
+  border-radius: 50%;
+  background: #1b2028;
+  color: #9ba4b0;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.topbar__help:hover,
+.topbar__help:focus-visible {
+  color: var(--n-0);
+  border-color: #9ba4b0;
 }
 
 /* Header fit (production walkthrough): the search box is the only flexible

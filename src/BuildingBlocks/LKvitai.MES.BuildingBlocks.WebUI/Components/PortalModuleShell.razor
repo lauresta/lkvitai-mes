@@ -119,6 +119,11 @@
 
         <LanguageSwitcher />
 
+        @* Help: the user manuals (served at /manuals/ behind the portal sign-in), opened on the current module's
+           section in a new tab so the user keeps their place. *@
+        <a class="topbar__help" href="@HelpUrl" target="_blank" rel="noopener"
+           title="@L["Shell.Help"]" aria-label="@L["Shell.Help"]" data-testid="shell-help">?</a>
+
         @* AUTHENTIC SEAM: user-block + logout form.
            Replace the form below with an Authentic logout endpoint when the
            module migrates off cookie auth. The DisplayName/Initials helpers
@@ -260,6 +265,29 @@
     /// endpoint here (or wrap the form in a host-provided fragment).
     /// </summary>
     [Parameter] public string LogoutAction { get; set; } = "auth/logout";
+
+    /// <summary>
+    /// Modules whose manual section has its own start page (docs/manuals/docs/{section}/index.md). The portal (the
+    /// hub) and the warehouse (no section start page) open the manuals start page, which lists every module.
+    /// </summary>
+    private static readonly HashSet<string> ManualSections =
+        new(StringComparer.OrdinalIgnoreCase) { "sales", "finance", "shopfloor", "frontline", "scanning" };
+
+    /// <summary>Overrides the help link; by default it follows the module the page belongs to.</summary>
+    [Parameter] public string? HelpLink { get; set; }
+
+    private string HelpUrl => HelpLink ?? BuildHelpUrl(Navigation.BaseUri);
+
+    /// <summary>
+    /// /manuals/{module}/ for a module with its own manual section (the first path segment of the module's base
+    /// URI, e.g. https://host/sales/ -> /manuals/sales/), otherwise the manuals start page.
+    /// </summary>
+    public static string BuildHelpUrl(string? baseUri)
+    {
+        if (!Uri.TryCreate(baseUri, UriKind.Absolute, out var uri)) return "/manuals/";
+        var module = uri.AbsolutePath.Trim('/').Split('/')[0];
+        return ManualSections.Contains(module) ? $"/manuals/{module.ToLowerInvariant()}/" : "/manuals/";
+    }
 
     /// <summary>Test-strip note. Null falls back to the localized shared-environment copy.</summary>
     [Parameter] public string? BannerNote { get; set; }
