@@ -152,6 +152,22 @@ public sealed class ReceivingController : ControllerBase
             pageSize));
     }
 
+    /// <summary>Open (not fully received) inbound shipment lines of one item: the item card "Laukiama" block.</summary>
+    [HttpGet("by-item/{itemId:int}")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> GetOpenLinesByItemAsync(int itemId, CancellationToken cancellationToken = default)
+    {
+        var openStatuses = ItemIncomingRows.OpenStatuses;
+        var shipments = await _dbContext.InboundShipments
+            .AsNoTracking()
+            .Include(x => x.Supplier)
+            .Include(x => x.Lines)
+            .Where(x => openStatuses.Contains(x.Status) && x.Lines.Any(line => line.ItemId == itemId))
+            .ToListAsync(cancellationToken);
+
+        return Ok(ItemIncomingRows.Build(itemId, shipments));
+    }
+
     [HttpGet("{id:int}")]
     [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
     public async Task<IActionResult> GetShipmentByIdAsync(

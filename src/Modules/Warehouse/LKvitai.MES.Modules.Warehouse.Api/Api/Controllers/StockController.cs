@@ -186,7 +186,8 @@ public sealed class StockController : ControllerBase
                     : null,
                 item is not null && priceByItemId.TryGetValue(item.Id, out var sale)
                     ? sale.BasePrice
-                    : null);
+                    : null,
+                StockLocationRole.Resolve(code, location));
         });
 
         if (itemId.HasValue)
@@ -274,7 +275,8 @@ public sealed class StockController : ControllerBase
                 x.PrimaryThumbnailUrl,
                 x.UnitCost,
                 ItemPriceResolver.Value(x.Qty, x.UnitCost),
-                x.BasePrice)).ToList(),
+                x.BasePrice,
+                x.LocationRole)).ToList(),
             totalCount,
             pageNumber,
             pageSize,
@@ -576,7 +578,8 @@ public sealed class StockController : ControllerBase
         IReadOnlyList<string> Tags,
         string? PrimaryThumbnailUrl,
         decimal? UnitCost,
-        decimal? BasePrice);
+        decimal? BasePrice,
+        string? LocationRole);
 
     /// <summary>
     /// Keeps the projection warehouse identity so cross-warehouse stock is not inferred from a location code.
@@ -599,7 +602,8 @@ public sealed class StockController : ControllerBase
         string? PrimaryThumbnailUrl,
         decimal? UnitCost,
         decimal? TotalValue,
-        decimal? BasePrice);
+        decimal? BasePrice,
+        string? LocationRole = null);
 
     public sealed record PagedStockResponse<T>(
         IReadOnlyList<T> Items,

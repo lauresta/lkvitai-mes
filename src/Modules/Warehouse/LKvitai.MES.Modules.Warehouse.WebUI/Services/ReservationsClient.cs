@@ -37,6 +37,10 @@ public class ReservationsClient
     public Task<PagedResult<ReservationDto>> SearchReservationsAsync(string? status, int page = 1, int pageSize = 50)
         => GetReservationsAsync(status, page, pageSize);
 
+    /// <summary>Active reservation lines of one item, with the owning sales order and customer.</summary>
+    public Task<IReadOnlyList<ItemReservationRowDto>> GetByItemAsync(int itemId)
+        => GetAsync<IReadOnlyList<ItemReservationRowDto>>($"/api/warehouse/v1/reservations/by-item/{itemId}");
+
     public Task<StartPickingResponseDto> StartPickingAsync(Guid reservationId)
     {
         return PostAsync<StartPickingResponseDto>($"/api/warehouse/v1/reservations/{reservationId}/start-picking", new { reservationId });

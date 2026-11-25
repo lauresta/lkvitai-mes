@@ -283,6 +283,7 @@ public sealed class ItemsController : ControllerBase
         var item = await _dbContext.Items
             .AsNoTracking()
             .Include(i => i.Barcodes)
+            .Include(i => i.Category)
             .FirstOrDefaultAsync(i => i.Id == id, cancellationToken);
 
         if (item is null)
@@ -322,7 +323,8 @@ public sealed class ItemsController : ControllerBase
             item.OriginCountry,
             item.MinQty,
             item.SupplementaryUnit,
-            item.SupplementaryUnitFactor);
+            item.SupplementaryUnitFactor,
+            item.Category?.Name);
 
         await Cache.SetAsync(cacheKey, dto, TimeSpan.FromHours(1), cancellationToken);
         return Ok(dto);
@@ -1082,7 +1084,8 @@ public sealed class ItemsController : ControllerBase
         string? OriginCountry = null,
         decimal? MinQty = null,
         string? SupplementaryUnit = null,
-        decimal? SupplementaryUnitFactor = null);
+        decimal? SupplementaryUnitFactor = null,
+        string? CategoryName = null);
 
     public sealed record AddBarcodeRequest(string Barcode, string BarcodeType, bool IsPrimary);
     public sealed record ItemBarcodeDto(int Id, string Barcode, string BarcodeType, bool IsPrimary);

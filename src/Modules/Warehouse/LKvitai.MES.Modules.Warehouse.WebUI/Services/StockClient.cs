@@ -64,6 +64,18 @@ public class StockClient
         return SearchCoreAsync(query.ToString(), cancellationToken);
     }
 
+    /// <summary>
+    /// Every stock row of one item for the item card: reserved quantities included and virtual locations kept,
+    /// so stock still in RECEIVING / QC shows up (rows outside the stock boundary are dropped by the caller).
+    /// </summary>
+    public Task<PagedResult<AvailableStockItemDto>> GetItemStockAsync(
+        int itemId,
+        int pageSize = 200,
+        CancellationToken cancellationToken = default)
+        => SearchCoreAsync(
+            $"/api/warehouse/v1/stock/available?itemId={itemId}&includeReserved=true&includeVirtualLocations=true&pageNumber=1&pageSize={pageSize}",
+            cancellationToken);
+
     public async Task<byte[]> ExportAvailableStockCsvAsync(
         string? warehouse,
         string? location,
@@ -162,7 +174,9 @@ public class StockClient
         {
             ItemId = row.ItemId,
             WarehouseId = row.WarehouseId,
+            LocationId = row.LocationId,
             Location = row.LocationCode ?? string.Empty,
+            LocationRole = row.LocationRole,
             SKU = row.InternalSku ?? string.Empty,
             ItemName = row.ItemName ?? string.Empty,
             PhysicalQty = row.Qty,
@@ -232,7 +246,9 @@ public class StockClient
         public int? ItemId { get; init; }
         public string WarehouseId { get; init; } = string.Empty;
         public string? ItemName { get; init; }
+        public int? LocationId { get; init; }
         public string? LocationCode { get; init; }
+        public string? LocationRole { get; init; }
         public string? InternalSku { get; init; }
         public decimal Qty { get; init; }
         public decimal ReservedQty { get; init; }

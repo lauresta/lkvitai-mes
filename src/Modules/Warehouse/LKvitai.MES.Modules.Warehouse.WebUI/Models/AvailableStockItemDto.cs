@@ -4,7 +4,10 @@ public record AvailableStockItemDto
 {
     public int? ItemId { get; init; }
     public string WarehouseId { get; init; } = string.Empty;
+    public int? LocationId { get; init; }
     public string Location { get; init; } = string.Empty;
+    /// <summary>Receiving, QcHold, Quarantine, Shipping, Transit, Outside, or the configured cell role (default Storage).</summary>
+    public string? LocationRole { get; init; }
     public string SKU { get; init; } = string.Empty;
     public string ItemName { get; init; } = string.Empty;
     public decimal PhysicalQty { get; init; }

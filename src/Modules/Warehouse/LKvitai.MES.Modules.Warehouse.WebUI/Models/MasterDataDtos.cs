@@ -113,6 +113,7 @@ public record ItemDetailsDto
     public string? OriginCountry { get; init; }
     public string? SupplementaryUnit { get; init; }
     public decimal? SupplementaryUnitFactor { get; init; }
+    public string? CategoryName { get; init; }
 }
 
 public record ItemPhotosResponseDto
