@@ -71,7 +71,7 @@ public sealed class MasterDataImportService : IMasterDataImportService
             _ => throw new ArgumentOutOfRangeException(nameof(entityType), $"Unsupported import entity '{entityType}'.")
         };
 
-        ValidateHeaders(sheet, headers, errors, normalized == "items" ? ExcelTemplateService.ItemRequiredHeaderCount : headers.Length);
+        ValidateHeaders(sheet, headers, errors, RequiredHeaderCount(normalized, headers.Length));
         if (errors.Count > 0)
         {
             return BuildResult(0, 0, 0, dryRun, false, errors, startedAt);
@@ -300,6 +300,7 @@ public sealed class MasterDataImportService : IMasterDataImportService
             }
 
             ParseIntrastat(row, errors);
+            ParseMinQty(row, errors);
         }
 
         if (errors.Count > 0)
@@ -352,6 +353,7 @@ public sealed class MasterDataImportService : IMasterDataImportService
                     ProductConfigId = row.Get("ProductConfigId")
                 });
                 ApplyIntrastat(toInsert[^1], row);
+                ApplyMinQty(toInsert[^1], row);
             }
             else
             {
@@ -367,6 +369,7 @@ public sealed class MasterDataImportService : IMasterDataImportService
                 existing.PrimaryBarcode = row.Get("PrimaryBarcode");
                 existing.ProductConfigId = row.Get("ProductConfigId");
                 ApplyIntrastat(existing, row);
+                ApplyMinQty(existing, row);
                 toUpdate.Add(existing);
             }
         }
@@ -423,6 +426,11 @@ public sealed class MasterDataImportService : IMasterDataImportService
             if (!seen.Add(code))
             {
                 errors.Add(new ImportErrorReport(row.RowNumber, "Code", code, "Duplicate supplier code in file."));
+                continue;
+            }
+
+            if (!TryParseKind(row, errors, out _))
+            {
                 continue;
             }
 
@@ -484,6 +492,35 @@ public sealed class MasterDataImportService : IMasterDataImportService
         supplier.AdditionalInfo = Normalize(row.Get("AdditionalInfo"));
         // ContactInfo retained as legacy/backward-compatible free-text input only.
         supplier.ContactInfo = Normalize(row.Get("ContactInfo"));
+        if (TryParseKind(row, new List<ImportErrorReport>(), out var kind) && kind is not null)
+        {
+            supplier.Kind = kind;
+        }
+    }
+
+    /// <summary>Reads the optional Kind cell. An empty cell is valid and yields null (leave the value unchanged).</summary>
+    private static bool TryParseKind(RowData row, ICollection<ImportErrorReport> errors, out SupplierKind? kind)
+    {
+        var text = row.Get("Kind");
+        kind = null;
+        if (text is null)
+        {
+            return true;
+        }
+
+        kind = text.ToLowerInvariant() switch
+        {
+            "domestic" => SupplierKind.Domestic,
+            "eu" => SupplierKind.Eu,
+            "noneu" => SupplierKind.NonEu,
+            _ => null
+        };
+        if (kind is null)
+        {
+            errors.Add(new ImportErrorReport(row.RowNumber, "Kind", text, "Kind must be Domestic, Eu or NonEu."));
+        }
+
+        return kind is not null;
     }
 
     private static string? Normalize(string? value)
@@ -804,6 +841,33 @@ public sealed class MasterDataImportService : IMasterDataImportService
         }
     }
 
+    /// <summary>Reads the optional MinQty cell. An empty cell yields null (leave the value unchanged).</summary>
+    private static decimal? ParseMinQty(RowData row, ICollection<ImportErrorReport> errors)
+    {
+        var text = row.Get("MinQty");
+        if (text is null)
+        {
+            return null;
+        }
+
+        if (IntrastatItemRules.TryParseDecimal(text, out var value) && value >= 0m)
+        {
+            return value;
+        }
+
+        errors.Add(new ImportErrorReport(row.RowNumber, "MinQty", text, "MinQty must be a number greater than or equal to 0."));
+        return null;
+    }
+
+    private static void ApplyMinQty(Item item, RowData row)
+    {
+        var minQty = ParseMinQty(row, new List<ImportErrorReport>());
+        if (minQty is not null)
+        {
+            item.MinQty = minQty;
+        }
+    }
+
     private sealed record IntrastatCells(
         string? CommodityCode, decimal? NetWeightKg, string? OriginCountry, string? SupplementaryUnit, decimal? SupplementaryUnitFactor);
 
@@ -834,6 +898,13 @@ public sealed class MasterDataImportService : IMasterDataImportService
 
         return rows;
     }
+
+    private static int RequiredHeaderCount(string normalizedEntityType, int headerCount) => normalizedEntityType switch
+    {
+        "items" => ExcelTemplateService.ItemRequiredHeaderCount,
+        "suppliers" => ExcelTemplateService.SupplierRequiredHeaderCount,
+        _ => headerCount
+    };
 
     private static void ValidateHeaders(
         IXLWorksheet sheet,

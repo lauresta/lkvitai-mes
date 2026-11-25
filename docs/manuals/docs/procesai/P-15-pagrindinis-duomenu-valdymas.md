@@ -67,6 +67,7 @@ Pirkimo dokumentų (priėmimo) apskaita remiasi šiais tiekėjo duomenimis:
 5. Skiltyje `(UI: Import Result)` matote `(UI: Inserted:)`, `(UI: Updated:)`, `(UI: Skipped:)`, `(UI: Errors:)` ir lentelę (`(UI: Row)`, `(UI: Column)`, `(UI: Value)`, `(UI: Message)`). Klaidų ataskaitą parsisiųskite `(UI: Download Error Report)`.
 6. Kai patikra be klaidų, `(UI: Commit Changes)` tampa aktyvus ir įrašo duomenis. Kol yra klaidų, rodoma „Commit is disabled until dry-run errors are resolved."
 7. Prekių šablone po įprastų stulpelių yra penki Intrastat stulpeliai: `CommodityCode` (8 skaitmenys), `NetWeightKg` (didesnė už nulį; kablelis ar taškas), `OriginCountry` (2 raidės), `SupplementaryUnit` (3 simboliai) ir `SupplementaryUnitFactor` (didesnis už nulį). Papildomas vienetas ir koeficientas pildomi kartu. Tuščias langelis esamos prekės reikšmės nekeičia; senesni failai be šių stulpelių tebeveikia. Neteisinga reikšmė rodoma klaidų lentelėje su stulpelio pavadinimu, ir nieko neįrašoma. Intrastat duomenų užpildymo keliom prekėm apžvalga - [P-21](P-21-intrastat-atvykimai.md).
+8. Prekių šablono paskutinis stulpelis `MinQty` (neprivalomas, skaičius ne mažesnis už 0, bazinis vienetas) nustato visada sandėlyje laikytiną prekės kiekį, o tiekėjų šablono paskutinis stulpelis `Kind` (neprivalomas: `Domestic`, `Eu` arba `NonEu`) nustato tiekėjo rūšį; tuščias langelis esamos reikšmės nekeičia, o senesni failai be šių stulpelių tebeveikia.
 
 ![Importo vedlys](../img/warehouse/admin-import-wizard.png)
 
