@@ -961,6 +961,13 @@ td.is-num strong { font-weight: 700; }
   font-size: 12px;
 }
 
+/* One vertical scroll per page (no scroll area inside a scrolling page). The warehouse grids have no fixed height, so
+   MudBlazor's sticky-header container only added a second, near-empty vertical scrollbar (a few px of overflow)
+   next to the page scrollbar. They keep horizontal scrolling; the stock grid keeps its own height-limited scroll. */
+.lk-grid:not(.stock-grid) .mud-table-container {
+  overflow-y: hidden;
+}
+
 .lots-grid .mud-table-head th {
   height: var(--row-h) !important;
   padding: 0 12px !important;
