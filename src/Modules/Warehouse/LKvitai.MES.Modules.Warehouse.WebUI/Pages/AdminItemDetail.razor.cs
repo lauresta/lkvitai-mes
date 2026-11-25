@@ -48,7 +48,6 @@ public partial class AdminItemDetail
     private int? _loadedId;
     private IReadOnlyList<AvailableStockItemDto> _stockRows = Array.Empty<AvailableStockItemDto>();
     private ItemStockSummary? _stockSummary;
-    private ItemIncomingSummary? _incomingSummary;
     private IReadOnlyList<ItemMovement> _timeline = Array.Empty<ItemMovement>();
 
     [Inject] private MasterDataAdminClient AdminClient { get; set; } = default!;
@@ -72,6 +71,8 @@ public partial class AdminItemDetail
     private string Tab => ItemCardTabs.Parse(TabQuery);
 
     private OnHandValueRowDto? OnHandRow => _onHand.Value?.FirstOrDefault();
+
+    private ItemIncomingSummary? IncomingSummary => _incoming.Value is { } rows ? ItemIncomingSummary.From(rows.ToList()) : null;
 
     private int MovementTotal => _movements.Value?.TotalCount ?? _timeline.Count;
 
@@ -195,7 +196,6 @@ public partial class AdminItemDetail
     {
         _stockRows = _stock.Value is null ? Array.Empty<AvailableStockItemDto>() : ItemStockMath.StockRows(_stock.Value);
         _stockSummary = _stock.HasValue ? ItemStockSummary.From(_stockRows) : null;
-        _incomingSummary = _incoming.Value is null ? null : ItemIncomingSummary.From(_incoming.Value.ToList());
         _timeline = _movements.Value is null
             ? Array.Empty<ItemMovement>()
             : ItemMovementTimeline.Build(_movements.Value.Movements, _stockSummary?.Physical);
@@ -230,28 +230,27 @@ public partial class AdminItemDetail
     }
 
     private Task OpenMoveDialogAsync(int? locationId)
-        => OpenStockDialogAsync<ItemMoveDialog>(L["AdminItemDetail.MoveDialog.Title"].Value, locationId);
+        => Item is null
+            ? Task.CompletedTask
+            : OpenStockDialogAsync<ItemMoveDialog>(Item, "AdminItemDetail.MoveDialog.Title", locationId);
 
     private Task OpenAdjustDialogAsync(int? locationId)
-        => OpenStockDialogAsync<ItemAdjustDialog>(L["AdminItemDetail.AdjustDialog.Title"].Value, locationId);
+        => Item is null
+            ? Task.CompletedTask
+            : OpenStockDialogAsync<ItemAdjustDialog>(Item, "AdminItemDetail.AdjustDialog.Title", locationId);
 
     /// <summary>Opens a stock dialog with the item's rows; a successful move / adjustment reloads stock and movements.</summary>
-    private async Task OpenStockDialogAsync<TDialog>(string title, int? locationId)
+    private async Task OpenStockDialogAsync<TDialog>(ItemDetailsDto item, string titleKey, int? locationId)
         where TDialog : ComponentBase
     {
-        if (Item is null)
-        {
-            return;
-        }
-
         var parameters = new DialogParameters
         {
-            ["Item"] = Item,
+            ["Item"] = item,
             ["Rows"] = _stockRows,
             ["PreselectedLocationId"] = locationId
         };
 
-        var dialog = await DialogService.ShowAsync<TDialog>(title, parameters, StockDialogOptions);
+        var dialog = await DialogService.ShowAsync<TDialog>(L[titleKey].Value, parameters, StockDialogOptions);
         var result = await dialog.Result;
         if (result.Canceled)
         {

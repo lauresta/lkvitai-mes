@@ -85,12 +85,11 @@
     private string _qtyText = string.Empty;
     private bool _qtyTouched;
     private bool _saving;
+    private IReadOnlyList<AvailableStockItemDto> _sourceRows = Array.Empty<AvailableStockItemDto>();
 
-    private IReadOnlyList<AvailableStockItemDto> SourceRows => Rows
-        .Where(x => x.LocationId.HasValue && x.AvailableQty > 0m)
-        .ToList();
+    private IReadOnlyList<AvailableStockItemDto> SourceRows => _sourceRows;
 
-    private AvailableStockItemDto? Source => SourceRows.FirstOrDefault(x => x.LocationId == _fromId);
+    private AvailableStockItemDto? Source => _sourceRows.FirstOrDefault(x => x.LocationId == _fromId);
 
     private decimal? Qty => DecimalInputParser.TryParse(_qtyText, out var value) ? value : null;
 
@@ -116,8 +115,9 @@
 
     protected override void OnInitialized()
     {
-        _fromId = SourceRows.FirstOrDefault(x => x.LocationId == PreselectedLocationId)?.LocationId
-                  ?? SourceRows.FirstOrDefault()?.LocationId;
+        _sourceRows = Rows.Where(x => x.LocationId.HasValue && x.AvailableQty > 0m).ToList();
+        _fromId = _sourceRows.FirstOrDefault(x => x.LocationId == PreselectedLocationId)?.LocationId
+                  ?? _sourceRows.FirstOrDefault()?.LocationId;
     }
 
     private void OnFromChanged(ChangeEventArgs args)

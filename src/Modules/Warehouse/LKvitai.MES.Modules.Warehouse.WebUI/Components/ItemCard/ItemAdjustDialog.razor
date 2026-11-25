@@ -78,15 +78,16 @@
     [Parameter] public int? PreselectedLocationId { get; set; }
 
     private IReadOnlyList<AdjustReasonOption> _reasons = Array.Empty<AdjustReasonOption>();
+    private IReadOnlyList<AvailableStockItemDto> _locationRows = Array.Empty<AvailableStockItemDto>();
     private int? _locationId;
     private string _countedText = string.Empty;
     private int _reasonIndex;
     private string _notes = string.Empty;
     private bool _saving;
 
-    private IReadOnlyList<AvailableStockItemDto> LocationRows => Rows.Where(x => x.LocationId.HasValue).ToList();
+    private IReadOnlyList<AvailableStockItemDto> LocationRows => _locationRows;
 
-    private AvailableStockItemDto? Selected => LocationRows.FirstOrDefault(x => x.LocationId == _locationId);
+    private AvailableStockItemDto? Selected => _locationRows.FirstOrDefault(x => x.LocationId == _locationId);
 
     private decimal? Difference => Selected is null || !DecimalInputParser.TryParse(_countedText, out var counted)
         ? null
@@ -100,8 +101,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _locationId = LocationRows.FirstOrDefault(x => x.LocationId == PreselectedLocationId)?.LocationId
-                      ?? LocationRows.FirstOrDefault()?.LocationId;
+        _locationRows = Rows.Where(x => x.LocationId.HasValue).ToList();
+        _locationId = _locationRows.FirstOrDefault(x => x.LocationId == PreselectedLocationId)?.LocationId
+                      ?? _locationRows.FirstOrDefault()?.LocationId;
 
         try
         {

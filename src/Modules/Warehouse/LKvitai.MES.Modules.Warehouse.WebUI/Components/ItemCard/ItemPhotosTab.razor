@@ -53,11 +53,15 @@
     [Parameter] public EventCallback OnChanged { get; set; }
 
     private bool _busy;
+    private IReadOnlyList<ItemPhotoDto> _photos = Array.Empty<ItemPhotoDto>();
 
-    private IReadOnlyList<ItemPhotoDto> Photos => Item.Photos
-        .OrderByDescending(x => x.IsPrimary)
-        .ThenByDescending(x => x.CreatedAt)
-        .ToList();
+    private IReadOnlyList<ItemPhotoDto> Photos => _photos;
+
+    protected override void OnParametersSet()
+        => _photos = Item.Photos
+            .OrderByDescending(x => x.IsPrimary)
+            .ThenByDescending(x => x.CreatedAt)
+            .ToList();
 
     private bool CanRecompute => Photos.Count > 0 && !_busy;
 

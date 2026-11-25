@@ -68,12 +68,18 @@
 
     private MovementFilter _filter = MovementFilter.All;
     private int _visible = PageSize;
+    private IReadOnlyList<ItemMovement> _filtered = Array.Empty<ItemMovement>();
 
-    private IReadOnlyList<ItemMovement> Filtered => Timeline.Where(x => ItemMovementTimeline.Matches(x, _filter)).ToList();
+    private IReadOnlyList<ItemMovement> Filtered => _filtered;
 
-    private bool IsEmpty => State.HasValue && Filtered.Count == 0;
+    private bool IsEmpty => State.HasValue && _filtered.Count == 0;
 
-    private bool HasMore => Filtered.Count > _visible;
+    private bool HasMore => _filtered.Count > _visible;
+
+    protected override void OnParametersSet() => ApplyFilter();
+
+    private void ApplyFilter()
+        => _filtered = Timeline.Where(x => ItemMovementTimeline.Matches(x, _filter)).ToList();
 
     private string FilterClass(MovementFilter filter) => filter == _filter ? "ic-filter is-active" : "ic-filter";
 
@@ -86,6 +92,7 @@
     {
         _filter = filter;
         _visible = PageSize;
+        ApplyFilter();
     }
 
     private void ShowMore() => _visible += PageSize;

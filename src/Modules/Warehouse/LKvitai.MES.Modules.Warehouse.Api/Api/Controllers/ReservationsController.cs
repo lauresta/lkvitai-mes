@@ -144,7 +144,7 @@ public sealed class ReservationsController : ControllerBase
             .ToListAsync(cancellationToken);
 
         return orders
-            .GroupBy(x => x.ReservationId!.Value)
+            .GroupBy(x => x.ReservationId.GetValueOrDefault())
             .ToDictionary(
                 x => x.Key,
                 x => x.Select(order => new ReservationOrderRef(order.Id, order.OrderNumber, order.Customer?.Name, order.Status.ToString())).First());
