@@ -6,16 +6,26 @@ namespace LKvitai.MES.Modules.Warehouse.Api.Middleware;
 
 public sealed class ApiRateLimitingMiddleware
 {
-    private const int LimitPerMinute = 100;
+    /// <summary>
+    /// Default per-user budget. One item card or list page of the web UI makes 10–30 API calls, so 100 a minute cut
+    /// ordinary browsing off with 429. Override with WarehouseApi:RateLimitPerMinute; API keys keep their own limit.
+    /// </summary>
+    public const int DefaultLimitPerMinute = 1000;
+    public const string LimitConfigKey = "WarehouseApi:RateLimitPerMinute";
     private const int WindowSeconds = 60;
 
     private readonly RequestDelegate _next;
+    private readonly int _limitPerMinute;
     private readonly ConcurrentDictionary<string, CounterState> _counters = new(StringComparer.Ordinal);
 
-    public ApiRateLimitingMiddleware(RequestDelegate next)
+    public ApiRateLimitingMiddleware(RequestDelegate next, IConfiguration? configuration = null)
     {
         _next = next;
+        var configured = configuration?.GetValue<int?>(LimitConfigKey);
+        _limitPerMinute = configured is > 0 ? configured.Value : DefaultLimitPerMinute;
     }
+
+    public int LimitPerMinute => _limitPerMinute;
 
     public async Task InvokeAsync(HttpContext context)
     {
@@ -118,12 +128,12 @@ public sealed class ApiRateLimitingMiddleware
         return $"ip:{ip}";
     }
 
-    private static int ResolveLimit(HttpContext context)
+    private int ResolveLimit(HttpContext context)
     {
         var value = context.User.FindFirstValue("api_key_rate_limit");
         return int.TryParse(value, out var parsed) && parsed > 0
             ? parsed
-            : LimitPerMinute;
+            : _limitPerMinute;
     }
 
     private sealed class CounterState

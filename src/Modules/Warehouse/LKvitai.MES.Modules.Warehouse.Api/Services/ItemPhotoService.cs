@@ -501,8 +501,13 @@ public sealed class ItemPhotoService : IItemPhotoService
         return true;
     }
 
+    /// <summary>
+    /// Photo URL for the Warehouse web UI. It is relative on purpose: the page's base href (/warehouse/) turns it into
+    /// /warehouse/api/warehouse/v1/..., the WebUI photo proxy that adds the user's token. A root-relative /api/... URL
+    /// reaches the API directly without a token and the browser gets 401 (broken images).
+    /// </summary>
     public static string BuildProxyUrl(int itemId, Guid photoId, string size)
-        => $"/api/warehouse/v1/items/{itemId}/photos/{photoId}?size={size}";
+        => $"api/warehouse/v1/items/{itemId}/photos/{photoId}?size={size}";
 
     private static (string ContentType, string Extension)? DetectImageType(ReadOnlySpan<byte> bytes)
     {

@@ -218,7 +218,7 @@ public class ItemPhotosIntegrationTests
         row.Weight.Should().Be(1.25m);
         row.Volume.Should().Be(0.4m);
         row.ProductConfigId.Should().Be("CFG-1005");
-        row.PrimaryThumbnailUrl.Should().Be($"/api/warehouse/v1/items/1005/photos/{photoId}?size=thumb");
+        row.PrimaryThumbnailUrl.Should().Be($"api/warehouse/v1/items/1005/photos/{photoId}?size=thumb");
         row.PrimaryPhotoId.Should().Be(photoId);
     }
 
