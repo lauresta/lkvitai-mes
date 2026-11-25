@@ -277,6 +277,11 @@
   <data name="AdminItems.ItemsManagement" xml:space="preserve"><value>Items Management</value></data>
   <data name="AdminItems.NoImg" xml:space="preserve"><value>No img</value></data>
   <data name="AdminItems.NoItemsFound" xml:space="preserve"><value>No items found</value></data>
+  <data name="AdminItems.View.Table" xml:space="preserve"><value>Table</value></data>
+  <data name="AdminItems.View.Cards" xml:space="preserve"><value>Cards</value></data>
+  <data name="AdminItems.View.Aria" xml:space="preserve"><value>View</value></data>
+  <data name="AdminItems.Preview.Hint" xml:space="preserve"><value>Click — all photos</value></data>
+  <data name="AdminItems.UploadPhoto" xml:space="preserve"><value>+ Upload photo</value></data>
   <data name="AdminItems.NoTags" xml:space="preserve"><value>No tags</value></data>
   <data name="AdminItems.Obsolete" xml:space="preserve"><value>Obsolete</value></data>
   <data name="AdminItems.OpenPhotos" xml:space="preserve"><value>Open photos</value></data>

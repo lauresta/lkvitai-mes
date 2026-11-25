@@ -277,6 +277,11 @@
   <data name="AdminItems.ItemsManagement" xml:space="preserve"><value>Prekių valdymas</value></data>
   <data name="AdminItems.NoImg" xml:space="preserve"><value>Nėra nuotraukos</value></data>
   <data name="AdminItems.NoItemsFound" xml:space="preserve"><value>Prekių nerasta</value></data>
+  <data name="AdminItems.View.Table" xml:space="preserve"><value>Lentelė</value></data>
+  <data name="AdminItems.View.Cards" xml:space="preserve"><value>Kortelės</value></data>
+  <data name="AdminItems.View.Aria" xml:space="preserve"><value>Rodinys</value></data>
+  <data name="AdminItems.Preview.Hint" xml:space="preserve"><value>Spustelėkite — visos nuotraukos</value></data>
+  <data name="AdminItems.UploadPhoto" xml:space="preserve"><value>+ Įkelti nuotrauką</value></data>
   <data name="AdminItems.NoTags" xml:space="preserve"><value>Nėra žymų</value></data>
   <data name="AdminItems.Obsolete" xml:space="preserve"><value>Pasenęs</value></data>
   <data name="AdminItems.OpenPhotos" xml:space="preserve"><value>Atidaryti nuotraukas</value></data>

@@ -1,10 +1,13 @@
 @page "/admin/items"
 @using System.Diagnostics
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure.ItemsList
+@implements IAsyncDisposable
 @inject MasterDataAdminClient AdminClient
 @inject UomClient UomClient
 @inject ToastService ToastService
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
+@inject IJSRuntime JS
 
 <PageTitle>@L["AdminItems.AdminItemsCikadaMES"]</PageTitle>
 
@@ -66,7 +69,7 @@
                     <MudSelect T="int"
                                Variant="Variant.Outlined"
                                Margin="Margin.Dense"
-                               Value="@_pageSize"
+                               Value="@_state.PageSize"
                                ValueChanged="OnPageSizeChangedAsync"
                                InputAttributes="@ItemsPageSizeAttributes">
                         <MudSelectItem T="int" Value="25">25</MudSelectItem>
@@ -105,9 +108,28 @@
 
         <div class="lots-grid-head items-grid-head">
             <strong data-testid="admin-items-summary">@L["AdminItems.Total", _totalCount]</strong>
-            <span class="mono" data-testid="admin-items-current-page">@L["AdminItems.Page", _currentPage]</span>
+            <span class="mono" data-testid="admin-items-current-page">@L["AdminItems.Page", _state.Page]</span>
+            <div class="stock-view-toggle items-view-toggle" role="group" aria-label="@L["AdminItems.View.Aria"]" data-testid="admin-items-view-toggle">
+                <MudButton Size="Size.Small"
+                           Variant="@ViewVariant(ItemsViewMode.Table)"
+                           Color="Color.Primary"
+                           OnClick="@(() => SetViewAsync(ItemsViewMode.Table))"
+                           UserAttributes="@ItemsViewTableAttributes">@L["AdminItems.View.Table"]</MudButton>
+                <MudButton Size="Size.Small"
+                           Variant="@ViewVariant(ItemsViewMode.Cards)"
+                           Color="Color.Primary"
+                           OnClick="@(() => SetViewAsync(ItemsViewMode.Cards))"
+                           UserAttributes="@ItemsViewCardsAttributes">@L["AdminItems.View.Cards"]</MudButton>
+            </div>
         </div>
 
+        <div @ref="_listRoot" class="items-list-root">
+        @if (_state.ViewMode == ItemsViewMode.Cards)
+        {
+            @CardsView
+        }
+        else
+        {
         <MudDataGrid T="AdminItemDto"
                      @ref="_grid"
                      @key="_gridRenderKey"
@@ -117,7 +139,8 @@
                      Dense="true"
                      Hover="true"
                      FixedHeader="true"
-                     RowsPerPage="@_pageSize"
+                     RowsPerPage="@_state.PageSize"
+                     CurrentPage="@(_state.Page - 1)"
                      Loading="@_isLoading"
                      MultiSelection="true"
                      SelectedItems="_selected"
@@ -129,10 +152,10 @@
                 <TemplateColumn Title="@L["AdminItems.Image"]" Sortable="false">
                     <CellTemplate>
                         <button type="button"
-                                class="items-thumb"
-                                title="@L["AdminItems.OpenPhotos"]"
+                                class="@ThumbClass(context.Item)"
+                                @attributes="@ThumbAttributes(context.Item)"
                                 @onclick="@(() => OpenPhotosDialogAsync(context.Item))">
-                            @if (!string.IsNullOrWhiteSpace(context.Item.PrimaryThumbnailUrl))
+                            @if (HasPhoto(context.Item))
                             {
                                 <img src="@context.Item.PrimaryThumbnailUrl"
                                      alt="@context.Item.Name"
@@ -140,7 +163,7 @@
                             }
                             else
                             {
-                                <span>@L["AdminItems.NoImg"]</span>
+                                <span aria-hidden="true">+</span>
                             }
                         </button>
                     </CellTemplate>
@@ -263,16 +286,7 @@
                 </TemplateColumn>
             </Columns>
             <NoRecordsContent>
-                <div class="lots-grid__empty">
-                    <span class="lots-grid__empty-title">@L["AdminItems.NoItemsFound"]</span>
-                    <span>
-                        No items match the current filter.
-                        @if (HasAppliedFilters)
-                        {
-                            <button type="button" class="lots-grid__empty-action" @onclick="ClearFiltersAsync">@L["Common.ClearFilters"]</button>
-                        }
-                    </span>
-                </div>
+                @EmptyState
             </NoRecordsContent>
             <PagerContent>
                 <div class="lots-pager" data-testid="admin-items-pager">
@@ -280,6 +294,8 @@
                 </div>
             </PagerContent>
         </MudDataGrid>
+        }
+        </div>
     </MudPaper>
 
     <SharedConfirmDialog IsVisible="@(_deactivateTarget is not null)"
@@ -305,9 +321,11 @@
     private bool _intrastatMissing;
     private bool _appliedIntrastatMissing;
     private HashSet<AdminItemDto> _selected = [];
-    private int _pageSize = 50;
+    private readonly ItemsListState _state = new();
     private int _totalCount;
-    private int _currentPage = 1;
+    private List<AdminItemDto> _cardItems = [];
+    private ElementReference _listRoot;
+    private bool _previewAttached;
     private int _gridRenderKey;
     private bool _isLoading;
     private ApiException? _apiError;
@@ -327,6 +345,11 @@
         CloseButton = true
     };
 
+    [SupplyParameterFromQuery(Name = ItemsListView.QueryKey)]
+    public string? ViewQuery { get; set; }
+
+    private static readonly Dictionary<string, object> ItemsViewTableAttributes = new() { ["data-testid"] = "admin-items-view-table" };
+    private static readonly Dictionary<string, object> ItemsViewCardsAttributes = new() { ["data-testid"] = "admin-items-view-cards" };
     private static readonly Dictionary<string, object> ItemsGridAttributes = new() { ["data-testid"] = "admin-items-grid" };
     private Dictionary<string, object> ItemsSearchAttributes => new() { ["data-testid"] = "admin-items-search-input", ["aria-label"] = L["Aria.Search"].Value };
     private Dictionary<string, object> ItemsCategoryAttributes => new() { ["data-testid"] = "admin-items-category", ["aria-label"] = L["Aria.Category"].Value };
@@ -354,10 +377,123 @@
         _appliedCategoryId.HasValue ||
         _appliedIntrastatMissing;
 
+    private bool _initialized;
+
     protected override async Task OnInitializedAsync()
     {
+        _state.SwitchView(ItemsListView.FromQuery(ViewQuery));
         await LoadLookupsAsync();
+        if (_state.ViewMode == ItemsViewMode.Cards)
+        {
+            await LoadCardsAsync();
+        }
+
+        _initialized = true;
     }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!_initialized)
+        {
+            return;
+        }
+
+        // Back/forward or a pasted link changed ?view=: follow it.
+        var mode = ItemsListView.FromQuery(ViewQuery);
+        if (_state.SwitchView(mode) && mode == ItemsViewMode.Cards)
+        {
+            await LoadCardsAsync();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await AttachPhotoPreviewAsync();
+        await ApplyRememberedViewAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (!_previewAttached)
+        {
+            return;
+        }
+
+        try
+        {
+            await JS.InvokeVoidAsync("itemsPhotoPreview.detach", _listRoot);
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException or JSException)
+        {
+            // Circuit is gone: the page and its listeners go with it.
+        }
+    }
+
+    private async Task AttachPhotoPreviewAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("itemsPhotoPreview.attach", _listRoot, L["AdminItems.Preview.Hint"].Value);
+            _previewAttached = true;
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException or JSException)
+        {
+            // No preview then: tapping the thumbnail still opens the photos dialog.
+        }
+    }
+
+    private async Task ApplyRememberedViewAsync()
+    {
+        try
+        {
+            var stored = await JS.InvokeAsync<string?>("itemsPhotoPreview.readView");
+            var remembered = ItemsListView.RememberedFor(ViewQuery, stored);
+            if (remembered.HasValue)
+            {
+                await SetViewAsync(remembered.Value);
+            }
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException or JSException)
+        {
+            // Nothing remembered: stay on the table.
+        }
+    }
+
+    private async Task SetViewAsync(ItemsViewMode mode)
+    {
+        if (!_state.SwitchView(mode))
+        {
+            return;
+        }
+
+        await RememberViewAsync(mode);
+        var uri = NavigationManager.GetUriWithQueryParameter(ItemsListView.QueryKey, ItemsListView.ToQuery(mode));
+        NavigationManager.NavigateTo(uri, replace: true);
+        if (mode == ItemsViewMode.Cards)
+        {
+            await LoadCardsAsync();
+        }
+    }
+
+    private async Task RememberViewAsync(ItemsViewMode mode)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("itemsPhotoPreview.saveView", ItemsListView.ToStorage(mode));
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException or JSException)
+        {
+            // Not remembered: the URL still carries the mode.
+        }
+    }
+
+    private Variant ViewVariant(ItemsViewMode mode)
+        => _state.ViewMode == mode ? Variant.Filled : Variant.Outlined;
 
     private async Task ReloadAsync()
     {
@@ -397,14 +533,32 @@
         _appliedCategoryId = int.TryParse(_categoryFilter, out var categoryId) ? categoryId : null;
         _appliedIntrastatMissing = _intrastatMissing;
         _selected = [];
-        _gridRenderKey++;
-        await InvokeAsync(StateHasChanged);
+        _state.ResetPage();
+        await ReloadViewAsync();
     }
 
     private async Task OnPageSizeChangedAsync(int pageSize)
     {
-        _pageSize = Math.Clamp(pageSize, 1, 500);
+        _state.SetPageSize(pageSize);
+        await ReloadViewAsync();
+    }
+
+    private async Task OnCardsPageChangedAsync(int page)
+    {
+        _state.SetPage(page);
+        await LoadCardsAsync();
+    }
+
+    /// <summary>Filters or page size changed: the table re-creates its grid, the cards load their page.</summary>
+    private async Task ReloadViewAsync()
+    {
         _gridRenderKey++;
+        if (_state.ViewMode == ItemsViewMode.Cards)
+        {
+            await LoadCardsAsync();
+            return;
+        }
+
         await InvokeAsync(StateHasChanged);
     }
 
@@ -419,12 +573,18 @@
         _appliedCategoryId = null;
         _appliedIntrastatMissing = false;
         _selected = [];
-        _gridRenderKey++;
-        await InvokeAsync(StateHasChanged);
+        _state.ResetPage();
+        await ReloadViewAsync();
     }
 
     private async Task RefreshAsync()
     {
+        if (_state.ViewMode == ItemsViewMode.Cards)
+        {
+            await LoadCardsAsync();
+            return;
+        }
+
         if (_grid is null)
         {
             return;
@@ -436,23 +596,59 @@
     private async Task<GridData<AdminItemDto>> LoadServerDataAsync(GridState<AdminItemDto> state)
     {
         _isLoading = true;
+        _state.AdoptGridPaging(state.Page, state.PageSize);
+
+        try
+        {
+            return await LoadPageAsync(_state.Page, _state.PageSize);
+        }
+        finally
+        {
+            _isLoading = false;
+            // The summary above the grid is outside the grid component: re-render it with the new total.
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task LoadCardsAsync()
+    {
+        _isLoading = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            var data = await LoadPageAsync(_state.Page, _state.PageSize);
+            _cardItems = data.Items.ToList();
+            if (_cardItems.Count == 0 && _totalCount > 0 && _state.Page > 1)
+            {
+                // The page vanished (items removed or filtered out): show the last one.
+                _state.SetPage(ItemsListState.PageCount(_totalCount, _state.PageSize));
+                data = await LoadPageAsync(_state.Page, _state.PageSize);
+                _cardItems = data.Items.ToList();
+            }
+        }
+        finally
+        {
+            _isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    /// <summary>One page of items for the applied filters; shared by the table and the cards.</summary>
+    private async Task<GridData<AdminItemDto>> LoadPageAsync(int page, int pageSize)
+    {
         _apiError = null;
-        _currentPage = state.Page + 1;
-
-        var requestedPageSize = state.PageSize > 0 ? state.PageSize : _pageSize;
-        _pageSize = requestedPageSize;
-
         try
         {
             var result = await AdminClient.GetItemsAsync(
                 _appliedSearch,
                 _appliedCategoryId,
                 _appliedStatus,
-                state.Page + 1,
-                requestedPageSize,
+                page,
+                pageSize,
                 intrastatMissing: _appliedIntrastatMissing);
 
             _totalCount = result.TotalCount;
+            _selected = ItemsSelection.Reconcile(_selected, result.Items);
             return new GridData<AdminItemDto>
             {
                 Items = result.Items,
@@ -478,12 +674,6 @@
                 500);
             _totalCount = 0;
             return EmptyGridData();
-        }
-        finally
-        {
-            _isLoading = false;
-            // The summary above the grid is outside the grid component: re-render it with the new total.
-            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -684,6 +874,146 @@
     {
         NavigationManager.NavigateTo($"admin/items/{itemId}");
     }
+
+    private static bool HasPhoto(AdminItemDto item) => !string.IsNullOrWhiteSpace(item.PrimaryThumbnailUrl);
+
+    private static string ThumbClass(AdminItemDto item) => HasPhoto(item) ? "items-thumb" : "items-thumb items-thumb--empty";
+
+    private Dictionary<string, object> ThumbAttributes(AdminItemDto item)
+    {
+        if (!HasPhoto(item))
+        {
+            var noImg = L["AdminItems.NoImg"].Value;
+            return new Dictionary<string, object> { ["title"] = noImg, ["aria-label"] = noImg };
+        }
+
+        return new Dictionary<string, object>
+        {
+            ["title"] = L["AdminItems.OpenPhotos"].Value,
+            ["data-preview-thumb"] = item.PrimaryThumbnailUrl!,
+            ["data-preview-src"] = ItemsListView.OriginalUrl(item.PrimaryThumbnailUrl),
+            ["data-preview-sku"] = item.InternalSKU,
+            ["data-preview-name"] = item.Name
+        };
+    }
+
+    private bool IsCardSelected(AdminItemDto item) => ItemsSelection.Contains(_selected, item.Id);
+
+    private void ToggleCardSelection(AdminItemDto item) => _selected = ItemsSelection.Toggle(_selected, item);
+
+    private string CardRange
+    {
+        get
+        {
+            if (_totalCount == 0)
+            {
+                return string.Empty;
+            }
+
+            var from = ((_state.Page - 1) * _state.PageSize) + 1;
+            var to = Math.Min(_state.Page * _state.PageSize, _totalCount);
+            return $"{from}–{to} / {_totalCount}";
+        }
+    }
+
+    private RenderFragment EmptyState => @<div class="lots-grid__empty">
+        <span class="lots-grid__empty-title">@L["AdminItems.NoItemsFound"]</span>
+        <span>
+            No items match the current filter.
+            @if (HasAppliedFilters)
+            {
+                <button type="button" class="lots-grid__empty-action" @onclick="ClearFiltersAsync">@L["Common.ClearFilters"]</button>
+            }
+        </span>
+    </div>;
+
+    private RenderFragment CardsView => @<div class="items-cards-wrap" aria-busy="@_isLoading">
+        @if (_isLoading)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="items-cards__progress" />
+        }
+        @if (_cardItems.Count == 0 && !_isLoading)
+        {
+            @EmptyState
+        }
+        else
+        {
+            <div class="items-cards" data-testid="admin-items-cards">
+                @foreach (var item in _cardItems)
+                {
+                    @ItemCard(item)
+                }
+            </div>
+        }
+        <div class="items-cards__pager" data-testid="admin-items-cards-pager">
+            <div class="items-cards__pager-size" data-testid="admin-items-cards-page-size">
+                <MudSelect T="int"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Value="@_state.PageSize"
+                           ValueChanged="OnPageSizeChangedAsync"
+                           InputAttributes="@ItemsPageSizeAttributes">
+                    <MudSelectItem T="int" Value="25">25</MudSelectItem>
+                    <MudSelectItem T="int" Value="50">50</MudSelectItem>
+                    <MudSelectItem T="int" Value="100">100</MudSelectItem>
+                </MudSelect>
+            </div>
+            <span class="mono items-cards__range">@CardRange</span>
+            <MudPagination Count="@ItemsListState.PageCount(_totalCount, _state.PageSize)"
+                           Selected="@_state.Page"
+                           SelectedChanged="OnCardsPageChangedAsync"
+                           Size="Size.Small"
+                           Color="Color.Primary"
+                           Class="items-cards__pagination" />
+        </div>
+    </div>;
+
+    private RenderFragment ItemCard(AdminItemDto item) => @<a @key="item.Id"
+                                                                class="@CardClass(item)"
+                                                                href="admin/items/@item.Id"
+                                                                data-testid="admin-items-card"
+                                                                data-item-id="@item.Id">
+        <button type="button"
+                class="items-card__check"
+                role="checkbox"
+                aria-checked="@IsCardSelected(item)"
+                aria-label="@item.InternalSKU"
+                @onclick="@(() => ToggleCardSelection(item))"
+                @onclick:preventDefault
+                @onclick:stopPropagation>
+            <span class="items-card__box">@(IsCardSelected(item) ? "✓" : string.Empty)</span>
+        </button>
+        <div class="@(HasPhoto(item) ? "items-card__photo" : "items-card__photo items-card__photo--empty")">
+            @if (HasPhoto(item))
+            {
+                <img src="@item.PrimaryThumbnailUrl" alt="@item.Name" loading="lazy" />
+            }
+            else
+            {
+                <button type="button"
+                        class="items-card__upload"
+                        @onclick="@(() => OpenPhotosDialogAsync(item))"
+                        @onclick:preventDefault
+                        @onclick:stopPropagation>@L["AdminItems.UploadPhoto"]</button>
+            }
+        </div>
+        <div class="items-card__body">
+            <div class="items-card__row">
+                <span class="items-card__sku">@item.InternalSKU</span>
+                <span class="@ItemsListView.StatusDotClass(item.Status)"
+                      title="@WarehouseStatusText.Get(L, item.Status)"
+                      aria-label="@WarehouseStatusText.Get(L, item.Status)"></span>
+            </div>
+            <div class="items-card__name" title="@item.Name">@item.Name</div>
+            <div class="items-card__row items-card__row--meta">
+                <span class="items-card__meta">@item.CategoryName · @item.BaseUoM</span>
+                <span class="@(item.BasePrice.HasValue ? "items-card__price" : "items-card__price items-card__price--none")">@(item.BasePrice.HasValue ? FormatMoney(item.BasePrice) : "-")</span>
+            </div>
+        </div>
+    </a>;
+
+    private string CardClass(AdminItemDto item)
+        => IsCardSelected(item) ? "items-card items-card--selected" : "items-card";
 
     private static bool IsDiscontinued(AdminItemDto item)
         => string.Equals(item.Status, "Discontinued", StringComparison.OrdinalIgnoreCase);
