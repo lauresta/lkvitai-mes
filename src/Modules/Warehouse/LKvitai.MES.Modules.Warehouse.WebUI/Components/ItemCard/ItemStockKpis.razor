@@ -1,0 +1,28 @@
+@* Tablet KPI strip under the stock bar: Rezervuota · Laisva · Laukiama. *@
+<div class="ic-kpis">
+    <div class="ic-kpi">
+        <span class="ic-kpi__label">@L["AdminItemDetail.Reserved"]</span>
+        <strong class="ic-kpi__value mono">@WithUnit(Stock?.Reserved)</strong>
+    </div>
+    <div class="ic-kpi ic-kpi--ok">
+        <span class="ic-kpi__label">@L["AdminItemDetail.Available"]</span>
+        <strong class="ic-kpi__value mono">@WithUnit(Stock?.Available)</strong>
+    </div>
+    <div class="ic-kpi">
+        <span class="ic-kpi__label">@L["AdminItemDetail.Incoming"]</span>
+        <strong class="ic-kpi__value mono">@IncomingText <span class="ic-kpi__hint">@EtaText</span></strong>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? BaseUoM { get; set; }
+    [Parameter] public ItemStockSummary? Stock { get; set; }
+    [Parameter] public ItemIncomingSummary? Incoming { get; set; }
+
+    private string IncomingText => Incoming is null ? ItemCardFormat.Dash : "+" + ItemCardFormat.Qty(Incoming.Total);
+
+    private string EtaText => Incoming?.NearestEta is { } eta ? ItemCardFormat.ShortDate(eta) : string.Empty;
+
+    private string WithUnit(decimal? value)
+        => value.HasValue ? ItemCardFormat.QtyWithUnit(value.Value, BaseUoM) : ItemCardFormat.Dash;
+}

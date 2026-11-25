@@ -1,0 +1,69 @@
+@* Tiekėjai: supplier mappings of the item; the first one (by name) is the primary supplier. *@
+<ItemCardPanel Title="@L["AdminItemDetail.Suppliers"]"
+               Suffix="@Rows.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+               TestId="admin-item-detail-suppliers"
+               IsLoading="State.IsLoading"
+               Error="State.Error"
+               OnRetry="OnRetry"
+               OnDismiss="State.ClearError">
+    <HeadContent>
+        <a class="ic-link" href="admin/supplier-mappings">@L["AdminItemDetail.ManageSupplierMappings"]</a>
+    </HeadContent>
+    <ChildContent>
+        @if (IsEmpty)
+        {
+            <div class="ic-empty">@L["AdminItemDetail.NoSuppliers"]</div>
+        }
+        else if (Rows.Count > 0)
+        {
+            <div class="ic-table-wrap">
+                <table class="lk-table ic-table">
+                    <thead>
+                    <tr>
+                        <th>@L["Common.Supplier"]</th>
+                        <th>@L["AdminItemDetail.SupplierCode"]</th>
+                        <th class="is-num">@L["AdminItemDetail.LeadTime"]</th>
+                        <th class="is-num">MOQ</th>
+                        <th class="is-num">@L["Common.Price"]</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var row in Rows)
+                    {
+                        <tr>
+                            <td><strong>@row.SupplierName</strong></td>
+                            <td class="mono">@row.SupplierSKU</td>
+                            <td class="is-num">@LeadTime(row)</td>
+                            <td class="is-num">@ItemCardFormat.WholeWithUnit(row.MinOrderQty, Item.BaseUoM)</td>
+                            <td class="is-num">@UnitPrice(row)</td>
+                            <td class="ic-table__actions">
+                                @if (ReferenceEquals(row, Rows[0]))
+                                {
+                                    <span class="chip chip--reserved">@L["AdminItemDetail.PrimarySupplier"]</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </ChildContent>
+</ItemCardPanel>
+
+@code {
+    [Parameter, EditorRequired] public ItemDetailsDto Item { get; set; } = default!;
+    [Parameter, EditorRequired] public PanelState<IReadOnlyList<AdminSupplierMappingDto>> State { get; set; } = default!;
+    [Parameter] public EventCallback OnRetry { get; set; }
+
+    private IReadOnlyList<AdminSupplierMappingDto> Rows => State.Value ?? Array.Empty<AdminSupplierMappingDto>();
+
+    private bool IsEmpty => State.HasValue && Rows.Count == 0;
+
+    private string LeadTime(AdminSupplierMappingDto row)
+        => row.LeadTimeDays.HasValue ? L["AdminItemDetail.Days", row.LeadTimeDays.Value].Value : ItemCardFormat.Dash;
+
+    private static string UnitPrice(AdminSupplierMappingDto row)
+        => row.PricePerUnit.HasValue ? Money.FormatUnit(row.PricePerUnit) : ItemCardFormat.Dash;
+}

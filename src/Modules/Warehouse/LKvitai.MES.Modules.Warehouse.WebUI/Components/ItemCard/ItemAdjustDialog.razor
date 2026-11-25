@@ -1,0 +1,167 @@
+@* Koreguoti likutį: counted quantity at one location; the difference is posted as a stock adjustment. *@
+@inject AdjustmentsClient AdjustmentsClient
+@inject AdminConfigurationClient ConfigurationClient
+@inject ToastService ToastService
+
+<MudDialog Class="ic-dialog" ClassContent="ic-dialog__content" ClassActions="ic-dialog__actions" data-testid="admin-item-detail-adjust-dialog">
+    <TitleContent>
+        <ItemDialogTitle Eyebrow="@L["AdminItemDetail.AdjustDialog.Eyebrow", Item.InternalSKU]"
+                         Title="@L["AdminItemDetail.AdjustDialog.Title"]"
+                         OnClose="Cancel" />
+    </TitleContent>
+    <DialogContent>
+        <div class="ic-dialog__body">
+            <label class="ic-form-field">
+                <span class="ic-form-field__label">@L["Common.Location"]</span>
+                <select class="ic-input mono" value="@_locationId" @onchange="OnLocationChanged" data-testid="admin-item-detail-adjust-location">
+                    @foreach (var row in LocationRows)
+                    {
+                        <option value="@row.LocationId">@L["AdminItemDetail.AdjustDialog.LocationOption", row.Location, ItemCardFormat.QtyWithUnit(row.PhysicalQty, Item.BaseUoM)]</option>
+                    }
+                </select>
+            </label>
+
+            <div class="ic-count-strip">
+                <div class="ic-count-strip__cell ic-count-strip__cell--muted">
+                    <span class="ic-form-field__label">@L["AdminItemDetail.AdjustDialog.System"]</span>
+                    <strong class="mono">@(Selected is null ? ItemCardFormat.Dash : ItemCardFormat.QtyWithUnit(Selected.PhysicalQty, Item.BaseUoM))</strong>
+                </div>
+                <label class="ic-count-strip__cell">
+                    <span class="ic-form-field__label">@L["AdminItemDetail.AdjustDialog.Actual"]</span>
+                    <input class="ic-input ic-input--qty ic-input--compact mono"
+                           inputmode="decimal"
+                           placeholder="@ItemCardFormat.Qty(0m)"
+                           value="@_countedText"
+                           @oninput="OnCountedInput"
+                           data-testid="admin-item-detail-adjust-actual" />
+                </label>
+                <div class="ic-count-strip__cell ic-count-strip__cell--muted">
+                    <span class="ic-form-field__label">@L["AdminItemDetail.AdjustDialog.Diff"]</span>
+                    <strong class="mono @DiffClass" data-testid="admin-item-detail-adjust-diff">@DiffText</strong>
+                </div>
+            </div>
+
+            <label class="ic-form-field">
+                <span class="ic-form-field__label">@L["Common.Reason"]</span>
+                <select class="ic-input" value="@_reasonIndex" @onchange="OnReasonChanged" disabled="@(_reasons.Count == 0)" data-testid="admin-item-detail-adjust-reason">
+                    @for (var index = 0; index < _reasons.Count; index++)
+                    {
+                        <option value="@index">@ReasonLabel(_reasons[index])</option>
+                    }
+                </select>
+            </label>
+
+            <label class="ic-form-field">
+                <span class="ic-form-field__label">@L["AdminItemDetail.AdjustDialog.Note"]</span>
+                <input class="ic-input"
+                       placeholder="@L["AdminItemDetail.AdjustDialog.Optional"]"
+                       maxlength="500"
+                       value="@_notes"
+                       @oninput="OnNotesInput"
+                       data-testid="admin-item-detail-adjust-note" />
+            </label>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <div class="ic-dialog__foot">
+            <button type="button" class="ic-btn ic-btn--dialog" @onclick="Cancel">@L["Common.Cancel"]</button>
+            <button type="button" class="ic-btn ic-btn--primary ic-btn--dialog" disabled="@(!CanSave)" @onclick="SaveAsync" data-testid="admin-item-detail-adjust-submit">@L["AdminItemDetail.AdjustDialog.Save"]</button>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired] public ItemDetailsDto Item { get; set; } = default!;
+    [Parameter] public IReadOnlyList<AvailableStockItemDto> Rows { get; set; } = Array.Empty<AvailableStockItemDto>();
+    [Parameter] public int? PreselectedLocationId { get; set; }
+
+    private IReadOnlyList<AdjustReasonOption> _reasons = Array.Empty<AdjustReasonOption>();
+    private int? _locationId;
+    private string _countedText = string.Empty;
+    private int _reasonIndex;
+    private string _notes = string.Empty;
+    private bool _saving;
+
+    private IReadOnlyList<AvailableStockItemDto> LocationRows => Rows.Where(x => x.LocationId.HasValue).ToList();
+
+    private AvailableStockItemDto? Selected => LocationRows.FirstOrDefault(x => x.LocationId == _locationId);
+
+    private decimal? Difference => Selected is null || !DecimalInputParser.TryParse(_countedText, out var counted)
+        ? null
+        : StockDialogRules.Difference(counted, Selected.PhysicalQty);
+
+    private string DiffText => Difference is { } diff ? ItemCardFormat.Signed(diff) + " " + ItemCardFormat.Unit(Item.BaseUoM) : ItemCardFormat.Dash;
+
+    private string DiffClass => Difference is { } diff ? ItemMovementTimeline.QtyClass(diff) : "ic-muted";
+
+    private bool CanSave => !_saving && Selected is not null && Difference is { } diff && diff != 0m && _reasons.Count > 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _locationId = LocationRows.FirstOrDefault(x => x.LocationId == PreselectedLocationId)?.LocationId
+                      ?? LocationRows.FirstOrDefault()?.LocationId;
+
+        try
+        {
+            _reasons = StockDialogRules.AdjustReasons(await ConfigurationClient.GetReasonCodesAsync("ADJUSTMENT", true));
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(ItemCardErrors.Describe(L, ex));
+        }
+    }
+
+    private void OnLocationChanged(ChangeEventArgs args)
+        => _locationId = int.TryParse(args.Value?.ToString(), out var id) ? id : null;
+
+    private void OnCountedInput(ChangeEventArgs args) => _countedText = args.Value?.ToString() ?? string.Empty;
+
+    private void OnReasonChanged(ChangeEventArgs args)
+        => _reasonIndex = int.TryParse(args.Value?.ToString(), out var index) ? index : 0;
+
+    private void OnNotesInput(ChangeEventArgs args) => _notes = args.Value?.ToString() ?? string.Empty;
+
+    private string ReasonLabel(AdjustReasonOption option)
+        => option.LabelKey is null ? option.Label : L[option.LabelKey].Value;
+
+    private async Task SaveAsync()
+    {
+        if (!CanSave || Selected?.LocationId is not { } locationId || Difference is not { } delta)
+        {
+            return;
+        }
+
+        var reason = _reasons[Math.Clamp(_reasonIndex, 0, _reasons.Count - 1)];
+        _saving = true;
+        try
+        {
+            var response = await AdjustmentsClient.CreateAsync(new CreateAdjustmentRequestDto(
+                Item.Id,
+                locationId,
+                delta,
+                reason.Code,
+                string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim(),
+                null));
+
+            ToastService.ShowSuccess(L["AdminItemDetail.Toast.Adjusted", Selected.Location].Value);
+            if (!string.IsNullOrWhiteSpace(response.Warning))
+            {
+                ToastService.ShowWarning(response.Warning);
+            }
+
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(ItemCardErrors.Describe(L, ex));
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

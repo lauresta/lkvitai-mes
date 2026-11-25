@@ -1,0 +1,96 @@
+@* Right rail (below the tabs on tablets): recent movements, incoming and reserved quantities. *@
+<aside class="ic-rail" data-testid="admin-item-detail-rail">
+    <ItemCardPanel Title="@L["AdminItemDetail.LastMovements"]"
+                   Class="ic-rail__panel"
+                   TestId="admin-item-detail-rail-movements"
+                   IsLoading="Movements.IsLoading"
+                   Error="Movements.Error"
+                   OnRetry="OnRetryMovements"
+                   OnDismiss="Movements.ClearError">
+        @if (Movements.HasValue && Timeline.Count == 0)
+        {
+            <div class="ic-empty">@L["AdminItemDetail.NoMovements"]</div>
+        }
+        @foreach (var movement in Timeline.Take(RecentCount))
+        {
+            <div class="ic-rail-move" data-testid="admin-item-detail-rail-movement">
+                <span class="ic-dot @ItemMovementTimeline.DotClass(movement.Kind)"></span>
+                <div class="ic-rail-move__body">
+                    <span class="ic-rail-move__type">@L[$"AdminItemDetail.MovementKind.{movement.Kind}"]</span>
+                    <span class="ic-rail-move__meta mono">@ItemCardFormat.ShortTimestamp(movement.Source.Timestamp) · @movement.Route</span>
+                </div>
+                <strong class="ic-rail-move__qty mono @ItemMovementTimeline.QtyClass(movement.Delta)">@ItemMovementTimeline.Quantity(movement)</strong>
+            </div>
+        }
+        @if (Movements.HasValue)
+        {
+            <button type="button" class="ic-rail__more" @onclick="OnAllMovements" data-testid="admin-item-detail-all-movements">@L["AdminItemDetail.AllMovements", TotalMovements]</button>
+        }
+    </ItemCardPanel>
+
+    <ItemCardPanel Title="@L["AdminItemDetail.Incoming"]"
+                   Suffix="@IncomingSuffix"
+                   Class="ic-rail__panel"
+                   TestId="admin-item-detail-incoming"
+                   IsLoading="Incoming.IsLoading"
+                   Error="Incoming.Error"
+                   OnRetry="OnRetryIncoming"
+                   OnDismiss="Incoming.ClearError">
+        @if (Incoming.HasValue && IncomingRows.Count == 0)
+        {
+            <div class="ic-empty">@L["AdminItemDetail.NothingIncoming"]</div>
+        }
+        @foreach (var row in IncomingRows)
+        {
+            <ItemIncomingRow Row="row" BaseUoM="@Unit" />
+        }
+    </ItemCardPanel>
+
+    <ItemCardPanel Title="@L["AdminItemDetail.Reserved"]"
+                   Suffix="@ReservedSuffix"
+                   Class="ic-rail__panel"
+                   TestId="admin-item-detail-rail-reservations"
+                   IsLoading="Reservations.IsLoading"
+                   Error="Reservations.Error"
+                   OnRetry="OnRetryReservations"
+                   OnDismiss="Reservations.ClearError">
+        @if (Reservations.HasValue && ReservationRows.Count == 0)
+        {
+            <div class="ic-empty">@L["AdminItemDetail.NoReservations"]</div>
+        }
+        @foreach (var row in ReservationRows)
+        {
+            <div class="ic-rail-res" data-testid="admin-item-detail-rail-reservation">
+                <div class="ic-rail-res__body">
+                    <ItemReservationOrderLink Row="row" />
+                    <span class="ic-rail-res__meta">@ReservationMeta(row)</span>
+                </div>
+                <strong class="mono">@ItemCardFormat.Qty(row.Qty)</strong>
+            </div>
+        }
+    </ItemCardPanel>
+</aside>
+
+@code {
+    private const int RecentCount = 5;
+
+    [Parameter] public string? Unit { get; set; }
+    [Parameter] public IReadOnlyList<ItemMovement> Timeline { get; set; } = Array.Empty<ItemMovement>();
+    [Parameter] public int TotalMovements { get; set; }
+    [Parameter, EditorRequired] public PanelState<StockMovementsResponseDto> Movements { get; set; } = default!;
+    [Parameter, EditorRequired] public PanelState<IReadOnlyList<ItemIncomingRowDto>> Incoming { get; set; } = default!;
+    [Parameter, EditorRequired] public PanelState<IReadOnlyList<ItemReservationRowDto>> Reservations { get; set; } = default!;
+    [Parameter] public EventCallback OnAllMovements { get; set; }
+    [Parameter] public EventCallback OnRetryMovements { get; set; }
+    [Parameter] public EventCallback OnRetryIncoming { get; set; }
+    [Parameter] public EventCallback OnRetryReservations { get; set; }
+
+    private IReadOnlyList<ItemIncomingRowDto> IncomingRows => Incoming.Value ?? Array.Empty<ItemIncomingRowDto>();
+    private IReadOnlyList<ItemReservationRowDto> ReservationRows => Reservations.Value ?? Array.Empty<ItemReservationRowDto>();
+
+    private string? IncomingSuffix => Incoming.HasValue ? ItemCardFormat.QtyWithUnit(IncomingRows.Sum(x => x.OpenQty), Unit) : null;
+    private string? ReservedSuffix => Reservations.HasValue ? ItemCardFormat.QtyWithUnit(ReservationRows.Sum(x => x.Qty), Unit) : null;
+
+    private static string ReservationMeta(ItemReservationRowDto row)
+        => string.Join(" · ", new[] { row.CustomerName, row.Location }.Where(x => !string.IsNullOrWhiteSpace(x)));
+}

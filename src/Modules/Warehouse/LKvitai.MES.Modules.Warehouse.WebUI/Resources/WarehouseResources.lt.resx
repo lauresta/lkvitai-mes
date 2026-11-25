@@ -2270,4 +2270,150 @@
   <data name="Intrastat.Warnings.Other" xml:space="preserve"><value>Praleistos {0} eilutės. Trūksta prekės kodo, išsiuntimo ar kilmės šalies, sandorio pobūdžio, pristatymo sąlygų, transporto rūšies, papildomo vieneto koeficiento ar vertės, arba reikia koreguoti deklaraciją dėl tik kainos kreditinės sąskaitos.</value></data>
   <data name="Intrastat.Warnings.Few" xml:space="preserve"><value>Praleistos {0} eilutės. Trūksta prekės kodo, išsiuntimo ar kilmės šalies, sandorio pobūdžio, pristatymo sąlygų, transporto rūšies, papildomo vieneto koeficiento ar vertės, arba reikia koreguoti deklaraciją dėl tik kainos kreditinės sąskaitos.</value></data>
   <data name="Intrastat.Warnings.Many" xml:space="preserve"><value>Praleista {0} eilučių. Trūksta prekės kodo, išsiuntimo ar kilmės šalies, sandorio pobūdžio, pristatymo sąlygų, transporto rūšies, papildomo vieneto koeficiento ar vertės, arba reikia koreguoti deklaraciją dėl tik kainos kreditinės sąskaitos.</value></data>
+  <data name="AdminItemDetail.Physical" xml:space="preserve"><value>Fiziškai</value></data>
+  <data name="AdminItemDetail.Reserved" xml:space="preserve"><value>Rezervuota</value></data>
+  <data name="AdminItemDetail.Available" xml:space="preserve"><value>Laisva</value></data>
+  <data name="AdminItemDetail.Incoming" xml:space="preserve"><value>Laukiama</value></data>
+  <data name="AdminItemDetail.InLocations" xml:space="preserve"><value>{0} vietose</value></data>
+  <data name="AdminItemDetail.AboveMin" xml:space="preserve"><value>Virš ribos</value></data>
+  <data name="AdminItemDetail.BelowMin" xml:space="preserve"><value>Žemiau ribos</value></data>
+  <data name="AdminItemDetail.Change" xml:space="preserve"><value>Keisti</value></data>
+  <data name="AdminItemDetail.AllFields" xml:space="preserve"><value>Visi laukai →</value></data>
+  <data name="AdminItemDetail.Move" xml:space="preserve"><value>Perkelti</value></data>
+  <data name="AdminItemDetail.Adjust" xml:space="preserve"><value>Koreguoti likutį</value></data>
+  <data name="AdminItemDetail.Show3D" xml:space="preserve"><value>Rodyti 3D sandėlyje</value></data>
+  <data name="AdminItemDetail.AssignBarcode" xml:space="preserve"><value>Priskirti</value></data>
+  <data name="AdminItemDetail.Tab.Locations" xml:space="preserve"><value>Vietos</value></data>
+  <data name="AdminItemDetail.Tab.Movements" xml:space="preserve"><value>Judėjimai</value></data>
+  <data name="AdminItemDetail.Tab.PricesSuppliers" xml:space="preserve"><value>Kainos ir tiekėjai</value></data>
+  <data name="AdminItemDetail.Tab.Photos" xml:space="preserve"><value>Nuotraukos</value></data>
+  <data name="AdminItemDetail.Tab.Data" xml:space="preserve"><value>Duomenys</value></data>
+  <data name="AdminItemDetail.StockByLocation" xml:space="preserve"><value>Atsargos pagal vietas</value></data>
+  <data name="AdminItemDetail.Reservations" xml:space="preserve"><value>Rezervacijos</value></data>
+  <data name="AdminItemDetail.AwaitingPutaway" xml:space="preserve"><value>Laukia padėjimo</value></data>
+  <data name="AdminItemDetail.LastMovements" xml:space="preserve"><value>Paskutiniai judėjimai</value></data>
+  <data name="AdminItemDetail.AllMovements" xml:space="preserve"><value>Visi judėjimai ({0}) →</value></data>
+  <data name="AdminItemDetail.NothingIncoming" xml:space="preserve"><value>Nieko nelaukiama</value></data>
+  <data name="AdminItemDetail.NoReservations" xml:space="preserve"><value>Rezervacijų nėra</value></data>
+  <data name="AdminItemDetail.MoveDialog.Title" xml:space="preserve"><value>Perkelti atsargas</value></data>
+  <data name="AdminItemDetail.MoveDialog.From" xml:space="preserve"><value>Iš vietos</value></data>
+  <data name="AdminItemDetail.MoveDialog.To" xml:space="preserve"><value>Į vietą</value></data>
+  <data name="AdminItemDetail.MoveDialog.ScanHint" xml:space="preserve"><value>Skenuokite arba įveskite, pvz. A-04-1</value></data>
+  <data name="AdminItemDetail.MoveDialog.AllAvailable" xml:space="preserve"><value>Visas laisvas</value></data>
+  <data name="AdminItemDetail.AdjustDialog.Title" xml:space="preserve"><value>Koreguoti likutį</value></data>
+  <data name="AdminItemDetail.AdjustDialog.System" xml:space="preserve"><value>Sistemoje</value></data>
+  <data name="AdminItemDetail.AdjustDialog.Actual" xml:space="preserve"><value>Faktiškai</value></data>
+  <data name="AdminItemDetail.AdjustDialog.Diff" xml:space="preserve"><value>Skirtumas</value></data>
+  <data name="AdminItemDetail.AdjustDialog.Save" xml:space="preserve"><value>Išsaugoti korekciją</value></data>
+  <data name="AdminItemDetail.Dropzone" xml:space="preserve"><value>Nutempkite nuotrauką čia arba</value></data>
+  <data name="AdminItemDetail.ChooseFile" xml:space="preserve"><value>Pasirinkti failą</value></data>
+  <data name="AdminItemDetail.System" xml:space="preserve"><value>Sistema</value></data>
+  <data name="AdminItemDetail.Items" xml:space="preserve"><value>Prekės</value></data>
+  <data name="AdminItemDetail.UploadPhoto" xml:space="preserve"><value>+ Įkelti nuotrauką</value></data>
+  <data name="AdminItemDetail.UnitLabel" xml:space="preserve"><value>Vienetas</value></data>
+  <data name="AdminItemDetail.Barcode" xml:space="preserve"><value>Brūkšninis kodas</value></data>
+  <data name="AdminItemDetail.AdjustShort" xml:space="preserve"><value>Koreguoti</value></data>
+  <data name="AdminItemDetail.PriceShort" xml:space="preserve"><value>Kaina</value></data>
+  <data name="AdminItemDetail.MinShort" xml:space="preserve"><value>Min.</value></data>
+  <data name="AdminItemDetail.ItemType.Stock" xml:space="preserve"><value>Sandėliuojama</value></data>
+  <data name="AdminItemDetail.ItemType.Service" xml:space="preserve"><value>Paslauga</value></data>
+  <data name="AdminItemDetail.SalePrice" xml:space="preserve"><value>Pardavimo kaina</value></data>
+  <data name="AdminItemDetail.Ok" xml:space="preserve"><value>Gerai</value></data>
+  <data name="AdminItemDetail.PurchaseShort" xml:space="preserve"><value>Pirk.</value></data>
+  <data name="AdminItemDetail.MarginShort" xml:space="preserve"><value>marža</value></data>
+  <data name="AdminItemDetail.MinQtyShort" xml:space="preserve"><value>Min. kiekis</value></data>
+  <data name="AdminItemDetail.UpdatedShort" xml:space="preserve"><value>Atn. {0}</value></data>
+  <data name="AdminItemDetail.PhysicalInLocations.One" xml:space="preserve"><value>fiziškai · {0} vietoje</value></data>
+  <data name="AdminItemDetail.PhysicalInLocations.Few" xml:space="preserve"><value>fiziškai · {0} vietose</value></data>
+  <data name="AdminItemDetail.PhysicalInLocations.Many" xml:space="preserve"><value>fiziškai · {0} vietų</value></data>
+  <data name="AdminItemDetail.PhysicalInLocations.Other" xml:space="preserve"><value>fiziškai · {0} vietose</value></data>
+  <data name="AdminItemDetail.IncomingFrom" xml:space="preserve"><value>nuo {0}</value></data>
+  <data name="AdminItemDetail.UpdatedAt" xml:space="preserve"><value>Atnaujinta {0}</value></data>
+  <data name="AdminItemDetail.NoStock" xml:space="preserve"><value>Šios prekės atsargų sandėlyje nėra.</value></data>
+  <data name="AdminItemDetail.Zone" xml:space="preserve"><value>Zona</value></data>
+  <data name="AdminItemDetail.LastChange" xml:space="preserve"><value>pask. {0}</value></data>
+  <data name="AdminItemDetail.ReservedShort" xml:space="preserve"><value>Rezerv.</value></data>
+  <data name="AdminItemDetail.TotalRow" xml:space="preserve"><value>Iš viso</value></data>
+  <data name="AdminItemDetail.Since" xml:space="preserve"><value>Nuo</value></data>
+  <data name="AdminItemDetail.Locations.One" xml:space="preserve"><value>{0} vieta</value></data>
+  <data name="AdminItemDetail.Locations.Few" xml:space="preserve"><value>{0} vietos</value></data>
+  <data name="AdminItemDetail.Locations.Many" xml:space="preserve"><value>{0} vietų</value></data>
+  <data name="AdminItemDetail.Locations.Other" xml:space="preserve"><value>{0} vietos</value></data>
+  <data name="AdminItemDetail.WarehouseLabel" xml:space="preserve"><value>sandėlis {0}</value></data>
+  <data name="AdminItemDetail.Orders.One" xml:space="preserve"><value>{0} užsakymas</value></data>
+  <data name="AdminItemDetail.Orders.Few" xml:space="preserve"><value>{0} užsakymai</value></data>
+  <data name="AdminItemDetail.Orders.Many" xml:space="preserve"><value>{0} užsakymų</value></data>
+  <data name="AdminItemDetail.Orders.Other" xml:space="preserve"><value>{0} užsakymai</value></data>
+  <data name="AdminItemDetail.Role.Receiving" xml:space="preserve"><value>Priėmimo zona</value></data>
+  <data name="AdminItemDetail.Role.QcHold" xml:space="preserve"><value>QC laikymas</value></data>
+  <data name="AdminItemDetail.Role.Quarantine" xml:space="preserve"><value>Karantinas</value></data>
+  <data name="AdminItemDetail.Role.Shipping" xml:space="preserve"><value>Išsiuntimo zona</value></data>
+  <data name="AdminItemDetail.Role.Transit" xml:space="preserve"><value>Tranzitas</value></data>
+  <data name="AdminItemDetail.Role.Storage" xml:space="preserve"><value>Sandėliavimas</value></data>
+  <data name="AdminItemDetail.Role.Cell" xml:space="preserve"><value>Lentynos vieta</value></data>
+  <data name="AdminItemDetail.Role.Bulk" xml:space="preserve"><value>Masinis sandėliavimas</value></data>
+  <data name="AdminItemDetail.Role.EndCap" xml:space="preserve"><value>Galinė lentyna</value></data>
+  <data name="AdminItemDetail.Role.Overflow" xml:space="preserve"><value>Perteklinė vieta</value></data>
+  <data name="AdminItemDetail.Role.GroundSlot" xml:space="preserve"><value>Vieta ant grindų</value></data>
+  <data name="AdminItemDetail.MovementFilter.All" xml:space="preserve"><value>Visi</value></data>
+  <data name="AdminItemDetail.MovementFilter.Receipts" xml:space="preserve"><value>Priėmimai</value></data>
+  <data name="AdminItemDetail.MovementFilter.Issues" xml:space="preserve"><value>Išdavimai</value></data>
+  <data name="AdminItemDetail.MovementFilter.Transfers" xml:space="preserve"><value>Perkėlimai</value></data>
+  <data name="AdminItemDetail.MovementFilter.Adjustments" xml:space="preserve"><value>Korekcijos</value></data>
+  <data name="AdminItemDetail.MovementKind.Receipt" xml:space="preserve"><value>Priėmimas</value></data>
+  <data name="AdminItemDetail.MovementKind.Issue" xml:space="preserve"><value>Išdavimas</value></data>
+  <data name="AdminItemDetail.MovementKind.Transfer" xml:space="preserve"><value>Perkėlimas</value></data>
+  <data name="AdminItemDetail.MovementKind.Adjustment" xml:space="preserve"><value>Korekcija</value></data>
+  <data name="AdminItemDetail.MovementKind.Opening" xml:space="preserve"><value>Pradinis likutis</value></data>
+  <data name="AdminItemDetail.NoMovements" xml:space="preserve"><value>Judėjimų nėra</value></data>
+  <data name="AdminItemDetail.Date" xml:space="preserve"><value>Data</value></data>
+  <data name="AdminItemDetail.Document" xml:space="preserve"><value>Dokumentas</value></data>
+  <data name="AdminItemDetail.Balance" xml:space="preserve"><value>Likutis</value></data>
+  <data name="AdminItemDetail.DoneBy" xml:space="preserve"><value>Atliko</value></data>
+  <data name="AdminItemDetail.ShowMore" xml:space="preserve"><value>Rodyti daugiau</value></data>
+  <data name="AdminItemDetail.Prices" xml:space="preserve"><value>Kainos</value></data>
+  <data name="AdminItemDetail.SalePriceBase" xml:space="preserve"><value>Pardavimo kaina (bazinė)</value></data>
+  <data name="AdminItemDetail.AverageCost" xml:space="preserve"><value>Vidutinė savikaina (WAC)</value></data>
+  <data name="AdminItemDetail.Margin" xml:space="preserve"><value>Marža</value></data>
+  <data name="AdminItemDetail.StockValue" xml:space="preserve"><value>Atsargų vertė</value></data>
+  <data name="AdminItemDetail.Overridden" xml:space="preserve"><value>Perrašyta</value></data>
+  <data name="AdminItemDetail.Final" xml:space="preserve"><value>Galutinė</value></data>
+  <data name="AdminItemDetail.SupplierCode" xml:space="preserve"><value>Tiekėjo kodas</value></data>
+  <data name="AdminItemDetail.LeadTime" xml:space="preserve"><value>Pristatymas</value></data>
+  <data name="AdminItemDetail.Days" xml:space="preserve"><value>{0} d.</value></data>
+  <data name="AdminItemDetail.PrimarySupplier" xml:space="preserve"><value>Pagrindinis</value></data>
+  <data name="AdminItemDetail.RecomputeSearchIndex" xml:space="preserve"><value>Perskaičiuoti paieškos indeksą</value></data>
+  <data name="AdminItemDetail.DropzoneHint" xml:space="preserve"><value>JPEG, PNG, WEBP · iki 5 MB. Pirma nuotrauka tampa pagrindine ir rodoma sąrašuose.</value></data>
+  <data name="AdminItemDetail.Group.Main" xml:space="preserve"><value>Pagrindiniai</value></data>
+  <data name="AdminItemDetail.Group.Physical" xml:space="preserve"><value>Fiziniai duomenys ir kontrolė</value></data>
+  <data name="AdminItemDetail.Group.Record" xml:space="preserve"><value>Įrašas</value></data>
+  <data name="AdminItemDetail.Category" xml:space="preserve"><value>Kategorija</value></data>
+  <data name="AdminItemDetail.DataComplete" xml:space="preserve"><value>Duomenys pilni</value></data>
+  <data name="AdminItemDetail.IncomingStatus.Draft" xml:space="preserve"><value>Užsakyta</value></data>
+  <data name="AdminItemDetail.IncomingStatus.Partial" xml:space="preserve"><value>Dalinai priimta</value></data>
+  <data name="AdminItemDetail.InDays" xml:space="preserve"><value>po {0} d.</value></data>
+  <data name="AdminItemDetail.Overdue" xml:space="preserve"><value>vėluoja {0} d.</value></data>
+  <data name="AdminItemDetail.MoveDialog.Eyebrow" xml:space="preserve"><value>Perkėlimas · {0}</value></data>
+  <data name="AdminItemDetail.MoveDialog.FromOption" xml:space="preserve"><value>{0} · laisva {1}</value></data>
+  <data name="AdminItemDetail.MoveDialog.ReservedStays" xml:space="preserve"><value>Rezervuota {0} lieka vietoje {1}.</value></data>
+  <data name="AdminItemDetail.MoveDialog.NoReservationsHere" xml:space="preserve"><value>Šioje vietoje rezervacijų nėra.</value></data>
+  <data name="AdminItemDetail.MoveDialog.Problem.None" xml:space="preserve"><value>Viskas gerai.</value></data>
+  <data name="AdminItemDetail.MoveDialog.Problem.SourceMissing" xml:space="preserve"><value>Pasirinkite vietą, iš kurios perkeliama.</value></data>
+  <data name="AdminItemDetail.MoveDialog.Problem.TargetMissing" xml:space="preserve"><value>Nurodykite vietą, į kurią perkeliama.</value></data>
+  <data name="AdminItemDetail.MoveDialog.Problem.TargetUnknown" xml:space="preserve"><value>Tokios aktyvios vietos nėra.</value></data>
+  <data name="AdminItemDetail.MoveDialog.Problem.SameLocation" xml:space="preserve"><value>Vieta turi skirtis nuo pradinės.</value></data>
+  <data name="AdminItemDetail.MoveDialog.Problem.QtyMissing" xml:space="preserve"><value>Įveskite kiekį, didesnį už nulį.</value></data>
+  <data name="AdminItemDetail.MoveDialog.Problem.QtyTooHigh" xml:space="preserve"><value>Kiekis viršija laisvą likutį.</value></data>
+  <data name="AdminItemDetail.AdjustDialog.Eyebrow" xml:space="preserve"><value>Korekcija · {0}</value></data>
+  <data name="AdminItemDetail.AdjustDialog.LocationOption" xml:space="preserve"><value>{0} · sistemoje {1}</value></data>
+  <data name="AdminItemDetail.AdjustDialog.Note" xml:space="preserve"><value>Pastaba</value></data>
+  <data name="AdminItemDetail.AdjustDialog.Optional" xml:space="preserve"><value>Neprivaloma</value></data>
+  <data name="AdminItemDetail.AdjustReason.Count" xml:space="preserve"><value>Inventorizacija</value></data>
+  <data name="AdminItemDetail.AdjustReason.Damaged" xml:space="preserve"><value>Pažeista</value></data>
+  <data name="AdminItemDetail.AdjustReason.Found" xml:space="preserve"><value>Rasta</value></data>
+  <data name="AdminItemDetail.AdjustReason.EntryError" xml:space="preserve"><value>Klaida įvedant</value></data>
+  <data name="AdminItemDetail.Toast.TransferAwaitsApproval" xml:space="preserve"><value>Perkėlimas {0} sukurtas ir laukia patvirtinimo.</value></data>
+  <data name="AdminItemDetail.Toast.Moved" xml:space="preserve"><value>Perkelta ({0}).</value></data>
+  <data name="AdminItemDetail.Toast.TransferNotCompleted" xml:space="preserve"><value>Perkėlimas {0} sukurtas, bet neužbaigtas: {1}</value></data>
+  <data name="AdminItemDetail.Toast.Adjusted" xml:space="preserve"><value>Likutis vietoje {0} pakoreguotas.</value></data>
 </root>

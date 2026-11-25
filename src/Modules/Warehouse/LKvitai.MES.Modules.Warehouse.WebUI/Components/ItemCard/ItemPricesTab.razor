@@ -1,0 +1,24 @@
+@* Kainos ir tiekėjai tab: price summary, price-group overrides, suppliers, price and purchase-cost history. *@
+<div class="ic-tab-panel" data-testid="admin-item-detail-tab-panel-kainos">
+    <div class="ic-prices-grid">
+        <ItemPriceSummaryPanel Item="Item" State="OnHand" OnRetry="OnRetryOnHand" />
+        <ItemPriceGroupsPanel Item="Item" State="Overrides" OnChanged="OnRetryOverrides" />
+    </div>
+    <ItemSuppliersPanel Item="Item" State="Suppliers" OnRetry="OnRetrySuppliers" />
+    <ItemPriceHistoryPanel State="PriceHistory" OnRetry="OnRetryPriceHistory" />
+    <ItemPurchaseHistoryPanel State="PurchaseHistory" OnRetry="OnRetryPurchaseHistory" />
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ItemDetailsDto Item { get; set; } = default!;
+    [Parameter, EditorRequired] public PanelState<IReadOnlyList<OnHandValueRowDto>> OnHand { get; set; } = default!;
+    [Parameter, EditorRequired] public PanelState<IReadOnlyList<ItemPriceOverrideDto>> Overrides { get; set; } = default!;
+    [Parameter, EditorRequired] public PanelState<IReadOnlyList<AdminSupplierMappingDto>> Suppliers { get; set; } = default!;
+    [Parameter, EditorRequired] public PanelState<IReadOnlyList<ItemPriceHistoryDto>> PriceHistory { get; set; } = default!;
+    [Parameter, EditorRequired] public PanelState<IReadOnlyList<CostHistoryRowDto>> PurchaseHistory { get; set; } = default!;
+    [Parameter] public EventCallback OnRetryOnHand { get; set; }
+    [Parameter] public EventCallback OnRetryOverrides { get; set; }
+    [Parameter] public EventCallback OnRetrySuppliers { get; set; }
+    [Parameter] public EventCallback OnRetryPriceHistory { get; set; }
+    [Parameter] public EventCallback OnRetryPurchaseHistory { get; set; }
+}

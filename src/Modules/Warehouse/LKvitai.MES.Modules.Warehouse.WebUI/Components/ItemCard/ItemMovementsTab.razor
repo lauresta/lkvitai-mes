@@ -1,0 +1,92 @@
+@* Judėjimai tab: movements of the item with type filters, signed quantities and the running item total. *@
+<div class="ic-tab-panel" data-testid="admin-item-detail-tab-panel-judejimai">
+    <ItemCardPanel Title="@L["AdminItemDetail.Tab.Movements"]"
+                   TestId="admin-item-detail-movements"
+                   IsLoading="State.IsLoading"
+                   Error="State.Error"
+                   OnRetry="OnRetry"
+                   OnDismiss="State.ClearError">
+        <HeadContent>
+            <div class="ic-filters" role="group">
+                @foreach (var filter in ItemMovementTimeline.Filters)
+                {
+                    <button type="button"
+                            class="@FilterClass(filter)"
+                            aria-pressed="@Pressed(filter)"
+                            @onclick="() => SetFilter(filter)"
+                            data-testid="@FilterTestId(filter)">
+                        @L[$"AdminItemDetail.MovementFilter.{filter}"]
+                        <span class="ic-filter__count mono">@ItemMovementTimeline.Count(Timeline, filter)</span>
+                    </button>
+                }
+            </div>
+        </HeadContent>
+        <ChildContent>
+            @if (IsEmpty)
+            {
+                <div class="ic-empty" data-testid="admin-item-detail-movements-empty">@L["AdminItemDetail.NoMovements"]</div>
+            }
+            else if (Filtered.Count > 0)
+            {
+                <div class="ic-table-wrap">
+                    <table class="lk-table ic-table">
+                        <thead>
+                        <tr>
+                            <th>@L["AdminItemDetail.Date"]</th>
+                            <th>@L["Common.Type"]</th>
+                            <th>@L["AdminItemDetail.Document"]</th>
+                            <th>@L["Common.Location"]</th>
+                            <th class="is-num">@ItemCardFormat.ColumnTitle(L["Common.Qty"].Value, Item.BaseUoM)</th>
+                            <th class="is-num">@L["AdminItemDetail.Balance"]</th>
+                            <th>@L["AdminItemDetail.DoneBy"]</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var movement in Filtered.Take(_visible))
+                        {
+                            <ItemMovementRow Movement="movement" />
+                        }
+                        </tbody>
+                    </table>
+                </div>
+                @if (HasMore)
+                {
+                    <button type="button" class="ic-more" @onclick="ShowMore" data-testid="admin-item-detail-movements-more">@L["AdminItemDetail.ShowMore"]</button>
+                }
+            }
+        </ChildContent>
+    </ItemCardPanel>
+</div>
+
+@code {
+    private const int PageSize = 50;
+
+    [Parameter, EditorRequired] public ItemDetailsDto Item { get; set; } = default!;
+    [Parameter, EditorRequired] public PanelState<StockMovementsResponseDto> State { get; set; } = default!;
+    [Parameter] public IReadOnlyList<ItemMovement> Timeline { get; set; } = Array.Empty<ItemMovement>();
+    [Parameter] public EventCallback OnRetry { get; set; }
+
+    private MovementFilter _filter = MovementFilter.All;
+    private int _visible = PageSize;
+
+    private IReadOnlyList<ItemMovement> Filtered => Timeline.Where(x => ItemMovementTimeline.Matches(x, _filter)).ToList();
+
+    private bool IsEmpty => State.HasValue && Filtered.Count == 0;
+
+    private bool HasMore => Filtered.Count > _visible;
+
+    private string FilterClass(MovementFilter filter) => filter == _filter ? "ic-filter is-active" : "ic-filter";
+
+    private string Pressed(MovementFilter filter) => filter == _filter ? "true" : "false";
+
+    private static string FilterTestId(MovementFilter filter)
+        => "admin-item-detail-movement-filter-" + filter.ToString().ToLowerInvariant();
+
+    private void SetFilter(MovementFilter filter)
+    {
+        _filter = filter;
+        _visible = PageSize;
+    }
+
+    private void ShowMore() => _visible += PageSize;
+}

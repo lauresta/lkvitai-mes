@@ -1,0 +1,46 @@
+@* Kainos panel: sale / purchase price, WAC, margin and the on-hand stock value. *@
+<ItemCardPanel Title="@L["AdminItemDetail.Prices"]"
+               TestId="admin-item-detail-onhand"
+               IsLoading="State.IsLoading"
+               Error="State.Error"
+               OnRetry="OnRetry"
+               OnDismiss="State.ClearError">
+    <dl class="ic-kv">
+        <div class="ic-kv__row">
+            <dt>@L["AdminItemDetail.SalePriceBase"]</dt>
+            <dd><strong class="mono">@SalePrice</strong></dd>
+        </div>
+        <div class="ic-kv__row">
+            <dt>@L["AdminItemDetail.PurchasePrice"]</dt>
+            <dd class="mono">@ItemCardFormat.Money(Item.PurchasePrice)</dd>
+        </div>
+        <div class="ic-kv__row">
+            <dt>@L["AdminItemDetail.AverageCost"]</dt>
+            <dd class="mono">@ItemCardFormat.Money(Row?.UnitCost)</dd>
+        </div>
+        <div class="ic-kv__row">
+            <dt>@L["AdminItemDetail.Margin"]</dt>
+            <dd class="mono">@ItemCardFormat.Percent(ItemStockMath.MarginPercent(Item.BasePrice, Row?.UnitCost))</dd>
+        </div>
+        <div class="ic-kv__row ic-kv__row--total">
+            <dt>@StockValueLabel</dt>
+            <dd><strong class="mono">@ItemCardFormat.Money(Row?.TotalValue)</strong></dd>
+        </div>
+    </dl>
+</ItemCardPanel>
+
+@code {
+    [Parameter, EditorRequired] public ItemDetailsDto Item { get; set; } = default!;
+    [Parameter, EditorRequired] public PanelState<IReadOnlyList<OnHandValueRowDto>> State { get; set; } = default!;
+    [Parameter] public EventCallback OnRetry { get; set; }
+
+    private OnHandValueRowDto? Row => State.Value?.FirstOrDefault();
+
+    private string SalePrice => Item.BasePrice.HasValue
+        ? $"{ItemCardFormat.Money(Item.BasePrice)} / {ItemCardFormat.Unit(Item.BaseUoM)}"
+        : ItemCardFormat.Dash;
+
+    private string StockValueLabel => Row is null
+        ? L["AdminItemDetail.StockValue"].Value
+        : $"{L["AdminItemDetail.StockValue"]} · {ItemCardFormat.QtyWithUnit(Row.Qty, Item.BaseUoM)}";
+}

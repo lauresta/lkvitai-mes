@@ -1,0 +1,71 @@
+@* Inline edit of one number in the header price column: Enter saves, Esc cancels. *@
+<div class="ic-inline-edit @(IsInvalid ? "is-invalid" : null)">
+    <input @ref="_input"
+           class="ic-inline-edit__input @(Wide ? "ic-inline-edit__input--wide" : null)"
+           inputmode="decimal"
+           aria-label="@Label"
+           value="@_text"
+           @oninput="OnInput"
+           @onkeydown="OnKeyDownAsync"
+           data-testid="@($"{TestId}-input")" />
+    <span class="ic-inline-edit__unit mono">@Unit</span>
+    <button type="button" class="ic-btn ic-btn--primary ic-btn--inline" disabled="@IsSaving" @onclick="SaveAsync" data-testid="@($"{TestId}-save")">@L["AdminItemDetail.Ok"]</button>
+    <button type="button" class="ic-btn ic-btn--inline" disabled="@IsSaving" @onclick="OnCancel" aria-label="@L["Common.Cancel"]" data-testid="@($"{TestId}-cancel")">×</button>
+</div>
+
+@code {
+    [Parameter] public decimal? Value { get; set; }
+    [Parameter] public string Unit { get; set; } = string.Empty;
+    [Parameter] public string Label { get; set; } = string.Empty;
+    [Parameter] public bool Wide { get; set; }
+    [Parameter] public bool IsSaving { get; set; }
+    [Parameter] public string TestId { get; set; } = "admin-item-detail-inline";
+    [Parameter] public EventCallback<decimal?> OnSave { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private ElementReference _input;
+    private string _text = string.Empty;
+    private bool IsInvalid { get; set; }
+
+    protected override void OnInitialized()
+    {
+        _text = Value?.ToString("0.####", System.Globalization.CultureInfo.CurrentUICulture) ?? string.Empty;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await _input.FocusAsync();
+        }
+    }
+
+    private void OnInput(ChangeEventArgs args)
+    {
+        _text = args.Value?.ToString() ?? string.Empty;
+        IsInvalid = false;
+    }
+
+    private async Task OnKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            await SaveAsync();
+        }
+        else if (args.Key == "Escape")
+        {
+            await OnCancel.InvokeAsync();
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (!DecimalInputParser.TryParse(_text, out var parsed) || parsed is < 0m)
+        {
+            IsInvalid = true;
+            return;
+        }
+
+        await OnSave.InvokeAsync(parsed);
+    }
+}

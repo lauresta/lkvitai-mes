@@ -1,0 +1,33 @@
+@* One photo of the item with Open / Primary / Delete. *@
+<div class="admin-item-photo" data-testid="admin-item-detail-photo-card">
+    <img src="@Photo.ThumbUrl" alt="@L["Common.ItemPhoto", ItemName]" loading="lazy" />
+    <div class="admin-item-photo__body">
+        <div class="admin-item-photo__meta">
+            <span class="@ChipClass">@ChipText</span>
+            <span class="mono">@Size</span>
+        </div>
+        <div class="admin-item-photo__buttons">
+            <a class="ic-btn ic-btn--row" href="@Photo.OriginalUrl" target="_blank" rel="noopener">@L["AdminItemDetail.Open"]</a>
+            <button type="button" class="ic-btn ic-btn--row" disabled="@CannotMakePrimary" @onclick="() => OnMakePrimary.InvokeAsync(Photo.Id)">@L["Common.Primary"]</button>
+            <button type="button" class="ic-btn ic-btn--row ic-btn--danger" disabled="@Busy" @onclick="() => OnDelete.InvokeAsync(Photo.Id)">@L["Common.Delete"]</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ItemPhotoDto Photo { get; set; } = default!;
+    [Parameter] public string ItemName { get; set; } = string.Empty;
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback<Guid> OnMakePrimary { get; set; }
+    [Parameter] public EventCallback<Guid> OnDelete { get; set; }
+
+    private bool CannotMakePrimary => Photo.IsPrimary || Busy;
+
+    private string ChipClass => Photo.IsPrimary ? "chip chip--reserved" : "chip chip--locked";
+
+    private string ChipText => Photo.IsPrimary ? L["Common.Primary"].Value : L["AdminItemDetail.Photo"].Value;
+
+    private string Size => Photo.SizeBytes >= 1024 * 1024
+        ? string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{Photo.SizeBytes / 1024m / 1024m:0.#} MB")
+        : string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{Math.Max(1, Photo.SizeBytes / 1024m):0.#} KB");
+}

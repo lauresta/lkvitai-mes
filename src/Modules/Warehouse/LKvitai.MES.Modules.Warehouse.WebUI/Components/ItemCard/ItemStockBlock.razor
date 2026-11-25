@@ -1,0 +1,85 @@
+@* Stock total, the reserved / available / incoming bar with the min marker, its legend and the tablet KPI strip. *@
+<div class="ic-stock" data-testid="admin-item-detail-stock">
+    @if (ShowProgress)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+
+    <div class="ic-stock__total">
+        <span class="ic-stock__qty mono">@TotalText</span>
+        <span class="ic-stock__where">@WhereText</span>
+    </div>
+
+    <div class="ic-bar" role="img" aria-label="@BarLabel" data-testid="admin-item-detail-stock-bar">
+        @foreach (var segment in Bar.Segments)
+        {
+            <div class="@SegmentClass(segment)" style="width:@segment.CssWidth"></div>
+        }
+        @if (Bar.MinMarkerCss is { } marker)
+        {
+            <div class="ic-bar__min" style="left:@marker" data-testid="admin-item-detail-min-marker"></div>
+        }
+    </div>
+
+    <div class="ic-legend">
+        <span class="ic-legend__item"><span class="ic-swatch ic-swatch--reserved"></span>@L["AdminItemDetail.Reserved"] <strong class="mono">@Qty(Stock?.Reserved)</strong></span>
+        <span class="ic-legend__item"><span class="ic-swatch ic-swatch--available"></span>@L["AdminItemDetail.Available"] <strong class="mono ic-ok">@Qty(Stock?.Available)</strong></span>
+        @if (Incoming is not null)
+        {
+            <span class="ic-legend__item">
+                <span class="ic-swatch ic-swatch--incoming"></span>@L["AdminItemDetail.Incoming"]
+                <strong class="mono">+@ItemCardFormat.Qty(Incoming.Total)</strong>
+                <span class="ic-muted-text">@IncomingFrom</span>
+            </span>
+        }
+        @if (Item.MinQty.HasValue)
+        {
+            <span class="ic-legend__item"><span class="ic-swatch ic-swatch--min"></span>@L["AdminItemDetail.MinShort"] <strong class="mono">@ItemCardFormat.WholeWithUnit(Item.MinQty, Item.BaseUoM)</strong></span>
+        }
+    </div>
+
+    <ItemStockKpis BaseUoM="@Item.BaseUoM" Stock="Stock" Incoming="Incoming" />
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ItemDetailsDto Item { get; set; } = default!;
+    [Parameter] public ItemStockSummary? Stock { get; set; }
+    [Parameter] public bool StockLoading { get; set; }
+    [Parameter] public ItemIncomingSummary? Incoming { get; set; }
+
+    private bool ShowProgress => StockLoading && Stock is null;
+
+    private string TotalText => Stock is null ? ItemCardFormat.Dash : ItemCardFormat.QtyWithUnit(Stock.Physical, Item.BaseUoM);
+
+    private string WhereText => Stock is null
+        ? string.Empty
+        : L[ItemCardText.PluralKey("AdminItemDetail.PhysicalInLocations", Stock.LocationCount), Stock.LocationCount].Value;
+
+    private string IncomingFrom => Incoming?.NearestEta is { } eta
+        ? L["AdminItemDetail.IncomingFrom", ItemCardFormat.ShortDate(eta)].Value
+        : string.Empty;
+
+    private StockBar Bar => Stock is null
+        ? new StockBar(Array.Empty<StockBarSegment>(), null)
+        : ItemStockMath.Bar(Stock.Physical, Stock.Reserved, Stock.Available, Incoming?.Total ?? 0m, Item.MinQty);
+
+    private string BarLabel => $"{L["AdminItemDetail.Reserved"]} {Qty(Stock?.Reserved)} · {L["AdminItemDetail.Available"]} {Qty(Stock?.Available)}";
+
+    private static string Qty(decimal? value) => value.HasValue ? ItemCardFormat.Qty(value.Value) : ItemCardFormat.Dash;
+
+    private static string SegmentClass(StockBarSegment segment)
+    {
+        var css = "ic-bar__seg ic-bar__seg--" + segment.Kind;
+        if (segment.RoundLeft)
+        {
+            css += " is-first";
+        }
+
+        if (segment.RoundRight)
+        {
+            css += " is-last";
+        }
+
+        return css;
+    }
+}

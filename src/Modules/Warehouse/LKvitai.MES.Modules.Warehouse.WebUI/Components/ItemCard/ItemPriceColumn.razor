@@ -1,0 +1,167 @@
+@* Header right column: sale price and minimum quantity with inline "Keisti" edits (one field at a time). *@
+<div class="ic-price" data-testid="admin-item-detail-price-column">
+    <div class="ic-price__block">
+        <div class="ic-price__head">
+            <span class="ic-eyebrow">@L["AdminItemDetail.SalePrice"]</span>
+            @if (_editField is null)
+            {
+                <button type="button" class="ic-link" @onclick="() => Begin(PriceField)" data-testid="admin-item-detail-price-edit">@L["AdminItemDetail.Change"]</button>
+            }
+        </div>
+        @if (_editField == PriceField)
+        {
+            <ItemInlineEdit Value="Item.BasePrice"
+                            Unit="€"
+                            Wide="true"
+                            Label="@L["AdminItemDetail.SalePrice"]"
+                            IsSaving="_saving"
+                            TestId="admin-item-detail-price"
+                            OnSave="SavePriceAsync"
+                            OnCancel="Cancel" />
+        }
+        else
+        {
+            <span class="@PriceClass">@PriceText<span class="ic-price__per">@PerUnit</span></span>
+        }
+        @if (SubParts.Count > 0)
+        {
+            <span class="ic-price__sub">
+                @foreach (var part in SubParts)
+                {
+                    <span>@part.Label <span class="mono">@part.Value</span></span>
+                }
+            </span>
+        }
+    </div>
+
+    <div class="ic-divider"></div>
+
+    <div class="ic-price__block">
+        <div class="ic-price__head">
+            <span class="ic-eyebrow">@L["AdminItemDetail.MinQtyShort"]</span>
+            @if (_editField is null)
+            {
+                <button type="button" class="ic-link" @onclick="() => Begin(MinField)" data-testid="admin-item-detail-min-edit">@L["AdminItemDetail.Change"]</button>
+            }
+        </div>
+        @if (_editField == MinField)
+        {
+            <ItemInlineEdit Value="Item.MinQty"
+                            Unit="@ItemCardFormat.Unit(Item.BaseUoM)"
+                            Label="@L["AdminItemDetail.MinQtyShort"]"
+                            IsSaving="_saving"
+                            TestId="admin-item-detail-min"
+                            OnSave="SaveMinAsync"
+                            OnCancel="Cancel" />
+        }
+        else
+        {
+            <div class="ic-price__min">
+                <span class="@MinClass">@ItemCardFormat.WholeWithUnit(Item.MinQty, Item.BaseUoM)</span>
+                @if (MinChip is { } chip)
+                {
+                    <span class="@chip.CssClass" data-testid="admin-item-detail-min-state">@chip.Text</span>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="ic-divider"></div>
+
+    <div class="ic-price__foot">
+        <span class="mono">@L["AdminItemDetail.UpdatedShort", ItemCardFormat.Timestamp(Item.UpdatedAt ?? Item.CreatedAt)]</span>
+        <button type="button" class="ic-link" @onclick="OnAllFields" data-testid="admin-item-detail-all-fields">@L["AdminItemDetail.AllFields"]</button>
+    </div>
+</div>
+
+@code {
+    private const string PriceField = "price";
+    private const string MinField = "min";
+
+    [Parameter, EditorRequired] public ItemDetailsDto Item { get; set; } = default!;
+    [Parameter] public decimal? UnitCost { get; set; }
+    [Parameter] public decimal? Available { get; set; }
+    [Parameter] public Func<decimal?, Task<bool>>? SavePrice { get; set; }
+    [Parameter] public Func<decimal?, Task<bool>>? SaveMin { get; set; }
+    [Parameter] public EventCallback OnAllFields { get; set; }
+
+    private string? _editField;
+    private bool _saving;
+
+    private string PriceClass => Item.BasePrice.HasValue ? "ic-price__value mono" : "ic-price__value mono ic-muted";
+
+    private string PriceText => ItemCardFormat.Money(Item.BasePrice);
+
+    private string PerUnit => Item.BasePrice.HasValue ? " / " + ItemCardFormat.Unit(Item.BaseUoM) : string.Empty;
+
+    private string MinClass => Item.MinQty.HasValue ? "ic-price__min-value mono" : "ic-price__min-value mono ic-muted";
+
+    /// <summary>"Pirk. 2,01 € · WAC 2,04 € · marža 57,5 %": each part only when its value is known.</summary>
+    private IReadOnlyList<(string Label, string Value)> SubParts
+    {
+        get
+        {
+            var parts = new List<(string Label, string Value)>();
+            if (Item.PurchasePrice.HasValue)
+            {
+                parts.Add((L["AdminItemDetail.PurchaseShort"].Value, ItemCardFormat.Money(Item.PurchasePrice)));
+            }
+
+            if (UnitCost.HasValue)
+            {
+                parts.Add(("WAC", ItemCardFormat.Money(UnitCost)));
+            }
+
+            var margin = ItemStockMath.MarginPercent(Item.BasePrice, UnitCost);
+            if (margin.HasValue)
+            {
+                parts.Add((L["AdminItemDetail.MarginShort"].Value, ItemCardFormat.Percent(margin)));
+            }
+
+            return parts;
+        }
+    }
+
+    private (string CssClass, string Text)? MinChip
+    {
+        get
+        {
+            var state = Available.HasValue ? ItemStockMath.MinState(Item.MinQty, Available.Value) : MinQtyState.None;
+            return state switch
+            {
+                MinQtyState.Above => ("chip chip--ok", L["AdminItemDetail.AboveMin"].Value),
+                MinQtyState.Below => ("chip chip--low", L["AdminItemDetail.BelowMin"].Value),
+                _ => null
+            };
+        }
+    }
+
+    private void Begin(string field) => _editField = field;
+
+    private void Cancel() => _editField = null;
+
+    private Task SavePriceAsync(decimal? value) => SaveAsync(SavePrice, value);
+
+    private Task SaveMinAsync(decimal? value) => SaveAsync(SaveMin, value);
+
+    private async Task SaveAsync(Func<decimal?, Task<bool>>? save, decimal? value)
+    {
+        if (save is null)
+        {
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            if (await save(value))
+            {
+                _editField = null;
+            }
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}
