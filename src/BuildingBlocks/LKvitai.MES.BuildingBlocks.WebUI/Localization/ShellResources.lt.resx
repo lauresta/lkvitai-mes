@@ -36,6 +36,7 @@
   <data name="Shell.Search.Kind.Other" xml:space="preserve"><value>Kita</value></data>
   <data name="Shell.Dismiss" xml:space="preserve"><value>Uždaryti</value></data>
   <data name="Shell.Logout" xml:space="preserve"><value>Atsijungti</value></data>
+  <data name="Shell.Help" xml:space="preserve"><value>Pagalba: naudotojo vadovas</value></data>
   <data name="Shell.SignedIn" xml:space="preserve"><value>Prisijungęs</value></data>
   <data name="Shell.MobileNavigation" xml:space="preserve"><value>Perjungti navigacijos meniu</value></data>
   <data name="Shell.HomeLink" xml:space="preserve"><value>Cikada.MES portalo pradžia</value></data>

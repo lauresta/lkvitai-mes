@@ -1,0 +1,23 @@
+/* Blazor's error bar (#blazor-error-ui in every module _Layout) stays hidden until Blazor reports an error;
+   it then sets display:block inline. Pages without MudBlazor (Portal, Scanning) had no rule for it and showed
+   "An unhandled error has occurred" all the time. Imported by portal-shell.css; Scanning links it directly. */
+#blazor-error-ui {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  padding: 0.6rem 2.5rem 0.6rem 1.25rem;
+  border-top: 1px solid var(--warn-bd, #e2cf9a);
+  background: var(--warn-bg, #f7eed5);
+  color: var(--warn-fg, #7c5f2a);
+  font-size: 13px;
+}
+
+#blazor-error-ui .dismiss {
+  cursor: pointer;
+  position: absolute;
+  right: 0.75rem;
+  top: 0.5rem;
+}

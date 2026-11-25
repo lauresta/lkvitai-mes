@@ -196,6 +196,9 @@ public sealed class UniversalSearchTests
             Assert.Matches("<div class=\"shell-search\"[^>]*\\shidden", html);
             Assert.Contains("aria-controls=\"shell-search-panel\"", html); Assert.Contains("aria-expanded=\"false\"", html);
             Assert.Contains(placeholder, html); Assert.DoesNotContain("coming soon", html); Assert.DoesNotContain("netrukus", html);
+            // Help link in the header: this module's manual section, new tab, localized tooltip.
+            Assert.Matches("<a class=\"topbar__help\" href=\"/manuals/sales/\" target=\"_blank\"", html);
+            Assert.Contains(language == "lt" ? "Pagalba: naudotojo vadovas" : "Help: user manual", html);
 
             // The script is wired after the first interactive render; drive that step directly.
             var shell = new PortalModuleShell();
