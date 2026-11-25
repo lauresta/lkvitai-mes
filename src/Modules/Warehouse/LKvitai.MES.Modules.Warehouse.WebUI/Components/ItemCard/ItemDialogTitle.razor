@@ -1,0 +1,14 @@
+@* Head of the stock dialogs: mono eyebrow, 17px title and a 32px close button. *@
+<div class="ic-dialog__head">
+    <div>
+        <div class="ic-dialog__eyebrow">@Eyebrow</div>
+        <div class="ic-dialog__title">@Title</div>
+    </div>
+    <button type="button" class="ic-dialog__close" @onclick="OnClose" aria-label="@L["Common.Close"]" data-testid="admin-item-detail-dialog-close">×</button>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Eyebrow { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public EventCallback OnClose { get; set; }
+}

@@ -1,0 +1,25 @@
+@* Tabs of the item card; the active one is kept in ?tab=. *@
+<div class="ic-tabs" role="tablist" data-testid="admin-item-detail-tabs">
+    @foreach (var tab in ItemCardTabs.All)
+    {
+        var isActive = tab == Active;
+        <button type="button"
+                role="tab"
+                aria-selected="@(isActive ? "true" : "false")"
+                class="ic-tab @(isActive ? "is-active" : null)"
+                @onclick="() => OnSelect.InvokeAsync(tab)"
+                data-testid="@($"admin-item-detail-tab-{tab}")">
+            @L[ItemCardTabs.LabelKey(tab)]
+            @if (Counts.TryGetValue(tab, out var count) && count.HasValue)
+            {
+                <span class="ic-tab__count mono">@count</span>
+            }
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter] public string Active { get; set; } = ItemCardTabs.Locations;
+    [Parameter] public IReadOnlyDictionary<string, int?> Counts { get; set; } = new Dictionary<string, int?>();
+    [Parameter] public EventCallback<string> OnSelect { get; set; }
+}

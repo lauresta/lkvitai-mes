@@ -1,0 +1,85 @@
+@* Duomenys tab: every item field in four groups; full editing stays in AdminItemEditorDialog. *@
+<div class="ic-tab-panel" data-testid="admin-item-detail-tab-panel-duomenys">
+    <ItemCardPanel Title="@L["AdminItemDetail.Group.Main"]" TestId="admin-item-detail-fields">
+        <HeadContent>
+            <button type="button" class="ic-btn ic-btn--row" @onclick="OnEdit" data-testid="admin-item-detail-edit">@L["Common.Edit"]</button>
+        </HeadContent>
+        <ChildContent>
+            <div class="ic-fields">
+                <ItemDataField Label="@L["Common.Name"]" Value="@Item.Name" Class="ic-field--span2" />
+                <ItemDataField Label="SKU" Value="@Item.InternalSKU" Mono="true" />
+                <ItemDataField Label="@L["Common.Status"]" Value="@WarehouseStatusText.Get(L, Item.Status)" />
+                <ItemDataField Label="@L["AdminItemDetail.Category"]" Value="@CategoryText" />
+                <ItemDataField Label="@L["AdminItemDetail.BaseUoM"]" Value="@ItemCardFormat.Unit(Item.BaseUoM)" Mono="true" />
+                <ItemDataField Label="@L["AdminItemDetail.Barcode"]" Value="@Item.PrimaryBarcode" Mono="true" />
+                <ItemDataField Label="@L["Common.Tags"]"><ItemTagList Tags="Item.Tags" /></ItemDataField>
+                <ItemDataField Label="@L["AdminItemDetail.SalePrice"]" Value="@MoneyOrNull(Item.BasePrice)" Mono="true" />
+                <ItemDataField Label="@L["AdminItemDetail.PurchasePrice"]" Value="@MoneyOrNull(Item.PurchasePrice)" Mono="true" />
+                <ItemDataField Label="@L["AdminItemDetail.MinQtyShort"]" Value="@MinQtyText" Mono="true" />
+                <ItemDataField Label="@L["Common.Type"]" Value="@L[ItemCardText.ItemTypeKey(Item.ItemType)]" />
+                <ItemDataField Label="@L["Common.Description"]" Value="@Item.Description" Class="ic-field--full" />
+            </div>
+        </ChildContent>
+    </ItemCardPanel>
+
+    <ItemCardPanel Title="@L["AdminItemDetail.Group.Physical"]" TestId="admin-item-detail-physical">
+        <div class="ic-fields">
+            <ItemDataField Label="@L["Common.Weight"]" Value="@Number(Item.Weight)" Mono="true" />
+            <ItemDataField Label="@L["Common.Volume"]" Value="@Number(Item.Volume)" Mono="true" />
+            <ItemDataField Label="@L["AdminItemDetail.LotTracking"]" Value="@RequiredText(Item.RequiresLotTracking)" />
+            <ItemDataField Label="QC" Value="@RequiredText(Item.RequiresQC)" />
+            <ItemDataField Label="@L["AdminItemDetail.ProductConfig"]" Value="@Item.ProductConfigId" Mono="true" />
+        </div>
+    </ItemCardPanel>
+
+    <ItemCardPanel Title="@L["Intrastat.Card.Title"]" TestId="admin-item-detail-intrastat">
+        <HeadContent>
+            @if (IntrastatMissing)
+            {
+                <span class="chip chip--locked" title="@L["Intrastat.Items.MissingHint"]" data-testid="admin-item-detail-intrastat-missing">@L["Intrastat.Item.DataMissing"]</span>
+            }
+            else
+            {
+                <span class="chip chip--ok" data-testid="admin-item-detail-intrastat-complete">@L["AdminItemDetail.DataComplete"]</span>
+            }
+        </HeadContent>
+        <ChildContent>
+            <div class="ic-fields">
+                <ItemDataField Label="@L["Intrastat.Item.CommodityCode"]" Value="@Item.CommodityCode" Mono="true" />
+                <ItemDataField Label="@L["Intrastat.Item.NetWeightKg"]" Value="@Number(Item.NetWeightKg)" Mono="true" />
+                <ItemDataField Label="@L["Intrastat.Item.OriginCountry"]" Value="@Item.OriginCountry" Mono="true" />
+                <ItemDataField Label="@L["Intrastat.Item.SupplementaryUnit"]" Value="@Item.SupplementaryUnit" Mono="true" />
+                <ItemDataField Label="@L["Intrastat.Item.SupplementaryUnitFactor"]" Value="@Number(Item.SupplementaryUnitFactor)" Mono="true" />
+            </div>
+        </ChildContent>
+    </ItemCardPanel>
+
+    <ItemCardPanel Title="@L["AdminItemDetail.Group.Record"]" TestId="admin-item-detail-record">
+        <div class="ic-fields">
+            <ItemDataField Label="@L["Common.Created"]" Value="@ItemCardFormat.Timestamp(Item.CreatedAt)" Mono="true" />
+            <ItemDataField Label="@L["Common.Updated"]" Value="@UpdatedText" Mono="true" />
+            <ItemDataField Label="@L["AdminItemDetail.CategoryID"]" Value="@CategoryIdText" Mono="true" />
+        </div>
+    </ItemCardPanel>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ItemDetailsDto Item { get; set; } = default!;
+    [Parameter] public EventCallback OnEdit { get; set; }
+
+    private bool IntrastatMissing => IntrastatItemCheck.IsDataMissing(Item.ItemType, Item.CommodityCode, Item.NetWeightKg, Item.OriginCountry);
+
+    private string CategoryIdText => Item.CategoryId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    private string CategoryText => Item.CategoryName ?? CategoryIdText;
+
+    private string? MinQtyText => Item.MinQty.HasValue ? ItemCardFormat.WholeWithUnit(Item.MinQty, Item.BaseUoM) : null;
+
+    private string? UpdatedText => Item.UpdatedAt.HasValue ? ItemCardFormat.Timestamp(Item.UpdatedAt.Value) : null;
+
+    private string RequiredText(bool required) => required ? L["Common.Required"].Value : L["Common.NotRequired"].Value;
+
+    private static string? MoneyOrNull(decimal? value) => value.HasValue ? ItemCardFormat.Money(value) : null;
+
+    private static string? Number(decimal? value) => value.HasValue ? ItemCardFormat.Whole(value) : null;
+}

@@ -96,6 +96,7 @@
                           Label="@L["AdminItemEditorDialog.PrimaryBarcode"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
+                          AutoFocus="@(FocusField == "barcode")"
                           @bind-Value="_model.PrimaryBarcode" />
 
             <MudTextField T="string"
@@ -260,6 +261,8 @@
     [Parameter] public IReadOnlyList<AdminCategoryDto> Categories { get; set; } = Array.Empty<AdminCategoryDto>();
     [Parameter] public IReadOnlyList<UnitOfMeasureDto> Units { get; set; } = Array.Empty<UnitOfMeasureDto>();
     [Parameter] public IReadOnlyList<string> ExistingTags { get; set; } = Array.Empty<string>();
+    /// <summary>"barcode" focuses the primary barcode field (item card "Priskirti").</summary>
+    [Parameter] public string? FocusField { get; set; }
 
     private static readonly string[] CostTypePresets = ["Freight", "Duty", "Insurance", "VAT", "Other"];
 

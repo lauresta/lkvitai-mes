@@ -1,0 +1,130 @@
+@* Nuotraukos tab: drop zone (hidden InputFile), the photo grid with Open / Primary / Delete, and Recompute. *@
+@inject MasterDataAdminClient AdminClient
+@inject ToastService ToastService
+
+<div class="ic-tab-panel" data-testid="admin-item-detail-tab-panel-nuotraukos">
+    <ItemCardPanel Title="@L["AdminItemDetail.Photos"]"
+                   Suffix="@Photos.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                   Class="items-photo-panel"
+                   TestId="admin-item-detail-photos"
+                   IsLoading="_busy">
+        <HeadContent>
+            <button type="button"
+                    class="@RecomputeClass"
+                    disabled="@(!CanRecompute)"
+                    @onclick="RecomputeEmbeddingsAsync"
+                    data-testid="admin-item-detail-recompute">@L["AdminItemDetail.RecomputeSearchIndex"]</button>
+        </HeadContent>
+        <ChildContent>
+            <div class="ic-photos">
+                <div class="@DropzoneClass" data-testid="admin-item-detail-dropzone">
+                    <InputFile class="ic-dropzone__input"
+                               OnChange="HandleFileSelectedAsync"
+                               accept="image/jpeg,image/png,image/webp"
+                               disabled="@_busy"
+                               aria-label="@L["AdminItemDetail.ChooseFile"]" />
+                    @if (Photos.Count == 0)
+                    {
+                        <span class="ic-eyebrow">@L["AdminItemDetail.NoPhotos"]</span>
+                    }
+                    <span class="ic-dropzone__text">@L["AdminItemDetail.Dropzone"]</span>
+                    <span class="ic-btn ic-btn--primary ic-btn--row">@L["AdminItemDetail.ChooseFile"]</span>
+                    <span class="ic-dropzone__hint">@L["AdminItemDetail.DropzoneHint"]</span>
+                </div>
+
+                @if (Photos.Count > 0)
+                {
+                    <div class="admin-item-photos-dialog__grid">
+                        @foreach (var photo in Photos)
+                        {
+                            <ItemPhotoCard Photo="photo" ItemName="@Item.Name" Busy="_busy" OnMakePrimary="MakePrimaryAsync" OnDelete="DeletePhotoAsync" />
+                        }
+                    </div>
+                }
+            </div>
+        </ChildContent>
+    </ItemCardPanel>
+</div>
+
+@code {
+    private const long MaxPhotoBytes = 5L * 1024 * 1024;
+
+    [Parameter, EditorRequired] public ItemDetailsDto Item { get; set; } = default!;
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private bool _busy;
+    private IReadOnlyList<ItemPhotoDto> _photos = Array.Empty<ItemPhotoDto>();
+
+    private IReadOnlyList<ItemPhotoDto> Photos => _photos;
+
+    protected override void OnParametersSet()
+        => _photos = Item.Photos
+            .OrderByDescending(x => x.IsPrimary)
+            .ThenByDescending(x => x.CreatedAt)
+            .ToList();
+
+    private bool CanRecompute => Photos.Count > 0 && !_busy;
+
+    private string RecomputeClass => Photos.Count == 0 ? "ic-btn ic-btn--row ic-btn--dashed" : "ic-btn ic-btn--row";
+
+    private string DropzoneClass => Photos.Count == 0 ? "ic-dropzone" : "ic-dropzone ic-dropzone--compact";
+
+    private async Task HandleFileSelectedAsync(InputFileChangeEventArgs args)
+    {
+        var file = args.File;
+        await RunAsync(async () =>
+        {
+            await using var stream = file.OpenReadStream(MaxPhotoBytes);
+            using var buffer = new MemoryStream();
+            await stream.CopyToAsync(buffer);
+            await AdminClient.UploadPhotoAsync(Item.Id, file.Name, buffer.ToArray(), file.ContentType);
+            ToastService.ShowSuccess(L["AdminItemDetail.Toast.PhotoUploaded"].Value);
+        }, reload: true);
+    }
+
+    private Task MakePrimaryAsync(Guid photoId)
+        => RunAsync(async () =>
+        {
+            await AdminClient.MakePrimaryPhotoAsync(Item.Id, photoId);
+            ToastService.ShowSuccess(L["AdminItemDetail.Toast.PrimaryPhotoUpdated"].Value);
+        }, reload: true);
+
+    private Task DeletePhotoAsync(Guid photoId)
+        => RunAsync(async () =>
+        {
+            await AdminClient.DeletePhotoAsync(Item.Id, photoId);
+            ToastService.ShowWarning(L["AdminItemDetail.Toast.PhotoDeleted"].Value);
+        }, reload: true);
+
+    private Task RecomputeEmbeddingsAsync()
+        => RunAsync(async () =>
+        {
+            var count = await AdminClient.RecomputeEmbeddingsAsync(Item.Id);
+            ToastService.ShowSuccess(L["AdminItemDetail.Toast.EmbeddingsRecomputedForPhotoS", count].Value);
+        }, reload: false);
+
+    private async Task RunAsync(Func<Task> action, bool reload)
+    {
+        _busy = true;
+        try
+        {
+            await action();
+            if (reload)
+            {
+                await OnChanged.InvokeAsync();
+            }
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(ItemCardErrors.Describe(L, ex));
+        }
+        catch (IOException ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

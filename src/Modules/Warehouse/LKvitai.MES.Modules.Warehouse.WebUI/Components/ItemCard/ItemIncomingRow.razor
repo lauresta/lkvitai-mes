@@ -1,0 +1,37 @@
+@* One open inbound shipment of the item in the rail: open qty + status, ETA, document and supplier. *@
+<div class="ic-rail-in" data-testid="admin-item-detail-incoming-row">
+    <div class="ic-rail-in__top">
+        <strong class="mono">@ItemCardFormat.QtyWithUnit(Row.OpenQty, BaseUoM)</strong>
+        <span class="@ItemCardText.IncomingChipClass(Row.Status)">@StatusText</span>
+    </div>
+    @if (Row.ExpectedDate is { } eta)
+    {
+        <span class="ic-rail-in__eta mono">ETA @ItemCardFormat.Date(eta) <span class="ic-muted-text">· @EtaText(eta)</span></span>
+    }
+    <span class="ic-rail-in__doc">
+        <a class="ic-doc-link mono" href="@($"inbound/shipments/{Row.ShipmentId}")">@Row.ReferenceNumber</a>
+        @SupplierSuffix
+    </span>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ItemIncomingRowDto Row { get; set; } = default!;
+    [Parameter] public string? BaseUoM { get; set; }
+
+    private string SupplierSuffix => string.IsNullOrWhiteSpace(Row.SupplierName) ? string.Empty : " · " + Row.SupplierName;
+
+    private string StatusText
+    {
+        get
+        {
+            var localized = L[$"AdminItemDetail.IncomingStatus.{Row.Status}"];
+            return localized.ResourceNotFound ? WarehouseStatusText.Get(L, Row.Status) : localized.Value;
+        }
+    }
+
+    private string EtaText(DateOnly eta)
+    {
+        var days = ItemStockMath.DaysUntil(eta, DateOnly.FromDateTime(DateTime.Now));
+        return days >= 0 ? L["AdminItemDetail.InDays", days].Value : L["AdminItemDetail.Overdue", -days].Value;
+    }
+}

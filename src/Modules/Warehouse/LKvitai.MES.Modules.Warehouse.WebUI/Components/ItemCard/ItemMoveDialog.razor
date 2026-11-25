@@ -1,0 +1,260 @@
+@* Perkelti atsargas: one-line transfer of this item between two locations of the same warehouse. *@
+@inject TransfersClient TransfersClient
+@inject MasterDataAdminClient AdminClient
+@inject ToastService ToastService
+
+<MudDialog Class="ic-dialog" ClassContent="ic-dialog__content" ClassActions="ic-dialog__actions" data-testid="admin-item-detail-move-dialog">
+    <TitleContent>
+        <ItemDialogTitle Eyebrow="@L["AdminItemDetail.MoveDialog.Eyebrow", Item.InternalSKU]"
+                         Title="@L["AdminItemDetail.MoveDialog.Title"]"
+                         OnClose="Cancel" />
+    </TitleContent>
+    <DialogContent>
+        <div class="ic-dialog__body">
+            <label class="ic-form-field">
+                <span class="ic-form-field__label">@L["AdminItemDetail.MoveDialog.From"]</span>
+                <select class="ic-input mono" value="@_fromId" @onchange="OnFromChanged" data-testid="admin-item-detail-move-from">
+                    @foreach (var row in SourceRows)
+                    {
+                        <option value="@row.LocationId">@L["AdminItemDetail.MoveDialog.FromOption", row.Location, ItemCardFormat.QtyWithUnit(row.AvailableQty, Item.BaseUoM)]</option>
+                    }
+                </select>
+            </label>
+
+            <label class="ic-form-field">
+                <span class="ic-form-field__label">@L["AdminItemDetail.MoveDialog.To"]</span>
+                <input class="@TargetInputClass"
+                       placeholder="@L["AdminItemDetail.MoveDialog.ScanHint"]"
+                       value="@_targetText"
+                       autocomplete="off"
+                       @oninput="OnTargetInput"
+                       @onkeydown="OnTargetKeyDownAsync"
+                       @onblur="ResolveTargetAsync"
+                       data-testid="admin-item-detail-move-to" />
+                @if (ShowTargetError)
+                {
+                    <span class="ic-form-field__error" data-testid="admin-item-detail-move-to-error">@ProblemText</span>
+                }
+            </label>
+
+            <div class="ic-form-field">
+                <span class="ic-form-field__label">@QtyLabel</span>
+                <div class="ic-qty-row">
+                    <input class="@QtyInputClass"
+                           inputmode="decimal"
+                           placeholder="@ItemCardFormat.Qty(0m)"
+                           value="@_qtyText"
+                           @oninput="OnQtyInput"
+                           data-testid="admin-item-detail-move-qty" />
+                    <button type="button" class="ic-btn ic-btn--soft" @onclick="UseAllAvailable" disabled="@(Source is null)" data-testid="admin-item-detail-move-all">
+                        @L["AdminItemDetail.MoveDialog.AllAvailable"] · @ItemCardFormat.Qty(Source?.AvailableQty ?? 0m)
+                    </button>
+                </div>
+                @if (ShowQtyError)
+                {
+                    <span class="ic-form-field__error">@ProblemText</span>
+                }
+                else if (Source is not null)
+                {
+                    <span class="ic-form-field__hint">@ReservedHint</span>
+                }
+            </div>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <div class="ic-dialog__foot">
+            <button type="button" class="ic-btn ic-btn--dialog" @onclick="Cancel">@L["Common.Cancel"]</button>
+            <button type="button" class="ic-btn ic-btn--primary ic-btn--dialog" disabled="@CannotSubmit" @onclick="SubmitAsync" data-testid="admin-item-detail-move-submit">@L["AdminItemDetail.Move"]</button>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private const int TargetLookupSize = 100;
+
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired] public ItemDetailsDto Item { get; set; } = default!;
+    [Parameter] public IReadOnlyList<AvailableStockItemDto> Rows { get; set; } = Array.Empty<AvailableStockItemDto>();
+    [Parameter] public int? PreselectedLocationId { get; set; }
+
+    private int? _fromId;
+    private string _targetText = string.Empty;
+    private AdminLocationDto? _target;
+    private bool _targetChecked;
+    private string _qtyText = string.Empty;
+    private bool _qtyTouched;
+    private bool _saving;
+    private IReadOnlyList<AvailableStockItemDto> _sourceRows = Array.Empty<AvailableStockItemDto>();
+
+    private IReadOnlyList<AvailableStockItemDto> SourceRows => _sourceRows;
+
+    private AvailableStockItemDto? Source => _sourceRows.FirstOrDefault(x => x.LocationId == _fromId);
+
+    private decimal? Qty => DecimalInputParser.TryParse(_qtyText, out var value) ? value : null;
+
+    private MoveProblem Problem => StockDialogRules.ValidateMove(_fromId, _targetText, _target?.Id, Qty, Source?.AvailableQty ?? 0m);
+
+    private bool ShowTargetError => _targetChecked && Problem is MoveProblem.TargetUnknown or MoveProblem.SameLocation;
+
+    private bool ShowQtyError => _qtyTouched && Problem is MoveProblem.QtyMissing or MoveProblem.QtyTooHigh;
+
+    private string TargetInputClass => ShowTargetError ? "ic-input mono is-invalid" : "ic-input mono";
+
+    private string QtyInputClass => ShowQtyError ? "ic-input ic-input--qty mono is-invalid" : "ic-input ic-input--qty mono";
+
+    private bool CannotSubmit => _saving || Problem != MoveProblem.None;
+
+    private string QtyLabel => ItemCardFormat.ColumnTitle(L["Common.Qty"].Value, Item.BaseUoM);
+
+    private string ProblemText => L[$"AdminItemDetail.MoveDialog.Problem.{Problem}"].Value;
+
+    private string ReservedHint => Source is { ReservedQty: > 0m } source
+        ? L["AdminItemDetail.MoveDialog.ReservedStays", ItemCardFormat.QtyWithUnit(source.ReservedQty, Item.BaseUoM), source.Location].Value
+        : L["AdminItemDetail.MoveDialog.NoReservationsHere"].Value;
+
+    protected override void OnInitialized()
+    {
+        _sourceRows = Rows.Where(x => x.LocationId.HasValue && x.AvailableQty > 0m).ToList();
+        _fromId = _sourceRows.FirstOrDefault(x => x.LocationId == PreselectedLocationId)?.LocationId
+                  ?? _sourceRows.FirstOrDefault()?.LocationId;
+    }
+
+    private void OnFromChanged(ChangeEventArgs args)
+        => _fromId = int.TryParse(args.Value?.ToString(), out var id) ? id : null;
+
+    private void OnTargetInput(ChangeEventArgs args)
+    {
+        _targetText = args.Value?.ToString() ?? string.Empty;
+        _target = null;
+        _targetChecked = false;
+    }
+
+    private async Task OnTargetKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            await ResolveTargetAsync();
+        }
+    }
+
+    /// <summary>Validates the typed or scanned target against existing active locations (code or barcode).</summary>
+    private async Task ResolveTargetAsync()
+    {
+        var text = _targetText.Trim();
+        if (text.Length == 0 || _target is not null)
+        {
+            _targetChecked = text.Length > 0;
+            return;
+        }
+
+        try
+        {
+            var page = await AdminClient.GetLocationsAsync(text, "Active", false, 1, TargetLookupSize);
+            _target = StockDialogRules.MatchLocation(page.Items, text);
+            if (_target is not null)
+            {
+                _targetText = _target.Code;
+            }
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(ItemCardErrors.Describe(L, ex));
+        }
+        finally
+        {
+            _targetChecked = true;
+        }
+    }
+
+    private void OnQtyInput(ChangeEventArgs args)
+    {
+        _qtyText = args.Value?.ToString() ?? string.Empty;
+        _qtyTouched = true;
+    }
+
+    private void UseAllAvailable()
+    {
+        if (Source is null)
+        {
+            return;
+        }
+
+        _qtyText = Source.AvailableQty.ToString("0.###", System.Globalization.CultureInfo.CurrentUICulture);
+        _qtyTouched = true;
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (Problem != MoveProblem.None || Source is null || _target is null)
+        {
+            _qtyTouched = true;
+            _targetChecked = true;
+            return;
+        }
+
+        _saving = true;
+        TransferDto? created = null;
+        try
+        {
+            created = await TransfersClient.CreateTransferAsync(BuildRequest(Source, _target, Qty!.Value));
+            var submitted = await TransfersClient.SubmitTransferAsync(created.Id, new SubmitTransferRequestDto());
+            await ExecuteIfApprovedAsync(created, submitted);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (ApiException ex)
+        {
+            ReportFailure(created, ex);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private CreateTransferRequestDto BuildRequest(AvailableStockItemDto source, AdminLocationDto target, decimal qty)
+        => new()
+        {
+            CommandId = Guid.NewGuid(),
+            FromWarehouse = source.WarehouseId,
+            ToWarehouse = source.WarehouseId,
+            Lines =
+            [
+                new TransferLineDto
+                {
+                    ItemId = Item.Id,
+                    Qty = qty,
+                    FromLocationId = source.LocationId!.Value,
+                    ToLocationId = target.Id
+                }
+            ]
+        };
+
+    private async Task ExecuteIfApprovedAsync(TransferDto created, TransferDto submitted)
+    {
+        if (!StockDialogRules.CanExecuteAfterSubmit(submitted.Status))
+        {
+            ToastService.ShowWarning(L["AdminItemDetail.Toast.TransferAwaitsApproval", created.TransferNumber].Value);
+            return;
+        }
+
+        await TransfersClient.ExecuteTransferAsync(created.Id, new ExecuteTransferRequestDto());
+        ToastService.ShowSuccess(L["AdminItemDetail.Toast.Moved", created.TransferNumber].Value);
+    }
+
+    /// <summary>Once the transfer exists, a later failure closes the dialog so it is not created twice.</summary>
+    private void ReportFailure(TransferDto? created, ApiException error)
+    {
+        var message = ItemCardErrors.Describe(L, error);
+        if (created is null)
+        {
+            ToastService.ShowError(message);
+            return;
+        }
+
+        ToastService.ShowError(L["AdminItemDetail.Toast.TransferNotCompleted", created.TransferNumber, message].Value);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

@@ -2270,4 +2270,150 @@
   <data name="Intrastat.Warnings.Other" xml:space="preserve"><value>{0} lines are left out: commodity code, country of dispatch or origin, transaction nature, delivery terms, transport mode, supplementary unit factor or value is missing, or a price-only credit needs a correction of the declaration.</value></data>
   <data name="Intrastat.Warnings.Few" xml:space="preserve"><value>{0} lines are left out: commodity code, country of dispatch or origin, transaction nature, delivery terms, transport mode, supplementary unit factor or value is missing, or a price-only credit needs a correction of the declaration.</value></data>
   <data name="Intrastat.Warnings.Many" xml:space="preserve"><value>{0} lines are left out: commodity code, country of dispatch or origin, transaction nature, delivery terms, transport mode, supplementary unit factor or value is missing, or a price-only credit needs a correction of the declaration.</value></data>
+  <data name="AdminItemDetail.Physical" xml:space="preserve"><value>On hand</value></data>
+  <data name="AdminItemDetail.Reserved" xml:space="preserve"><value>Reserved</value></data>
+  <data name="AdminItemDetail.Available" xml:space="preserve"><value>Available</value></data>
+  <data name="AdminItemDetail.Incoming" xml:space="preserve"><value>Incoming</value></data>
+  <data name="AdminItemDetail.InLocations" xml:space="preserve"><value>in {0} locations</value></data>
+  <data name="AdminItemDetail.AboveMin" xml:space="preserve"><value>Above min</value></data>
+  <data name="AdminItemDetail.BelowMin" xml:space="preserve"><value>Below min</value></data>
+  <data name="AdminItemDetail.Change" xml:space="preserve"><value>Change</value></data>
+  <data name="AdminItemDetail.AllFields" xml:space="preserve"><value>All fields →</value></data>
+  <data name="AdminItemDetail.Move" xml:space="preserve"><value>Move</value></data>
+  <data name="AdminItemDetail.Adjust" xml:space="preserve"><value>Adjust stock</value></data>
+  <data name="AdminItemDetail.Show3D" xml:space="preserve"><value>Show in 3D</value></data>
+  <data name="AdminItemDetail.AssignBarcode" xml:space="preserve"><value>Assign</value></data>
+  <data name="AdminItemDetail.Tab.Locations" xml:space="preserve"><value>Locations</value></data>
+  <data name="AdminItemDetail.Tab.Movements" xml:space="preserve"><value>Movements</value></data>
+  <data name="AdminItemDetail.Tab.PricesSuppliers" xml:space="preserve"><value>Prices &amp; suppliers</value></data>
+  <data name="AdminItemDetail.Tab.Photos" xml:space="preserve"><value>Photos</value></data>
+  <data name="AdminItemDetail.Tab.Data" xml:space="preserve"><value>Data</value></data>
+  <data name="AdminItemDetail.StockByLocation" xml:space="preserve"><value>Stock by location</value></data>
+  <data name="AdminItemDetail.Reservations" xml:space="preserve"><value>Reservations</value></data>
+  <data name="AdminItemDetail.AwaitingPutaway" xml:space="preserve"><value>Awaiting put-away</value></data>
+  <data name="AdminItemDetail.LastMovements" xml:space="preserve"><value>Recent movements</value></data>
+  <data name="AdminItemDetail.AllMovements" xml:space="preserve"><value>All movements ({0}) →</value></data>
+  <data name="AdminItemDetail.NothingIncoming" xml:space="preserve"><value>Nothing incoming</value></data>
+  <data name="AdminItemDetail.NoReservations" xml:space="preserve"><value>No reservations</value></data>
+  <data name="AdminItemDetail.MoveDialog.Title" xml:space="preserve"><value>Move stock</value></data>
+  <data name="AdminItemDetail.MoveDialog.From" xml:space="preserve"><value>From location</value></data>
+  <data name="AdminItemDetail.MoveDialog.To" xml:space="preserve"><value>To location</value></data>
+  <data name="AdminItemDetail.MoveDialog.ScanHint" xml:space="preserve"><value>Scan or type, e.g. A-04-1</value></data>
+  <data name="AdminItemDetail.MoveDialog.AllAvailable" xml:space="preserve"><value>All available</value></data>
+  <data name="AdminItemDetail.AdjustDialog.Title" xml:space="preserve"><value>Adjust stock</value></data>
+  <data name="AdminItemDetail.AdjustDialog.System" xml:space="preserve"><value>In system</value></data>
+  <data name="AdminItemDetail.AdjustDialog.Actual" xml:space="preserve"><value>Counted</value></data>
+  <data name="AdminItemDetail.AdjustDialog.Diff" xml:space="preserve"><value>Difference</value></data>
+  <data name="AdminItemDetail.AdjustDialog.Save" xml:space="preserve"><value>Save adjustment</value></data>
+  <data name="AdminItemDetail.Dropzone" xml:space="preserve"><value>Drop a photo here or</value></data>
+  <data name="AdminItemDetail.ChooseFile" xml:space="preserve"><value>Choose file</value></data>
+  <data name="AdminItemDetail.System" xml:space="preserve"><value>System</value></data>
+  <data name="AdminItemDetail.Items" xml:space="preserve"><value>Items</value></data>
+  <data name="AdminItemDetail.UploadPhoto" xml:space="preserve"><value>+ Upload photo</value></data>
+  <data name="AdminItemDetail.UnitLabel" xml:space="preserve"><value>Unit</value></data>
+  <data name="AdminItemDetail.Barcode" xml:space="preserve"><value>Barcode</value></data>
+  <data name="AdminItemDetail.AdjustShort" xml:space="preserve"><value>Adjust</value></data>
+  <data name="AdminItemDetail.PriceShort" xml:space="preserve"><value>Price</value></data>
+  <data name="AdminItemDetail.MinShort" xml:space="preserve"><value>Min.</value></data>
+  <data name="AdminItemDetail.ItemType.Stock" xml:space="preserve"><value>Stocked</value></data>
+  <data name="AdminItemDetail.ItemType.Service" xml:space="preserve"><value>Service</value></data>
+  <data name="AdminItemDetail.SalePrice" xml:space="preserve"><value>Sale price</value></data>
+  <data name="AdminItemDetail.Ok" xml:space="preserve"><value>OK</value></data>
+  <data name="AdminItemDetail.PurchaseShort" xml:space="preserve"><value>Purch.</value></data>
+  <data name="AdminItemDetail.MarginShort" xml:space="preserve"><value>margin</value></data>
+  <data name="AdminItemDetail.MinQtyShort" xml:space="preserve"><value>Min. qty</value></data>
+  <data name="AdminItemDetail.UpdatedShort" xml:space="preserve"><value>Upd. {0}</value></data>
+  <data name="AdminItemDetail.PhysicalInLocations.One" xml:space="preserve"><value>on hand · in {0} location</value></data>
+  <data name="AdminItemDetail.PhysicalInLocations.Few" xml:space="preserve"><value>on hand · in {0} locations</value></data>
+  <data name="AdminItemDetail.PhysicalInLocations.Many" xml:space="preserve"><value>on hand · in {0} locations</value></data>
+  <data name="AdminItemDetail.PhysicalInLocations.Other" xml:space="preserve"><value>on hand · in {0} locations</value></data>
+  <data name="AdminItemDetail.IncomingFrom" xml:space="preserve"><value>from {0}</value></data>
+  <data name="AdminItemDetail.UpdatedAt" xml:space="preserve"><value>Updated {0}</value></data>
+  <data name="AdminItemDetail.NoStock" xml:space="preserve"><value>No stock of this item in the warehouse.</value></data>
+  <data name="AdminItemDetail.Zone" xml:space="preserve"><value>Zone</value></data>
+  <data name="AdminItemDetail.LastChange" xml:space="preserve"><value>last {0}</value></data>
+  <data name="AdminItemDetail.ReservedShort" xml:space="preserve"><value>Reserv.</value></data>
+  <data name="AdminItemDetail.TotalRow" xml:space="preserve"><value>Total</value></data>
+  <data name="AdminItemDetail.Since" xml:space="preserve"><value>Since</value></data>
+  <data name="AdminItemDetail.Locations.One" xml:space="preserve"><value>{0} location</value></data>
+  <data name="AdminItemDetail.Locations.Few" xml:space="preserve"><value>{0} locations</value></data>
+  <data name="AdminItemDetail.Locations.Many" xml:space="preserve"><value>{0} locations</value></data>
+  <data name="AdminItemDetail.Locations.Other" xml:space="preserve"><value>{0} locations</value></data>
+  <data name="AdminItemDetail.WarehouseLabel" xml:space="preserve"><value>warehouse {0}</value></data>
+  <data name="AdminItemDetail.Orders.One" xml:space="preserve"><value>{0} order</value></data>
+  <data name="AdminItemDetail.Orders.Few" xml:space="preserve"><value>{0} orders</value></data>
+  <data name="AdminItemDetail.Orders.Many" xml:space="preserve"><value>{0} orders</value></data>
+  <data name="AdminItemDetail.Orders.Other" xml:space="preserve"><value>{0} orders</value></data>
+  <data name="AdminItemDetail.Role.Receiving" xml:space="preserve"><value>Receiving</value></data>
+  <data name="AdminItemDetail.Role.QcHold" xml:space="preserve"><value>QC hold</value></data>
+  <data name="AdminItemDetail.Role.Quarantine" xml:space="preserve"><value>Quarantine</value></data>
+  <data name="AdminItemDetail.Role.Shipping" xml:space="preserve"><value>Shipping</value></data>
+  <data name="AdminItemDetail.Role.Transit" xml:space="preserve"><value>In transit</value></data>
+  <data name="AdminItemDetail.Role.Storage" xml:space="preserve"><value>Storage</value></data>
+  <data name="AdminItemDetail.Role.Cell" xml:space="preserve"><value>Shelf cell</value></data>
+  <data name="AdminItemDetail.Role.Bulk" xml:space="preserve"><value>Bulk</value></data>
+  <data name="AdminItemDetail.Role.EndCap" xml:space="preserve"><value>End cap</value></data>
+  <data name="AdminItemDetail.Role.Overflow" xml:space="preserve"><value>Overflow</value></data>
+  <data name="AdminItemDetail.Role.GroundSlot" xml:space="preserve"><value>Ground slot</value></data>
+  <data name="AdminItemDetail.MovementFilter.All" xml:space="preserve"><value>All</value></data>
+  <data name="AdminItemDetail.MovementFilter.Receipts" xml:space="preserve"><value>Receipts</value></data>
+  <data name="AdminItemDetail.MovementFilter.Issues" xml:space="preserve"><value>Issues</value></data>
+  <data name="AdminItemDetail.MovementFilter.Transfers" xml:space="preserve"><value>Transfers</value></data>
+  <data name="AdminItemDetail.MovementFilter.Adjustments" xml:space="preserve"><value>Adjustments</value></data>
+  <data name="AdminItemDetail.MovementKind.Receipt" xml:space="preserve"><value>Receipt</value></data>
+  <data name="AdminItemDetail.MovementKind.Issue" xml:space="preserve"><value>Issue</value></data>
+  <data name="AdminItemDetail.MovementKind.Transfer" xml:space="preserve"><value>Transfer</value></data>
+  <data name="AdminItemDetail.MovementKind.Adjustment" xml:space="preserve"><value>Adjustment</value></data>
+  <data name="AdminItemDetail.MovementKind.Opening" xml:space="preserve"><value>Opening balance</value></data>
+  <data name="AdminItemDetail.NoMovements" xml:space="preserve"><value>No movements</value></data>
+  <data name="AdminItemDetail.Date" xml:space="preserve"><value>Date</value></data>
+  <data name="AdminItemDetail.Document" xml:space="preserve"><value>Document</value></data>
+  <data name="AdminItemDetail.Balance" xml:space="preserve"><value>Balance</value></data>
+  <data name="AdminItemDetail.DoneBy" xml:space="preserve"><value>Done by</value></data>
+  <data name="AdminItemDetail.ShowMore" xml:space="preserve"><value>Show more</value></data>
+  <data name="AdminItemDetail.Prices" xml:space="preserve"><value>Prices</value></data>
+  <data name="AdminItemDetail.SalePriceBase" xml:space="preserve"><value>Sale price (base)</value></data>
+  <data name="AdminItemDetail.AverageCost" xml:space="preserve"><value>Average cost (WAC)</value></data>
+  <data name="AdminItemDetail.Margin" xml:space="preserve"><value>Margin</value></data>
+  <data name="AdminItemDetail.StockValue" xml:space="preserve"><value>Stock value</value></data>
+  <data name="AdminItemDetail.Overridden" xml:space="preserve"><value>Override</value></data>
+  <data name="AdminItemDetail.Final" xml:space="preserve"><value>Final</value></data>
+  <data name="AdminItemDetail.SupplierCode" xml:space="preserve"><value>Supplier code</value></data>
+  <data name="AdminItemDetail.LeadTime" xml:space="preserve"><value>Lead time</value></data>
+  <data name="AdminItemDetail.Days" xml:space="preserve"><value>{0} d</value></data>
+  <data name="AdminItemDetail.PrimarySupplier" xml:space="preserve"><value>Primary</value></data>
+  <data name="AdminItemDetail.RecomputeSearchIndex" xml:space="preserve"><value>Recompute search index</value></data>
+  <data name="AdminItemDetail.DropzoneHint" xml:space="preserve"><value>JPEG, PNG, WEBP · up to 5 MB. The first photo becomes the primary one and is shown in lists.</value></data>
+  <data name="AdminItemDetail.Group.Main" xml:space="preserve"><value>Main</value></data>
+  <data name="AdminItemDetail.Group.Physical" xml:space="preserve"><value>Physical data &amp; control</value></data>
+  <data name="AdminItemDetail.Group.Record" xml:space="preserve"><value>Record</value></data>
+  <data name="AdminItemDetail.Category" xml:space="preserve"><value>Category</value></data>
+  <data name="AdminItemDetail.DataComplete" xml:space="preserve"><value>Data complete</value></data>
+  <data name="AdminItemDetail.IncomingStatus.Draft" xml:space="preserve"><value>Ordered</value></data>
+  <data name="AdminItemDetail.IncomingStatus.Partial" xml:space="preserve"><value>Partly received</value></data>
+  <data name="AdminItemDetail.InDays" xml:space="preserve"><value>in {0} d</value></data>
+  <data name="AdminItemDetail.Overdue" xml:space="preserve"><value>{0} d overdue</value></data>
+  <data name="AdminItemDetail.MoveDialog.Eyebrow" xml:space="preserve"><value>Transfer · {0}</value></data>
+  <data name="AdminItemDetail.MoveDialog.FromOption" xml:space="preserve"><value>{0} · available {1}</value></data>
+  <data name="AdminItemDetail.MoveDialog.ReservedStays" xml:space="preserve"><value>Reserved {0} stays at {1}.</value></data>
+  <data name="AdminItemDetail.MoveDialog.NoReservationsHere" xml:space="preserve"><value>No reservations at this location.</value></data>
+  <data name="AdminItemDetail.MoveDialog.Problem.None" xml:space="preserve"><value>All good.</value></data>
+  <data name="AdminItemDetail.MoveDialog.Problem.SourceMissing" xml:space="preserve"><value>Choose the source location.</value></data>
+  <data name="AdminItemDetail.MoveDialog.Problem.TargetMissing" xml:space="preserve"><value>Enter the target location.</value></data>
+  <data name="AdminItemDetail.MoveDialog.Problem.TargetUnknown" xml:space="preserve"><value>No active location with this code.</value></data>
+  <data name="AdminItemDetail.MoveDialog.Problem.SameLocation" xml:space="preserve"><value>The target must differ from the source.</value></data>
+  <data name="AdminItemDetail.MoveDialog.Problem.QtyMissing" xml:space="preserve"><value>Enter a quantity above zero.</value></data>
+  <data name="AdminItemDetail.MoveDialog.Problem.QtyTooHigh" xml:space="preserve"><value>The quantity exceeds the available stock.</value></data>
+  <data name="AdminItemDetail.AdjustDialog.Eyebrow" xml:space="preserve"><value>Adjustment · {0}</value></data>
+  <data name="AdminItemDetail.AdjustDialog.LocationOption" xml:space="preserve"><value>{0} · in system {1}</value></data>
+  <data name="AdminItemDetail.AdjustDialog.Note" xml:space="preserve"><value>Note</value></data>
+  <data name="AdminItemDetail.AdjustDialog.Optional" xml:space="preserve"><value>Optional</value></data>
+  <data name="AdminItemDetail.AdjustReason.Count" xml:space="preserve"><value>Stock count</value></data>
+  <data name="AdminItemDetail.AdjustReason.Damaged" xml:space="preserve"><value>Damaged</value></data>
+  <data name="AdminItemDetail.AdjustReason.Found" xml:space="preserve"><value>Found</value></data>
+  <data name="AdminItemDetail.AdjustReason.EntryError" xml:space="preserve"><value>Entry error</value></data>
+  <data name="AdminItemDetail.Toast.TransferAwaitsApproval" xml:space="preserve"><value>Transfer {0} was created and awaits approval.</value></data>
+  <data name="AdminItemDetail.Toast.Moved" xml:space="preserve"><value>Moved ({0}).</value></data>
+  <data name="AdminItemDetail.Toast.TransferNotCompleted" xml:space="preserve"><value>Transfer {0} was created but not completed: {1}</value></data>
+  <data name="AdminItemDetail.Toast.Adjusted" xml:space="preserve"><value>Stock at {0} adjusted.</value></data>
 </root>

@@ -1,0 +1,83 @@
+@* Vietos tab: stock by location with row actions (cards on tablets) and the reservations of the item. *@
+<div class="ic-tab-panel" data-testid="admin-item-detail-tab-panel-vietos">
+    <ItemCardPanel Title="@L["AdminItemDetail.StockByLocation"]"
+                   Suffix="@LocationsSuffix"
+                   Class="ic-loc-panel"
+                   TestId="admin-item-detail-locations"
+                   IsLoading="Stock.IsLoading"
+                   Error="Stock.Error"
+                   OnRetry="OnRetryStock"
+                   OnDismiss="Stock.ClearError">
+        <HeadContent>
+            <span class="ic-panel__stamp mono">@UpdatedText</span>
+        </HeadContent>
+        <ChildContent>
+            @if (IsEmpty)
+            {
+                <div class="ic-empty" data-testid="admin-item-detail-locations-empty">@L["AdminItemDetail.NoStock"]</div>
+            }
+            else if (Rows.Count > 0)
+            {
+                <div class="ic-loc-table" role="table">
+                    <div class="ic-loc-row ic-loc-row--head ic-grid-head" role="row">
+                        <span role="columnheader">@L["Common.Location"]</span>
+                        <span role="columnheader">@L["AdminItemDetail.Zone"]</span>
+                        <span role="columnheader" class="is-num">@Column("AdminItemDetail.Physical")</span>
+                        <span role="columnheader" class="is-num">@Column("AdminItemDetail.Reserved")</span>
+                        <span role="columnheader" class="is-num">@Column("AdminItemDetail.Available")</span>
+                        <span role="columnheader"></span>
+                    </div>
+                    @foreach (var row in Rows)
+                    {
+                        <ItemLocationRow Row="row" OnMove="OnMove" OnAdjust="OnAdjust" />
+                    }
+                    <div class="ic-loc-row ic-loc-row--total" role="row" data-testid="admin-item-detail-locations-total">
+                        <span>@L["AdminItemDetail.TotalRow"]</span>
+                        <span></span>
+                        <span class="is-num mono">@ItemCardFormat.Qty(Summary?.Physical ?? 0m)</span>
+                        <span class="is-num mono">@ItemCardFormat.Qty(Summary?.Reserved ?? 0m)</span>
+                        <span class="is-num mono ic-ok">@ItemCardFormat.Qty(Summary?.Available ?? 0m)</span>
+                        <span></span>
+                    </div>
+                </div>
+            }
+        </ChildContent>
+    </ItemCardPanel>
+
+    <ItemReservationsPanel Item="Item" State="Reservations" OnRetry="OnRetryReservations" />
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ItemDetailsDto Item { get; set; } = default!;
+    [Parameter, EditorRequired] public PanelState<IReadOnlyList<AvailableStockItemDto>> Stock { get; set; } = default!;
+    [Parameter, EditorRequired] public PanelState<IReadOnlyList<ItemReservationRowDto>> Reservations { get; set; } = default!;
+    [Parameter] public IReadOnlyList<AvailableStockItemDto> Rows { get; set; } = Array.Empty<AvailableStockItemDto>();
+    [Parameter] public ItemStockSummary? Summary { get; set; }
+    [Parameter] public EventCallback OnRetryStock { get; set; }
+    [Parameter] public EventCallback OnRetryReservations { get; set; }
+    [Parameter] public EventCallback<int?> OnMove { get; set; }
+    [Parameter] public EventCallback<int?> OnAdjust { get; set; }
+
+    private bool IsEmpty => Stock.HasValue && Rows.Count == 0;
+
+    private string? UpdatedText => Summary?.LastUpdated is { } updated
+        ? L["AdminItemDetail.UpdatedAt", ItemCardFormat.Timestamp(updated)].Value
+        : null;
+
+    private string? LocationsSuffix
+    {
+        get
+        {
+            if (Summary is null)
+            {
+                return null;
+            }
+
+            var count = L[ItemCardText.PluralKey("AdminItemDetail.Locations", Summary.LocationCount), Summary.LocationCount].Value;
+            var warehouses = string.Join(", ", Rows.Select(x => x.WarehouseId).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase));
+            return warehouses.Length == 0 ? count : $"{count} · {L["AdminItemDetail.WarehouseLabel", warehouses]}";
+        }
+    }
+
+    private string Column(string key) => ItemCardFormat.ColumnTitle(L[key].Value, Item.BaseUoM);
+}

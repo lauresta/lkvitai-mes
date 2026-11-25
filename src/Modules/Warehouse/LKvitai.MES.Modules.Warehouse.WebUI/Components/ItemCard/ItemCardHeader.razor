@@ -1,0 +1,100 @@
+@* Header card: photo, identity, stock bar with min marker, quick actions and the price / min column. *@
+<section class="ic-header" data-testid="admin-item-detail-header">
+    <button type="button"
+            class="@PhotoClass"
+            @onclick="OnPhotoClick"
+            aria-label="@L["AdminItemDetail.Tab.Photos"]"
+            data-testid="admin-item-detail-photo">
+        @if (HasPhoto)
+        {
+            <img src="@Item.PrimaryThumbnailUrl" alt="@L["Common.ItemPhoto", Item.Name]" />
+        }
+        else
+        {
+            <span class="ic-photo__tag">@L["AdminItemDetail.UploadPhoto"]</span>
+        }
+    </button>
+
+    <div class="ic-info">
+        <span class="ic-eyebrow" data-testid="admin-item-detail-eyebrow">@Eyebrow</span>
+        <h1 class="ic-title">@Item.Name</h1>
+        <div class="ic-meta">
+            <strong class="ic-meta__sku mono">@Item.InternalSKU</strong>
+            <span class="@ItemCardText.StatusChipClass(Item.Status)">@WarehouseStatusText.Get(L, Item.Status)</span>
+            <span>@L["AdminItemDetail.UnitLabel"] <strong class="ic-meta__value mono">@ItemCardFormat.Unit(Item.BaseUoM)</strong></span>
+            <ItemBarcode Barcode="@Item.PrimaryBarcode" Class="ic-meta__wide" TestId="admin-item-detail-assign-barcode" OnAssign="OnAssignBarcode" />
+            @if (FirstSupplier is not null)
+            {
+                <span class="ic-meta__wide">
+                    @L["Common.Supplier"]
+                    <a class="ic-link" href="@SupplierHref">@FirstSupplier.SupplierName</a>
+                </span>
+            }
+        </div>
+    </div>
+
+    <ItemStockBlock Item="Item" Stock="Stock" StockLoading="StockLoading" Incoming="Incoming" />
+
+    <div class="ic-actions">
+        <button type="button" class="ic-btn ic-btn--primary ic-btn--action" disabled="@(!CanMove)" @onclick="OnMove" data-testid="admin-item-detail-move">
+            <span class="mono">⇄</span>@L["AdminItemDetail.Move"]
+        </button>
+        <button type="button" class="ic-btn ic-btn--action" disabled="@(!CanAdjust)" @onclick="OnAdjust" data-testid="admin-item-detail-adjust">
+            <span class="mono">±</span><span class="ic-wide-only">@L["AdminItemDetail.Adjust"]</span><span class="ic-narrow-only">@L["AdminItemDetail.AdjustShort"]</span>
+        </button>
+        <a class="ic-btn ic-btn--action" href="@Show3DHref" target="_blank" rel="noopener" data-testid="admin-item-detail-3d">
+            <span class="ic-wide-only">@L["AdminItemDetail.Show3D"]</span><span class="ic-narrow-only">3D</span> ↗
+        </a>
+    </div>
+
+    <ItemPriceColumn Item="Item"
+                     UnitCost="UnitCost"
+                     Available="Stock?.Available"
+                     SavePrice="SavePrice"
+                     SaveMin="SaveMin"
+                     OnAllFields="OnAllFields" />
+
+    <div class="ic-compact" data-testid="admin-item-detail-compact">
+        <span>@L["AdminItemDetail.PriceShort"] <strong class="mono">@CompactPrice</strong></span>
+        <span>@L["AdminItemDetail.MinShort"] <strong class="mono">@ItemCardFormat.WholeWithUnit(Item.MinQty, Item.BaseUoM)</strong></span>
+        <ItemBarcode Barcode="@Item.PrimaryBarcode" OnAssign="OnAssignBarcode" />
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public ItemDetailsDto Item { get; set; } = default!;
+    [Parameter] public ItemStockSummary? Stock { get; set; }
+    [Parameter] public bool StockLoading { get; set; }
+    [Parameter] public ItemIncomingSummary? Incoming { get; set; }
+    [Parameter] public decimal? UnitCost { get; set; }
+    [Parameter] public AdminSupplierMappingDto? FirstSupplier { get; set; }
+    [Parameter] public bool CanMove { get; set; }
+    [Parameter] public bool CanAdjust { get; set; }
+    [Parameter] public string Show3DHref { get; set; } = "visualization/3d";
+    [Parameter] public Func<decimal?, Task<bool>>? SavePrice { get; set; }
+    [Parameter] public Func<decimal?, Task<bool>>? SaveMin { get; set; }
+    [Parameter] public EventCallback OnMove { get; set; }
+    [Parameter] public EventCallback OnAdjust { get; set; }
+    [Parameter] public EventCallback OnPhotoClick { get; set; }
+    [Parameter] public EventCallback OnAllFields { get; set; }
+    [Parameter] public EventCallback OnAssignBarcode { get; set; }
+
+    private bool HasPhoto => !string.IsNullOrWhiteSpace(Item.PrimaryThumbnailUrl);
+
+    private string PhotoClass => HasPhoto ? "ic-photo" : "ic-photo ic-photo--empty";
+
+    private string SupplierHref => $"admin/supplier-mappings?supplierId={FirstSupplier?.SupplierId}";
+
+    private string CompactPrice => Item.BasePrice.HasValue
+        ? $"{ItemCardFormat.Money(Item.BasePrice)} / {ItemCardFormat.Unit(Item.BaseUoM)}"
+        : ItemCardFormat.Dash;
+
+    private string Eyebrow
+    {
+        get
+        {
+            var type = L[ItemCardText.ItemTypeKey(Item.ItemType)].Value;
+            return string.IsNullOrWhiteSpace(Item.CategoryName) ? type : $"{Item.CategoryName} · {type}";
+        }
+    }
+}

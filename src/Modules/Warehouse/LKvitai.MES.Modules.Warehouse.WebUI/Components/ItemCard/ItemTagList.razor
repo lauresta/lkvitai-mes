@@ -1,0 +1,18 @@
+@* Tags of the item as #chips, or an n-400 dash when there are none. *@
+@if (Tags.Count == 0)
+{
+    <strong class="ic-muted">@ItemCardFormat.Dash</strong>
+}
+else
+{
+    <div class="item-tags item-tags--detail">
+        @foreach (var tag in Tags)
+        {
+            <span class="chip chip--reserved item-tag-chip">#@tag</span>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public IReadOnlyList<string> Tags { get; set; } = Array.Empty<string>();
+}

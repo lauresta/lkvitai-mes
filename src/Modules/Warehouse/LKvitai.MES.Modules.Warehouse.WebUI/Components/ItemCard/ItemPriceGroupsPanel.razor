@@ -1,0 +1,107 @@
+@* Kainos pagal grupes: price-group overrides with the existing inline override edit. *@
+@inject MasterDataAdminClient AdminClient
+@inject ToastService ToastService
+
+<ItemCardPanel Title="@L["AdminItemDetail.PricesByGroup"]"
+               TestId="admin-item-detail-prices"
+               IsLoading="State.IsLoading"
+               Error="State.Error"
+               OnRetry="OnChanged"
+               OnDismiss="State.ClearError">
+    @if (IsEmpty)
+    {
+        <div class="lots-grid__empty">
+            <span class="lots-grid__empty-title">@L["AdminItemDetail.NoPriceGroups"]</span>
+            <span>@L["AdminItemDetail.CreatePriceGroupHint"]</span>
+        </div>
+    }
+    else if (Rows.Count > 0)
+    {
+        <div class="ic-table-wrap">
+            <table class="lk-table ic-table">
+                <thead>
+                <tr>
+                    <th>@L["AdminItemDetail.Group"]</th>
+                    <th class="is-num">@L["AdminItemDetail.Overridden"]</th>
+                    <th class="is-num">@L["AdminItemDetail.Final"]</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var row in Rows)
+                {
+                    <tr>
+                        <td><span class="mono">@row.PriceGroupCode</span> · @row.PriceGroupName</td>
+                        @if (_editingGroupId == row.PriceGroupId)
+                        {
+                            <td class="is-num">
+                                <LkDecimalField T="decimal?" Variant="Variant.Outlined" Margin="Margin.Dense" Format="0.00" @bind-Value="_editingAmount" />
+                            </td>
+                            <td class="is-num ic-muted">@ItemCardFormat.Dash</td>
+                            <td class="ic-table__actions">
+                                <button type="button" class="ic-btn ic-btn--row ic-btn--primary" @onclick="SavePriceOverrideAsync">@L["Common.Save"]</button>
+                                <button type="button" class="ic-btn ic-btn--row" @onclick="CancelEditOverride">@L["Common.Cancel"]</button>
+                            </td>
+                        }
+                        else
+                        {
+                            <td class="@OverrideClass(row)">@ItemCardFormat.Money(row.OverrideAmount)</td>
+                            <td class="is-num"><strong>@ItemCardFormat.Money(row.EffectivePrice)</strong></td>
+                            <td class="ic-table__actions">
+                                <button type="button" class="ic-btn ic-btn--row" @onclick="() => BeginEditOverride(row)">@L["Common.Edit"]</button>
+                            </td>
+                        }
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</ItemCardPanel>
+
+@code {
+    [Parameter, EditorRequired] public ItemDetailsDto Item { get; set; } = default!;
+    [Parameter, EditorRequired] public PanelState<IReadOnlyList<ItemPriceOverrideDto>> State { get; set; } = default!;
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private int? _editingGroupId;
+    private decimal? _editingAmount;
+
+    private IReadOnlyList<ItemPriceOverrideDto> Rows => State.Value ?? Array.Empty<ItemPriceOverrideDto>();
+
+    private bool IsEmpty => State.HasValue && Rows.Count == 0;
+
+    private static string OverrideClass(ItemPriceOverrideDto row) => row.OverrideAmount.HasValue ? "is-num" : "is-num ic-muted";
+
+    private void BeginEditOverride(ItemPriceOverrideDto row)
+    {
+        _editingGroupId = row.PriceGroupId;
+        _editingAmount = row.OverrideAmount;
+    }
+
+    private void CancelEditOverride()
+    {
+        _editingGroupId = null;
+        _editingAmount = null;
+    }
+
+    private async Task SavePriceOverrideAsync()
+    {
+        if (_editingGroupId is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await AdminClient.SetItemPriceOverrideAsync(Item.Id, _editingGroupId.Value, _editingAmount);
+            ToastService.ShowSuccess(L["AdminItemDetail.Toast.PriceOverrideUpdated"].Value);
+            CancelEditOverride();
+            await OnChanged.InvokeAsync();
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(ItemCardErrors.Describe(L, ex));
+        }
+    }
+}

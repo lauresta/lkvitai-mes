@@ -1,0 +1,66 @@
+@* One location of the Vietos tab: a table row on desktops, a card with 44px buttons on tablets. *@
+<div class="ic-loc-row" role="row" data-testid="admin-item-detail-location-row">
+    <div class="ic-loc-row__place">
+        <div class="ic-loc-row__title">
+            <strong class="ic-loc-row__code mono">@Row.Location</strong>
+            <span class="ic-loc-row__zone-inline">@Zone</span>
+            @if (ItemStockMath.IsAwaitingPutaway(Row))
+            {
+                <span class="chip chip--low">@L["AdminItemDetail.AwaitingPutaway"]</span>
+            }
+        </div>
+        <span class="ic-loc-row__last mono">@L["AdminItemDetail.LastChange", ItemCardFormat.ShortTimestamp(Row.LastUpdated)]</span>
+    </div>
+    <span class="ic-loc-row__zone">@Zone</span>
+    <span class="ic-loc-row__num ic-loc-row__num--phys">
+        <span class="ic-loc-row__label">@L["AdminItemDetail.Physical"]</span>
+        <span class="mono">@ItemCardFormat.Qty(Row.PhysicalQty)</span>
+    </span>
+    <span class="ic-loc-row__num ic-loc-row__num--res">
+        <span class="ic-loc-row__label">@L["AdminItemDetail.ReservedShort"]</span>
+        <span class="@ReservedClass">@ItemCardFormat.Qty(Row.ReservedQty)</span>
+    </span>
+    <span class="ic-loc-row__num ic-loc-row__num--avail">
+        <span class="ic-loc-row__label">@L["AdminItemDetail.Available"]</span>
+        <strong class="mono">@ItemCardFormat.Qty(Row.AvailableQty)</strong>
+    </span>
+    <div class="ic-loc-row__actions">
+        <button type="button"
+                class="ic-btn ic-btn--row"
+                disabled="@(!CanMove)"
+                @onclick="() => OnMove.InvokeAsync(Row.LocationId)"
+                data-testid="admin-item-detail-location-move">@L["AdminItemDetail.Move"]</button>
+        <button type="button"
+                class="ic-btn ic-btn--row"
+                disabled="@(!CanAdjust)"
+                @onclick="() => OnAdjust.InvokeAsync(Row.LocationId)"
+                data-testid="admin-item-detail-location-adjust">@L["AdminItemDetail.AdjustShort"]</button>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public AvailableStockItemDto Row { get; set; } = default!;
+    [Parameter] public EventCallback<int?> OnMove { get; set; }
+    [Parameter] public EventCallback<int?> OnAdjust { get; set; }
+
+    private bool CanAdjust => Row.LocationId.HasValue;
+
+    private bool CanMove => CanAdjust && Row.AvailableQty > 0m;
+
+    private string ReservedClass => Row.ReservedQty == 0m ? "mono ic-muted" : "mono";
+
+    private string Zone
+    {
+        get
+        {
+            var key = ItemCardText.RoleKey(Row.LocationRole);
+            if (key is null)
+            {
+                return ItemCardFormat.Dash;
+            }
+
+            var localized = L[key];
+            return localized.ResourceNotFound ? Row.LocationRole! : localized.Value;
+        }
+    }
+}

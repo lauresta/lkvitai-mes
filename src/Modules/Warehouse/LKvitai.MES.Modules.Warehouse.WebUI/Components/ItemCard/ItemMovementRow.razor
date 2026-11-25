@@ -1,0 +1,22 @@
+@* One row of the Judėjimai table. *@
+<tr data-testid="admin-item-detail-movement-row">
+    <td class="mono ic-muted-text">@ItemCardFormat.Timestamp(Movement.Source.Timestamp)</td>
+    <td><span class="@ItemMovementTimeline.ChipClass(Movement.Kind)">@L[$"AdminItemDetail.MovementKind.{Movement.Kind}"]</span></td>
+    <td><ItemMovementDocument Movement="Movement" /></td>
+    <td class="mono">@Movement.Route</td>
+    <td class="is-num"><strong class="@ItemMovementTimeline.QtyClass(Movement.Delta)">@ItemMovementTimeline.Quantity(Movement)</strong></td>
+    <td class="is-num ic-muted-text">@Balance</td>
+    <td class="ic-table__wrap">
+        <span>@ItemCardErrors.Actor(L, Movement.Source.Operator)</span>
+        @if (ItemMovementTimeline.Note(Movement) is { } note)
+        {
+            <span class="ic-table__note">@note</span>
+        }
+    </td>
+</tr>
+
+@code {
+    [Parameter, EditorRequired] public ItemMovement Movement { get; set; } = default!;
+
+    private string Balance => Movement.Balance.HasValue ? ItemCardFormat.Qty(Movement.Balance.Value) : ItemCardFormat.Dash;
+}

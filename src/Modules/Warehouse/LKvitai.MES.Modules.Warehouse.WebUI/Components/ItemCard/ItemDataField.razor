@@ -1,0 +1,24 @@
+@* One cell of a Duomenys field grid: mono label, value or an n-400 dash when empty. *@
+<div class="ic-field @Class">
+    <span class="ic-field__label">@Label</span>
+    @if (ChildContent is not null)
+    {
+        <div class="ic-field__value">@ChildContent</div>
+    }
+    else if (string.IsNullOrWhiteSpace(Value))
+    {
+        <strong class="ic-field__value ic-muted">@ItemCardFormat.Dash</strong>
+    }
+    else
+    {
+        <strong class="ic-field__value @(Mono ? "mono" : null)">@Value</strong>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public bool Mono { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

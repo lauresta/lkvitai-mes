@@ -1,0 +1,13 @@
+@* Order of a reservation: link to the sales order (new tab), or the reservation purpose when no order owns it. *@
+@if (Row.SalesOrderId is { } orderId)
+{
+    <a class="ic-doc-link mono" href="@($"sales/orders/{orderId}")" target="_blank" rel="noopener">@(Row.OrderNumber ?? Row.Purpose) ↗</a>
+}
+else
+{
+    <span class="mono">@(string.IsNullOrWhiteSpace(Row.Purpose) ? ItemCardFormat.Dash : Row.Purpose)</span>
+}
+
+@code {
+    [Parameter, EditorRequired] public ItemReservationRowDto Row { get; set; } = default!;
+}

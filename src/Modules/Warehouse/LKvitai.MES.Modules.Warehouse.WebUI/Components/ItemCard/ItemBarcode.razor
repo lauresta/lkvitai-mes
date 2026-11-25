@@ -1,0 +1,20 @@
+@* "Brūkšninis kodas" value, or a dash with the "Priskirti" link that opens the editor on the barcode field. *@
+<span class="@Class">
+    @L["AdminItemDetail.Barcode"]
+    @if (string.IsNullOrWhiteSpace(Barcode))
+    {
+        <span class="ic-muted">@ItemCardFormat.Dash</span>
+        <button type="button" class="ic-link" @onclick="OnAssign" data-testid="@TestId">@L["AdminItemDetail.AssignBarcode"]</button>
+    }
+    else
+    {
+        <strong class="ic-meta__value mono">@Barcode</strong>
+    }
+</span>
+
+@code {
+    [Parameter] public string? Barcode { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? TestId { get; set; }
+    [Parameter] public EventCallback OnAssign { get; set; }
+}

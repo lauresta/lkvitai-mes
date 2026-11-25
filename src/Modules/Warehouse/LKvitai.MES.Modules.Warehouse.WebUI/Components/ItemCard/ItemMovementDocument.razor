@@ -1,0 +1,13 @@
+@* Document of a movement: a link when the WebUI has a page for it, otherwise mono text. *@
+@if (ItemMovementTimeline.DocumentHref(Movement.Source) is { } href)
+{
+    <a class="ic-doc-link mono" href="@href">@ItemMovementTimeline.DocumentLabel(Movement.Source)</a>
+}
+else
+{
+    <span class="mono">@ItemMovementTimeline.DocumentLabel(Movement.Source)</span>
+}
+
+@code {
+    [Parameter, EditorRequired] public ItemMovement Movement { get; set; } = default!;
+}

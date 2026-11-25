@@ -1,0 +1,67 @@
+@* Rezervacijos panel of the Vietos tab: active reservation lines of the item. *@
+<ItemCardPanel Title="@L["AdminItemDetail.Reservations"]"
+               Suffix="@Suffix"
+               TestId="admin-item-detail-reservations"
+               IsLoading="State.IsLoading"
+               Error="State.Error"
+               OnRetry="OnRetry"
+               OnDismiss="State.ClearError">
+    @if (IsEmpty)
+    {
+        <div class="ic-empty">@L["AdminItemDetail.NoReservations"]</div>
+    }
+    else if (Rows.Count > 0)
+    {
+        <div class="ic-table-wrap">
+            <table class="lk-table ic-table">
+                <thead>
+                <tr>
+                    <th>@L["Common.Order"]</th>
+                    <th>@L["Common.Customer"]</th>
+                    <th>@L["Common.Location"]</th>
+                    <th class="is-num">@ItemCardFormat.ColumnTitle(L["Common.Qty"].Value, Item.BaseUoM)</th>
+                    <th>@L["AdminItemDetail.Since"]</th>
+                    <th>@L["Common.Status"]</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var row in Rows)
+                {
+                    <tr data-testid="admin-item-detail-reservation-row">
+                        <td><ItemReservationOrderLink Row="row" /></td>
+                        <td>@(row.CustomerName ?? ItemCardFormat.Dash)</td>
+                        <td class="mono">@(row.Location ?? ItemCardFormat.Dash)</td>
+                        <td class="is-num">@ItemCardFormat.Qty(row.Qty)</td>
+                        <td class="mono ic-muted-text">@ItemCardFormat.Date(row.CreatedAt)</td>
+                        <td><span class="@ItemCardText.ReservationChipClass(row.Status)">@WarehouseStatusText.Get(L, row.Status)</span></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</ItemCardPanel>
+
+@code {
+    [Parameter, EditorRequired] public ItemDetailsDto Item { get; set; } = default!;
+    [Parameter, EditorRequired] public PanelState<IReadOnlyList<ItemReservationRowDto>> State { get; set; } = default!;
+    [Parameter] public EventCallback OnRetry { get; set; }
+
+    private IReadOnlyList<ItemReservationRowDto> Rows => State.Value ?? Array.Empty<ItemReservationRowDto>();
+
+    private bool IsEmpty => State.HasValue && Rows.Count == 0;
+
+    private string? Suffix
+    {
+        get
+        {
+            if (Rows.Count == 0)
+            {
+                return null;
+            }
+
+            var orders = L[ItemCardText.PluralKey("AdminItemDetail.Orders", Rows.Count), Rows.Count].Value;
+            return $"{orders} · {ItemCardFormat.QtyWithUnit(Rows.Sum(x => x.Qty), Item.BaseUoM)}";
+        }
+    }
+}

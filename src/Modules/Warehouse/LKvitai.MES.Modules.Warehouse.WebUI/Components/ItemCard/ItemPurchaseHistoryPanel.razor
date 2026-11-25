@@ -1,0 +1,55 @@
+@* Pirkimo / išlaidų istorija: purchase receipts and cost changes of the item. *@
+<ItemCardPanel Title="@L["AdminItemDetail.PurchaseCostHistory"]"
+               TestId="admin-item-detail-purchase-history"
+               IsLoading="State.IsLoading"
+               Error="State.Error"
+               OnRetry="OnRetry"
+               OnDismiss="State.ClearError">
+    @if (IsEmpty)
+    {
+        <div class="ic-empty">@L["AdminItemDetail.NoPurchaseReceiptsOrCostChangesYet"]</div>
+    }
+    else if (Rows.Count > 0)
+    {
+        <div class="ic-table-wrap">
+            <table class="lk-table ic-table">
+                <thead>
+                <tr>
+                    <th>@L["AdminItemDetail.When"]</th>
+                    <th>@L["Common.Type"]</th>
+                    <th class="is-num">@L["AdminItemDetail.OldCost"]</th>
+                    <th class="is-num">@L["AdminItemDetail.NewCost"]</th>
+                    <th>@L["AdminItemDetail.By"]</th>
+                    <th>@L["Common.Reason"]</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var row in Rows)
+                {
+                    <tr>
+                        <td class="mono ic-muted-text">@ItemCardFormat.Timestamp(row.ChangedAt)</td>
+                        <td>@row.ActionType</td>
+                        <td class="is-num">@Cost(row.OldCost)</td>
+                        <td class="is-num">@Cost(row.NewCost)</td>
+                        <td>@Actor(row.ApprovedBy)</td>
+                        <td class="ic-muted-text">@row.Reason</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</ItemCardPanel>
+
+@code {
+    [Parameter, EditorRequired] public PanelState<IReadOnlyList<CostHistoryRowDto>> State { get; set; } = default!;
+    [Parameter] public EventCallback OnRetry { get; set; }
+
+    private IReadOnlyList<CostHistoryRowDto> Rows => State.Value ?? Array.Empty<CostHistoryRowDto>();
+
+    private bool IsEmpty => State.HasValue && Rows.Count == 0;
+
+    private static string Cost(decimal? value) => value.HasValue ? Money.FormatUnit(value) : ItemCardFormat.Dash;
+
+    private string Actor(string? actor) => ItemCardErrors.Actor(L, actor);
+}

@@ -41,6 +41,10 @@ public sealed class ReceivingClient
         return GetAsync<PagedApiResponse<InboundShipmentSummaryDto>>($"/api/warehouse/v1/inbound-shipments{query}", cancellationToken);
     }
 
+    /// <summary>Open (not fully received) inbound shipment lines of one item.</summary>
+    public Task<IReadOnlyList<ItemIncomingRowDto>> GetIncomingByItemAsync(int itemId, CancellationToken cancellationToken = default)
+        => GetAsync<IReadOnlyList<ItemIncomingRowDto>>($"/api/warehouse/v1/inbound-shipments/by-item/{itemId}", cancellationToken);
+
     public Task<InboundShipmentDetailDto> GetShipmentByIdAsync(int id, CancellationToken cancellationToken = default)
         => GetAsync<InboundShipmentDetailDto>($"/api/warehouse/v1/inbound-shipments/{id}", cancellationToken);
 

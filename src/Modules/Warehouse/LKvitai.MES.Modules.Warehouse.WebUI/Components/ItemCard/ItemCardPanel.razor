@@ -1,0 +1,48 @@
+@* One item card panel: head (title, suffix, tools), its own progress bar and its own error. *@
+<MudPaper Outlined="true" Elevation="0" Class="@($"panel ic-panel {Class}".TrimEnd())" data-testid="@TestId">
+    <div class="ic-panel__head">
+        <div class="ic-panel__title">
+            <span class="ic-panel__name">@Title</span>
+            @if (!string.IsNullOrWhiteSpace(Suffix))
+            {
+                <span class="ic-panel__suffix">@Suffix</span>
+            }
+            @TitleContent
+        </div>
+        @if (HeadContent is not null)
+        {
+            <div class="ic-panel__tools">@HeadContent</div>
+        }
+    </div>
+
+    @if (IsLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+
+    @if (Error is not null)
+    {
+        <div class="ic-panel__error" data-testid="@($"{TestId}-error")">
+            <SharedErrorAlert Message="@ItemCardErrors.Describe(L, Error)"
+                              TraceId="@Error.TraceId"
+                              OnRetry="OnRetry"
+                              OnDismiss="OnDismiss" />
+        </div>
+    }
+
+    @ChildContent
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Suffix { get; set; }
+    [Parameter] public string? TestId { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public ApiException? Error { get; set; }
+    [Parameter] public EventCallback OnRetry { get; set; }
+    [Parameter] public EventCallback OnDismiss { get; set; }
+    [Parameter] public RenderFragment? TitleContent { get; set; }
+    [Parameter] public RenderFragment? HeadContent { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}
