@@ -276,8 +276,7 @@ else
                     }
                     <div class="inc-mx__total" role="cell">
                         <span class="mono">@IncomesFormat.MoneyWhole(row.Total)</span>
-                        <span class="inc-mx__bar"><i style="width:@Pct(row.Bar)"></i></span>
-                        <small class="mono">@IncomesFormat.Count(row.Count) · @IncomesFormat.Percent(row.Share)</small>
+                        <span class="inc-mx__meta"><span class="inc-mx__bar"><i style="width:@Pct(row.Bar)"></i></span><small class="mono">@IncomesFormat.Count(row.Count) · @IncomesFormat.Percent(row.Share)</small></span>
                     </div>
                 </div>
             }

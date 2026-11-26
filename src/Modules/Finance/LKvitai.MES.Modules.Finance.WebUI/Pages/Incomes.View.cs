@@ -78,6 +78,8 @@ public partial class Incomes
         var year = s?.Comparisons.LastYear;
         IReadOnlyList<KpiComparison> Cmp(Func<IncomesComparisonDto, decimal> pick, decimal value, Func<decimal, string> format) =>
             prev is null || year is null ? []
+            // A year to date: the previous period is the same span last year, so one line says it all.
+            : prev.From == year.From && prev.To == year.To ? [Compare(PeriodLabel(year.From, year.To), value, pick(year), format)]
             : [Compare(PeriodLabel(prev.From, prev.To), value, pick(prev), format), Compare(PeriodLabel(year.From, year.To), value, pick(year), format)];
         static decimal Avg(decimal amount, int count) => count == 0 ? 0 : amount / count;
         var average = Avg(t.AmountEur, t.Count);

@@ -93,7 +93,7 @@ public partial class Incomes : IAsyncDisposable
     {
         if (!firstRender || !Allowed) return;
         _reference = DotNetObjectReference.Create(this);
-        try { Viewport = await JS.InvokeAsync<string>("financeIncomes.watch", _reference); }
+        try { Viewport = await JS.InvokeAsync<string>("financeIncomes.watch", _lifetime.Token, _reference); }
         catch (JSException) { Viewport = "desktop"; }
         await LoadAllAsync();
     }
@@ -196,7 +196,8 @@ public partial class Incomes : IAsyncDisposable
             if (generation == _rowsGeneration) RowsLoading = false;
         }
         StateHasChanged();
-        try { await JS.InvokeVoidAsync("financeIncomes.scrollTableTop"); } catch (JSException) { /* no table yet */ }
+        try { await JS.InvokeVoidAsync("financeIncomes.scrollTableTop", _lifetime.Token); }
+        catch (Exception ex) when (ex is JSException or TaskCanceledException) { /* no table yet, or the page is gone */ }
         if (Virtualizer is not null) await Virtualizer.RefreshDataAsync();
         if (IsPhone) await LoadPhoneRowsAsync();
     }
@@ -365,7 +366,8 @@ public partial class Incomes : IAsyncDisposable
     {
         _searchText = args.Value?.ToString() ?? "";
         var generation = ++_searchGeneration;
-        await Task.Delay(300);
+        try { await Task.Delay(300, _lifetime.Token); }
+        catch (TaskCanceledException) { return; }
         if (generation != _searchGeneration || _searchText.Trim() == State.Search) return;
         var text = _searchText.Trim();
         await ApplyTable(State with { Search = text.Length > 100 ? text[..100] : text });
@@ -467,7 +469,7 @@ public partial class Incomes : IAsyncDisposable
     {
         try
         {
-            await JS.InvokeAsync<string>("financeIncomes.copyLink");
+            await JS.InvokeAsync<string>("financeIncomes.copyLink", _lifetime.Token);
             ShowToast(L["Incomes.LinkCopied"].Value);
         }
         catch (JSException) { ShowToast(L["Incomes.CopyFailed"].Value); }
@@ -483,7 +485,7 @@ public partial class Incomes : IAsyncDisposable
             persistent: true);
         try
         {
-            await JS.InvokeVoidAsync("financeIncomes.download", State.ToQuery());
+            await JS.InvokeVoidAsync("financeIncomes.download", _lifetime.Token, State.ToQuery());
             ShowToast(L["Incomes.ExportReady", file].Value);
         }
         catch (JSException) { ShowToast(L["Incomes.ExportFailed"].Value); }
@@ -511,7 +513,7 @@ public partial class Incomes : IAsyncDisposable
             totalLabel = L["Incomes.Total"].Value,
             failed = L["Incomes.Error.Title"].Value,
         };
-        try { await JS.InvokeVoidAsync("financeIncomes.print", State.ToQuery(), setup); }
+        try { await JS.InvokeVoidAsync("financeIncomes.print", _lifetime.Token, State.ToQuery(), setup); }
         catch (JSException) { ShowToast(L["Incomes.Error.Title"].Value); }
     }
 
@@ -520,13 +522,19 @@ public partial class Incomes : IAsyncDisposable
         Toast = text;
         var generation = ++_toastGeneration;
         StateHasChanged();
-        if (persistent) return;
-        _ = Task.Delay(4200).ContinueWith(_ => InvokeAsync(() =>
+        if (!persistent) _ = HideToastLaterAsync(generation);
+    }
+
+    private async Task HideToastLaterAsync(int generation)
+    {
+        try { await Task.Delay(4200, _lifetime.Token); }
+        catch (TaskCanceledException) { return; }
+        await InvokeAsync(() =>
         {
             if (generation != _toastGeneration) return;
             Toast = null;
             StateHasChanged();
-        }), TaskScheduler.Default);
+        });
     }
 
     internal void CloseToast() => Toast = null;
@@ -547,7 +555,7 @@ public partial class Incomes : IAsyncDisposable
         _lifetime.Dispose();
         if (_reference is not null)
         {
-            try { await JS.InvokeVoidAsync("financeIncomes.unwatch"); }
+            try { await JS.InvokeVoidAsync("financeIncomes.unwatch", CancellationToken.None); }
             catch (Exception ex) when (ex is JSDisconnectedException or JSException or TaskCanceledException) { /* circuit gone */ }
             _reference.Dispose();
         }
