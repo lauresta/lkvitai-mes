@@ -1,6 +1,7 @@
 using LKvitai.MES.BuildingBlocks.WebUI.Localization;
 using System.Security.Claims;
 using LKvitai.MES.BuildingBlocks.Manuals;
+using LKvitai.MES.BuildingBlocks.Observability;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.BuildingBlocks.Search;
 using LKvitai.MES.BuildingBlocks.WebUI.Services;
@@ -35,11 +36,13 @@ var loggerConfiguration = new LoggerConfiguration()
         "logs/portal-.log",
         rollingInterval: RollingInterval.Day,
         retainedFileCountLimit: 14,
-        outputTemplate: structuredLogTemplate);
+        outputTemplate: structuredLogTemplate)
+    .WriteToCikadaSentry(builder.Configuration);
 
 Log.Logger = loggerConfiguration.CreateLogger();
 
 builder.Host.UseSerilog();
+builder.AddCikadaSentry("portal-webui");
 
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();

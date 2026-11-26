@@ -1,3 +1,4 @@
+using LKvitai.MES.BuildingBlocks.Observability;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -36,6 +37,7 @@ public static class ScaffoldModuleStartupExtensions
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 14,
                 outputTemplate: StructuredLogTemplate)
+            .WriteToCikadaSentry(builder.Configuration)
             .CreateLogger();
 
         builder.Host.UseSerilog();

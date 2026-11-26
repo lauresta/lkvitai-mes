@@ -125,6 +125,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Modules.Finance
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Tests.Finance.Unit", "..\tests\Modules\Finance\LKvitai.MES.Tests.Finance.Unit\LKvitai.MES.Tests.Finance.Unit.csproj", "{CD3D151A-C30B-46AA-B863-8398263E8206}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.BuildingBlocks.Observability", "BuildingBlocks\LKvitai.MES.BuildingBlocks.Observability\LKvitai.MES.BuildingBlocks.Observability.csproj", "{962536A4-F7A4-4573-8234-A302A34F2B6F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -723,6 +725,18 @@ Global
 		{CD3D151A-C30B-46AA-B863-8398263E8206}.Release|x64.Build.0 = Release|Any CPU
 		{CD3D151A-C30B-46AA-B863-8398263E8206}.Release|x86.ActiveCfg = Release|Any CPU
 		{CD3D151A-C30B-46AA-B863-8398263E8206}.Release|x86.Build.0 = Release|Any CPU
+		{962536A4-F7A4-4573-8234-A302A34F2B6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{962536A4-F7A4-4573-8234-A302A34F2B6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{962536A4-F7A4-4573-8234-A302A34F2B6F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{962536A4-F7A4-4573-8234-A302A34F2B6F}.Debug|x64.Build.0 = Debug|Any CPU
+		{962536A4-F7A4-4573-8234-A302A34F2B6F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{962536A4-F7A4-4573-8234-A302A34F2B6F}.Debug|x86.Build.0 = Debug|Any CPU
+		{962536A4-F7A4-4573-8234-A302A34F2B6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{962536A4-F7A4-4573-8234-A302A34F2B6F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{962536A4-F7A4-4573-8234-A302A34F2B6F}.Release|x64.ActiveCfg = Release|Any CPU
+		{962536A4-F7A4-4573-8234-A302A34F2B6F}.Release|x64.Build.0 = Release|Any CPU
+		{962536A4-F7A4-4573-8234-A302A34F2B6F}.Release|x86.ActiveCfg = Release|Any CPU
+		{962536A4-F7A4-4573-8234-A302A34F2B6F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -780,5 +794,6 @@ Global
 		{19962445-12AB-42DA-B6A7-2A9FE6C883FA} = {8B5D1EA7-631B-4533-86B8-77A9BC1F8309}
 		{4876503C-655F-42C3-A528-A3086A77A33F} = {88E7281F-5CE0-4196-A7C7-DD8D10A200AE}
 		{962C34A0-4BEA-40DB-B179-2EABA4AD0867} = {88E7281F-5CE0-4196-A7C7-DD8D10A200AE}
+		{962536A4-F7A4-4573-8234-A302A34F2B6F} = {12C1EE8E-A2E0-45AF-BB0B-AE1B9FE15B43}
 	EndGlobalSection
 EndGlobal

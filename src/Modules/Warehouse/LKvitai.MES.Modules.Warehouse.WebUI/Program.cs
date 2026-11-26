@@ -1,3 +1,4 @@
+using LKvitai.MES.BuildingBlocks.Observability;
 using LKvitai.MES.BuildingBlocks.WebUI.Localization;
 using System.Net.Http.Headers;
 using System.Security.Claims;
@@ -8,6 +9,7 @@ using LKvitai.MES.Modules.Warehouse.WebUI.Services;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddCikadaSentry("warehouse-webui");
 
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();

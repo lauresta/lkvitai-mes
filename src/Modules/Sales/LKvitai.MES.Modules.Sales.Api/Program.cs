@@ -1,3 +1,4 @@
+using LKvitai.MES.BuildingBlocks.Observability;
 using LKvitai.MES.BuildingBlocks.ModuleStartup;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.Modules.Sales.Api.Composition;
@@ -10,6 +11,7 @@ using LKvitai.MES.Modules.Sales.Infrastructure.Sql.Security;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.UseScaffoldSerilog("sales");
+builder.AddCikadaSentry("sales-api");
 builder.Services.AddScaffoldApiCore();
 
 // S-2: bind the orders read-side to the SQL Server adapter

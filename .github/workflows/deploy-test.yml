@@ -37,11 +37,14 @@ jobs:
       Agnum__PriceSync__Enabled: ${{ vars.Agnum__PriceSync__Enabled }}
       Agnum__Warehouses__sandelys__ApiKey: ${{ secrets.AGNUM__WAREHOUSES__SANDELYS__APIKEY }}
       Agnum__Warehouses__pardavimai__ApiKey: ${{ secrets.AGNUM__WAREHOUSES__PARDAVIMAI__APIKEY }}
-      # Not a secret - the Clarity project id is embedded in client-side JS and
-      # visible to anyone visiting the site. A repo Variable (not a Secret) is
-      # the right slot. Test-only for now; prod will get its own project id
-      # via the same vars.CLARITY_PROJECT_ID name scoped to the prod environment.
-      CLARITY_PROJECT_ID: ${{ vars.CLARITY_PROJECT_ID }}
+      # Sentry (project cikada-test). Not a secret - the DSN is embedded in the
+      # browser snippet and visible to anyone visiting the site, so it is an
+      # Environment Variable. Empty = Sentry off. The sample rates are optional
+      # (defaults in docker-compose.test.yml) and can be tuned without a code change.
+      SENTRY_DSN: ${{ vars.SENTRY_DSN }}
+      SENTRY_TRACES_SAMPLE_RATE: ${{ vars.SENTRY_TRACES_SAMPLE_RATE }}
+      SENTRY_REPLAY_SESSION_SAMPLE_RATE: ${{ vars.SENTRY_REPLAY_SESSION_SAMPLE_RATE }}
+      SENTRY_REPLAY_ON_ERROR_SAMPLE_RATE: ${{ vars.SENTRY_REPLAY_ON_ERROR_SAMPLE_RATE }}
       # Cikada MCP order entry tools (writes). Off unless the variable is "true";
       # turn on once the order entry API (PR #224) is deployed.
       CIKADA_MCP_ORDER_ENTRY: ${{ vars.CIKADA_MCP_ORDER_ENTRY }}

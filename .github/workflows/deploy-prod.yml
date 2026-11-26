@@ -60,7 +60,11 @@ jobs:
       ITEMIMAGES__SECRETKEY: ${{ secrets.ITEMIMAGES__SECRETKEY }}
       ITEMIMAGES__MODEL_PATH: ${{ vars.ITEMIMAGES__MODEL_PATH }}
       WAREHOUSE_CODE: ${{ vars.WAREHOUSE_CODE }}
-      CLARITY_PROJECT_ID: ${{ vars.CLARITY_PROJECT_ID }}
+      # Sentry (project cikada-prod): public DSN, empty = off; the sample rates are optional.
+      SENTRY_DSN: ${{ vars.SENTRY_DSN }}
+      SENTRY_TRACES_SAMPLE_RATE: ${{ vars.SENTRY_TRACES_SAMPLE_RATE }}
+      SENTRY_REPLAY_SESSION_SAMPLE_RATE: ${{ vars.SENTRY_REPLAY_SESSION_SAMPLE_RATE }}
+      SENTRY_REPLAY_ON_ERROR_SAMPLE_RATE: ${{ vars.SENTRY_REPLAY_ON_ERROR_SAMPLE_RATE }}
       # Switches for writes into the legacy database. Unset = off (see docker-compose.prod.yml).
       SALES_ORDER_ENTRY_ENABLED: ${{ vars.SALES_ORDER_ENTRY_ENABLED }}
       SALES_ORDER_ENTRY_PAYMENTS_ENABLED: ${{ vars.SALES_ORDER_ENTRY_PAYMENTS_ENABLED }}

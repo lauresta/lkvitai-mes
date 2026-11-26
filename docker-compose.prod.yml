@@ -18,9 +18,21 @@
 
 name: lkvitai-mes-prod
 
+# Sentry (errors + browser Session Replay), BuildingBlocks.Observability; SENTRY_DSN empty = Sentry off.
+# Every .NET service merges it: directly (<<: *sentry) or through x-oidc-api below. The rates are optional
+# GitHub Environment variables (the Sentry plan allows few replays a month).
+x-sentry: &sentry
+  Sentry__Dsn: "${SENTRY_DSN:-}"
+  Sentry__Environment: "production"
+  Sentry__Release: "${IMAGE_TAG:-}"
+  Sentry__TracesSampleRate: "${SENTRY_TRACES_SAMPLE_RATE:-0}"
+  Sentry__Replay__SessionSampleRate: "${SENTRY_REPLAY_SESSION_SAMPLE_RATE:-0.1}"
+  Sentry__Replay__OnErrorSampleRate: "${SENTRY_REPLAY_ON_ERROR_SAMPLE_RATE:-1.0}"
+
 # SSO (authentik, sso.lauresta.com). APIs accept JWTs minted for the web client
 # and for the MCP client; Portal WebUI also runs the interactive login.
 x-oidc-api: &oidc-api
+  <<: *sentry
   Oidc__Enabled: "${CIKADA_OIDC_ENABLED:-true}"
   Oidc__Authority: "https://sso.lauresta.com/application/o/cikada/"
   Oidc__ClientId: "${CIKADA_OIDC_CLIENT_ID:-}"
@@ -105,7 +117,6 @@ services:
       PathBase: "/warehouse"
       PortalAuth__LoginBasePath: "/portal"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
-      Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
     networks:
@@ -155,7 +166,6 @@ services:
       Manuals__BaseUrl: "http://lkvitai-mes-manuals-prod:80"
       PathBase: "/portal"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
-      Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
       - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
@@ -238,7 +248,6 @@ services:
       PathBase: "/sales"
       PortalAuth__LoginBasePath: "/portal"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
-      Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
       - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
@@ -267,6 +276,7 @@ services:
     ports:
       - "5031:8080"
     environment:
+      <<: *sentry
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__LKvitaiDb: "${LKVITAI_MSACCESS_DB_CONNECTION}"
       Frontline__FabricDataSource: "Sql"
@@ -288,6 +298,7 @@ services:
     ports:
       - "5030:8080"
     environment:
+      <<: *sentry
       ASPNETCORE_ENVIRONMENT: Production
       FrontlineApi__BaseUrl: "http://lkvitai-mes-frontline-api-prod:8080"
       PathBase: "/frontline"
@@ -304,7 +315,6 @@ services:
       #      with Sales/Portal in case F-2.4 lands an authenticated route.
       PortalAuth__LoginBasePath: "/portal"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
-      Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
       - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
@@ -349,10 +359,10 @@ services:
     ports:
       - "5040:8080"
     environment:
+      <<: *sentry
       ASPNETCORE_ENVIRONMENT: Production
       ScanningApi__BaseUrl: "http://lkvitai-mes-scanning-api-prod:8080"
       PathBase: "/scan"
-      Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
     volumes:
       - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
     networks:
@@ -407,6 +417,7 @@ services:
     ports:
       - "5050:8080"
     environment:
+      <<: *sentry
       ASPNETCORE_ENVIRONMENT: Production
       PathBase: "/shopfloor"
       ShopfloorApi__BaseUrl: "http://lkvitai-mes-shopfloor-api-prod:8080"
@@ -418,7 +429,6 @@ services:
       ConnectionStrings__ShopfloorDb: "${SHOPFLOOR_DB_CONNECTION}"
       PortalAuth__LoginBasePath: "/portal"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
-      Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
       - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
@@ -477,6 +487,7 @@ services:
     ports:
       - "5060:8080"
     environment:
+      <<: *sentry
       ASPNETCORE_ENVIRONMENT: Production
       PathBase: "/finance"
       FinanceApi__BaseUrl: "http://lkvitai-mes-finance-api-prod:8080"
@@ -524,6 +535,9 @@ services:
       FINANCE_API_URL: "http://lkvitai-mes-finance-api-prod:8080"
       MCP_ENABLE_ORDER_ENTRY: "${CIKADA_MCP_ORDER_ENTRY:-false}"
       MCP_ENABLE_WAREHOUSE_ENTRY: "${CIKADA_MCP_WAREHOUSE_ENTRY:-false}"
+      SENTRY_DSN: "${SENTRY_DSN:-}"
+      SENTRY_ENVIRONMENT: "production"
+      SENTRY_RELEASE: "${IMAGE_TAG:-}"
     networks:
       - lkvitai-mes_prod
     depends_on:

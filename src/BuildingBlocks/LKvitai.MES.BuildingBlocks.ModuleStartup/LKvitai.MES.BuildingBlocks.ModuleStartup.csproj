@@ -19,4 +19,8 @@
     <PackageReference Include="Serilog.Sinks.File" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\LKvitai.MES.BuildingBlocks.Observability\LKvitai.MES.BuildingBlocks.Observability.csproj" />
+  </ItemGroup>
+
 </Project>
