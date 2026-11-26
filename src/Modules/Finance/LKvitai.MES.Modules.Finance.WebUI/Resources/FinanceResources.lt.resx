@@ -72,4 +72,236 @@
   <data name="Bank.WritesDisabledNotice" xml:space="preserve"><value>Tai testinis stendas: mokėjimų įkėlimas ir trynimas čia išjungtas, niekas neišsaugoma. Mokėjimus įkelkite darbinėje svetainėje:</value></data>
   <data name="Bank.Failed400" xml:space="preserve"><value>Patikrinkite pasirinktų pavedimų duomenis ir bandykite dar kartą.</value></data>
   <data name="Bank.Failed503" xml:space="preserve"><value>Finansų paslauga laikinai nepasiekiama.</value></data>
+  <data name="Nav.Module" xml:space="preserve"><value>Finansai</value></data>
+  <data name="Nav.Label" xml:space="preserve"><value>Finansų navigacija</value></data>
+  <data name="Nav.Open" xml:space="preserve"><value>Atidaryti finansų meniu</value></data>
+  <data name="Nav.Close" xml:space="preserve"><value>Uždaryti finansų meniu</value></data>
+  <data name="Bank.FocusNr" xml:space="preserve"><value>Rodomas tik pavedimas NR {0}</value></data>
+  <data name="Bank.FocusShowAll" xml:space="preserve"><value>Rodyti visus</value></data>
+  <data name="Bank.FocusClear" xml:space="preserve"><value>Rodyti visus pavedimus</value></data>
+  <data name="Incomes.Nav" xml:space="preserve"><value>Įplaukų judėjimas</value></data>
+  <data name="Incomes.Title" xml:space="preserve"><value>Įplaukų judėjimas</value></data>
+  <data name="Incomes.Dataset" xml:space="preserve"><value>Duomenys</value></data>
+  <data name="Incomes.DsMoney" xml:space="preserve"><value>Gauti pinigai</value></data>
+  <data name="Incomes.DsMoneySub" xml:space="preserve"><value>pagal mokėjimo datą</value></data>
+  <data name="Incomes.DsOrders" xml:space="preserve"><value>Priimti užsakymai</value></data>
+  <data name="Incomes.DsOrdersSub" xml:space="preserve"><value>pagal užsakymo datą</value></data>
+  <data name="Incomes.DsMoneyExplain" xml:space="preserve"><value>Mokėjimai, kurių mokėjimo data patenka į laikotarpį — nesvarbu, kada priimtas užsakymas.</value></data>
+  <data name="Incomes.DsOrdersExplain" xml:space="preserve"><value>Užsakymai, priimti laikotarpyje (imtinai su pirma ir paskutine diena), vertė po nuolaidos.</value></data>
+  <data name="Incomes.CopyLink" xml:space="preserve"><value>Kopijuoti nuorodą</value></data>
+  <data name="Incomes.LinkCopied" xml:space="preserve"><value>Nuoroda nukopijuota</value></data>
+  <data name="Incomes.CopyFailed" xml:space="preserve"><value>Nepavyko nukopijuoti nuorodos</value></data>
+  <data name="Incomes.Print" xml:space="preserve"><value>Spausdinti</value></data>
+  <data name="Incomes.Export" xml:space="preserve"><value>Eksportuoti į Excel</value></data>
+  <data name="Incomes.ExportShort" xml:space="preserve"><value>Excel</value></data>
+  <data name="Incomes.ExportTitle" xml:space="preserve"><value>Eksportuoti tai, kas rodoma</value></data>
+  <data name="Incomes.ExportFile" xml:space="preserve"><value>Failas</value></data>
+  <data name="Incomes.ExportSheets" xml:space="preserve"><value>Lapai</value></data>
+  <data name="Incomes.ExportSheetsMoney" xml:space="preserve"><value>Suvestinė · Filialai × būdai · Parduota ir gauta · Mokėjimai</value></data>
+  <data name="Incomes.ExportSheetsOrdersWeeks" xml:space="preserve"><value>Suvestinė · Filialai × savaitės · Parduota ir gauta · Užsakymai</value></data>
+  <data name="Incomes.ExportSheetsOrdersMonths" xml:space="preserve"><value>Suvestinė · Filialai × mėnesiai · Parduota ir gauta · Užsakymai</value></data>
+  <data name="Incomes.ExportRows" xml:space="preserve"><value>Eilutės</value></data>
+  <data name="Incomes.ExportRowsValue" xml:space="preserve"><value>{0} iš {1}</value></data>
+  <data name="Incomes.ExportByTable" xml:space="preserve"><value>pagal lentelės filtrus</value></data>
+  <data name="Incomes.ExportGrouped" xml:space="preserve"><value>Grupuota</value></data>
+  <data name="Incomes.ExportGroupedValue" xml:space="preserve"><value>{0} — tarpinės sumos, Excel grupės (outline)</value></data>
+  <data name="Incomes.ExportFilters" xml:space="preserve"><value>Filtrai</value></data>
+  <data name="Incomes.Download" xml:space="preserve"><value>Atsisiųsti .xlsx</value></data>
+  <data name="Incomes.Cancel" xml:space="preserve"><value>Atšaukti</value></data>
+  <data name="Incomes.ExportPreparing" xml:space="preserve"><value>Ruošiamas {0}…</value></data>
+  <data name="Incomes.ExportProgress" xml:space="preserve"><value>Ruošiamas didelis failas {0} — tai gali užtrukti…</value></data>
+  <data name="Incomes.ExportReady" xml:space="preserve"><value>Paruošta: {0}</value></data>
+  <data name="Incomes.ExportFailed" xml:space="preserve"><value>Nepavyko paruošti Excel failo</value></data>
+  <data name="Incomes.Filters" xml:space="preserve"><value>Filtrai</value></data>
+  <data name="Incomes.Period" xml:space="preserve"><value>Laikotarpis</value></data>
+  <data name="Incomes.PresetThisMonth" xml:space="preserve"><value>Šis mėnuo</value></data>
+  <data name="Incomes.PresetLastMonth" xml:space="preserve"><value>Praėjęs mėnuo</value></data>
+  <data name="Incomes.PresetThisQuarter" xml:space="preserve"><value>Šis ketvirtis</value></data>
+  <data name="Incomes.PresetThisYear" xml:space="preserve"><value>Šie metai</value></data>
+  <data name="Incomes.PresetCustom" xml:space="preserve"><value>Pasirinkti…</value></data>
+  <data name="Incomes.PrevMonth" xml:space="preserve"><value>Ankstesnis mėnuo</value></data>
+  <data name="Incomes.NextMonth" xml:space="preserve"><value>Kitas mėnuo</value></data>
+  <data name="Incomes.DaysInfo" xml:space="preserve"><value>{0} d. · {1} darbo d.</value></data>
+  <data name="Incomes.ResetFilters" xml:space="preserve"><value>Atstatyti filtrus</value></data>
+  <data name="Incomes.ClearFilters" xml:space="preserve"><value>Išvalyti filtrus</value></data>
+  <data name="Incomes.From" xml:space="preserve"><value>Nuo</value></data>
+  <data name="Incomes.To" xml:space="preserve"><value>Iki</value></data>
+  <data name="Incomes.Apply" xml:space="preserve"><value>Taikyti</value></data>
+  <data name="Incomes.Branches" xml:space="preserve"><value>Filialai</value></data>
+  <data name="Incomes.Methods" xml:space="preserve"><value>Būdai</value></data>
+  <data name="Incomes.All" xml:space="preserve"><value>Visi</value></data>
+  <data name="Incomes.AllLower" xml:space="preserve"><value>visi</value></data>
+  <data name="Incomes.AllBranches" xml:space="preserve"><value>Visi filialai</value></data>
+  <data name="Incomes.AllMethods" xml:space="preserve"><value>Visi būdai</value></data>
+  <data name="Incomes.NoDataBranch" xml:space="preserve"><value>Šiuo laikotarpiu duomenų nėra</value></data>
+  <data name="Incomes.MethodsNotApplicable" xml:space="preserve"><value>Būdai taikomi tik gautiems pinigams — užsakymas būdo neturi.</value></data>
+  <data name="Incomes.NotApplicable" xml:space="preserve"><value>netaikoma</value></data>
+  <data name="Incomes.SelectedCount" xml:space="preserve"><value>{0} pasirinkti</value></data>
+  <data name="Incomes.Method.BANK" xml:space="preserve"><value>Pavedimu</value></data>
+  <data name="Incomes.Method.EKA" xml:space="preserve"><value>Per EKA</value></data>
+  <data name="Incomes.Method.PPK" xml:space="preserve"><value>Per PPK</value></data>
+  <data name="Incomes.Method.KASA" xml:space="preserve"><value>Per kasą</value></data>
+  <data name="Incomes.MethodHint.BANK" xml:space="preserve"><value>banko pavedimas</value></data>
+  <data name="Incomes.MethodHint.EKA" xml:space="preserve"><value>kasos aparatas (grynieji / kortelė)</value></data>
+  <data name="Incomes.MethodHint.PPK" xml:space="preserve"><value>grynieji su pinigų priėmimo kvitu</value></data>
+  <data name="Incomes.MethodHint.KASA" xml:space="preserve"><value>grynieji kasoje</value></data>
+  <data name="Incomes.MethodPhrase.BANK" xml:space="preserve"><value>pavedimu</value></data>
+  <data name="Incomes.MethodPhrase.EKA" xml:space="preserve"><value>per EKA</value></data>
+  <data name="Incomes.MethodPhrase.PPK" xml:space="preserve"><value>per PPK</value></data>
+  <data name="Incomes.MethodPhrase.KASA" xml:space="preserve"><value>per kasą</value></data>
+  <data name="Incomes.Kpi.Received" xml:space="preserve"><value>Gauta pinigų</value></data>
+  <data name="Incomes.Kpi.Payments" xml:space="preserve"><value>Mokėjimų</value></data>
+  <data name="Incomes.Kpi.AvgPayment" xml:space="preserve"><value>Vidutinis mokėjimas</value></data>
+  <data name="Incomes.Kpi.Refunds" xml:space="preserve"><value>Grąžinimai</value></data>
+  <data name="Incomes.Kpi.Sold" xml:space="preserve"><value>Parduota (po nuolaidų)</value></data>
+  <data name="Incomes.Kpi.Orders" xml:space="preserve"><value>Užsakymų</value></data>
+  <data name="Incomes.Kpi.AvgOrder" xml:space="preserve"><value>Vidutinis užsakymas</value></data>
+  <data name="Incomes.Kpi.Cancelled" xml:space="preserve"><value>Anuliuota kliento prašymu</value></data>
+  <data name="Incomes.Kpi.Than" xml:space="preserve"><value>nei {0}</value></data>
+  <data name="Incomes.Kpi.RefundsSub.One" xml:space="preserve"><value>{0} mokėjimas su minuso ženklu · {1} visų</value></data>
+  <data name="Incomes.Kpi.RefundsSub.Few" xml:space="preserve"><value>{0} mokėjimai su minuso ženklu · {1} visų</value></data>
+  <data name="Incomes.Kpi.RefundsSub.Many" xml:space="preserve"><value>{0} mokėjimų su minuso ženklu · {1} visų</value></data>
+  <data name="Incomes.Kpi.CancelledSub" xml:space="preserve"><value>Lieka mokėti {0} — suma įtraukta į „Parduota“</value></data>
+  <data name="Incomes.Kpi.CancelledMini" xml:space="preserve"><value>lieka {0}</value></data>
+  <data name="Incomes.ShowInTable" xml:space="preserve"><value>Rodyti lentelėje</value></data>
+  <data name="Incomes.Remarks" xml:space="preserve"><value>Pastabos</value></data>
+  <data name="Incomes.FilterTable" xml:space="preserve"><value>Filtruoti lentelę</value></data>
+  <data name="Incomes.Remark.Change" xml:space="preserve"><value>{0} pajamos {1} nei {2}</value></data>
+  <data name="Incomes.Remark.ChangePeriod" xml:space="preserve"><value>Pajamos {0} nei ankstesnį laikotarpį</value></data>
+  <data name="Incomes.Remark.ChangeSold" xml:space="preserve"><value>{0} parduota {1} nei {2}</value></data>
+  <data name="Incomes.Remark.ChangeSoldPeriod" xml:space="preserve"><value>Parduota {0} nei ankstesnį laikotarpį</value></data>
+  <data name="Incomes.Remark.Refunds.One" xml:space="preserve"><value>{0} grąžinimas · {1}</value></data>
+  <data name="Incomes.Remark.Refunds.Few" xml:space="preserve"><value>{0} grąžinimai · {1}</value></data>
+  <data name="Incomes.Remark.Refunds.Many" xml:space="preserve"><value>{0} grąžinimų · {1}</value></data>
+  <data name="Incomes.Remark.Concentration" xml:space="preserve"><value>{0}: {1} mokėjimų {2} (tinkle {3})</value></data>
+  <data name="Incomes.Remark.OddDay" xml:space="preserve"><value>{0} ({1}): {2} — {3} mažiau nei įprasta darbo diena</value></data>
+  <data name="Incomes.Remark.NoEmployee.One" xml:space="preserve"><value>{0} mokėjimas be darbuotojo</value></data>
+  <data name="Incomes.Remark.NoEmployee.Few" xml:space="preserve"><value>{0} mokėjimai be darbuotojo</value></data>
+  <data name="Incomes.Remark.NoEmployee.Many" xml:space="preserve"><value>{0} mokėjimų be darbuotojo</value></data>
+  <data name="Incomes.Remark.AllEmployees" xml:space="preserve"><value>Visi kasos mokėjimai turi darbuotoją</value></data>
+  <data name="Incomes.Remark.Cancelled.One" xml:space="preserve"><value>{0} anuliuotas kliento prašymu · lieka {1}</value></data>
+  <data name="Incomes.Remark.Cancelled.Few" xml:space="preserve"><value>{0} anuliuoti kliento prašymu · lieka {1}</value></data>
+  <data name="Incomes.Remark.Cancelled.Many" xml:space="preserve"><value>{0} anuliuotų kliento prašymu · lieka {1}</value></data>
+  <data name="Incomes.Remark.FlowRatio" xml:space="preserve"><value>Gauta {0} parduotos sumos — srautai, ne skola</value></data>
+  <data name="Incomes.Remark.Discount" xml:space="preserve"><value>Vid. nuolaida {0}; didžiausia — {1} {2}</value></data>
+  <data name="Incomes.MonthsGenitive" xml:space="preserve"><value>sausio|vasario|kovo|balandžio|gegužės|birželio|liepos|rugpjūčio|rugsėjo|spalio|lapkričio|gruodžio</value></data>
+  <data name="Incomes.MonthsAccusative" xml:space="preserve"><value>sausį|vasarį|kovą|balandį|gegužę|birželį|liepą|rugpjūtį|rugsėjį|spalį|lapkritį|gruodį</value></data>
+  <data name="Incomes.Weekdays" xml:space="preserve"><value>Pr|An|Tr|Kt|Pn|Št|Sk</value></data>
+  <data name="Incomes.Chart.Received" xml:space="preserve"><value>Gauta pagal {0}</value></data>
+  <data name="Incomes.Chart.Sold" xml:space="preserve"><value>Parduota pagal {0}</value></data>
+  <data name="Incomes.Chart.By.day" xml:space="preserve"><value>dienas</value></data>
+  <data name="Incomes.Chart.By.week" xml:space="preserve"><value>savaites</value></data>
+  <data name="Incomes.Chart.By.month" xml:space="preserve"><value>mėnesius</value></data>
+  <data name="Incomes.Chart.Sub" xml:space="preserve"><value>vid. darbo diena {0} · spustelėkite stulpelį</value></data>
+  <data name="Incomes.Chart.SubClick" xml:space="preserve"><value>spustelėkite stulpelį — lentelė bus filtruota</value></data>
+  <data name="Incomes.Chart.ByMethod" xml:space="preserve"><value>Pagal būdą</value></data>
+  <data name="Incomes.Chart.ByBranch" xml:space="preserve"><value>Pagal filialą</value></data>
+  <data name="Incomes.Chart.Split" xml:space="preserve"><value>Stulpelių skaidymas</value></data>
+  <data name="Incomes.Chart.NoMethod" xml:space="preserve"><value>Užsakymai neturi mokėjimo būdo</value></data>
+  <data name="Incomes.Chart.Buckets" xml:space="preserve"><value>Stulpeliai</value></data>
+  <data name="Incomes.Chart.Bucket.day" xml:space="preserve"><value>Dienos</value></data>
+  <data name="Incomes.Chart.Bucket.week" xml:space="preserve"><value>Savaitės</value></data>
+  <data name="Incomes.Chart.Bucket.month" xml:space="preserve"><value>Mėnesiai</value></data>
+  <data name="Incomes.Weekend" xml:space="preserve"><value>Savaitgalis</value></data>
+  <data name="Incomes.WeekendTag" xml:space="preserve"><value>savaitgalis</value></data>
+  <data name="Incomes.Total" xml:space="preserve"><value>Viso</value></data>
+  <data name="Incomes.Matrix.Methods" xml:space="preserve"><value>Filialai × būdai</value></data>
+  <data name="Incomes.Matrix.Weeks" xml:space="preserve"><value>Filialai × savaitės</value></data>
+  <data name="Incomes.Matrix.Months" xml:space="preserve"><value>Filialai × mėnesiai</value></data>
+  <data name="Incomes.Matrix.Hint" xml:space="preserve"><value>Spustelėkite langelį, filialą ar stulpelį — lentelė žemiau bus filtruota</value></data>
+  <data name="Incomes.Matrix.Branch" xml:space="preserve"><value>Filialas</value></data>
+  <data name="Incomes.Matrix.NoData" xml:space="preserve"><value>{0} — šiuo laikotarpiu duomenų nėra (filialų sąrašas iš duomenų bazės).</value></data>
+  <data name="Incomes.Week" xml:space="preserve"><value>Sav. {0}</value></data>
+  <data name="Incomes.None" xml:space="preserve"><value>nėra</value></data>
+  <data name="Incomes.Svr.Title" xml:space="preserve"><value>Parduota ir gauta</value></data>
+  <data name="Incomes.Svr.Tag" xml:space="preserve"><value>srautų palyginimas</value></data>
+  <data name="Incomes.Svr.NotDebt" xml:space="preserve"><value>Tai ne skola: šio laikotarpio mokėjimai dažnai apmoka ankstesnių mėnesių užsakymus.</value></data>
+  <data name="Incomes.Svr.Sold" xml:space="preserve"><value>Parduota (užsakymai)</value></data>
+  <data name="Incomes.Svr.Received" xml:space="preserve"><value>Gauta (visi būdai)</value></data>
+  <data name="Incomes.Svr.SoldShort" xml:space="preserve"><value>Parduota</value></data>
+  <data name="Incomes.Svr.ReceivedShort" xml:space="preserve"><value>Gauta</value></data>
+  <data name="Incomes.Svr.Ratio" xml:space="preserve"><value>Gauta / pard.</value></data>
+  <data name="Incomes.Svr.TotalLine" xml:space="preserve"><value>{0} parduota · {1} gauta</value></data>
+  <data name="Incomes.Svr.PhoneLine" xml:space="preserve"><value>Parduota {0} · gauta {1}</value></data>
+  <data name="Incomes.Table.Payments" xml:space="preserve"><value>Mokėjimai</value></data>
+  <data name="Incomes.Table.Orders" xml:space="preserve"><value>Užsakymai</value></data>
+  <data name="Incomes.Table.Rows" xml:space="preserve"><value>{0} eil.</value></data>
+  <data name="Incomes.Search.Money" xml:space="preserve"><value>Užsakymo nr., pastaba, darbuotojas, kvitas…</value></data>
+  <data name="Incomes.Search.Orders" xml:space="preserve"><value>Užsakymo nr., klientas, konsultantas…</value></data>
+  <data name="Incomes.Search.Label" xml:space="preserve"><value>Paieška lentelėje</value></data>
+  <data name="Incomes.Quick.Refunds" xml:space="preserve"><value>Grąžinimai</value></data>
+  <data name="Incomes.Quick.NoEmployee" xml:space="preserve"><value>Be darbuotojo</value></data>
+  <data name="Incomes.Quick.Cancelled" xml:space="preserve"><value>Anuliuoti</value></data>
+  <data name="Incomes.Group" xml:space="preserve"><value>Grupuoti</value></data>
+  <data name="Incomes.Group.None" xml:space="preserve"><value>Nėra</value></data>
+  <data name="Incomes.Group.Day" xml:space="preserve"><value>Diena</value></data>
+  <data name="Incomes.Group.Week" xml:space="preserve"><value>Savaitė</value></data>
+  <data name="Incomes.Group.Month" xml:space="preserve"><value>Mėnuo</value></data>
+  <data name="Incomes.Group.Branch" xml:space="preserve"><value>Filialas</value></data>
+  <data name="Incomes.Group.Method" xml:space="preserve"><value>Būdas</value></data>
+  <data name="Incomes.Group.Employee" xml:space="preserve"><value>Darbuotojas</value></data>
+  <data name="Incomes.Group.Consultant" xml:space="preserve"><value>Konsultantas</value></data>
+  <data name="Incomes.Col.Date" xml:space="preserve"><value>Data</value></data>
+  <data name="Incomes.Col.Order" xml:space="preserve"><value>Užsakymas</value></data>
+  <data name="Incomes.Col.Branch" xml:space="preserve"><value>Filialas</value></data>
+  <data name="Incomes.Col.Method" xml:space="preserve"><value>Būdas</value></data>
+  <data name="Incomes.Col.Document" xml:space="preserve"><value>Dokumentas</value></data>
+  <data name="Incomes.Col.Note" xml:space="preserve"><value>Pastaba</value></data>
+  <data name="Incomes.Col.Employee" xml:space="preserve"><value>Darbuotojas</value></data>
+  <data name="Incomes.Col.Amount" xml:space="preserve"><value>Suma</value></data>
+  <data name="Incomes.Col.Consultant" xml:space="preserve"><value>Konsultantas</value></data>
+  <data name="Incomes.Col.Customer" xml:space="preserve"><value>Klientas</value></data>
+  <data name="Incomes.Col.Discount" xml:space="preserve"><value>Nuol.</value></data>
+  <data name="Incomes.Col.Paid" xml:space="preserve"><value>Apmokėta</value></data>
+  <data name="Incomes.Col.Status" xml:space="preserve"><value>Būsena</value></data>
+  <data name="Incomes.Col.Value" xml:space="preserve"><value>Vertė</value></data>
+  <data name="Incomes.SortBy" xml:space="preserve"><value>Rūšiuoti pagal {0}</value></data>
+  <data name="Incomes.Status.Accepted" xml:space="preserve"><value>Priimtas</value></data>
+  <data name="Incomes.Status.Cancelled" xml:space="preserve"><value>Anuliuotas</value></data>
+  <data name="Incomes.Status.CancelledTitle" xml:space="preserve"><value>Anuliuotas kliento prašymu</value></data>
+  <data name="Incomes.NoEmployee" xml:space="preserve"><value>— nėra —</value></data>
+  <data name="Incomes.Drill.Title" xml:space="preserve"><value>Lentelė filtruota:</value></data>
+  <data name="Incomes.Drill.Day" xml:space="preserve"><value>Diena: {0} ({1})</value></data>
+  <data name="Incomes.Drill.Branch" xml:space="preserve"><value>Filialas: {0}</value></data>
+  <data name="Incomes.Drill.Method" xml:space="preserve"><value>Būdas: {0}</value></data>
+  <data name="Incomes.Drill.Week" xml:space="preserve"><value>Savaitė {0}: {1}</value></data>
+  <data name="Incomes.Drill.Month" xml:space="preserve"><value>Mėnuo: {0}</value></data>
+  <data name="Incomes.Drill.Refunds" xml:space="preserve"><value>Tik grąžinimai</value></data>
+  <data name="Incomes.Drill.NoEmployee" xml:space="preserve"><value>Be darbuotojo</value></data>
+  <data name="Incomes.Drill.Cancelled" xml:space="preserve"><value>Tik anuliuoti</value></data>
+  <data name="Incomes.Drill.Remove" xml:space="preserve"><value>Pašalinti filtrą: {0}</value></data>
+  <data name="Incomes.Drill.Clear" xml:space="preserve"><value>Išvalyti</value></data>
+  <data name="Incomes.Drill.Scope" xml:space="preserve"><value>KPI ir grafikai rodo visą laikotarpį pagal viršutinius filtrus</value></data>
+  <data name="Incomes.Footer.Shown" xml:space="preserve"><value>Rodoma {0} iš {1} {2}</value></data>
+  <data name="Incomes.Footer.Groups" xml:space="preserve"><value>{0} grup.</value></data>
+  <data name="Incomes.Footer.Refunds" xml:space="preserve"><value>Grąžinimai</value></data>
+  <data name="Incomes.UnitPayments" xml:space="preserve"><value>mok.</value></data>
+  <data name="Incomes.UnitOrders" xml:space="preserve"><value>užs.</value></data>
+  <data name="Incomes.TableEmpty" xml:space="preserve"><value>Pagal lentelės filtrus ir paiešką eilučių nėra.</value></data>
+  <data name="Incomes.Empty.Title" xml:space="preserve"><value>Pasirinktam laikotarpiui ir filtrams duomenų nėra</value></data>
+  <data name="Incomes.Empty.Money" xml:space="preserve"><value>Nėra mokėjimų pagal pasirinktus filialus ir būdus. Pakeiskite filtrus arba laikotarpį.</value></data>
+  <data name="Incomes.Empty.Orders" xml:space="preserve"><value>Nėra užsakymų pagal pasirinktus filialus. Pakeiskite filtrus arba laikotarpį.</value></data>
+  <data name="Incomes.Error.Title" xml:space="preserve"><value>Nepavyko gauti duomenų</value></data>
+  <data name="Incomes.Error.Body" xml:space="preserve"><value>Filtrai ir nuoroda išsaugoti — galite bandyti dar kartą.</value></data>
+  <data name="Incomes.Error.Rows" xml:space="preserve"><value>Nepavyko gauti lentelės eilučių</value></data>
+  <data name="Incomes.Error.Retry" xml:space="preserve"><value>Bandyti dar kartą</value></data>
+  <data name="Incomes.NoAccess.Eyebrow" xml:space="preserve"><value>Finansai · ribota prieiga</value></data>
+  <data name="Incomes.NoAccess.Title" xml:space="preserve"><value>Neturite teisės matyti šios ataskaitos</value></data>
+  <data name="Incomes.NoAccess.Body" xml:space="preserve"><value>Įplaukų judėjimą mato tik paskirti vadovybės ir buhalterijos naudotojai. Prieigos klauskite administratoriaus.</value></data>
+  <data name="Incomes.NoAccess.Back" xml:space="preserve"><value>Grįžti į Portalą</value></data>
+  <data name="Incomes.ShowMore" xml:space="preserve"><value>Rodyti daugiau · liko {0}</value></data>
+  <data name="Incomes.Less" xml:space="preserve"><value>mažiau</value></data>
+  <data name="Incomes.More" xml:space="preserve"><value>daugiau</value></data>
+  <data name="Incomes.BiggestDay" xml:space="preserve"><value>didžiausia diena</value></data>
+  <data name="Incomes.Print.Prepared" xml:space="preserve"><value>Parengė (vardas, parašas, data)</value></data>
+  <data name="Incomes.Print.Checked" xml:space="preserve"><value>Patikrino (vardas, parašas, data)</value></data>
+  <data name="Incomes.Print.Generated" xml:space="preserve"><value>Sugeneruota {0}</value></data>
+  <data name="Incomes.Print.Company" xml:space="preserve"><value>UAB Lauresta · Cikada.MES</value></data>
+  <data name="Incomes.Print.DsMoney" xml:space="preserve"><value>Gauti pinigai (pagal mokėjimo datą)</value></data>
+  <data name="Incomes.Print.DsOrders" xml:space="preserve"><value>Priimti užsakymai (pagal užsakymo datą)</value></data>
+  <data name="Incomes.OpeningOrder" xml:space="preserve"><value>Atidaryti užsakymą</value></data>
+  <data name="Incomes.OpeningBank" xml:space="preserve"><value>Atidaryti bankinį pavedimą</value></data>
+  <data name="Incomes.Close" xml:space="preserve"><value>Uždaryti</value></data>
+  <data name="Incomes.FiltersLine" xml:space="preserve"><value>Filialai: {0} · Būdai: {1}</value></data>
+  <data name="Incomes.SearchLine" xml:space="preserve"><value>Paieška: „{0}“</value></data>
 </root>

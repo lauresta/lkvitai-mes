@@ -16,9 +16,10 @@ internal sealed class BankRepository(FinanceAccess access, BankImportSessions se
         r.GetString(2).TrimEnd(), r.GetString(3).TrimEnd(), r.GetDecimal(4));
 
     public async Task<BankPaymentPage> List(FinanceActor actor, string country, DateOnly? from, DateOnly? to, string? q,
-        string? sort, bool desc, int page, CancellationToken ct)
+        string? sort, bool desc, int page, CancellationToken ct, int? nr = null)
     {
         country = Country(country);
+        if (nr is <= 0) throw new BankOperationException(400, "Invalid NR.");
         if (from.HasValue && to.HasValue && to < from)
             throw new BankOperationException(400, "The end date precedes the start date.");
         page = Math.Max(1, page);
@@ -34,13 +35,14 @@ internal sealed class BankRepository(FinanceAccess access, BankImportSessions se
             SELECT COUNT(*), MAX(Data) FROM dbo.BankTransfersTable WHERE Country=@country;
             SELECT COUNT(*) FROM dbo.BankTransfersTable WHERE Country=@country
               AND (@from IS NULL OR Data>=@from) AND (@to IS NULL OR Data<@to)
-              AND (@q='' OR Firma LIKE @pattern OR Paskirtis LIKE @pattern);
+              AND (@q='' OR Firma LIKE @pattern OR Paskirtis LIKE @pattern) AND (@nr IS NULL OR NR=@nr);
             SELECT NR,Data,Firma,Paskirtis,Suma FROM dbo.BankTransfersTable
             WHERE Country=@country AND (@from IS NULL OR Data>=@from) AND (@to IS NULL OR Data<@to)
-              AND (@q='' OR Firma LIKE @pattern OR Paskirtis LIKE @pattern)
+              AND (@q='' OR Firma LIKE @pattern OR Paskirtis LIKE @pattern) AND (@nr IS NULL OR NR=@nr)
             ORDER BY {order} OFFSET @offset ROWS FETCH NEXT 100 ROWS ONLY;
             """);
         Add(cmd, "@country", country);
+        Add(cmd, "@nr", nr);
         Add(cmd, "@from", from?.ToDateTime(TimeOnly.MinValue));
         Add(cmd, "@to", to is null || to == DateOnly.MaxValue
             ? null : to.Value.AddDays(1).ToDateTime(TimeOnly.MinValue));

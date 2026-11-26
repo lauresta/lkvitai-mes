@@ -1,0 +1,81 @@
+@* Daily (weekly, monthly) stacked bars in plain CSS: one <button> per bucket, segments bottom→top in legend order,
+   weekends banded, tooltip on hover and keyboard focus, click = drill filter for the table. *@
+@{
+    var chart = Page.Chart();
+    var summary = Page.Summary!;
+    var bucket = summary.Period.Bucket;
+    var count = chart.Columns.Count;
+}
+<section class="inc-panel inc-chart" data-testid="inc-daily-chart">
+    <div class="inc-panel__head">
+        <strong>@L[Page.IsMoney ? "Incomes.Chart.Received" : "Incomes.Chart.Sold", L["Incomes.Chart.By." + bucket].Value]</strong>
+        <span class="inc-muted">@(bucket == "day" ? L["Incomes.Chart.Sub", IncomesFormat.MoneyWhole(chart.WeekdayMedian)] : L["Incomes.Chart.SubClick"])</span>
+        <div class="inc-chart__tools">
+            <div class="inc-legend">
+                @foreach (var (name, color) in chart.Legend)
+                {
+                    <span><i style="background:@color"></i>@name</span>
+                }
+                @if (bucket == "day") { <span><i class="inc-legend__weekend"></i>@L["Incomes.Weekend"]</span> }
+            </div>
+            @if (Page.State.IsLong)
+            {
+                <div class="inc-seg inc-seg--sm" role="radiogroup" aria-label="@L["Incomes.Chart.Buckets"]">
+                    @foreach (var option in new[] { "day", "week", "month" })
+                    {
+                        var disabled = option == "day" && Page.State.Days > 370;
+                        <button type="button" role="radio" aria-checked="@(bucket == option ? "true" : "false")" class="@(bucket == option ? "on" : "")"
+                                disabled="@disabled" @onclick="() => Page.SetBucket(option)">@L["Incomes.Chart.Bucket." + option]</button>
+                    }
+                </div>
+            }
+            <div class="inc-seg inc-seg--sm" role="radiogroup" aria-label="@L["Incomes.Chart.Split"]">
+                @{ var by = Page.IsMoney ? Page.ChartBy : "branch"; }
+                <button type="button" role="radio" aria-checked="@(by == "method" ? "true" : "false")" class="@(by == "method" ? "on" : "")"
+                        disabled="@(!Page.IsMoney)" title="@(Page.IsMoney ? null : L["Incomes.Chart.NoMethod"].Value)"
+                        @onclick='() => Page.SetChartBy("method")'>@L["Incomes.Chart.ByMethod"]</button>
+                <button type="button" role="radio" aria-checked="@(by == "branch" ? "true" : "false")" class="@(by == "branch" ? "on" : "")"
+                        @onclick='() => Page.SetChartBy("branch")'>@L["Incomes.Chart.ByBranch"]</button>
+            </div>
+        </div>
+    </div>
+    <div class="inc-plot @(count > 62 ? "inc-plot--dense" : "")">
+        <div class="inc-plot__area">
+            @foreach (var (value, bottom) in chart.Ticks)
+            {
+                <div class="inc-plot__tick" style="bottom:@Incomes.Px(bottom)"><span class="mono">@value</span></div>
+            }
+            <div class="inc-plot__base"><span class="mono">0 €</span></div>
+        </div>
+        <div class="inc-plot__cols">
+            @for (var i = 0; i < count; i++)
+            {
+                var column = chart.Columns[i];
+                var edge = i < 4 ? "inc-tip--start" : i > count - 5 ? "inc-tip--end" : "";
+                <button type="button" class="@Css.Join(("inc-col", true), ("is-weekend", column.Weekend), ("is-on", column.Selected), ("is-faded", column.Faded), ("is-partial", column.Partial))"
+                        aria-label="@column.Aria" aria-pressed="@(column.Selected ? "true" : "false")"
+                        data-testid="inc-day-@column.Bucket.Key" @onclick="() => Page.DrillDay(column.Bucket)">
+                    <span class="inc-col__bars">
+                        @foreach (var segment in column.Segments)
+                        {
+                            <span style="height:@Incomes.Px(segment.Height);background:@segment.Color"></span>
+                        }
+                    </span>
+                    <span class="inc-col__label"><b class="mono">@column.Label</b><small class="mono">@column.Sub</small></span>
+                    <span class="inc-tip @edge" role="tooltip">
+                        <span class="inc-tip__head mono"><span>@column.TipTitle</span><span>@IncomesFormat.Count(column.Bucket.Count) @Page.Unit</span></span>
+                        @foreach (var segment in column.Segments.Reverse())
+                        {
+                            <span class="inc-tip__line"><i style="background:@segment.Color"></i><span>@segment.Name</span><span class="mono">@IncomesFormat.MoneyWhole(segment.Value)</span></span>
+                        }
+                        <span class="inc-tip__total mono"><span>@L["Incomes.Total"]</span><span>@IncomesFormat.Money(column.Bucket.AmountEur)</span></span>
+                    </span>
+                </button>
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    [CascadingParameter] public Incomes Page { get; set; } = default!;
+}

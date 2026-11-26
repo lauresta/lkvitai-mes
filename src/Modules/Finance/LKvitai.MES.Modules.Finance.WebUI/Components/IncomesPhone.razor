@@ -1,0 +1,192 @@
+@* Phone (< 760 px): period as one select button, main KPI + three mini cards, remarks list, month calendar heatmap,
+   branch cards and row cards («Rodyti daugiau»). All hit targets at least 44 px, inputs 16 px. *@
+@{
+    var summary = Page.Summary;
+    var money = Page.IsMoney;
+    var meta = Page.Rows?.Meta;
+}
+<h1 class="inc-phone__title">@L["Incomes.Title"]</h1>
+<div class="inc-phone__period">
+    <button type="button" class="inc-phone__select" aria-expanded="@(Page.PhonePeriodOpen ? "true" : "false")" @onclick="Page.TogglePhonePeriod">
+        <strong>@Page.PresetLabel(Page.CurrentPreset)</strong>
+        <span class="mono">@IncomesFormat.Date(Page.State.From) — @IncomesFormat.Date(Page.State.To)</span>
+        <span aria-hidden="true">▾</span>
+    </button>
+    @if (Page.PhonePeriodOpen)
+    {
+        <div class="inc-phone__menu" role="radiogroup" aria-label="@L["Incomes.Period"]">
+            @foreach (var preset in IncomesPresets.All.Where(p => p != "custom"))
+            {
+                var on = Page.CurrentPreset == preset;
+                <button type="button" role="radio" aria-checked="@(on ? "true" : "false")" class="@(on ? "on" : "")"
+                        data-testid="inc-preset-@preset" @onclick="() => Page.SetPreset(preset)">@Page.PresetLabel(preset)</button>
+            }
+            <div class="inc-phone__custom">
+                <label>@L["Incomes.From"] <input type="date" @bind="Page.CustomFrom" /></label>
+                <label>@L["Incomes.To"] <input type="date" @bind="Page.CustomTo" /></label>
+                <button type="button" class="inc-btn inc-btn--primary" data-testid="inc-preset-custom" @onclick="Page.ApplyCustom">@L["Incomes.Apply"]</button>
+            </div>
+        </div>
+    }
+</div>
+@Page.DatasetSwitch
+@if (Page.SummaryError is { } error)
+{
+    @Page.ErrorPanel(error)
+}
+else if (summary is null)
+{
+    <div class="inc-skel" aria-busy="true"><div class="inc-panel inc-skel__kpi"><i></i><i></i><i></i></div><div class="inc-panel inc-skel__chart"></div></div>
+}
+else
+{
+    var kpis = Page.Kpis();
+    var main = kpis[0];
+    <div class="inc-panel inc-kpi inc-kpi--main" data-testid="@main.TestId">
+        <span class="inc-eyebrow">@main.Label</span>
+        <span class="inc-kpi__value @(main.Muted ? "is-muted" : "")">@main.Value</span>
+        @Page.KpiComparisons(main)
+    </div>
+    <div class="inc-phone__minis">
+        @foreach (var kpi in kpis.Skip(1))
+        {
+            var first = kpi.Comparisons.FirstOrDefault();
+            <div class="inc-panel inc-kpi inc-kpi--mini" data-testid="@kpi.TestId">
+                <span class="inc-eyebrow">@kpi.Label</span>
+                <span class="inc-kpi__value @(kpi.Danger ? "is-danger" : kpi.Muted ? "is-muted" : "")">@kpi.Value</span>
+                <span class="inc-delta @(first is null ? "" : "inc-delta--" + first.Tone)">@(first is null ? kpi.Mini : $"{first.Arrow} {first.Change}")</span>
+            </div>
+        }
+    </div>
+    @if (summary.Remarks.Count > 0)
+    {
+        <div class="inc-panel inc-remarks inc-remarks--list" data-testid="inc-remarks">
+            @foreach (var remark in summary.Remarks)
+            {
+                @Page.RemarkButton(remark)
+            }
+        </div>
+    }
+    @if (summary.Totals.Count == 0)
+    {
+        @Page.EmptyPanel
+    }
+    else
+    {
+        @if (summary.Period.Bucket == "day" && !Page.State.IsLong)
+        {
+            @Calendar(summary)
+        }
+        else
+        {
+            <IncomesChart />
+        }
+        <div class="inc-phone__section">
+            <span class="inc-eyebrow">@L["Incomes.Branches"]</span>
+            @{ var flows = summary.SoldVsReceived.ToDictionary(f => f.Branch, StringComparer.Ordinal); }
+            @foreach (var row in Page.MatrixRows())
+            {
+                var flow = flows.GetValueOrDefault(row.Branch.Code);
+                <button type="button" class="inc-bcard @(row.Selected ? "on" : "")" aria-pressed="@(row.Selected ? "true" : "false")"
+                        @onclick="() => Page.DrillBranch(row.Branch.Code)">
+                    <span class="inc-bcard__head"><strong>@row.Branch.Name</strong><span class="mono inc-muted">@IncomesFormat.Percent(row.Share)</span><b class="mono">@IncomesFormat.MoneyWhole(row.Total)</b></span>
+                    <span class="inc-bcard__split">
+                        @foreach (var cell in row.Cells.Where(c => c.Cell is { AmountEur: > 0 }))
+                        {
+                            <i style="width:@Incomes.Pct(row.Total <= 0 ? 0 : (double)(cell.Cell!.AmountEur / row.Total));background:@(money ? Incomes.MethodColor(cell.Column.Key) : "var(--accent-500)")"></i>
+                        }
+                    </span>
+                    <span class="mono inc-muted">@L["Incomes.Svr.PhoneLine", IncomesFormat.MoneyWhole(flow?.SoldEur ?? 0), IncomesFormat.MoneyWhole(flow?.ReceivedEur ?? 0)]</span>
+                </button>
+            }
+        </div>
+        <div class="inc-phone__section" data-testid="inc-table">
+            <div class="inc-phone__rowshead">
+                <span class="inc-eyebrow">@L[money ? "Incomes.Table.Payments" : "Incomes.Table.Orders"]</span>
+                <span class="mono inc-muted">@L["Incomes.Footer.Shown", IncomesFormat.Count(Page.PhoneRows.Count), IncomesFormat.Count(meta?.Total ?? 0), Page.Unit]</span>
+            </div>
+            <input type="search" class="inc-search inc-search--phone" data-testid="inc-search" value="@Page.SearchText" maxlength="100"
+                   placeholder="@L[money ? "Incomes.Search.Money" : "Incomes.Search.Orders"]" aria-label="@L["Incomes.Search.Label"]"
+                   @oninput="Page.SearchChanged" />
+            @if (Page.DrillChips() is { Count: > 0 } chips)
+            {
+                <div class="inc-phone__chips" data-testid="inc-drill-chips">
+                    @foreach (var (label, without) in chips)
+                    {
+                        <button type="button" aria-label="@L["Incomes.Drill.Remove", label]" @onclick="() => Page.SetDrill(without)">@label <span aria-hidden="true">×</span></button>
+                    }
+                </div>
+            }
+            @if (Page.RowsError is { } rowsError)
+            {
+                <div class="inc-error inc-error--inline" role="alert"><strong>@L["Incomes.Error.Rows"]</strong><span class="mono">@Page.ErrorLine(rowsError)</span></div>
+            }
+            else if (meta is { Total: 0 })
+            {
+                <div class="inc-tbl__empty">@L["Incomes.TableEmpty"]</div>
+            }
+            @foreach (var row in Page.PhoneRows)
+            {
+                var negative = row.Amount < 0;
+                <div class="inc-rcard @(negative ? "is-neg" : "")">
+                    <div class="inc-rcard__head"><a class="inc-order mono" href="@Incomes.OrderHref(row.OrderNo)">@row.OrderNo ↗</a><b class="mono">@IncomesFormat.Money(row.Amount)</b></div>
+                    <span class="mono inc-muted">@IncomesFormat.Date(row.Date) · @row.Branch</span>
+                    @if (money)
+                    {
+                        <div class="inc-rcard__line"><span class="inc-tag inc-tag--@row.Method"><MethodIcon Code="@(row.Method ?? "")" />@L["Incomes.Method." + row.Method]</span><span class="ellipsis @(row.Employee is null ? "is-missing" : "")">@(row.Employee ?? L["Incomes.NoEmployee"].Value)</span></div>
+                    }
+                    else
+                    {
+                        <div class="inc-rcard__line"><span class="inc-pill @(row.IsCancelled ? "inc-pill--cancelled" : "")">@L[row.IsCancelled ? "Incomes.Status.Cancelled" : "Incomes.Status.Accepted"]</span><span class="ellipsis">@row.Customer</span></div>
+                    }
+                </div>
+            }
+            @if (meta is not null && meta.Total > Page.PhoneRows.Count && Page.PhoneRows.Count > 0)
+            {
+                <button type="button" class="inc-btn inc-btn--more" @onclick="Page.ShowMorePhone">@L["Incomes.ShowMore", IncomesFormat.Count(meta.Total - Page.PhoneRows.Count)]</button>
+            }
+            <div class="inc-phone__total" data-testid="inc-grand-total">
+                <span class="inc-eyebrow">@L["Incomes.Total"]</span>
+                <span>@L["Incomes.Footer.Shown", IncomesFormat.Count(meta?.Total ?? 0), IncomesFormat.Count(summary.Totals.Count), Page.Unit]</span>
+                <b class="mono">@IncomesFormat.Money(meta?.SumEur ?? 0)</b>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [CascadingParameter] public Incomes Page { get; set; } = default!;
+
+    private RenderFragment Calendar(IncomesSummaryDto summary)
+    {
+        var days = summary.Buckets;
+        var max = days.Count == 0 ? 1 : Math.Max(1, days.Max(d => d.AmountEur));
+        var offset = days.Count == 0 ? 0 : ((int)days[0].From.DayOfWeek + 6) % 7;
+        var selected = days.FirstOrDefault(d => d.From == Page.State.Day);
+        var reading = selected ?? days.OrderByDescending(d => d.AmountEur).FirstOrDefault();
+        var weekdays = L["Incomes.Weekdays"].Value.Split('|');
+        return @<div class="inc-panel inc-cal" data-testid="inc-daily-chart">
+            <strong>@L[Page.IsMoney ? "Incomes.Chart.Received" : "Incomes.Chart.Sold", L["Incomes.Chart.By.day"].Value]</strong>
+            <div class="inc-cal__grid">
+                @foreach (var (name, index) in weekdays.Select((n, i) => (n, i)))
+                {
+                    <span class="inc-cal__dow @(index >= 5 ? "is-weekend" : "")">@name</span>
+                }
+                @for (var i = 0; i < offset; i++) { <span></span> }
+                @foreach (var day in days)
+                {
+                    var on = Page.State.Day == day.From;
+                    var t = day.AmountEur > 0 ? Math.Sqrt((double)(day.AmountEur / max)) : 0;
+                    <button type="button" class="@Css.Join(("inc-cal__day", true), ("is-weekend", IncomesFormat.IsWeekend(day.From)), ("is-on", on), ("is-zero", day.AmountEur <= 0))"
+                            style="@Incomes.Heat(t, 55)" aria-pressed="@(on ? "true" : "false")" data-testid="inc-day-@day.Key"
+                            aria-label="@($"{day.Key}: {IncomesFormat.Money(day.AmountEur)}")" @onclick="() => Page.DrillDay(day)">@day.From.Day</button>
+                }
+            </div>
+            <div class="inc-cal__legend"><span>@L["Incomes.Less"]</span><i style="--t:.15;--hi:55%"></i><i style="--t:.5;--hi:55%"></i><i style="--t:1;--hi:55%"></i><span>@L["Incomes.More"]</span></div>
+            @if (reading is not null)
+            {
+                <div class="inc-cal__read mono">@IncomesFormat.Date(reading.From) · @Page.Weekday(reading.From) · @IncomesFormat.MoneyWhole(reading.AmountEur) · @IncomesFormat.Count(reading.Count) @Page.Unit@(selected is null ? " — " + L["Incomes.BiggestDay"].Value : "")</div>
+            }
+        </div>;
+    }
+}

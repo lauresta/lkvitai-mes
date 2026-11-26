@@ -1,6 +1,7 @@
 using LKvitai.MES.BuildingBlocks.ModuleStartup;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.Modules.Finance.Api.BankPayments;
+using LKvitai.MES.Modules.Finance.Api.Incomes;
 using LKvitai.MES.Modules.Finance.Api.Security;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -33,9 +34,11 @@ builder.Services.AddHttpClient("CikadaUsers", client =>
 builder.Services.AddScoped<FinanceAccess>();
 builder.Services.AddScoped<BankRepository>();
 builder.Services.AddSingleton<BankImportSessions>();
+builder.Services.AddMemoryCache();
 var app = builder.Build();
 app.UseScaffoldApiPipeline();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapBankPayments();
+app.MapIncomes();
 await app.RunAsync();

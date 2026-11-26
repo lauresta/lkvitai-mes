@@ -94,8 +94,8 @@ internal static class BankPaymentsEndpoints
             { return Results.Problem(statusCode: 503, title: "Finance access service is unavailable."); }
         });
         group.MapGet("", async (HttpContext http, BankRepository repo, IConfiguration configuration, string country,
-            DateOnly? from, DateOnly? to, string? q, string? sort, bool? desc, int? page) =>
-            await repo.List(Actor(http), country, from, to, q, sort, desc ?? true, page ?? 1, http.RequestAborted)
+            DateOnly? from, DateOnly? to, string? q, string? sort, bool? desc, int? page, int? nr) =>
+            await repo.List(Actor(http), country, from, to, q, sort, desc ?? true, page ?? 1, http.RequestAborted, nr)
                 with { WritesEnabled = BankPaymentWrites.Enabled(configuration) });
         group.MapPost("/parse", (HttpContext http, BankRepository repo, BankPasteRequest request,
             IConfiguration configuration) => repo.Parse(Actor(http), request, configuration, http.RequestAborted));

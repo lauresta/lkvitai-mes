@@ -1,0 +1,224 @@
+@* The detail table: search, quick toggles, grouping, drill chips, a height-limited virtualized body (the only nested
+   scroll on the page) and an always visible grand total. *@
+@{
+    var money = Page.IsMoney;
+    var meta = Page.Rows?.Meta;
+    var totals = Page.Summary!.Totals;
+    var group = Page.State.EffectiveGroup;
+    var chips = Page.DrillChips();
+}
+<section class="inc-panel inc-table @(money ? "" : "inc-table--orders")" data-testid="inc-table">
+    <div class="inc-table__tools">
+        <strong>@L[money ? "Incomes.Table.Payments" : "Incomes.Table.Orders"]</strong>
+        <span class="inc-muted mono">@L["Incomes.Table.Rows", IncomesFormat.Count(meta?.Total ?? 0)]</span>
+        <input type="search" class="inc-search" data-testid="inc-search" value="@Page.SearchText" maxlength="100"
+               placeholder="@L[money ? "Incomes.Search.Money" : "Incomes.Search.Orders"]" aria-label="@L["Incomes.Search.Label"]"
+               @oninput="Page.SearchChanged" />
+        @if (money)
+        {
+            @Quick("refunds", L["Incomes.Quick.Refunds"].Value, totals.Refunds.Count, Page.State.Refunds)
+            @Quick("noEmployee", L["Incomes.Quick.NoEmployee"].Value, totals.NoEmployeeCount, Page.State.NoEmployee)
+        }
+        else
+        {
+            @Quick("cancelled", L["Incomes.Quick.Cancelled"].Value, totals.Cancelled.Count, Page.State.Cancelled)
+        }
+        <div class="inc-table__group">
+            <span class="inc-eyebrow">@L["Incomes.Group"]</span>
+            @if (Page.IsTablet)
+            {
+                <select class="inc-select" data-testid="inc-grouping" aria-label="@L["Incomes.Group"]"
+                        @onchange='e => Page.SetGroup(e.Value?.ToString() ?? "none")'>
+                    @foreach (var option in Page.GroupOptions())
+                    {
+                        <option value="@option" selected="@(group == option)">@Page.GroupLabel(option)</option>
+                    }
+                </select>
+            }
+            else
+            {
+                <div class="inc-seg inc-seg--sm" role="radiogroup" aria-label="@L["Incomes.Group"]" data-testid="inc-grouping">
+                    @foreach (var option in Page.GroupOptions())
+                    {
+                        <button type="button" role="radio" aria-checked="@(group == option ? "true" : "false")" class="@(group == option ? "on" : "")"
+                                @onclick="() => Page.SetGroup(option)">@Page.GroupLabel(option)</button>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+    @if (chips.Count > 0)
+    {
+        <div class="inc-drill" data-testid="inc-drill-chips">
+            <span class="inc-drill__title">@L["Incomes.Drill.Title"]</span>
+            @foreach (var (label, without) in chips)
+            {
+                <span class="inc-drill__chip">@label<button type="button" aria-label="@L["Incomes.Drill.Remove", label]" @onclick="() => Page.SetDrill(without)">×</button></span>
+            }
+            <button type="button" class="inc-link inc-link--underline" @onclick="Page.ClearDrill">@L["Incomes.Drill.Clear"]</button>
+            <span class="inc-drill__scope">@L["Incomes.Drill.Scope"]</span>
+        </div>
+    }
+    <div class="inc-tbl" data-inc-scroll role="table" aria-label="@L[money ? "Incomes.Table.Payments" : "Incomes.Table.Orders"]"
+         aria-rowcount="@(meta?.Total ?? 0)">
+        <div class="inc-tr inc-tr--head" role="row">
+            @foreach (var (key, label, end, css) in Columns(money))
+            {
+                var on = key is not null && Page.State.Sort == key;
+                <span role="columnheader" class="@css @(end ? "num" : "")"
+                      aria-sort="@(on ? (Page.State.SortDesc ? "descending" : "ascending") : "none")">
+                    @if (key is null)
+                    {
+                        <span class="inc-th">@label</span>
+                    }
+                    else
+                    {
+                        <button type="button" class="inc-th @(on ? "on" : "")" aria-label="@L["Incomes.SortBy", label]" @onclick="() => Page.SortBy(key)">
+                            @label<span aria-hidden="true">@(on ? (Page.State.SortDesc ? "↓" : "↑") : "↕")</span>
+                        </button>
+                    }
+                </span>
+            }
+        </div>
+        @if (Page.RowsError is { } error)
+        {
+            <div class="inc-error inc-error--inline" role="alert">
+                <strong>@L["Incomes.Error.Rows"]</strong>
+                <span class="mono">@Page.ErrorLine(error)</span>
+                <button type="button" class="inc-btn inc-btn--danger" @onclick="Page.ReloadRows">@L["Incomes.Error.Retry"]</button>
+            </div>
+        }
+        else if (meta is null)
+        {
+            <div aria-busy="true">@for (var i = 0; i < 6; i++) { <div class="inc-tr inc-tr--placeholder"><i></i><i></i><i></i><i></i></div> }</div>
+        }
+        else if (meta.Total == 0)
+        {
+            <div class="inc-tbl__empty">@L["Incomes.TableEmpty"] <button type="button" class="inc-link inc-link--underline" @onclick="Page.ClearDrill">@L["Incomes.Drill.Clear"]</button></div>
+        }
+        else
+        {
+            <Virtualize @ref="Page.Virtualizer" TItem="IncomesFlatItem" ItemsProvider="Page.ProvideRows" ItemSize="30" OverscanCount="8" Context="item">
+                <ItemContent>
+                    @if (item.Group is { } g)
+                    {
+                        @GroupRow(g, item.Collapsed)
+                    }
+                    else if (item.Row is { } row)
+                    {
+                        @(money ? PaymentRow(row) : OrderRow(row))
+                    }
+                    else
+                    {
+                        <div class="inc-tr inc-tr--placeholder"><i></i><i></i><i></i><i></i></div>
+                    }
+                </ItemContent>
+                <Placeholder>
+                    <div class="inc-tr inc-tr--placeholder"><i></i><i></i><i></i><i></i></div>
+                </Placeholder>
+            </Virtualize>
+        }
+    </div>
+    <div class="inc-tfoot" data-testid="inc-grand-total">
+        <span>@L["Incomes.Footer.Shown", IncomesFormat.Count(meta?.Total ?? 0), IncomesFormat.Count(totals.Count), Page.Unit]@(meta is { Groups.Count: > 0 } ? " · " + L["Incomes.Footer.Groups", meta.Groups.Count].Value : "")</span>
+        @if (money && meta is { RefundsEur: < 0 })
+        {
+            <span>@L["Incomes.Footer.Refunds"] <b class="mono is-danger">@IncomesFormat.Money(meta.RefundsEur)</b></span>
+        }
+        <span class="inc-tfoot__sum"><span class="inc-eyebrow">@L["Incomes.Total"]</span><b class="mono">@IncomesFormat.Money(meta?.SumEur ?? 0)</b></span>
+    </div>
+</section>
+
+@code {
+    [CascadingParameter] public Incomes Page { get; set; } = default!;
+
+    private RenderFragment Quick(string kind, string label, int count, bool on) =>
+        @<button type="button" class="inc-quick @(on ? "on" : "")" aria-pressed="@(on ? "true" : "false")" @onclick="() => Page.ToggleQuick(kind)">
+            @label<span class="mono">@IncomesFormat.Count(count)</span>
+        </button>;
+
+    /// <summary>Sort key (null = not sortable), header, right-aligned, and the column class the tablet layout uses
+    /// to keep only Data · Užsakymas · Būdas/Klientas · Darbuotojas/Būsena · Suma.</summary>
+    private IEnumerable<(string? Key, string Label, bool End, string Css)> Columns(bool money) => money
+        ? [("date", L["Incomes.Col.Date"].Value, false, "c-date"), ("order", L["Incomes.Col.Order"].Value, false, "c-order"),
+           ("branch", L["Incomes.Col.Branch"].Value, false, "c-branch"), ("method", L["Incomes.Col.Method"].Value, false, "c-method"),
+           (null, L["Incomes.Col.Document"].Value, false, "c-doc"), (null, L["Incomes.Col.Note"].Value, false, "c-note"),
+           ("emp", L["Incomes.Col.Employee"].Value, false, "c-emp"), ("amt", L["Incomes.Col.Amount"].Value, true, "c-amt")]
+        : [("date", L["Incomes.Col.Date"].Value, false, "c-date"), ("order", L["Incomes.Col.Order"].Value, false, "c-order"),
+           ("branch", L["Incomes.Col.Branch"].Value, false, "c-branch"), ("emp", L["Incomes.Col.Consultant"].Value, false, "c-cons"),
+           ("cust", L["Incomes.Col.Customer"].Value, false, "c-cust"), ("disc", L["Incomes.Col.Discount"].Value, true, "c-disc"),
+           ("paid", L["Incomes.Col.Paid"].Value, true, "c-paid"), ("status", L["Incomes.Col.Status"].Value, false, "c-status"),
+           ("amt", L["Incomes.Col.Value"].Value, true, "c-amt")];
+
+    private RenderFragment GroupRow(IncomesGroupDto group, bool collapsed)
+    {
+        var group0 = Page.State.EffectiveGroup;
+        DateOnly.TryParseExact(group.Key, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out var day);
+        var isDay = group0 == "day" && day != default;
+        var label = group0 switch
+        {
+            "day" when isDay => $"{group.Key} · {Page.Weekday(day)}",
+            "method" => L["Incomes.Method." + group.Key].Value,
+            "employee" or "consultant" when group.Key.Length == 0 => L["Incomes.NoEmployee"].Value,
+            "week" => L["Incomes.Week", group.Key.Length > 6 ? group.Key[6..] : group.Key].Value + " · " + group.Key[..4],
+            _ => group.Label,
+        };
+        return @<button type="button" class="inc-tr inc-tr--group" aria-expanded="@(collapsed ? "false" : "true")" @onclick="() => Page.ToggleGroup(group.Key)">
+            <span class="inc-caret" aria-hidden="true">@(collapsed ? "▸" : "▾")</span>
+            @if (group0 == "method") { <MethodIcon Code="@group.Key" Size="13" /> }
+            <strong>@label</strong>
+            @if (isDay && IncomesFormat.IsWeekend(day)) { <span class="inc-tag-weekend">@L["Incomes.WeekendTag"]</span> }
+            <span class="inc-muted mono">@IncomesFormat.Count(group.Count) @Page.Unit</span>
+            <span class="inc-tr__sum mono @(group.SumEur < 0 ? "is-danger" : "")">@IncomesFormat.Money(group.SumEur)</span>
+        </button>;
+    }
+
+    private RenderFragment DateCell(DateOnly date) =>
+        @<span class="c-date mono">@IncomesFormat.Date(date) <span class="inc-wd @(IncomesFormat.IsWeekend(date) ? "is-weekend" : "")">@Page.Weekday(date)</span></span>;
+
+    private RenderFragment OrderCell(string orderNo) =>
+        @<a class="c-order inc-order mono" href="@Incomes.OrderHref(orderNo)" title="@L["Incomes.OpeningOrder"]">@orderNo ↗</a>;
+
+    private RenderFragment PaymentRow(IncomesRowDto row)
+    {
+        var negative = row.Amount < 0;
+        var bank = row.Method == "BANK";
+        return @<div class="inc-tr @(negative ? "is-neg" : "")" role="row">
+            @DateCell(row.Date)
+            @OrderCell(row.OrderNo)
+            <span class="c-branch ellipsis">@row.Branch</span>
+            <span class="c-method"><span class="inc-tag inc-tag--@row.Method"><MethodIcon Code="@(row.Method ?? "")" />@L["Incomes.Method." + row.Method]</span></span>
+            <span class="c-doc ellipsis mono">
+                @if (bank && row.BankTransferNo is { } nr)
+                {
+                    <a href="@Incomes.BankHref(nr)" title="@L["Incomes.OpeningBank"]">@Page.DocumentText(row) ↗</a>
+                }
+                else
+                {
+                    <span class="inc-muted">@Page.DocumentText(row)</span>
+                }
+            </span>
+            <span class="c-note ellipsis @(row.Note is null ? "is-empty" : "")" title="@row.Note">@(row.Note ?? "—")</span>
+            <span class="c-emp ellipsis @(row.Employee is null ? "is-missing" : bank ? "is-bank" : "")">@(row.Employee ?? L["Incomes.NoEmployee"].Value)</span>
+            <span class="c-amt num mono">@IncomesFormat.Money(row.Amount)</span>
+        </div>;
+    }
+
+    private RenderFragment OrderRow(IncomesRowDto row)
+    {
+        var paid = row.PaidEur ?? 0;
+        var full = paid >= row.Amount - 0.005m && row.Amount > 0;
+        return @<div class="inc-tr" role="row">
+            @DateCell(row.Date)
+            @OrderCell(row.OrderNo)
+            <span class="c-branch ellipsis">@row.Branch</span>
+            <span class="c-cons ellipsis">@(row.Consultant ?? "—")</span>
+            <span class="c-cust ellipsis" title="@(row.Note is null ? row.Customer : $"{row.Customer} · {row.Note}")">@(row.Customer ?? "—")@if (row.Note is not null) { <small class="inc-muted"> · @row.Note</small> }</span>
+            <span class="c-disc num mono">@(row.DiscountPct is { } d && d != 0 ? IncomesFormat.Percent(d, 1) : "—")</span>
+            <span class="c-paid num mono @(full ? "is-ok" : "")">@IncomesFormat.Money(paid)</span>
+            <span class="c-status"><span class="inc-pill @(row.IsCancelled ? "inc-pill--cancelled" : "")" title="@(row.IsCancelled ? L["Incomes.Status.CancelledTitle"].Value : null)">@L[row.IsCancelled ? "Incomes.Status.Cancelled" : "Incomes.Status.Accepted"]</span></span>
+            <span class="c-amt num mono strong">@IncomesFormat.Money(row.Amount)</span>
+        </div>;
+    }
+}

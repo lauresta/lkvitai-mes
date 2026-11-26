@@ -1,0 +1,80 @@
+@* Print (A4 portrait, @media print): page 1 is the month-close summary with signature lines, page 2+ the table as
+   currently filtered and grouped (filled by finance-incomes.js from the rows endpoint right before window.print()). *@
+@{
+    var summary = Page.Summary;
+}
+<section class="inc-print" aria-hidden="true">
+    @if (summary is not null)
+    {
+        var kpis = Page.Kpis();
+        <header class="inc-print__head">
+            <div>
+                <strong>@L["Incomes.Title"]</strong>
+                <span>@L[Page.IsMoney ? "Incomes.Print.DsMoney" : "Incomes.Print.DsOrders"]</span>
+                <span class="mono">@IncomesFormat.Date(Page.State.From) — @IncomesFormat.Date(Page.State.To) · @L["Incomes.DaysInfo", summary.Period.Days, summary.Period.Workdays]</span>
+            </div>
+            <div class="inc-print__meta mono">
+                @L["Incomes.Print.Company"]<br />
+                @L["Incomes.Print.Generated", DateTime.Now.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture)]<br />
+                @Page.UserName
+            </div>
+        </header>
+        <p class="inc-print__filters">@Page.FiltersText() · @L["Incomes.Group"]: @Page.GroupLabel(Page.State.EffectiveGroup)</p>
+        <div class="inc-print__kpis">
+            @foreach (var kpi in kpis)
+            {
+                <div>
+                    <span>@kpi.Label</span>
+                    <b class="mono">@kpi.Value</b>
+                    <small class="mono">@(kpi.Comparisons.Count == 0 ? kpi.Sub : string.Join(" / ", kpi.Comparisons.Select(c => $"{c.Arrow} {c.Change} {L["Incomes.Kpi.Than", c.Label].Value}")))</small>
+                </div>
+            }
+        </div>
+        <h2>@Page.MatrixTitle</h2>
+        <table class="inc-print__table">
+            <thead><tr><th>@L["Incomes.Matrix.Branch"]</th>@foreach (var column in summary.Columns) {<th class="num">@Page.ColumnLabel(column)</th>}<th class="num">@L["Incomes.Total"]</th></tr></thead>
+            <tbody>
+                @foreach (var row in Page.MatrixRows())
+                {
+                    <tr><td>@row.Branch.Name</td>@foreach (var cell in row.Cells) {<td class="num mono">@(cell.Cell is null ? "—" : IncomesFormat.Money(cell.Cell.AmountEur))</td>}<td class="num mono strong">@IncomesFormat.Money(row.Total)</td></tr>
+                }
+            </tbody>
+            <tfoot><tr><td>@L["Incomes.Total"]</td>@foreach (var column in summary.Columns) {<td class="num mono">@IncomesFormat.Money(summary.Matrix.Where(c => c.Column == column.Key).Sum(c => c.AmountEur))</td>}<td class="num mono">@IncomesFormat.Money(summary.Totals.AmountEur)</td></tr></tfoot>
+        </table>
+        <h2>@L["Incomes.Svr.Title"] <small>@L["Incomes.Svr.Tag"]</small></h2>
+        <table class="inc-print__table">
+            <thead><tr><th>@L["Incomes.Matrix.Branch"]</th><th class="num">@L["Incomes.Svr.SoldShort"]</th><th class="num">@L["Incomes.Svr.ReceivedShort"]</th><th class="num">@L["Incomes.Svr.Ratio"]</th></tr></thead>
+            <tbody>
+                @foreach (var flow in Page.Flows())
+                {
+                    <tr><td>@flow.Branch.Name</td><td class="num mono">@IncomesFormat.Money(flow.Sold)</td><td class="num mono">@IncomesFormat.Money(flow.Received)</td><td class="num mono">@Incomes.Ratio(flow.Sold, flow.Received)</td></tr>
+                }
+            </tbody>
+            <tfoot><tr><td>@L["Incomes.Total"]</td><td class="num mono">@IncomesFormat.Money(summary.SoldVsReceived.Sum(f => f.SoldEur))</td><td class="num mono">@IncomesFormat.Money(summary.SoldVsReceived.Sum(f => f.ReceivedEur))</td><td class="num mono">@Incomes.Ratio(summary.SoldVsReceived.Sum(f => f.SoldEur), summary.SoldVsReceived.Sum(f => f.ReceivedEur))</td></tr></tfoot>
+        </table>
+        var max = summary.Buckets.Count == 0 ? 1 : Math.Max(1, summary.Buckets.Max(b => b.AmountEur));
+        <h2>@L[Page.IsMoney ? "Incomes.Chart.Received" : "Incomes.Chart.Sold", L["Incomes.Chart.By." + summary.Period.Bucket].Value]</h2>
+        <div class="inc-print__bars">
+            @foreach (var bucket in summary.Buckets)
+            {
+                <span class="@(summary.Period.Bucket == "day" && IncomesFormat.IsWeekend(bucket.From) ? "is-weekend" : "")"
+                      style="height:@Incomes.Px(Math.Max(0, (double)(bucket.AmountEur / max)) * 56)"></span>
+            }
+        </div>
+        <h2>@L["Incomes.Remarks"]</h2>
+        <ul class="inc-print__remarks">
+            @foreach (var remark in summary.Remarks) { <li>@remark.Glyph @Page.RemarkText(remark)</li> }
+        </ul>
+        <div class="inc-print__sign">
+            <span>@L["Incomes.Print.Prepared"]</span>
+            <span>@L["Incomes.Print.Checked"]</span>
+        </div>
+        <footer class="inc-print__foot mono">@Nav.Uri</footer>
+    }
+    <div id="inc-print-rows" class="inc-print__rows"></div>
+</section>
+
+@code {
+    [CascadingParameter] public Incomes Page { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+}

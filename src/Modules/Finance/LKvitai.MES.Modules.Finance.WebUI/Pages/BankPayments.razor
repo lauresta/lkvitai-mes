@@ -6,6 +6,7 @@
 @inject IHttpClientFactory HttpClients
 @inject IHttpContextAccessor HttpContexts
 @inject PersistentComponentState ApplicationState
+@inject NavigationManager Navigation
 
 <PageTitle>@L["Bank.Title"] · Cikada.MES</PageTitle>
 <main class="bp-page">
@@ -33,6 +34,11 @@
         <button type="button" class="bp-link bp-link--muted" @onclick="CancelPaste">@L["Bank.Cancel"]</button>
       </div>
     </div>
+  }
+  @if (_focusNr is { } focusNr)
+  {
+    <div class="bp-focus" role="status"><span>@L["Bank.FocusNr", focusNr]</span>
+      <button type="button" class="bp-link" aria-label="@L["Bank.FocusClear"]" @onclick="ClearFocus">@L["Bank.FocusShowAll"] ×</button></div>
   }
   @if (!WritesEnabled) { <div class="bp-notice" role="status">@L["Bank.WritesDisabledNotice"] <a href="@ProductionUrl">@ProductionUrl</a></div> }
   @if (!string.IsNullOrWhiteSpace(_error)) { <div class="bp-error" role="alert">@_error</div> }
@@ -84,7 +90,8 @@
         {
           @foreach (var row in _data!.Items)
           {
-            <div class="bp-row bp-data-row @(_justImported.Contains(row.Nr) ? "bp-row--new" : "")" @key="row.Nr">
+            <div class="bp-row bp-data-row @(_justImported.Contains(row.Nr) ? "bp-row--new" : "") @(row.Nr == _focusNr ? "bp-row--focus" : "")"
+                 aria-current="@(row.Nr == _focusNr ? "true" : null)" @key="row.Nr">
               <span class="mono bp-nr">@row.Nr</span>
               <span class="mono">@row.Date.ToString("yyyy-MM-dd")</span>
               <strong title="@row.Firm">@row.Firm</strong>

@@ -1,14 +1,74 @@
 @inherits LayoutComponentBase
+@implements IDisposable
+@inject NavigationManager Navigation
+@inject IConfiguration Configuration
 
 <MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<PortalAuthenticatedShell LiveProductionDataWarning="true">
+<PortalAuthenticatedShell LiveProductionDataWarning="true"
+                          OnMobileNavigationToggle="ToggleDrawer"
+                          MobileNavigationOpen="_drawerOpen"
+                          MobileNavigationLabel="@(_drawerOpen ? L["Nav.Close"].Value : L["Nav.Open"].Value)"
+                          MobileNavigationTargetId="@DrawerId">
     <ChildContent>
-        @Body
+        <div class="fin-layout">
+            <aside id="@DrawerId" class="fin-drawer @(_drawerOpen ? "is-open" : "")" aria-label="@L["Nav.Label"]" @onkeydown="CloseOnEscape">
+                <div class="fin-drawer__head"><span>@L["Nav.Module"]</span></div>
+                <nav class="fin-drawer__nav">
+                    <a href="bank-payments" class="fin-drawer__link @(IsBankPage ? "is-active" : "")"
+                       aria-current="@(IsBankPage ? "page" : null)">@L["Bank.Title"]</a>
+                    @if (_incomesAllowed)
+                    {
+                        <a href="incomes" class="fin-drawer__link @(IsIncomesPage ? "is-active" : "")" data-testid="inc-nav"
+                           aria-current="@(IsIncomesPage ? "page" : null)">@L["Incomes.Nav"]</a>
+                    }
+                </nav>
+            </aside>
+            @if (_drawerOpen)
+            {
+                <button type="button" class="fin-drawer__scrim" aria-label="@L["Nav.Close"]" tabindex="-1" @onclick="ToggleDrawer"></button>
+            }
+            <div class="fin-main">@Body</div>
+        </div>
     </ChildContent>
     <NotAuthorizedContent>
         <RedirectToLogin />
     </NotAuthorizedContent>
 </PortalAuthenticatedShell>
+
+@code {
+    private const string DrawerId = "finance-navigation";
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
+    private bool _drawerOpen;
+    private bool _incomesAllowed;
+
+    private string RelativePath => Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].TrimEnd('/');
+    private bool IsIncomesPage => RelativePath.Equals("incomes", StringComparison.OrdinalIgnoreCase);
+    // The bank payments page is also the module root (/finance/).
+    private bool IsBankPage => RelativePath.Length == 0 || RelativePath.Equals("bank-payments", StringComparison.OrdinalIgnoreCase);
+
+    protected override async Task OnInitializedAsync()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+        var user = AuthenticationState is null ? null : (await AuthenticationState).User;
+        // Only the users on Finance:Incomes:AllowedUsers see the item; the API refuses everybody else anyway.
+        _incomesAllowed = IncomesAccess.IsAllowed(user, Configuration);
+    }
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    private void CloseOnEscape(KeyboardEventArgs args)
+    {
+        if (_drawerOpen && args.Key == "Escape") _drawerOpen = false;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs args)
+    {
+        _drawerOpen = false;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+}
