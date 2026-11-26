@@ -9,6 +9,7 @@ import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/
 import { CikadaApi } from './api.js';
 import { stripTrailingSlashes, type Config } from './config.js';
 import { challenge, checkBearer, handleOAuth, type Log } from './oauth.js';
+import { reportError } from './sentry.js';
 import { createServer } from './server.js';
 
 const MAX_BODY_BYTES = 1024 * 1024;
@@ -135,6 +136,7 @@ export function startRemote(config: Config, log: Log = stderrLog, deps: Dependen
       res.end(payload);
     } catch (error) {
       log({ msg: 'error', path, error: error instanceof Error ? `${error.name}: ${error.message}` : 'unknown' });
+      reportError(error, { path }, bearer.user?.username);
       if (!res.headersSent) jsonRpcError(res, 500, 'internal error');
     } finally {
       void transport.close();
