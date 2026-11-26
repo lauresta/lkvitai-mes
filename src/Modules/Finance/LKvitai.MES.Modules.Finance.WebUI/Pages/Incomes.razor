@@ -1,0 +1,399 @@
+@page "/incomes"
+@implements IAsyncDisposable
+
+<PageTitle>@L["Incomes.Title"] · Cikada.MES</PageTitle>
+@if (!Allowed || NoAccess)
+{
+    <main class="inc-page inc-page--center">
+        <div class="inc-noaccess" data-testid="inc-no-access">
+            <span class="inc-eyebrow inc-eyebrow--sand">@L["Incomes.NoAccess.Eyebrow"]</span>
+            <strong>@L["Incomes.NoAccess.Title"]</strong>
+            <p>@L["Incomes.NoAccess.Body"]</p>
+            <div><a class="inc-btn inc-btn--primary" href="@(Configuration["PortalWebUi:BaseUrl"] ?? "/portal/")">@L["Incomes.NoAccess.Back"]</a></div>
+        </div>
+    </main>
+}
+else
+{
+    <CascadingValue Value="this">
+        <main class="inc-page @(IsPhone ? "inc-page--phone" : IsTablet ? "inc-page--tablet" : "")" aria-busy="@(SummaryLoading ? "true" : "false")">
+            <MethodIcon Defs="true" />
+            @if (IsPhone)
+            {
+                <IncomesPhone />
+            }
+            else
+            {
+                <div class="inc-head">
+                    <div class="inc-head__title">
+                        <h1>@L["Incomes.Title"]</h1>
+                        <span>@L[IsMoney ? "Incomes.DsMoneyExplain" : "Incomes.DsOrdersExplain"]</span>
+                    </div>
+                    @if (!IsTablet) { @DatasetSwitch }
+                    <div class="inc-head__actions">
+                        @if (!IsTablet)
+                        {
+                            <button type="button" class="inc-btn inc-btn--ghost" data-testid="inc-copy-link" @onclick="CopyLink">@L["Incomes.CopyLink"]</button>
+                        }
+                        <button type="button" class="inc-btn inc-btn--ghost" data-testid="inc-print" @onclick="Print">@L["Incomes.Print"]</button>
+                        <button type="button" class="inc-btn inc-btn--primary" data-testid="inc-export" aria-expanded="@(ExportOpen ? "true" : "false")"
+                                @onclick="ToggleExport">@L[IsTablet ? "Incomes.ExportShort" : "Incomes.Export"]</button>
+                        @if (ExportOpen) { @ExportDialog }
+                    </div>
+                </div>
+                @if (IsTablet) { @DatasetSwitch }
+                @Filters
+                @Body
+            }
+            @if (Toast is not null)
+            {
+                <div class="inc-toast" role="status">
+                    <span>@Toast</span>
+                    <button type="button" aria-label="@L["Incomes.Close"]" @onclick="CloseToast">×</button>
+                </div>
+            }
+            <IncomesPrint />
+        </main>
+    </CascadingValue>
+}
+
+@code {
+    internal RenderFragment DatasetSwitch => @<div class="inc-ds" role="radiogroup" aria-label="@L["Incomes.Dataset"]">
+        <button type="button" role="radio" aria-checked="@(IsMoney ? "true" : "false")" class="@(IsMoney ? "on" : "")"
+                data-testid="inc-dataset-money" @onclick="() => SetDataset(false)">
+            <span>@L["Incomes.DsMoney"]</span><small>@L["Incomes.DsMoneySub"]</small>
+        </button>
+        <button type="button" role="radio" aria-checked="@(IsMoney ? "false" : "true")" class="@(IsMoney ? "" : "on")"
+                data-testid="inc-dataset-orders" @onclick="() => SetDataset(true)">
+            <span>@L["Incomes.DsOrders"]</span><small>@L["Incomes.DsOrdersSub"]</small>
+        </button>
+    </div>;
+
+    private RenderFragment ExportDialog => @<div class="inc-export" role="dialog" aria-label="@L["Incomes.ExportTitle"]">
+        <strong>@L["Incomes.ExportTitle"]</strong>
+        <dl>
+            <dt>@L["Incomes.ExportFile"]</dt><dd class="mono">@ExportFileName</dd>
+            <dt>@L["Incomes.ExportSheets"]</dt>
+            <dd>@ExportSheets</dd>
+            <dt>@L["Incomes.ExportRows"]</dt>
+            <dd>@L["Incomes.ExportRowsValue", IncomesFormat.Count(Rows?.Meta?.Total ?? 0), IncomesFormat.Count(Summary?.Totals.Count ?? 0)]@(State.HasDrill || State.Search.Length > 0 ? " — " + L["Incomes.ExportByTable"].Value : "")</dd>
+            <dt>@L["Incomes.ExportGrouped"]</dt>
+            <dd>@(State.EffectiveGroup == "none" ? L["Incomes.Group.None"].Value : L["Incomes.ExportGroupedValue", GroupLabel(State.EffectiveGroup)].Value)</dd>
+            <dt>@L["Incomes.ExportFilters"]</dt><dd>@FiltersText()</dd>
+        </dl>
+        <div class="inc-export__actions">
+            <button type="button" class="inc-btn inc-btn--ghost" @onclick="ToggleExport">@L["Incomes.Cancel"]</button>
+            <button type="button" class="inc-btn inc-btn--primary" @onclick="Download">@L["Incomes.Download"]</button>
+        </div>
+    </div>;
+
+    private RenderFragment Filters => @<section class="inc-panel inc-filters" data-testid="inc-filters" aria-label="@L["Incomes.Filters"]">
+        <div class="inc-frow">
+            <span class="inc-eyebrow inc-frow__label">@L["Incomes.Period"]</span>
+            <div class="inc-seg" role="radiogroup" aria-label="@L["Incomes.Period"]">
+                @foreach (var preset in IncomesPresets.All)
+                {
+                    var on = CurrentPreset == preset;
+                    <button type="button" role="radio" aria-checked="@(on ? "true" : "false")" class="@(on ? "on" : "")"
+                            data-testid="inc-preset-@preset" @onclick="() => SetPreset(preset)">@PresetLabel(preset)</button>
+                }
+            </div>
+            <div class="inc-range">
+                <button type="button" aria-label="@L["Incomes.PrevMonth"]" @onclick="() => StepMonth(-1)">‹</button>
+                <span class="mono">@IncomesFormat.Date(State.From) — @IncomesFormat.Date(State.To)</span>
+                <button type="button" aria-label="@L["Incomes.NextMonth"]" disabled="@(IncomesPresets.StepMonth(State.From, 1, Today) is null)"
+                        @onclick="() => StepMonth(1)">›</button>
+            </div>
+            <span class="inc-muted mono">@L["Incomes.DaysInfo", State.Days, Summary?.Period.Workdays ?? WorkdaysOf(State.From, State.To)]</span>
+            <button type="button" class="inc-link inc-frow__end" @onclick="ResetFilters">@L["Incomes.ResetFilters"]</button>
+            @if (CustomOpen)
+            {
+                <div class="inc-custom" role="dialog" aria-label="@L["Incomes.PresetCustom"]">
+                    <label>@L["Incomes.From"] <input type="date" @bind="CustomFrom" max="@IncomesFormat.Date(Today)" /></label>
+                    <label>@L["Incomes.To"] <input type="date" @bind="CustomTo" max="@IncomesFormat.Date(Today)" /></label>
+                    <button type="button" class="inc-btn inc-btn--primary" @onclick="ApplyCustom">@L["Incomes.Apply"]</button>
+                    <button type="button" class="inc-btn inc-btn--ghost" @onclick='() => SetPreset("custom")'>@L["Incomes.Cancel"]</button>
+                </div>
+            }
+        </div>
+        @if (IsTablet)
+        {
+            <div class="inc-frow inc-frow--selects">
+                @MultiSelect("branches", L["Incomes.Branches"].Value, BranchSummary(), BranchOptions(), false)
+                @MultiSelect("methods", L["Incomes.Methods"].Value, MethodSummary(), MethodOptions(), !IsMoney)
+            </div>
+        }
+        else
+        {
+            <div class="inc-frow">
+                <span class="inc-eyebrow inc-frow__label">@L["Incomes.Branches"]</span>
+                <button type="button" class="inc-chip @(State.Branches is null ? "inc-chip--on" : "")" aria-pressed="@(State.Branches is null ? "true" : "false")"
+                        title="@L["Incomes.AllBranches"]" @onclick="() => ToggleBranch(null)">@L["Incomes.All"]</button>
+                @foreach (var branch in Summary?.Branches ?? [])
+                {
+                    var on = State.Branches?.Contains(branch.Code) == true;
+                    <button type="button" class="@Css.Join(("inc-chip", true), ("inc-chip--on", on), ("inc-chip--nodata", !branch.HasData && !on))"
+                            aria-pressed="@(on ? "true" : "false")" data-testid="inc-branch-chip-@branch.Code"
+                            title="@(branch.HasData ? $"{IncomesFormat.Count(branch.Count)} {Unit}" : L["Incomes.NoDataBranch"].Value)"
+                            @onclick="() => ToggleBranch(branch.Code)">@branch.Name<span class="inc-chip__n">@IncomesFormat.Count(branch.Count)</span></button>
+                }
+            </div>
+            <div class="inc-frow @(IsMoney ? "" : "inc-frow--off")">
+                <span class="inc-eyebrow inc-frow__label">@L["Incomes.Methods"]</span>
+                <button type="button" class="inc-chip @(IsMoney && State.Methods is null ? "inc-chip--on" : "")" disabled="@(!IsMoney)"
+                        aria-pressed="@(IsMoney && State.Methods is null ? "true" : "false")" title="@L["Incomes.AllMethods"]"
+                        @onclick="() => ToggleMethod(null)">@L["Incomes.All"]</button>
+                @foreach (var method in MethodOrder)
+                {
+                    var on = IsMoney && State.Methods?.Contains(method) == true;
+                    var info = Summary?.Methods.FirstOrDefault(m => m.Code == method);
+                    <button type="button" class="inc-chip @(on ? "inc-chip--on" : "")" disabled="@(!IsMoney)" aria-pressed="@(on ? "true" : "false")"
+                            data-testid="inc-method-chip-@method" title="@L["Incomes.MethodHint." + method]" @onclick="() => ToggleMethod(method)">
+                        <MethodIcon Code="@method" Size="13" />
+                        <span>@L["Incomes.Method." + method]</span>
+                        @if (IsMoney) { <span class="inc-chip__n">@IncomesFormat.Count(info?.Count ?? 0)</span> }
+                    </button>
+                }
+                @if (!IsMoney) { <span class="inc-muted inc-frow__note">@L["Incomes.MethodsNotApplicable"]</span> }
+            </div>
+        }
+    </section>;
+
+    private RenderFragment MultiSelect(string name, string label, string value, IReadOnlyList<(string? Code, string Text, bool On)> options,
+        bool disabled) => @<div class="inc-ms">
+        <button type="button" class="inc-ms__button" aria-expanded="@(OpenSelect == name ? "true" : "false")" disabled="@disabled"
+                @onclick="() => ToggleSelect(name)">
+            <span class="inc-eyebrow">@label</span><strong>@value</strong><span aria-hidden="true">▾</span>
+        </button>
+        @if (OpenSelect == name && !disabled)
+        {
+            <div class="inc-ms__list" role="group" aria-label="@label">
+                @foreach (var option in options)
+                {
+                    <label><input type="checkbox" checked="@option.On"
+                                  @onchange='() => name == "branches" ? ToggleBranch(option.Code) : ToggleMethod(option.Code)' />@option.Text</label>
+                }
+            </div>
+        }
+    </div>;
+
+    private RenderFragment Body => @<text>
+        @if (SummaryError is { } error)
+        {
+            @ErrorPanel(error)
+        }
+        else if (SummaryLoading && Summary is null)
+        {
+            <div class="inc-skel" aria-busy="true">
+                <div class="inc-kpis">@for (var i = 0; i < 4; i++) { <div class="inc-panel inc-skel__kpi"><i></i><i></i><i></i></div> }</div>
+                <div class="inc-panel inc-skel__chart"></div>
+                <div class="inc-panel inc-skel__table"><i></i><i></i><i></i><i></i></div>
+            </div>
+        }
+        else if (Summary is not null)
+        {
+            <div class="inc-kpis">
+                @foreach (var kpi in Kpis())
+                {
+                    <div class="inc-panel inc-kpi" data-testid="@kpi.TestId">
+                        <span class="inc-eyebrow">@kpi.Label</span>
+                        <span class="inc-kpi__value @(kpi.Danger ? "is-danger" : kpi.Muted ? "is-muted" : "")">@kpi.Value</span>
+                        @KpiComparisons(kpi)
+                        @if (kpi.Sub is not null)
+                        {
+                            <div class="inc-kpi__sub">
+                                <span>@kpi.Sub</span>
+                                @if (kpi.ActionKind is { } action)
+                                {
+                                    <button type="button" class="inc-link" @onclick="() => ToggleQuick(action)">@L["Incomes.ShowInTable"] →</button>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+            @if (Summary.Remarks.Count > 0)
+            {
+                <div class="inc-panel inc-remarks" data-testid="inc-remarks">
+                    <span class="inc-eyebrow inc-remarks__label">@L["Incomes.Remarks"]</span>
+                    @foreach (var remark in Summary.Remarks)
+                    {
+                        @RemarkButton(remark)
+                    }
+                </div>
+            }
+            @if (Summary.Totals.Count == 0)
+            {
+                @EmptyPanel
+            }
+            else
+            {
+                <IncomesChart />
+                <div class="inc-duo">
+                    @Matrix
+                    @SoldVsReceived
+                </div>
+                <IncomesTable />
+            }
+        }
+    </text>;
+
+    private RenderFragment Matrix => @<section class="inc-panel inc-matrix" data-testid="inc-matrix">
+        <div class="inc-panel__head"><strong>@MatrixTitle</strong><span class="inc-muted">@L["Incomes.Matrix.Hint"]</span></div>
+        <div class="inc-mx" role="table" aria-label="@MatrixTitle">
+            <div class="inc-mx__row inc-mx__row--head" role="row">
+                <span class="inc-eyebrow inc-mx__name" role="columnheader">@L["Incomes.Matrix.Branch"]</span>
+                @foreach (var column in Summary!.Columns)
+                {
+                    var on = State.DrillBranch is null && ColumnSelected(column.Key);
+                    <button type="button" role="columnheader" class="inc-mx__col @(on ? "on" : "")" aria-pressed="@(on ? "true" : "false")"
+                            @onclick="() => DrillColumn(column.Key)">
+                        @if (column.Sub is not null) { <small>@L["Incomes.Week", column.Sub]</small> }
+                        <span>@if (IsMoney) { <MethodIcon Code="@column.Key" /> }@ColumnLabel(column)</span>
+                    </button>
+                }
+                <span class="inc-eyebrow inc-mx__total" role="columnheader">@L["Incomes.Total"]</span>
+            </div>
+            @foreach (var row in MatrixRows())
+            {
+                <div class="inc-mx__row" role="row">
+                    <button type="button" role="rowheader" class="inc-mx__name @(row.Selected ? "on" : "")" aria-pressed="@(row.Selected ? "true" : "false")"
+                            @onclick="() => DrillBranch(row.Branch.Code)">
+                        <i style="background:@row.Color"></i><span>@row.Branch.Name</span>
+                    </button>
+                    @foreach (var cell in row.Cells)
+                    {
+                        var amount = cell.Cell?.AmountEur ?? 0;
+                        <button type="button" role="cell" class="inc-mx__cell @(cell.Cell is null ? "is-empty" : "") @(cell.Selected ? "on" : "")"
+                                style="@(cell.Cell is null ? null : Heat(cell.Heat))" aria-pressed="@(cell.Selected ? "true" : "false")"
+                                data-testid="inc-cell-@row.Branch.Code-@cell.Column.Key"
+                                aria-label="@CellAria(row, cell)"
+                                title="@(cell.Cell is null ? null : IncomesFormat.Money(amount))"
+                                @onclick="() => DrillCell(row.Branch.Code, cell.Column.Key)">
+                            <span class="mono">@(cell.Cell is null ? "—" : IncomesFormat.MoneyWhole(amount))</span>
+                            @if (cell.Cell is not null) { <small class="mono">@IncomesFormat.Count(cell.Cell.Count) @Unit</small> }
+                        </button>
+                    }
+                    <div class="inc-mx__total" role="cell">
+                        <span class="mono">@IncomesFormat.MoneyWhole(row.Total)</span>
+                        <span class="inc-mx__meta"><span class="inc-mx__bar"><i style="width:@Pct(row.Bar)"></i></span><small class="mono">@IncomesFormat.Count(row.Count) · @IncomesFormat.Percent(row.Share)</small></span>
+                    </div>
+                </div>
+            }
+            <div class="inc-mx__row inc-mx__row--foot" role="row">
+                <span class="inc-eyebrow inc-mx__name" role="rowheader">@L["Incomes.Total"]</span>
+                @foreach (var column in Summary.Columns)
+                {
+                    var cells = Summary.Matrix.Where(c => c.Column == column.Key).ToList();
+                    <span class="inc-mx__sum mono" role="cell" title="@IncomesFormat.Money(cells.Sum(c => c.AmountEur))">@(cells.Count == 0 ? "—" : IncomesFormat.MoneyWhole(cells.Sum(c => c.AmountEur)))</span>
+                }
+                <span class="inc-mx__grand mono" role="cell" title="@IncomesFormat.Money(Summary.Totals.AmountEur)">@IncomesFormat.MoneyWhole(Summary.Totals.AmountEur)</span>
+            </div>
+        </div>
+        @if (BranchesWithoutData() is { Count: > 0 } quiet)
+        {
+            <p class="inc-mx__note">@L["Incomes.Matrix.NoData", string.Join(", ", quiet.Select(b => b.Name))]</p>
+        }
+    </section>;
+
+    private RenderFragment SoldVsReceived => @<section class="inc-panel inc-svr" data-testid="inc-sold-vs-received">
+        <div class="inc-panel__head inc-panel__head--stack">
+            <div><strong>@L["Incomes.Svr.Title"]</strong> <span class="inc-eyebrow">@L["Incomes.Svr.Tag"]</span></div>
+            <span class="inc-muted">@L["Incomes.Svr.NotDebt"]</span>
+        </div>
+        <div class="inc-svr__legend">
+            <span><i class="inc-swatch inc-swatch--sold"></i>@L["Incomes.Svr.Sold"]</span>
+            <span><i class="inc-swatch inc-swatch--received"></i>@L["Incomes.Svr.Received"]</span>
+            <span class="inc-eyebrow inc-svr__ratio-head">@L["Incomes.Svr.Ratio"]</span>
+        </div>
+        <div class="inc-svr__rows">
+            @foreach (var flow in Flows())
+            {
+                <button type="button" class="inc-svr__row @(flow.Selected ? "on" : "")" aria-pressed="@(flow.Selected ? "true" : "false")"
+                        @onclick="() => DrillBranch(flow.Branch.Code)">
+                    <span class="inc-svr__name">@flow.Branch.Name</span>
+                    <span class="inc-svr__bars">
+                        <span><i class="inc-swatch--sold" style="width:calc((100% - 84px) * @Frac(flow.SoldBar))"></i><small class="mono">@IncomesFormat.MoneyWhole(flow.Sold)</small></span>
+                        <span><i class="inc-swatch--received" style="width:calc((100% - 84px) * @Frac(flow.ReceivedBar))"></i><small class="mono strong">@IncomesFormat.MoneyWhole(flow.Received)</small></span>
+                    </span>
+                    <span class="inc-svr__ratio mono">@Ratio(flow.Sold, flow.Received)</span>
+                </button>
+            }
+            <div class="inc-svr__row inc-svr__row--total">
+                <span class="inc-eyebrow">@L["Incomes.Total"]</span>
+                <span class="mono">@L["Incomes.Svr.TotalLine", IncomesFormat.MoneyWhole(Summary!.SoldVsReceived.Sum(f => f.SoldEur)), IncomesFormat.MoneyWhole(Summary.SoldVsReceived.Sum(f => f.ReceivedEur))]</span>
+                <span class="inc-svr__ratio mono strong">@Ratio(Summary.SoldVsReceived.Sum(f => f.SoldEur), Summary.SoldVsReceived.Sum(f => f.ReceivedEur))</span>
+            </div>
+        </div>
+    </section>;
+
+    internal RenderFragment ErrorPanel(IncomesFailure error) => @<div class="inc-error" role="alert" data-testid="inc-error">
+        <strong>@L["Incomes.Error.Title"]</strong>
+        <span>@L["Incomes.Error.Body"]</span>
+        <span class="mono">@ErrorLine(error)</span>
+        <button type="button" class="inc-btn inc-btn--danger" @onclick="LoadAllAsync">@L["Incomes.Error.Retry"]</button>
+    </div>;
+
+    internal RenderFragment KpiComparisons(KpiCard kpi) => @<text>
+        @foreach (var c in kpi.Comparisons)
+        {
+            <div class="inc-kpi__cmp">
+                <span class="inc-delta inc-delta--@c.Tone">@c.Arrow @c.Change</span>
+                <span class="inc-kpi__than">@L["Incomes.Kpi.Than", c.Label]</span>
+                <span class="inc-kpi__base">@c.Base</span>
+            </div>
+        }
+    </text>;
+
+    internal RenderFragment RemarkButton(IncomesRemarkDto remark)
+    {
+        var drill = remark.Drill;
+        return @<button type="button" class="inc-remark @(drill is null ? "is-static" : "")" disabled="@(drill is null)"
+                        title="@(drill is null ? null : L["Incomes.FilterTable"].Value)"
+                        @onclick="() => drill is null ? Task.CompletedTask : DrillRemark(drill)">
+            <span class="inc-glyph inc-glyph--@remark.Tone" aria-hidden="true">@remark.Glyph</span>
+            <span>@RemarkText(remark)</span>
+            @if (drill is not null) { <span class="inc-remark__go" aria-hidden="true">→</span> }
+        </button>;
+    }
+
+    internal RenderFragment EmptyPanel => @<div class="inc-empty" data-testid="inc-empty">
+        <strong>@L["Incomes.Empty.Title"]</strong>
+        <span>@L[IsMoney ? "Incomes.Empty.Money" : "Incomes.Empty.Orders"]</span>
+        <div>
+            <button type="button" class="inc-btn inc-btn--primary" @onclick="ResetFilters">@L["Incomes.ClearFilters"]</button>
+            <button type="button" class="inc-btn inc-btn--ghost" @onclick='() => SetPreset("last")'>@L["Incomes.PresetLastMonth"]</button>
+        </div>
+    </div>;
+
+    internal string ColumnLabel(IncomesColumnDto column) => IsMoney ? L["Incomes.Method." + column.Key].Value : column.Label;
+
+    internal string ErrorLine(IncomesFailure error) =>
+        $"GET {error.Path} · {(error.Status == 0 ? "—" : error.Status.ToString(System.Globalization.CultureInfo.InvariantCulture))} · {FormatAt(error.At)}{(error.Id.Length > 0 ? " · ID " + error.Id : "")}";
+
+    private static string FormatAt(string at) =>
+        DateTimeOffset.TryParse(at, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.RoundtripKind, out var value)
+            ? value.ToLocalTime().ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture) : at;
+
+    private static int WorkdaysOf(DateOnly from, DateOnly to)
+    {
+        var count = 0;
+        for (var day = from; day <= to; day = day.AddDays(1)) if (!IncomesFormat.IsWeekend(day)) count++;
+        return count;
+    }
+
+    private string BranchSummary() => State.Branches is null ? L["Incomes.All"].Value
+        : State.Branches.Count == 1 ? BranchName(State.Branches[0]) : L["Incomes.SelectedCount", State.Branches.Count].Value;
+
+    private string MethodSummary() => !IsMoney ? L["Incomes.NotApplicable"].Value
+        : State.Methods is null ? L["Incomes.All"].Value
+        : string.Join(", ", State.Methods.Select(m => L["Incomes.Method." + m].Value));
+
+    private IReadOnlyList<(string? Code, string Text, bool On)> BranchOptions() =>
+        [(null, L["Incomes.All"].Value, State.Branches is null),
+         .. (Summary?.Branches ?? []).Select(b => ((string?)b.Code, $"{b.Name} · {IncomesFormat.Count(b.Count)}", State.Branches?.Contains(b.Code) == true))];
+
+    private IReadOnlyList<(string? Code, string Text, bool On)> MethodOptions() =>
+        [(null, L["Incomes.All"].Value, State.Methods is null),
+         .. MethodOrder.Select(m => ((string?)m, L["Incomes.Method." + m].Value, State.Methods?.Contains(m) == true))];
+}

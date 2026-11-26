@@ -12,5 +12,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Modules\Finance\LKvitai.MES.Modules.Finance.Api\LKvitai.MES.Modules.Finance.Api.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Modules\Finance\LKvitai.MES.Modules.Finance.WebUI\LKvitai.MES.Modules.Finance.WebUI.csproj" />
   </ItemGroup>
 </Project>

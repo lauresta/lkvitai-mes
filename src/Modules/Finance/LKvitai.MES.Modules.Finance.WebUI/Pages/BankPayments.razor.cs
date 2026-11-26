@@ -39,9 +39,17 @@ public partial class BankPayments
     private string? _error;
     private bool _desc = true, _armed, _loading = true, _busy;
     private int _page = 1, _searchGeneration, _loadGeneration;
+    private int? _focusNr;
+    private bool _focusTriedOtherCountry;
+
+    /// <summary>
+    /// <c>?nr=201114010</c> (a link from Finance → Įplaukų judėjimas): show only that transfer and highlight it.
+    /// </summary>
+    [Parameter, SupplyParameterFromQuery(Name = "nr")] public int? Nr { get; set; }
 
     protected override void OnInitialized()
     {
+        _focusNr = Nr is > 0 ? Nr : null;
         _persistingSub = ApplicationState.RegisterOnPersisting(() =>
         {
             if (_data is not null)
@@ -94,7 +102,7 @@ public partial class BankPayments
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get,
-                "/api/finance/bank-payments?country=LT&sort=nr&desc=true&page=1");
+                "/api/finance/bank-payments?country=LT&sort=nr&desc=true&page=1" + NrQuery);
             request.Headers.TryAddWithoutValidation("Cookie", $"{PortalAuthDefaults.CookieName}={cookie}");
             using var response = await HttpClients.CreateClient("FinanceApi")
                 .SendAsync(request, context.RequestAborted);
@@ -114,7 +122,32 @@ public partial class BankPayments
         _reference = DotNetObjectReference.Create(this);
         await JS.InvokeVoidAsync("financeBank.attach", _reference);
         if (_data is null) await Load();
+        else if (_focusNr is not null && _data.Items.Count == 0) await FindFocusInOtherCountry();
     }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var nr = Nr is > 0 ? Nr : null;
+        if (nr == _focusNr) return;
+        _focusNr = nr;
+        _focusTriedOtherCountry = false;
+        if (_reference is null) return; // the first render loads it
+        _period = "all"; _search = ""; _page = 1;
+        await Load();
+    }
+
+    private string NrQuery => _focusNr is { } nr ? "&nr=" + nr.ToString(CultureInfo.InvariantCulture) : "";
+
+    /// <summary>The NR is unique across countries: when it is not on the Lithuanian list, look on the Latvian one.</summary>
+    private async Task FindFocusInOtherCountry()
+    {
+        if (_focusTriedOtherCountry) return;
+        _focusTriedOtherCountry = true;
+        _country = _country == "LT" ? "LV" : "LT";
+        await Load();
+    }
+
+    private void ClearFocus() => Navigation.NavigateTo("bank-payments");
     private string Failure(Exception error)
     {
         var marker = "finance-http:";
@@ -150,9 +183,15 @@ public partial class BankPayments
             };
             var path = $"?country={_country}&sort={_sort}&desc={_desc.ToString().ToLowerInvariant()}&page={_page}" +
                 (from.Length > 0 ? "&from=" + from : "") +
-                (_search.Length > 0 ? "&q=" + Uri.EscapeDataString(_search) : "");
+                (_search.Length > 0 ? "&q=" + Uri.EscapeDataString(_search) : "") + NrQuery;
             var result = JsonSerializer.Deserialize<PaymentPage>(await Request(path), Json);
             if (generation == _loadGeneration) _data = result;
+            if (generation == _loadGeneration && _focusNr is not null && result?.Items.Count == 0 && !_focusTriedOtherCountry)
+            {
+                _loading = false;
+                await FindFocusInOtherCountry();
+                return;
+            }
         }
         catch (Exception ex) { if (generation == _loadGeneration) { _error = Failure(ex); _data = null; } }
         finally { if (generation == _loadGeneration) { _loading = false; StateHasChanged(); } }

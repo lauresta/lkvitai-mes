@@ -410,6 +410,11 @@ services:
       # SQL logins without the Windows prefix on the new SQL Server (Ubuntu, no Windows auth)
       Finance__AllowedLegacyLogins__2: 'd.bykovas'
       Finance__AllowedLegacyLogins__3: 'v.stropus'
+      # Finance → Įplaukų judėjimas: only these Cikada (SSO) usernames; an empty list lets nobody in.
+      # Keep the same list on finance-webui (menu item, page and shell search).
+      Finance__Incomes__AllowedUsers__0: 'bykovas'
+      Finance__Incomes__AllowedUsers__1: 'dstropiene'
+      Finance__Incomes__AllowedUsers__2: 'vstropus'
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
@@ -433,6 +438,10 @@ services:
       ASPNETCORE_ENVIRONMENT: Test
       PathBase: "/finance"
       FinanceApi__BaseUrl: "http://lkvitai-mes-finance-api:8080"
+      # Same list as finance-api: who sees Finance → Įplaukų judėjimas.
+      Finance__Incomes__AllowedUsers__0: 'bykovas'
+      Finance__Incomes__AllowedUsers__1: 'dstropiene'
+      Finance__Incomes__AllowedUsers__2: 'vstropus'
       PortalAuth__LoginBasePath: "/portal"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
     volumes:

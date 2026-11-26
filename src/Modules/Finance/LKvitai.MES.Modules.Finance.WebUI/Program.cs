@@ -3,6 +3,7 @@ using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.BuildingBlocks.Search;
 using LKvitai.MES.BuildingBlocks.WebUI.Localization;
 using LKvitai.MES.BuildingBlocks.WebUI.Services;
+using LKvitai.MES.Modules.Finance.WebUI.IncomesReport;
 using LKvitai.MES.Modules.Finance.WebUI.Resources;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Localization;
@@ -38,13 +39,18 @@ app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok());
 app.MapPortalLogout();
-// Portal "Search everything" (#375): this module's one screen for the shared top bar.
+// Portal "Search everything" (#375): this module's screens for the shared top bar. The incomes report is offered
+// only to the users on Finance:Incomes:AllowedUsers.
 app.MapShellScreenSearch(context =>
 {
     var text = context.RequestServices.GetRequiredService<IStringLocalizer<FinanceResources>>();
-    IReadOnlyList<ScreenEntry> screens =
-        [ScreenEntry.FromResource(text, "bank-payments", "Bank.Title", text["Finance.Title"].Value, CikadaLocalization.LanguageCodes)];
-    return screens;
+    var screens = new List<ScreenEntry>
+    {
+        ScreenEntry.FromResource(text, "bank-payments", "Bank.Title", text["Finance.Title"].Value, CikadaLocalization.LanguageCodes),
+    };
+    if (IncomesAccess.IsAllowed(context.User, app.Configuration))
+        screens.Add(ScreenEntry.FromResource(text, "incomes", "Incomes.Title", text["Finance.Title"].Value, CikadaLocalization.LanguageCodes));
+    return (IReadOnlyList<ScreenEntry>)screens;
 });
 app.MapCikadaCultureEndpoint();
 app.MapBlazorHub();
