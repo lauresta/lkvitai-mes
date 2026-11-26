@@ -184,6 +184,10 @@
   <data name="Incomes.Remark.Cancelled.Many" xml:space="preserve"><value>{0} anuliuotų kliento prašymu · lieka {1}</value></data>
   <data name="Incomes.Remark.FlowRatio" xml:space="preserve"><value>Gauta {0} parduotos sumos — srautai, ne skola</value></data>
   <data name="Incomes.Remark.Discount" xml:space="preserve"><value>Vid. nuolaida {0}; didžiausia — {1} {2}</value></data>
+  <data name="Incomes.Remark.Corrections.One" xml:space="preserve"><value>{0} užsakymas su kainos korekcija</value></data>
+  <data name="Incomes.Remark.Corrections.Few" xml:space="preserve"><value>{0} užsakymai su kainos korekcija</value></data>
+  <data name="Incomes.Remark.Corrections.Many" xml:space="preserve"><value>{0} užsakymų su kainos korekcija</value></data>
+  <data name="Incomes.PriceCorrection" xml:space="preserve"><value>Kainos korekcija: kaina padidinta {0} (neigiama nuolaida)</value></data>
   <data name="Incomes.MonthsGenitive" xml:space="preserve"><value>sausio|vasario|kovo|balandžio|gegužės|birželio|liepos|rugpjūčio|rugsėjo|spalio|lapkričio|gruodžio</value></data>
   <data name="Incomes.MonthsAccusative" xml:space="preserve"><value>sausį|vasarį|kovą|balandį|gegužę|birželį|liepą|rugpjūtį|rugsėjį|spalį|lapkritį|gruodį</value></data>
   <data name="Incomes.Weekdays" xml:space="preserve"><value>Pr|An|Tr|Kt|Pn|Št|Sk</value></data>

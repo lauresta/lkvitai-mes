@@ -231,6 +231,24 @@ public class IncomesCalculatorTests
     }
 
     [Fact]
+    public void Negative_discounts_are_price_corrections_not_discounts()
+    {
+        var orders = new List<IncomesRecord>();
+        for (var i = 0; i < 30; i++) orders.Add(Order(D(10, 5), Kaunas, 100, discount: 10));
+        for (var i = 0; i < 4; i++) orders.Add(Order(D(10, 6), Kaunas, 1000, discount: -89.3m));
+        var query = October(IncomesDataset.Orders);
+        var summary = IncomesCalculator.Summary(query, Sources(orders, payments: [], orders: orders), Today);
+
+        var discount = summary.Remarks.Single(r => r.Kind == "discount");
+        Assert.Equal("10.0", discount.Values["average"]);
+        Assert.Equal("10.0", discount.Values["branchAverage"]);
+        Assert.Equal("4", discount.Values["corrections"]);
+        Assert.EndsWith(" · 4 užsakymai su kainos korekcija", IncomesText.Remark(discount));
+        Assert.True(IncomesCalculator.IsPriceCorrection(orders[^1]));
+        Assert.False(IncomesCalculator.IsPriceCorrection(orders[0]));
+    }
+
+    [Fact]
     public void Query_parser_defaults_to_last_month_and_validates()
     {
         var empty = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>();

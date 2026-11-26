@@ -105,7 +105,10 @@ public static class IncomesText
             "allEmployees" => "Visi kasos mokėjimai turi darbuotoją",
             "cancelled" => $"{N("count")} {Plural(N("count"), "anuliuotas", "anuliuoti", "anuliuotų")} kliento prašymu · lieka {Money(D("amount"), 0)}",
             "flowRatio" => $"Gauta {Percent("pct")} parduotos sumos — srautai, ne skola",
-            "discount" => $"Vid. nuolaida {Percent("average")}; didžiausia — {V("branch")} {Percent("branchAverage")}",
+            "discount" => $"Vid. nuolaida {Percent("average")}; didžiausia — {V("branch")} {Percent("branchAverage")}" +
+                (N("corrections") > 0
+                    ? $" · {N("corrections")} {Plural(N("corrections"), "užsakymas", "užsakymai", "užsakymų")} su kainos korekcija"
+                    : ""),
             _ => remark.Kind,
         };
     }

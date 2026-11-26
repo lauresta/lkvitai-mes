@@ -184,6 +184,10 @@
   <data name="Incomes.Remark.Cancelled.Many" xml:space="preserve"><value>{0} cancelled by the client · {1} left</value></data>
   <data name="Incomes.Remark.FlowRatio" xml:space="preserve"><value>Received {0} of the amount sold — flows, not debt</value></data>
   <data name="Incomes.Remark.Discount" xml:space="preserve"><value>Average discount {0}; highest — {1} {2}</value></data>
+  <data name="Incomes.Remark.Corrections.One" xml:space="preserve"><value>{0} order with a price correction</value></data>
+  <data name="Incomes.Remark.Corrections.Few" xml:space="preserve"><value>{0} orders with a price correction</value></data>
+  <data name="Incomes.Remark.Corrections.Many" xml:space="preserve"><value>{0} orders with a price correction</value></data>
+  <data name="Incomes.PriceCorrection" xml:space="preserve"><value>Price correction: price raised by {0} (negative discount)</value></data>
   <data name="Incomes.MonthsGenitive" xml:space="preserve"><value>January|February|March|April|May|June|July|August|September|October|November|December</value></data>
   <data name="Incomes.MonthsAccusative" xml:space="preserve"><value>January|February|March|April|May|June|July|August|September|October|November|December</value></data>
   <data name="Incomes.Weekdays" xml:space="preserve"><value>Mo|Tu|We|Th|Fr|Sa|Su</value></data>
