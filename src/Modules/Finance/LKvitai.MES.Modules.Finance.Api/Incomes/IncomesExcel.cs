@@ -181,7 +181,8 @@ public static class IncomesExcel
         var money = query.IsMoney;
         string[] heads = money
             ? ["Data", "Užsakymas", "Filialas", "Būdas", "Dokumentas", "Pastaba", "Darbuotojas", "Suma"]
-            : ["Data", "Užsakymas", "Filialas", "Konsultantas", "Klientas", "Nuolaida, %", "Apmokėta", "Būsena", "Vertė"];
+            : ["Data", "Užsakymas", "Filialas", "Konsultantas", "Klientas", "Nuolaida, % (neigiama — kainos korekcija)", "Apmokėta",
+                "Būsena", "Vertė"];
         var amountColumn = heads.Length;
         Header(sheet, 1, heads);
         sheet.Outline.SummaryVLocation = XLOutlineSummaryVLocation.Top;

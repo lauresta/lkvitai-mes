@@ -110,6 +110,23 @@ public partial class Incomes
         return cards;
     }
 
+    /// <summary>" · 343 orders with a price correction" after the discount remark; empty when there are none.</summary>
+    private string Corrections(long count) => count > 0
+        ? " · " + L["Incomes.Remark.Corrections." + IncomesFormat.PluralForm(count), IncomesFormat.Count(count)].Value
+        : "";
+
+    /// <summary>Discount cell: a negative discount is a price correction upwards, shown as "+89,3 %".</summary>
+    internal string DiscountText(decimal? discount) => discount switch
+    {
+        null or 0 => "—",
+        < 0 => "+" + IncomesFormat.Percent(-discount.Value, 1),
+        _ => IncomesFormat.Percent(discount.Value, 1),
+    };
+
+    internal string? DiscountTitle(decimal? discount) => discount < 0
+        ? L["Incomes.PriceCorrection", IncomesFormat.Percent(-discount.Value, 1)].Value
+        : null;
+
     internal string RemarkText(IncomesRemarkDto remark)
     {
         string V(string key) => remark.Values.TryGetValue(key, out var value) ? value : "";
@@ -139,7 +156,7 @@ public partial class Incomes
             "cancelled" => L["Incomes.Remark.Cancelled." + form, IncomesFormat.Count(count), IncomesFormat.MoneyWhole(D("amount"))].Value,
             "flowRatio" => L["Incomes.Remark.FlowRatio", IncomesFormat.Percent(V("pct"))].Value,
             "discount" => L["Incomes.Remark.Discount", IncomesFormat.Percent(V("average")), V("branch"),
-                IncomesFormat.Percent(V("branchAverage"))].Value,
+                IncomesFormat.Percent(V("branchAverage"))].Value + Corrections((long)D("corrections")),
             _ => remark.Kind,
         };
     }

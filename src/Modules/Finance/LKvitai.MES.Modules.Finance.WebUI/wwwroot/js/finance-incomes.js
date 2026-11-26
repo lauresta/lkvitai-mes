@@ -113,7 +113,8 @@ window.financeIncomes = (() => {
     const value = item[field];
     if (value == null || value === '') return field === 'employee' ? setup.noEmployee : '—';
     if (field === 'amountEur' || field === 'valueEur' || field === 'paidEur') return setup.money(value);
-    if (field === 'discountPct') return String(value).replace('.', ',') + ' %';
+    // A negative discount is a price correction upwards: print it as "+89,3 %".
+    if (field === 'discountPct') return (value < 0 ? '+' + String(-value) : String(value)).replace('.', ',') + ' %';
     if (field === 'method') return setup.methods[value] || value;
     if (field === 'status') return setup.statuses[value] || value;
     return value;

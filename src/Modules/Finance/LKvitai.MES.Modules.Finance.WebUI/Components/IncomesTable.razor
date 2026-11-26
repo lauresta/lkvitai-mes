@@ -215,7 +215,7 @@
             <span class="c-branch ellipsis">@row.Branch</span>
             <span class="c-cons ellipsis">@(row.Consultant ?? "—")</span>
             <span class="c-cust ellipsis" title="@(row.Note is null ? row.Customer : $"{row.Customer} · {row.Note}")">@(row.Customer ?? "—")@if (row.Note is not null) { <small class="inc-muted"> · @row.Note</small> }</span>
-            <span class="c-disc num mono">@(row.DiscountPct is { } d && d != 0 ? IncomesFormat.Percent(d, 1) : "—")</span>
+            <span class="c-disc num mono @(row.DiscountPct < 0 ? "is-corr" : "")" title="@Page.DiscountTitle(row.DiscountPct)">@Page.DiscountText(row.DiscountPct)</span>
             <span class="c-paid num mono @(full ? "is-ok" : "")">@IncomesFormat.Money(paid)</span>
             <span class="c-status"><span class="inc-pill @(row.IsCancelled ? "inc-pill--cancelled" : "")" title="@(row.IsCancelled ? L["Incomes.Status.CancelledTitle"].Value : null)">@L[row.IsCancelled ? "Incomes.Status.Cancelled" : "Incomes.Status.Accepted"]</span></span>
             <span class="c-amt num mono strong">@IncomesFormat.Money(row.Amount)</span>

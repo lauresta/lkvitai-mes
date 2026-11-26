@@ -213,12 +213,21 @@ public static class IncomesCalculator
                 new IncomesDrill(Branch: best.Branch.Code, Method: best.Method));
     }
 
-    /// <summary>Order-value weighted average discount, and the branch (at least 30 orders) with the highest one.</summary>
+    /// <summary>
+    /// A negative <c>Uzsakymai.Nuolaida</c> is not a discount: staff use it to correct a price that came out too low
+    /// (owner, 2026-11-26).
+    /// </summary>
+    public static bool IsPriceCorrection(IncomesRecord record) => record.DiscountPct < 0;
+
+    /// <summary>
+    /// Order-value weighted average discount, and the branch (at least 30 orders) with the highest one. Price corrections
+    /// (negative discounts) are left out of both and counted separately.
+    /// </summary>
     private static IncomesRemark? Discount(IReadOnlyCollection<IncomesRecord> records, Dictionary<int, IncomesBranch> branches)
     {
         static decimal Weighted(IEnumerable<IncomesRecord> rows)
         {
-            var list = rows.Where(record => record.Amount > 0).ToList();
+            var list = rows.Where(record => record.Amount > 0 && !IsPriceCorrection(record)).ToList();
             var value = list.Sum(record => record.Amount);
             return value == 0 ? 0 : list.Sum(record => (record.DiscountPct ?? 0) * record.Amount) / value;
         }
@@ -228,7 +237,8 @@ public static class IncomesCalculator
             .FirstOrDefault();
         return top.Branch is null ? null
             : new IncomesRemark("discount", "info", "%", Values(("average", Percent(Weighted(records), 1)),
-                ("branch", top.Branch.Name), ("branchAverage", Percent(top.Average, 1))), new IncomesDrill(Branch: top.Branch.Code));
+                ("branch", top.Branch.Name), ("branchAverage", Percent(top.Average, 1)),
+                ("corrections", Count(records.Count(IsPriceCorrection)))), new IncomesDrill(Branch: top.Branch.Code));
     }
 
     /// <summary>The weekday (up to today) furthest below 60 % of the weekday median.</summary>
