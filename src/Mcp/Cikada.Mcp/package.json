@@ -21,7 +21,7 @@
     "pngjs": "7.0.0"
   },
   "devDependencies": {
-    "@types/node": "22.20.4",
+    "@types/node": "26.6.6",
     "@types/pngjs": "6.0.5",
     "typescript": "5.9.3"
   }
