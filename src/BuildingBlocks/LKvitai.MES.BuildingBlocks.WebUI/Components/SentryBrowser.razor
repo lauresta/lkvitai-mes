@@ -11,6 +11,9 @@
     Static, not ServerPrerendered: a script only has to be written into the page once, and a static render never
     becomes part of the Blazor circuit, which would insert the script elements again and start Sentry twice.
 
+    Session Replay records the screen unmasked by default (internal staff application; Sentry:Replay:MaskAllText,
+    MaskAllInputs and BlockAllMedia switch masking on). Password fields are always masked by the SDK.
+
     Renders nothing unless the module called builder.AddCikadaSentry(...) with Sentry:Dsn set. The CDN bundle is
     pinned to one @sentry/browser version with its SRI hash (bump both together; the hash is the sha384 of the
     file, base64). It loads with defer, so a slow or unreachable CDN never holds up the page; the init in

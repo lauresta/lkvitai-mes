@@ -38,7 +38,7 @@ public static class SentryBrowserScript
         var replay = JsonSerializer.Serialize(new
         {
             maskAllText = settings.ReplayMaskAllText,
-            maskAllInputs = true,
+            maskAllInputs = settings.ReplayMaskAllInputs,
             blockAllMedia = settings.ReplayBlockAllMedia,
         });
 

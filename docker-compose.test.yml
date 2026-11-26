@@ -10,6 +10,10 @@ x-sentry: &sentry
   Sentry__TracesSampleRate: "${SENTRY_TRACES_SAMPLE_RATE:-0}"
   Sentry__Replay__SessionSampleRate: "${SENTRY_REPLAY_SESSION_SAMPLE_RATE:-0.1}"
   Sentry__Replay__OnErrorSampleRate: "${SENTRY_REPLAY_ON_ERROR_SAMPLE_RATE:-1.0}"
+  # Internal staff application: replays show the screen as the user saw it (password fields stay masked).
+  Sentry__Replay__MaskAllText: "false"
+  Sentry__Replay__MaskAllInputs: "false"
+  Sentry__Replay__BlockAllMedia: "false"
 
 # SSO (authentik, sso.lauresta.com). APIs accept JWTs minted for the web client
 # and for the MCP client; Portal WebUI also runs the interactive login.

@@ -14,7 +14,8 @@ namespace LKvitai.MES.BuildingBlocks.Observability;
 ///     the <c>RELEASE_TAG</c> / <c>APP_VERSION</c> build arguments baked into the WebUI images.</item>
 ///   <item><c>Sentry:TracesSampleRate</c> - performance tracing, default 0 (off).</item>
 ///   <item><c>Sentry:Replay:*</c> - browser Session Replay: <c>SessionSampleRate</c> (0.1), <c>OnErrorSampleRate</c>
-///     (1.0), <c>MaskAllText</c> and <c>BlockAllMedia</c> (true, Sentry's privacy-safe defaults).</item>
+///     (1.0), <c>MaskAllText</c>, <c>MaskAllInputs</c> and <c>BlockAllMedia</c> (false: an internal staff application,
+///     the replay shows the screen as the user saw it; password fields stay masked by the Sentry SDK itself).</item>
 /// </list>
 /// </summary>
 public sealed record CikadaSentrySettings(
@@ -26,6 +27,7 @@ public sealed record CikadaSentrySettings(
     double ReplaySessionSampleRate,
     double ReplayOnErrorSampleRate,
     bool ReplayMaskAllText,
+    bool ReplayMaskAllInputs,
     bool ReplayBlockAllMedia)
 {
     public const string SectionName = "Sentry";
@@ -53,8 +55,9 @@ public sealed record CikadaSentrySettings(
             Rate(section["TracesSampleRate"], 0),
             Rate(section["Replay:SessionSampleRate"], 0.1),
             Rate(section["Replay:OnErrorSampleRate"], 1),
-            Flag(section["Replay:MaskAllText"], true),
-            Flag(section["Replay:BlockAllMedia"], true));
+            Flag(section["Replay:MaskAllText"]),
+            Flag(section["Replay:MaskAllInputs"]),
+            Flag(section["Replay:BlockAllMedia"]));
     }
 
     private static string? TrimToNull(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
@@ -65,5 +68,6 @@ public sealed record CikadaSentrySettings(
             ? Math.Clamp(rate, 0, 1)
             : fallback;
 
-    private static bool Flag(string? value, bool fallback) => bool.TryParse(value, out var flag) ? flag : fallback;
+    // Off unless explicitly "true".
+    private static bool Flag(string? value) => bool.TryParse(value, out var flag) && flag;
 }

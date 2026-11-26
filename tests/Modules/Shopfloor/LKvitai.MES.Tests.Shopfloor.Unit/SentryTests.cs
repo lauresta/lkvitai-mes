@@ -36,12 +36,12 @@ public class SentryTests
     }
 
     [Fact]
-    public void Settings_default_to_privacy_safe_replay_and_no_tracing()
+    public void Settings_default_to_unmasked_replay_and_no_tracing()
     {
         var settings = CikadaSentrySettings.From(Config(("Sentry:Dsn", Dsn), ("APP_VERSION", "v0.7.3-4-gabc")), "sales-webui");
 
         settings.Should().BeEquivalentTo(new CikadaSentrySettings(
-            "sales-webui", Dsn, null, "v0.7.3-4-gabc", 0, 0.1, 1, true, true));
+            "sales-webui", Dsn, null, "v0.7.3-4-gabc", 0, 0.1, 1, false, false, false));
     }
 
     [Fact]
@@ -54,14 +54,16 @@ public class SentryTests
             ("Sentry:TracesSampleRate", "0.25"),
             ("Sentry:Replay:SessionSampleRate", "abc"),
             ("Sentry:Replay:OnErrorSampleRate", "7"),
-            ("Sentry:Replay:MaskAllText", "false")), "portal-webui");
+            ("Sentry:Replay:MaskAllText", "true"),
+            ("Sentry:Replay:MaskAllInputs", "nonsense")), "portal-webui");
 
         settings.Release.Should().Be("v0.7.3");
         settings.TracesSampleRate.Should().Be(0.25);
         settings.ReplaySessionSampleRate.Should().Be(0.1);
         settings.ReplayOnErrorSampleRate.Should().Be(1);
-        settings.ReplayMaskAllText.Should().BeFalse();
-        settings.ReplayBlockAllMedia.Should().BeTrue();
+        settings.ReplayMaskAllText.Should().BeTrue();
+        settings.ReplayMaskAllInputs.Should().BeFalse();
+        settings.ReplayBlockAllMedia.Should().BeFalse();
     }
 
     [Fact]
@@ -78,7 +80,7 @@ public class SentryTests
             .And.Contain("\"replaysSessionSampleRate\":0.1")
             .And.Contain("\"replaysOnErrorSampleRate\":1")
             .And.Contain("\"tags\":{\"module\":\"finance-webui\"}")
-            .And.Contain("Sentry.replayIntegration({\"maskAllText\":true,\"maskAllInputs\":true,\"blockAllMedia\":true})")
+            .And.Contain("Sentry.replayIntegration({\"maskAllText\":false,\"maskAllInputs\":false,\"blockAllMedia\":false})")
             .And.Contain("Sentry.init(options);")
             .And.NotContain("</script")
             .And.NotContain("browserTracingIntegration")
