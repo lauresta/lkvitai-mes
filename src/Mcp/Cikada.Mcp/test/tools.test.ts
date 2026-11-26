@@ -13,7 +13,7 @@ test('tools/list: the read tools by default, read-only annotated; order entry on
   try {
     const token = fakeJwt();
     const listed = (await rpc(off.base, token, 'tools/list')).body.result.tools as { name: string; annotations: Record<string, unknown> }[];
-    assert.deepEqual(listed.map((t) => t.name), [...READ_TOOLS, 'bank_payments_import', 'docs_search', 'docs_get', 'docs_image']);
+    assert.deepEqual(listed.map((t) => t.name), [...READ_TOOLS, 'bank_payments_import', 'incomes_summary', 'incomes_rows', 'docs_search', 'docs_get', 'docs_image']);
     for (const tool of listed.filter((t) => t.name !== 'bank_payments_import')) assert.equal(tool.annotations.readOnlyHint, true, tool.name);
     assert.equal(listed.find((t) => t.name === 'bank_payments_import')?.annotations.destructiveHint, true);
 
@@ -146,6 +146,90 @@ test('bank payments list returns individual payers and full purposes across page
       assert.equal(call.url.searchParams.get('to'), '2026-10-30');
       assert.equal(call.headers.authorization, `Bearer ${token}`);
     }
+  } finally {
+    await stand.close();
+  }
+});
+
+test('incomes summary passes the report filters and words totals, comparisons, branches and methods', async () => {
+  const summary = {
+    period: { from: '2026-10-01', to: '2026-10-31', bucket: 'day', days: 31, workdays: 22 }, dataset: 'money',
+    branches: [{ code: 'VLN', name: 'Vilnius', count: 2, totalEur: 300, hasData: true },
+      { code: 'SEN', name: 'SENUKAI', count: 0, totalEur: 0, hasData: false }],
+    methods: [{ code: 'BANK', name: 'Pavedimu', hint: '', count: 1 }],
+    totals: { count: 2, amountEur: 300, refunds: { count: 1, amountEur: -20 }, noEmployeeCount: 0, cancelled: { count: 0, amountEur: 0 } },
+    comparisons: { previous: { from: '2026-09-01', to: '2026-09-30', count: 4, amountEur: 400 },
+      lastYear: { from: '2025-10-01', to: '2025-10-31', count: 2, amountEur: 250 } },
+    buckets: [], columns: [{ key: 'BANK', label: 'Pavedimu' }, { key: 'EKA', label: 'Per EKA' }],
+    matrix: [{ branch: 'VLN', column: 'BANK', count: 1, amountEur: 320 }, { branch: 'VLN', column: 'EKA', count: 1, amountEur: -20 }],
+    soldVsReceived: [{ branch: 'VLN', soldEur: 500, receivedEur: 300 }],
+    remarks: [{ kind: 'refunds', tone: 'danger', glyph: '', values: { count: '1', amount: '-20.00' } }],
+  };
+  const api = mockFetch(() => ({ status: 200, body: summary }));
+  const stand = await running(testConfig(), { fetchImpl: api.fetchImpl });
+  try {
+    const result = (await rpc(stand.base, fakeJwt(), 'tools/call', {
+      name: 'incomes_summary', arguments: { from: '2026-10-01', to: '2026-10-31', branches: ['VLN', 'KNS'], methods: ['BANK', 'EKA'] },
+    })).body.result;
+    assert.equal(result.isError, undefined, JSON.stringify(result));
+    const call = api.seen[0]!;
+    assert.equal(call.url.origin, 'https://finance.internal');
+    assert.equal(call.url.pathname, '/api/finance/incomes/summary');
+    assert.equal(call.url.searchParams.get('from'), '2026-10-01');
+    assert.equal(call.url.searchParams.get('branch'), 'VLN,KNS');
+    assert.equal(call.url.searchParams.get('method'), 'BANK,EKA');
+    assert.equal(call.url.searchParams.get('ds'), null);
+    const text = result.content[0].text as string;
+    assert.match(text, /2 payments, 300\.00 EUR/);
+    assert.match(text, /Previous period 2026-09-01\.\.2026-09-30: 4, 400\.00 EUR \(amount -25\.0 %/);
+    assert.match(text, /Vilnius \[VLN\] 300\.00 EUR \(2\)/);
+    assert.doesNotMatch(text, /SENUKAI \[SEN\]/);
+    assert.match(text, /BANK 320\.00 EUR \(1\); EKA -20\.00 EUR \(1\)/);
+    assert.match(text, /Vilnius sold 500\.00 EUR, received 300\.00 EUR/);
+    assert.equal(result.structuredContent.branches.length, 2);
+  } finally {
+    await stand.close();
+  }
+});
+
+test('incomes rows page orders, keep the price-correction meaning and ignore methods for orders', async () => {
+  const items = [{ date: '2026-10-16', orderNo: 'AB-11469-26', branch: 'Klaipėda mažmena', customer: 'Klientas',
+    valueEur: 147, discountPct: -240, paidEur: 147, status: 'accepted' }];
+  const api = mockFetch(() => ({ status: 200, body: { total: 153, sumEur: 9000, refundsEur: 0, groups: [], items } }));
+  const stand = await running(testConfig(), { fetchImpl: api.fetchImpl });
+  try {
+    const result = (await rpc(stand.base, fakeJwt(), 'tools/call', {
+      name: 'incomes_rows', arguments: { dataset: 'orders', methods: ['BANK'], cancelled: true, refunds: true,
+        sort: 'disc', descending: false, page: 2 },
+    })).body.result;
+    assert.equal(result.isError, undefined, JSON.stringify(result));
+    const seen = api.seen[0]!;
+    const query = seen.url.searchParams;
+    assert.equal(seen.url.pathname, '/api/finance/incomes/rows');
+    assert.equal(query.get('ds'), 'orders');
+    assert.equal(query.get('method'), null);
+    assert.equal(query.get('cancelled'), '1');
+    assert.equal(query.get('refunds'), null);
+    assert.equal(query.get('sort'), 'disc');
+    assert.equal(query.get('skip'), '100');
+    assert.equal(query.get('take'), '100');
+    const text = result.content[0].text as string;
+    assert.match(text, /153 orders, total 9000\.00 EUR; page 2 of 2/);
+    assert.match(text, /\+240\.0 % price correction/);
+    assert.equal(result.structuredContent.pages, 2);
+  } finally {
+    await stand.close();
+  }
+});
+
+test('incomes report reports the allow-list denial', async () => {
+  const api = mockFetch(() => ({ status: 403, body: { title: 'Incomes report access required.' } }));
+  const stand = await running(testConfig(), { fetchImpl: api.fetchImpl });
+  try {
+    const result = (await rpc(stand.base, fakeJwt(), 'tools/call', { name: 'incomes_summary', arguments: {} })).body.result;
+    assert.equal(result.isError, true);
+    assert.equal(result.structuredContent.error.status, 403);
+    assert.match(result.content[0].text, /Incomes report access required/);
   } finally {
     await stand.close();
   }
