@@ -11,11 +11,13 @@ COPY global.json .
 # because Portal.Api now wires PortalStructuredBearer for /api/portal/v1
 # (status stays AllowAnonymous, modules + news require auth).
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/LKvitai.MES.BuildingBlocks.PortalAuth.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Observability/LKvitai.MES.BuildingBlocks.Observability.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.Observability/
 COPY src/Modules/Portal/LKvitai.MES.Modules.Portal.Api/LKvitai.MES.Modules.Portal.Api.csproj Modules/Portal/LKvitai.MES.Modules.Portal.Api/
 
 RUN dotnet restore Modules/Portal/LKvitai.MES.Modules.Portal.Api/LKvitai.MES.Modules.Portal.Api.csproj
 
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/ BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Observability/ BuildingBlocks/LKvitai.MES.BuildingBlocks.Observability/
 COPY src/Modules/Portal/LKvitai.MES.Modules.Portal.Api/ Modules/Portal/LKvitai.MES.Modules.Portal.Api/
 
 WORKDIR /src/Modules/Portal/LKvitai.MES.Modules.Portal.Api

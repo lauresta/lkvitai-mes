@@ -1,3 +1,4 @@
+using LKvitai.MES.BuildingBlocks.Observability;
 using LKvitai.MES.BuildingBlocks.WebUI.Localization;
 using LKvitai.MES.BuildingBlocks.ModuleStartup;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
@@ -12,6 +13,7 @@ using Serilog;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.UseScaffoldSerilog("shopfloor-webui");
+builder.AddCikadaSentry("shopfloor-webui");
 builder.Services.AddScaffoldWebUiCore("ShopfloorApi", "ShopfloorApi:BaseUrl", "http://localhost:5041");
 builder.Services.AddCikadaLocalization(builder.Configuration);
 

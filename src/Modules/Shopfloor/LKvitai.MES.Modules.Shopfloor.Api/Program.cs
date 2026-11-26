@@ -1,3 +1,4 @@
+using LKvitai.MES.BuildingBlocks.Observability;
 using LKvitai.MES.BuildingBlocks.ModuleStartup;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.Modules.Shopfloor.Api.Endpoints;
@@ -13,6 +14,7 @@ using Microsoft.AspNetCore.Authorization;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.UseScaffoldSerilog("shopfloor-api");
+builder.AddCikadaSentry("shopfloor-api");
 builder.Services.AddScaffoldApiCore();
 
 builder.Services.AddShopfloorApplication();

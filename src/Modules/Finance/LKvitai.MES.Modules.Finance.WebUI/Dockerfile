@@ -4,11 +4,13 @@ COPY Directory.Build.props Directory.Packages.props global.json ./
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/LKvitai.MES.BuildingBlocks.ModuleStartup.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/LKvitai.MES.BuildingBlocks.PortalAuth.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/LKvitai.MES.BuildingBlocks.WebUI.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Observability/LKvitai.MES.BuildingBlocks.Observability.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.Observability/
 COPY src/Modules/Finance/LKvitai.MES.Modules.Finance.WebUI/LKvitai.MES.Modules.Finance.WebUI.csproj Modules/Finance/LKvitai.MES.Modules.Finance.WebUI/
 RUN dotnet restore Modules/Finance/LKvitai.MES.Modules.Finance.WebUI/LKvitai.MES.Modules.Finance.WebUI.csproj
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/ BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/ BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/ BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Observability/ BuildingBlocks/LKvitai.MES.BuildingBlocks.Observability/
 COPY src/Modules/Finance/LKvitai.MES.Modules.Finance.WebUI/ Modules/Finance/LKvitai.MES.Modules.Finance.WebUI/
 WORKDIR /src/Modules/Finance/LKvitai.MES.Modules.Finance.WebUI
 RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false --no-restore

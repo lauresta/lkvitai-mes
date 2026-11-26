@@ -1,3 +1,4 @@
+using LKvitai.MES.BuildingBlocks.Observability;
 using LKvitai.MES.BuildingBlocks.ModuleStartup;
 using LKvitai.MES.Modules.Frontline.Api.Composition;
 using LKvitai.MES.Modules.Frontline.Api.Endpoints;
@@ -5,6 +6,7 @@ using LKvitai.MES.Modules.Frontline.Api.Endpoints;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.UseScaffoldSerilog("frontline");
+builder.AddCikadaSentry("frontline-api");
 builder.Services.AddScaffoldApiCore();
 
 // F-1: bind the fabric read-side to the in-memory stub

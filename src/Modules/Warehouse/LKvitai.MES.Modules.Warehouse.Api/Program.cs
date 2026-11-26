@@ -3,6 +3,7 @@ using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using LKvitai.MES.Modules.Warehouse.Api.BackgroundJobs;
 using LKvitai.MES.BuildingBlocks.ObjectStorage;
+using LKvitai.MES.BuildingBlocks.Observability;
 using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using LKvitai.MES.Modules.Warehouse.Api.Middleware;
 using LKvitai.MES.Modules.Warehouse.Api.Observability;
@@ -51,11 +52,13 @@ var loggerConfiguration = new LoggerConfiguration()
         "logs/warehouse-.log",
         rollingInterval: RollingInterval.Day,
         retainedFileCountLimit: 14,
-        outputTemplate: structuredLogTemplate);
+        outputTemplate: structuredLogTemplate)
+    .WriteToCikadaSentry(builder.Configuration);
 
 Log.Logger = loggerConfiguration.CreateLogger();
 
 builder.Host.UseSerilog();
+builder.AddCikadaSentry("warehouse-api");
 
 // Add services per blueprint
 builder.Services.AddControllers();

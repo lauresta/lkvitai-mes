@@ -12,6 +12,7 @@ COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/LKvitai.MES
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/LKvitai.MES.BuildingBlocks.SharedKernel.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/LKvitai.MES.BuildingBlocks.ModuleStartup.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/LKvitai.MES.BuildingBlocks.PortalAuth.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Observability/LKvitai.MES.BuildingBlocks.Observability.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.Observability/
 COPY src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Contracts/LKvitai.MES.Modules.Shopfloor.Contracts.csproj Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Contracts/
 COPY src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Domain/LKvitai.MES.Modules.Shopfloor.Domain.csproj Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Domain/
 COPY src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Application/LKvitai.MES.Modules.Shopfloor.Application.csproj Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Application/
@@ -24,6 +25,7 @@ COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/ BuildingBl
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/ BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/ BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/ BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Observability/ BuildingBlocks/LKvitai.MES.BuildingBlocks.Observability/
 COPY src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Contracts/ Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Contracts/
 COPY src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Domain/ Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Domain/
 COPY src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Application/ Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Application/

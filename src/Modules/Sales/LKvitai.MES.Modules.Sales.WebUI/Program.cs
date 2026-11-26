@@ -1,3 +1,4 @@
+using LKvitai.MES.BuildingBlocks.Observability;
 using LKvitai.MES.BuildingBlocks.WebUI.Localization;
 using LKvitai.MES.BuildingBlocks.ModuleStartup;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
@@ -8,6 +9,7 @@ using Serilog;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.UseScaffoldSerilog("sales-webui");
+builder.AddCikadaSentry("sales-webui");
 builder.Services.AddScaffoldWebUiCore("SalesApi", "SalesApi:BaseUrl", "http://localhost:5021");
 builder.Services.AddCikadaLocalization(builder.Configuration);
 

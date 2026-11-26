@@ -10,4 +10,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LKvitai.MES.BuildingBlocks.Observability\LKvitai.MES.BuildingBlocks.Observability.csproj" />
+  </ItemGroup>
 </Project>

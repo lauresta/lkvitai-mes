@@ -1,3 +1,4 @@
+using LKvitai.MES.BuildingBlocks.Observability;
 using LKvitai.MES.BuildingBlocks.WebUI.Localization;
 using LKvitai.MES.BuildingBlocks.ModuleStartup;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
@@ -10,6 +11,7 @@ using Serilog;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.UseScaffoldSerilog("frontline-webui");
+builder.AddCikadaSentry("frontline-webui");
 builder.Services.AddScaffoldWebUiCore("FrontlineApi", "FrontlineApi:BaseUrl", "http://localhost:5031");
 builder.Services.AddCikadaLocalization(builder.Configuration);
 

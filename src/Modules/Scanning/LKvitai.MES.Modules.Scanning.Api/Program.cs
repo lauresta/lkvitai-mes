@@ -1,3 +1,4 @@
+using LKvitai.MES.BuildingBlocks.Observability;
 using LKvitai.MES.BuildingBlocks.ModuleStartup;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.UseScaffoldSerilog("scanning");
+builder.AddCikadaSentry("scanning-api");
 builder.Services.AddScaffoldApiCore();
 builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
 builder.Services.AddCikadaSsoTokenValidation(builder.Configuration);

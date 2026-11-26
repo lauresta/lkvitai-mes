@@ -13,6 +13,7 @@ COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/LKvitai.MES.Bui
 # in the Docker context for both restore and publish.
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/LKvitai.MES.BuildingBlocks.PortalAuth.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/LKvitai.MES.BuildingBlocks.WebUI.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Observability/LKvitai.MES.BuildingBlocks.Observability.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.Observability/
 COPY src/Modules/Frontline/LKvitai.MES.Modules.Frontline.Contracts/LKvitai.MES.Modules.Frontline.Contracts.csproj Modules/Frontline/LKvitai.MES.Modules.Frontline.Contracts/
 COPY src/Modules/Frontline/LKvitai.MES.Modules.Frontline.WebUI/LKvitai.MES.Modules.Frontline.WebUI.csproj Modules/Frontline/LKvitai.MES.Modules.Frontline.WebUI/
 
@@ -21,6 +22,7 @@ RUN dotnet restore Modules/Frontline/LKvitai.MES.Modules.Frontline.WebUI/LKvitai
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/ BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/ BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/ BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Observability/ BuildingBlocks/LKvitai.MES.BuildingBlocks.Observability/
 COPY src/Modules/Frontline/LKvitai.MES.Modules.Frontline.Contracts/ Modules/Frontline/LKvitai.MES.Modules.Frontline.Contracts/
 COPY src/Modules/Frontline/LKvitai.MES.Modules.Frontline.WebUI/ Modules/Frontline/LKvitai.MES.Modules.Frontline.WebUI/
 

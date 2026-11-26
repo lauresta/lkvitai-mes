@@ -11,6 +11,7 @@ import { DOCS_TOOLS } from './tools-docs.js';
 import { READ_TOOLS } from './tools-read.js';
 import { WAREHOUSE_TOOLS } from './tools-warehouse.js';
 import { REPORT_TOOLS } from './tools-reports.js';
+import { reportError } from './sentry.js';
 import { ArgumentError, validateArgs } from './validate.js';
 
 export const ALL_TOOLS: readonly ToolDef[] = [...READ_TOOLS, ...WAREHOUSE_TOOLS, ...REPORT_TOOLS, ...ORDER_ENTRY_TOOLS, ...FINANCE_TOOLS, ...DOCS_TOOLS];
@@ -47,6 +48,7 @@ export async function callTool(name: string, rawArgs: unknown, ctx: ToolContext,
     if (error instanceof ArgumentError) return failure('INVALID_ARGUMENTS', `Invalid arguments for ${name}: ${error.message}.`);
     if (error instanceof ApiError) return failure(error.code ?? `HTTP_${error.status}`, error.message, { status: error.status });
     log?.({ msg: 'tool_failed', tool: name, error: error instanceof Error ? `${error.name}: ${error.message}` : 'unknown' });
+    reportError(error, { tool: name }, ctx.user?.username);
     const reason = error instanceof Error && error.name === 'TimeoutError' ? 'the API did not answer in time' : 'the API could not be reached';
     return failure('UPSTREAM_UNREACHABLE', `${name} failed: ${reason}. Try again in a moment.`);
   }

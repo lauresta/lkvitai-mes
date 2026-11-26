@@ -66,7 +66,10 @@ Optional:
 | `ITEMIMAGES__ENDPOINT`, `ITEMIMAGES__BUCKET`, `ITEMIMAGES__USESSL` | variable | Object storage for item photos; use a production bucket, not the test one |
 | `ITEMIMAGES__ACCESSKEY`, `ITEMIMAGES__SECRETKEY` | secret | Keys for that storage |
 | `WAREHOUSE_CODE` | variable | Code of the physical warehouse, default `WH1` |
-| `CLARITY_PROJECT_ID` | variable | Microsoft Clarity project for production |
+| `SENTRY_DSN` | variable | DSN of Sentry project `cikada-prod` (public, it reaches the browser); empty = Sentry off |
+| `SENTRY_REPLAY_SESSION_SAMPLE_RATE` | variable | Share of browser sessions recorded by Session Replay, default `0.1` |
+| `SENTRY_REPLAY_ON_ERROR_SAMPLE_RATE` | variable | Share of sessions with an error whose replay is kept, default `1.0` |
+| `SENTRY_TRACES_SAMPLE_RATE` | variable | Performance tracing (server and browser), default `0` = off |
 | `AUTH_KEYS_DIR`, `LOGS_DIR`, `CLIP_MODEL_DIR` | variable | Host folders, default under `/opt/lkvitai-mes` |
 
 Writing into the legacy database. Production works on the same database as Access,

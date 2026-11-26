@@ -1,3 +1,4 @@
+using LKvitai.MES.BuildingBlocks.Observability;
 using LKvitai.MES.BuildingBlocks.ModuleStartup;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.BuildingBlocks.Search;
@@ -12,6 +13,7 @@ using Serilog;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.UseScaffoldSerilog("finance-webui");
+builder.AddCikadaSentry("finance-webui");
 builder.Services.AddScaffoldWebUiCore("FinanceApi", "FinanceApi:BaseUrl", "http://localhost:5061");
 builder.Services.Configure<HttpClientFactoryOptions>("FinanceApi", options =>
     options.HttpMessageHandlerBuilderActions.Add(handler =>

@@ -12,6 +12,7 @@ COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/LKvitai.MES
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/LKvitai.MES.BuildingBlocks.SharedKernel.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/LKvitai.MES.BuildingBlocks.ModuleStartup.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/LKvitai.MES.BuildingBlocks.PortalAuth.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Observability/LKvitai.MES.BuildingBlocks.Observability.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.Observability/
 COPY src/Modules/Sales/LKvitai.MES.Modules.Sales.Contracts/LKvitai.MES.Modules.Sales.Contracts.csproj Modules/Sales/LKvitai.MES.Modules.Sales.Contracts/
 COPY src/Modules/Sales/LKvitai.MES.Modules.Sales.Application/LKvitai.MES.Modules.Sales.Application.csproj Modules/Sales/LKvitai.MES.Modules.Sales.Application/
 COPY src/Modules/Sales/LKvitai.MES.Modules.Sales.Infrastructure/LKvitai.MES.Modules.Sales.Infrastructure.csproj Modules/Sales/LKvitai.MES.Modules.Sales.Infrastructure/
@@ -23,6 +24,7 @@ COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/ BuildingBl
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/ BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/ BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/ BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Observability/ BuildingBlocks/LKvitai.MES.BuildingBlocks.Observability/
 COPY src/Modules/Sales/LKvitai.MES.Modules.Sales.Contracts/ Modules/Sales/LKvitai.MES.Modules.Sales.Contracts/
 COPY src/Modules/Sales/LKvitai.MES.Modules.Sales.Application/ Modules/Sales/LKvitai.MES.Modules.Sales.Application/
 COPY src/Modules/Sales/LKvitai.MES.Modules.Sales.Infrastructure/ Modules/Sales/LKvitai.MES.Modules.Sales.Infrastructure/

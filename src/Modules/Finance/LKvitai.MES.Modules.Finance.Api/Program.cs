@@ -1,3 +1,4 @@
+using LKvitai.MES.BuildingBlocks.Observability;
 using LKvitai.MES.BuildingBlocks.ModuleStartup;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.Modules.Finance.Api.BankPayments;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.UseScaffoldSerilog("finance-api");
+builder.AddCikadaSentry("finance-api");
 builder.Services.AddScaffoldApiCore();
 builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
 builder.Services.AddCikadaSsoTokenValidation(builder.Configuration);
