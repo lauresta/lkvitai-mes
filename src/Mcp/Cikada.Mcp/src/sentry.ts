@@ -10,15 +10,12 @@ const CREDENTIAL_HEADERS = new Set(['authorization', 'cookie']);
 
 const value = (text: string | undefined): string | undefined => text?.trim() || undefined;
 
-/** Drops the Authorization and Cookie headers and the cookies of the request an event carries. */
+/** The event without the Authorization and Cookie headers and the cookies of the request it carries. */
 export function withoutCredentials<T extends { request?: { headers?: Record<string, string>; cookies?: unknown } }>(event: T): T {
-  const request = event.request;
-  if (!request) return event;
-  for (const name of Object.keys(request.headers ?? {})) {
-    if (CREDENTIAL_HEADERS.has(name.toLowerCase())) delete request.headers?.[name];
-  }
-  delete request.cookies;
-  return event;
+  if (!event.request) return event;
+  const { cookies: _cookies, headers = {}, ...request } = event.request;
+  const kept = Object.fromEntries(Object.entries(headers).filter(([name]) => !CREDENTIAL_HEADERS.has(name.toLowerCase())));
+  return { ...event, request: { ...request, headers: kept } };
 }
 
 /** Starts the SDK when SENTRY_DSN is set; returns whether it did. Every event carries the tag module=mcp. */
