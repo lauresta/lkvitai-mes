@@ -6,6 +6,7 @@ using LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum.Accounting;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.Modules.Warehouse.Integration.Agnum;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -156,6 +157,27 @@ public sealed class AgnumAccountingW3Tests
 
     private static AgnumClientDto Client(int id, string code, string? krd = "Y", string? vat = null, string? country = null)
         => new() { Id = id, Code = code, Name = "N" + id, Krd = krd, VatCode = vat, Country = country, ClientRoles = new List<string> { "SUPPLIER" } };
+
+    [Theory]
+    [InlineData(null, 1)]
+    [InlineData("true", 1)]
+    [InlineData("false", 0)]
+    public async Task SupplierSyncJob_RunsUnlessSwitchedOff(string? enabled, int expectedCalls)
+    {
+        await using var db = NewDb();
+        var agnum = new Mock<IAgnumReferenceClient>();
+        agnum.Setup(a => a.GetClientsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<AgnumClientDto> { Client(1, "S1") });
+        var settings = new Dictionary<string, string?>();
+        if (enabled is not null) settings[LKvitai.MES.Modules.Warehouse.Api.BackgroundJobs.AgnumSupplierSyncRecurringJob.EnabledSetting] = enabled;
+        var job = new LKvitai.MES.Modules.Warehouse.Api.BackgroundJobs.AgnumSupplierSyncRecurringJob(
+            new AgnumSupplierSyncService(db, agnum.Object, new NullLogger<AgnumSupplierSyncService>()),
+            new ConfigurationBuilder().AddInMemoryCollection(settings).Build(),
+            new NullLogger<LKvitai.MES.Modules.Warehouse.Api.BackgroundJobs.AgnumSupplierSyncRecurringJob>());
+
+        await job.ExecuteAsync();
+
+        agnum.Verify(a => a.GetClientsAsync(It.IsAny<CancellationToken>()), Times.Exactly(expectedCalls));
+    }
 
     [Fact]
     public async Task Sync_NeverRelinksByCoincidingCode()

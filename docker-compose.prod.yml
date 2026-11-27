@@ -91,6 +91,8 @@ services:
       # this placeholder never resolves, so every Agnum call fails at once.
       Agnum__Api__BaseUrl: "${Agnum__Api__BaseUrl:-http://agnum-not-connected.invalid:8181}"
       Agnum__PriceSync__Enabled: "${Agnum__PriceSync__Enabled:-false}"
+      # Daily supplier sync from Agnum (05:30 UTC). Off until Agnum is connected.
+      Agnum__SupplierSync__Enabled: "${Agnum__SupplierSync__Enabled:-false}"
       Agnum__Warehouses__sandelys__ApiKey: "${Agnum__Warehouses__sandelys__ApiKey}"
       Agnum__Warehouses__pardavimai__ApiKey: "${Agnum__Warehouses__pardavimai__ApiKey}"
       Agnum__Api__ReferenceApiKey: "${Agnum__Api__ReferenceApiKey:-${Agnum__Warehouses__sandelys__ApiKey}}"

@@ -97,6 +97,9 @@ legacy database and cannot be limited to the test branch. Parsing and preview wo
 Agnum is not connected on production. The Agnum key secrets stay unset until it is.
 Warehouse API does not start without an Agnum address, so `AGNUM__API__BASEURL`
 defaults to a placeholder that never resolves (`http://agnum-not-connected.invalid:8181`).
+The daily supplier sync from Agnum is off on production (`Agnum__SupplierSync__Enabled`
+defaults to `false` in `docker-compose.prod.yml`); set the `prod` environment variable
+`AGNUM__SUPPLIERSYNC__ENABLED` to `true` once Agnum is connected. The nomenclature import is switched per warehouse in `agnum_warehouse_mappings`.
 
 The deploy job runs on the repository runner `lkvitai-apps-01` (label `lkvitai-apps`,
 `/opt/actions-runner` on `lkvitai-apps`). If a deploy stays queued, check that the
