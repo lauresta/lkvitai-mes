@@ -206,36 +206,6 @@ public sealed class BackupService : IBackupService
     }
 }
 
-public sealed class DailyBackupRecurringJob
-{
-    private readonly IBackupService _backupService;
-
-    public DailyBackupRecurringJob(IBackupService backupService)
-    {
-        _backupService = backupService;
-    }
-
-    public Task ExecuteAsync(CancellationToken cancellationToken = default)
-    {
-        return _backupService.TriggerBackupAsync("SCHEDULED", cancellationToken);
-    }
-}
-
-public sealed class MonthlyRestoreTestRecurringJob
-{
-    private readonly IBackupService _backupService;
-
-    public MonthlyRestoreTestRecurringJob(IBackupService backupService)
-    {
-        _backupService = backupService;
-    }
-
-    public Task<BackupRestoreResultDto> ExecuteAsync(CancellationToken cancellationToken = default)
-    {
-        return _backupService.RunMonthlyRestoreTestAsync(cancellationToken);
-    }
-}
-
 public sealed record BackupExecutionDto(
     Guid Id,
     DateTimeOffset BackupStartedAt,

@@ -216,21 +216,6 @@ public sealed class DisasterRecoveryService : IDisasterRecoveryService
     }
 }
 
-public sealed class QuarterlyDisasterRecoveryDrillJob
-{
-    private readonly IDisasterRecoveryService _service;
-
-    public QuarterlyDisasterRecoveryDrillJob(IDisasterRecoveryService service)
-    {
-        _service = service;
-    }
-
-    public Task<DRDrillDto> ExecuteAsync(CancellationToken cancellationToken = default)
-    {
-        return _service.RunQuarterlyDrillAsync(cancellationToken);
-    }
-}
-
 public sealed record DRDrillDto(
     Guid Id,
     DateTimeOffset DrillStartedAt,

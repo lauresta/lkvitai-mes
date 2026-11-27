@@ -16,7 +16,8 @@
 ## Drill API
 - Trigger drill: `POST /api/warehouse/v1/admin/dr/drill`
 - Drill history: `GET /api/warehouse/v1/admin/dr/drills`
-- Quarterly schedule: Hangfire job `dr-quarterly-drill` with cron `0 4 1 1,4,7,10 *` (UTC)
+- No quarterly schedule: the drill only writes placeholder step logs, so the `dr-quarterly-drill`
+  Hangfire job was removed (it failed on the read-only container filesystem).
 
 ## Step-by-Step Failover
 1. Restore latest valid backup:
