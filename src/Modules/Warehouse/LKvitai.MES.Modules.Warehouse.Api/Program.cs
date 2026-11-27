@@ -353,10 +353,7 @@ builder.Services.AddScoped<ISlaMonitoringService, SlaMonitoringService>();
 builder.Services.AddScoped<ICapacityPlanningService, CapacityPlanningService>();
 builder.Services.AddSingleton<IChaosResilienceService, ChaosResilienceService>();
 builder.Services.AddScoped<IBackupService, BackupService>();
-builder.Services.AddScoped<DailyBackupRecurringJob>();
-builder.Services.AddScoped<MonthlyRestoreTestRecurringJob>();
 builder.Services.AddScoped<IDisasterRecoveryService, DisasterRecoveryService>();
-builder.Services.AddScoped<QuarterlyDisasterRecoveryDrillJob>();
 
 var applicationInsightsConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
 if (!string.IsNullOrWhiteSpace(applicationInsightsConnectionString))
@@ -587,32 +584,13 @@ RecurringJob.AddOrUpdate<RetentionPolicyRecurringJob>(
         TimeZone = TimeZoneInfo.Utc
     });
 
-RecurringJob.AddOrUpdate<DailyBackupRecurringJob>(
-    "backup-daily-2am",
-    job => job.ExecuteAsync(CancellationToken.None),
-    "0 2 * * *",
-    new RecurringJobOptions
-    {
-        TimeZone = TimeZoneInfo.Utc
-    });
-
-RecurringJob.AddOrUpdate<MonthlyRestoreTestRecurringJob>(
-    "backup-monthly-restore-test",
-    job => job.ExecuteAsync(CancellationToken.None),
-    "0 3 1 * *",
-    new RecurringJobOptions
-    {
-        TimeZone = TimeZoneInfo.Utc
-    });
-
-RecurringJob.AddOrUpdate<QuarterlyDisasterRecoveryDrillJob>(
-    "dr-quarterly-drill",
-    job => job.ExecuteAsync(CancellationToken.None),
-    "0 4 1 1,4,7,10 *",
-    new RecurringJobOptions
-    {
-        TimeZone = TimeZoneInfo.Utc
-    });
+// These jobs only wrote placeholder files ("Simulated pg_dump backup", DR drill step logs)
+// into the container and failed every night on the read-only /app. Real backups are the
+// pg_dump job on the database host and the nightly VM snapshot (docs/ops/backup-restore-runbook.md).
+// RemoveIfExists drops the schedules already stored in Hangfire.
+RecurringJob.RemoveIfExists("backup-daily-2am");
+RecurringJob.RemoveIfExists("backup-monthly-restore-test");
+RecurringJob.RemoveIfExists("dr-quarterly-drill");
 
 Log.Information("Starting LKvitai.MES Warehouse API");
 
