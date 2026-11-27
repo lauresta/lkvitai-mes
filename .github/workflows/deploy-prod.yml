@@ -76,6 +76,7 @@ jobs:
       # Agnum is not connected on production yet. Leave these unset until it is.
       Agnum__Api__BaseUrl: ${{ vars.AGNUM__API__BASEURL }}
       Agnum__PriceSync__Enabled: ${{ vars.AGNUM__PRICESYNC__ENABLED }}
+      Agnum__SupplierSync__Enabled: ${{ vars.AGNUM__SUPPLIERSYNC__ENABLED }}
       Agnum__Warehouses__sandelys__ApiKey: ${{ secrets.AGNUM__WAREHOUSES__SANDELYS__APIKEY }}
       Agnum__Warehouses__pardavimai__ApiKey: ${{ secrets.AGNUM__WAREHOUSES__PARDAVIMAI__APIKEY }}
     steps:
