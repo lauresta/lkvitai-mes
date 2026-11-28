@@ -1,0 +1,75 @@
+{
+  "uid": "neapmoketi-uzsakymai",
+  "title": "Neapmokėti užsakymai ir skolos",
+  "tags": ["verslas", "finansai"],
+  "timezone": "Europe/Vilnius",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "",
+  "editable": true,
+  "time": { "from": "now-12M", "to": "now" },
+  "timepicker": {},
+  "templating": {
+    "list": [
+      {
+        "name": "branch",
+        "label": "Filialas",
+        "type": "query",
+        "datasource": { "type": "mssql", "uid": "mssql-bi" },
+        "query": "SELECT DISTINCT BranchCode FROM bi.vIncomesOrders ORDER BY 1",
+        "refresh": 1,
+        "multi": true,
+        "includeAll": true,
+        "sort": 1,
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Bendra skola",
+      "description": "Neanuliuoti užsakymai, kurių vertė viršija sumokėtą sumą.",
+      "datasource": { "type": "mssql", "uid": "mssql-bi" },
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 5 },
+      "fieldConfig": { "defaults": { "unit": "currencyEUR", "decimals": 2, "color": { "mode": "fixed", "fixedColor": "red" } },
+        "overrides": [ { "matcher": { "id": "byName", "options": "Neapmokėtų užsakymų skaičius" }, "properties": [ { "id": "unit", "value": "none" }, { "id": "decimals", "value": 0 }, { "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } } ] } ] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "value_and_name" },
+      "targets": [ { "refId": "A", "datasource": { "type": "mssql", "uid": "mssql-bi" }, "editorMode": "code", "format": "table", "rawQuery": true,
+        "rawSql": "SELECT ISNULL(SUM(ValueEur - PaidEur), 0) AS [Bendra skola], COUNT(*) AS [Neapmokėtų užsakymų skaičius] FROM bi.vIncomesOrders WHERE Cancelled = 0 AND ValueEur - PaidEur > 0.005 AND BranchCode IN ($branch) AND CAST(OrderDate AS datetime) BETWEEN $__timeFrom() AND $__timeTo()" } ]
+    },
+    {
+      "id": 2, "type": "barchart", "title": "Skola pagal filialus",
+      "datasource": { "type": "mssql", "uid": "mssql-bi" },
+      "gridPos": { "x": 0, "y": 5, "w": 12, "h": 9 },
+      "fieldConfig": { "defaults": { "unit": "currencyEUR", "decimals": 2 },
+        "overrides": [ { "matcher": { "id": "byName", "options": "Užsakymų skaičius" }, "properties": [ { "id": "unit", "value": "none" }, { "id": "custom.hideFrom", "value": { "viz": true, "legend": true, "tooltip": false } } ] } ] },
+      "options": { "xField": "Filialas", "orientation": "auto", "legend": { "showLegend": false }, "tooltip": { "mode": "multi" }, "showValue": "auto" },
+      "targets": [ { "refId": "A", "datasource": { "type": "mssql", "uid": "mssql-bi" }, "editorMode": "code", "format": "table", "rawQuery": true,
+        "rawSql": "SELECT BranchCode AS [Filialas], SUM(ValueEur - PaidEur) AS [Skola], COUNT(*) AS [Užsakymų skaičius] FROM bi.vIncomesOrders WHERE Cancelled = 0 AND ValueEur - PaidEur > 0.005 AND BranchCode IN ($branch) AND CAST(OrderDate AS datetime) BETWEEN $__timeFrom() AND $__timeTo() GROUP BY BranchCode ORDER BY 2 DESC" } ]
+    },
+    {
+      "id": 3, "type": "barchart", "title": "Skola pagal užsakymo amžių",
+      "description": "Amžius dienomis nuo užsakymo datos iki šiandien.",
+      "datasource": { "type": "mssql", "uid": "mssql-bi" },
+      "gridPos": { "x": 12, "y": 5, "w": 12, "h": 9 },
+      "fieldConfig": { "defaults": { "unit": "currencyEUR", "decimals": 2 },
+        "overrides": [ { "matcher": { "id": "byName", "options": "Užsakymų skaičius" }, "properties": [ { "id": "unit", "value": "none" }, { "id": "custom.hideFrom", "value": { "viz": true, "legend": true, "tooltip": false } } ] } ] },
+      "options": { "xField": "Užsakymo amžius", "orientation": "auto", "legend": { "showLegend": false }, "tooltip": { "mode": "multi" }, "showValue": "auto" },
+      "targets": [ { "refId": "A", "datasource": { "type": "mssql", "uid": "mssql-bi" }, "editorMode": "code", "format": "table", "rawQuery": true,
+        "rawSql": "SELECT b AS [Užsakymo amžius], SUM(debt) AS [Skola], COUNT(*) AS [Užsakymų skaičius] FROM (SELECT CASE WHEN a <= 30 THEN N'0-30 d.' WHEN a <= 60 THEN N'31-60 d.' WHEN a <= 90 THEN N'61-90 d.' ELSE N'virš 90 d.' END AS b, a, debt FROM (SELECT DATEDIFF(day, OrderDate, CAST(GETDATE() AS date)) AS a, ValueEur - PaidEur AS debt FROM bi.vIncomesOrders WHERE Cancelled = 0 AND ValueEur - PaidEur > 0.005 AND BranchCode IN ($branch) AND CAST(OrderDate AS datetime) BETWEEN $__timeFrom() AND $__timeTo()) y) z GROUP BY b ORDER BY MIN(a)" } ]
+    },
+    {
+      "id": 4, "type": "table", "title": "Neapmokėti užsakymai",
+      "description": "Iki 500 didžiausių skolų.",
+      "datasource": { "type": "mssql", "uid": "mssql-bi" },
+      "gridPos": { "x": 0, "y": 14, "w": 24, "h": 14 },
+      "fieldConfig": { "defaults": {}, "overrides": [
+        { "matcher": { "id": "byName", "options": "Vertė" }, "properties": [ { "id": "unit", "value": "currencyEUR" }, { "id": "decimals", "value": 2 } ] },
+        { "matcher": { "id": "byName", "options": "Sumokėta" }, "properties": [ { "id": "unit", "value": "currencyEUR" }, { "id": "decimals", "value": 2 } ] },
+        { "matcher": { "id": "byName", "options": "Skola" }, "properties": [ { "id": "unit", "value": "currencyEUR" }, { "id": "decimals", "value": 2 } ] } ] },
+      "options": { "showHeader": true, "sortBy": [ { "displayName": "Skola", "desc": true } ] },
+      "targets": [ { "refId": "A", "datasource": { "type": "mssql", "uid": "mssql-bi" }, "editorMode": "code", "format": "table", "rawQuery": true,
+        "rawSql": "SELECT TOP 500 OrderNo AS [Užsakymas], CONVERT(varchar(10), OrderDate, 120) AS [Data], BranchCode AS [Filialas], ValueEur AS [Vertė], PaidEur AS [Sumokėta], ValueEur - PaidEur AS [Skola], Consultant AS [Konsultantas] FROM bi.vIncomesOrders WHERE Cancelled = 0 AND ValueEur - PaidEur > 0.005 AND BranchCode IN ($branch) AND CAST(OrderDate AS datetime) BETWEEN $__timeFrom() AND $__timeTo() ORDER BY ValueEur - PaidEur DESC" } ]
+    }
+  ]
+}

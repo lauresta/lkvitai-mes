@@ -1,0 +1,189 @@
+{
+  "uid": "iplauku-judejimas",
+  "title": "Įplaukų judėjimas",
+  "tags": ["verslas", "finansai"],
+  "timezone": "Europe/Vilnius",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "",
+  "editable": true,
+  "graphTooltip": 1,
+  "time": { "from": "now/M", "to": "now/M" },
+  "timepicker": {},
+  "templating": {
+    "list": [
+      {
+        "name": "branch",
+        "label": "Filialas",
+        "type": "query",
+        "datasource": { "type": "mssql", "uid": "mssql-bi" },
+        "query": "SELECT DISTINCT BranchCode FROM bi.vIncomesPayments ORDER BY 1",
+        "refresh": 1,
+        "multi": true,
+        "includeAll": true,
+        "sort": 1,
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] }
+      },
+      {
+        "name": "method",
+        "label": "Mokėjimo būdas",
+        "type": "custom",
+        "query": "BANK,EKA,PPK,KASA",
+        "multi": true,
+        "includeAll": true,
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] },
+        "options": []
+      }
+    ]
+  },
+  "panels": [
+    { "id": 100, "type": "row", "title": "Gauta", "collapsed": false, "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 }, "panels": [] },
+    {
+      "id": 1, "type": "stat", "title": "Gauta",
+      "datasource": { "type": "mssql", "uid": "mssql-bi" },
+      "gridPos": { "x": 0, "y": 1, "w": 5, "h": 4 },
+      "fieldConfig": { "defaults": { "unit": "currencyEUR", "decimals": 2, "color": { "mode": "fixed", "fixedColor": "green" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "value" },
+      "targets": [ { "refId": "A", "datasource": { "type": "mssql", "uid": "mssql-bi" }, "editorMode": "code", "format": "table", "rawQuery": true,
+        "rawSql": "SELECT ISNULL(SUM(AmountEur), 0) AS [Gauta] FROM bi.vIncomesPayments WHERE BranchCode IN ($branch) AND Method IN ($method) AND CAST(PayDate AS datetime) BETWEEN $__timeFrom() AND $__timeTo()" } ]
+    },
+    {
+      "id": 2, "type": "stat", "title": "Mokėjimų skaičius",
+      "datasource": { "type": "mssql", "uid": "mssql-bi" },
+      "gridPos": { "x": 5, "y": 1, "w": 5, "h": 4 },
+      "fieldConfig": { "defaults": { "unit": "none", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "value" },
+      "targets": [ { "refId": "A", "datasource": { "type": "mssql", "uid": "mssql-bi" }, "editorMode": "code", "format": "table", "rawQuery": true,
+        "rawSql": "SELECT COUNT(*) AS [Mokėjimų skaičius] FROM bi.vIncomesPayments WHERE BranchCode IN ($branch) AND Method IN ($method) AND CAST(PayDate AS datetime) BETWEEN $__timeFrom() AND $__timeTo()" } ]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Grąžinimai",
+      "description": "Mokėjimai su neigiama suma.",
+      "datasource": { "type": "mssql", "uid": "mssql-bi" },
+      "gridPos": { "x": 10, "y": 1, "w": 7, "h": 4 },
+      "fieldConfig": { "defaults": { "unit": "currencyEUR", "decimals": 2, "color": { "mode": "fixed", "fixedColor": "orange" } },
+        "overrides": [ { "matcher": { "id": "byName", "options": "Grąžinimų skaičius" }, "properties": [ { "id": "unit", "value": "none" }, { "id": "decimals", "value": 0 } ] } ] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "value_and_name" },
+      "targets": [ { "refId": "A", "datasource": { "type": "mssql", "uid": "mssql-bi" }, "editorMode": "code", "format": "table", "rawQuery": true,
+        "rawSql": "SELECT ISNULL(SUM(CASE WHEN AmountEur < 0 THEN AmountEur END), 0) AS [Grąžinimų suma], COUNT(CASE WHEN AmountEur < 0 THEN 1 END) AS [Grąžinimų skaičius] FROM bi.vIncomesPayments WHERE BranchCode IN ($branch) AND Method IN ($method) AND CAST(PayDate AS datetime) BETWEEN $__timeFrom() AND $__timeTo()" } ]
+    },
+    {
+      "id": 4, "type": "stat", "title": "Mokėjimai be darbuotojo",
+      "datasource": { "type": "mssql", "uid": "mssql-bi" },
+      "gridPos": { "x": 17, "y": 1, "w": 7, "h": 4 },
+      "fieldConfig": { "defaults": { "unit": "none", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "yellow" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "value" },
+      "targets": [ { "refId": "A", "datasource": { "type": "mssql", "uid": "mssql-bi" }, "editorMode": "code", "format": "table", "rawQuery": true,
+        "rawSql": "SELECT COUNT(*) AS [Mokėjimai be darbuotojo] FROM bi.vIncomesPayments WHERE BranchCode IN ($branch) AND Method IN ($method) AND Employee IS NULL AND CAST(PayDate AS datetime) BETWEEN $__timeFrom() AND $__timeTo()" } ]
+    },
+    {
+      "id": 5, "type": "stat", "title": "Palyginimas su ankstesniu laikotarpiu ir praėjusiais metais",
+      "datasource": { "type": "mssql", "uid": "mssql-bi" },
+      "gridPos": { "x": 0, "y": 5, "w": 24, "h": 5 },
+      "fieldConfig": { "defaults": { "unit": "currencyEUR", "decimals": 2, "color": { "mode": "fixed", "fixedColor": "text" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "none", "graphMode": "none", "textMode": "value_and_name" },
+      "targets": [ { "refId": "A", "datasource": { "type": "mssql", "uid": "mssql-bi" }, "editorMode": "code", "format": "table", "rawQuery": true,
+        "rawSql": "SELECT ISNULL(SUM(CASE WHEN d >= CAST($__timeFrom() AS datetime) AND d <= CAST($__timeTo() AS datetime) THEN AmountEur END), 0) AS [Pasirinktas laikotarpis], ISNULL(SUM(CASE WHEN d >= DATEADD(day, -DATEDIFF(day, CAST($__timeFrom() AS datetime), CAST($__timeTo() AS datetime)), CAST($__timeFrom() AS datetime)) AND d < CAST($__timeFrom() AS datetime) THEN AmountEur END), 0) AS [Ankstesnis tokios pat trukmės laikotarpis], ISNULL(SUM(CASE WHEN d >= DATEADD(year, -1, CAST($__timeFrom() AS datetime)) AND d <= DATEADD(year, -1, CAST($__timeTo() AS datetime)) THEN AmountEur END), 0) AS [Tas pats laikotarpis prieš metus] FROM (SELECT CAST(PayDate AS datetime) AS d, AmountEur FROM bi.vIncomesPayments WHERE BranchCode IN ($branch) AND Method IN ($method) AND PayDate >= DATEADD(year, -2, CAST($__timeFrom() AS datetime))) x" } ]
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "Pagal dienas",
+      "datasource": { "type": "mssql", "uid": "mssql-bi" },
+      "gridPos": { "x": 0, "y": 10, "w": 24, "h": 9 },
+      "fieldConfig": { "defaults": { "unit": "currencyEUR", "decimals": 2, "custom": { "drawStyle": "bars", "fillOpacity": 90, "lineWidth": 1, "stacking": { "mode": "normal", "group": "A" }, "barAlignment": 0 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [ { "refId": "A", "datasource": { "type": "mssql", "uid": "mssql-bi" }, "editorMode": "code", "format": "time_series", "rawQuery": true,
+        "rawSql": "SELECT CAST(PayDate AS datetime) AS time, Method AS metric, SUM(AmountEur) AS value FROM bi.vIncomesPayments WHERE BranchCode IN ($branch) AND Method IN ($method) AND CAST(PayDate AS datetime) BETWEEN $__timeFrom() AND $__timeTo() GROUP BY PayDate, Method ORDER BY 1" } ]
+    },
+    {
+      "id": 7, "type": "table", "title": "Pagal filialus",
+      "datasource": { "type": "mssql", "uid": "mssql-bi" },
+      "gridPos": { "x": 0, "y": 19, "w": 12, "h": 9 },
+      "fieldConfig": { "defaults": {}, "overrides": [
+        { "matcher": { "id": "byName", "options": "Suma" }, "properties": [ { "id": "unit", "value": "currencyEUR" }, { "id": "decimals", "value": 2 } ] } ] },
+      "options": { "showHeader": true, "footer": { "show": true, "reducer": ["sum"], "fields": ["Suma", "Mokėjimų skaičius"] } },
+      "targets": [ { "refId": "A", "datasource": { "type": "mssql", "uid": "mssql-bi" }, "editorMode": "code", "format": "table", "rawQuery": true,
+        "rawSql": "SELECT BranchCode AS [Filialas], MAX(BranchName) AS [Pavadinimas], SUM(AmountEur) AS [Suma], COUNT(*) AS [Mokėjimų skaičius] FROM bi.vIncomesPayments WHERE BranchCode IN ($branch) AND Method IN ($method) AND CAST(PayDate AS datetime) BETWEEN $__timeFrom() AND $__timeTo() GROUP BY BranchCode ORDER BY 3 DESC" } ]
+    },
+    {
+      "id": 8, "type": "table", "title": "Filialas × mokėjimo būdas",
+      "datasource": { "type": "mssql", "uid": "mssql-bi" },
+      "gridPos": { "x": 12, "y": 19, "w": 12, "h": 9 },
+      "fieldConfig": { "defaults": { "unit": "currencyEUR", "decimals": 2 }, "overrides": [] },
+      "options": { "showHeader": true, "footer": { "show": true, "reducer": ["sum"], "fields": ["BANK", "EKA", "KASA", "PPK", "Iš viso"] } },
+      "targets": [ { "refId": "A", "datasource": { "type": "mssql", "uid": "mssql-bi" }, "editorMode": "code", "format": "table", "rawQuery": true,
+        "rawSql": "SELECT BranchCode AS [Filialas], SUM(CASE WHEN Method = 'BANK' THEN AmountEur ELSE 0 END) AS [BANK], SUM(CASE WHEN Method = 'EKA' THEN AmountEur ELSE 0 END) AS [EKA], SUM(CASE WHEN Method = 'KASA' THEN AmountEur ELSE 0 END) AS [KASA], SUM(CASE WHEN Method = 'PPK' THEN AmountEur ELSE 0 END) AS [PPK], SUM(AmountEur) AS [Iš viso] FROM bi.vIncomesPayments WHERE BranchCode IN ($branch) AND Method IN ($method) AND CAST(PayDate AS datetime) BETWEEN $__timeFrom() AND $__timeTo() GROUP BY BranchCode ORDER BY 1" } ]
+    },
+    {
+      "id": 9, "type": "table", "title": "Mokėjimų sąrašas",
+      "description": "Iki 1000 naujausių mokėjimų pasirinktame laikotarpyje.",
+      "datasource": { "type": "mssql", "uid": "mssql-bi" },
+      "gridPos": { "x": 0, "y": 28, "w": 24, "h": 10 },
+      "fieldConfig": { "defaults": {}, "overrides": [
+        { "matcher": { "id": "byName", "options": "Suma" }, "properties": [ { "id": "unit", "value": "currencyEUR" }, { "id": "decimals", "value": 2 } ] } ] },
+      "options": { "showHeader": true },
+      "targets": [ { "refId": "A", "datasource": { "type": "mssql", "uid": "mssql-bi" }, "editorMode": "code", "format": "table", "rawQuery": true,
+        "rawSql": "SELECT TOP 1000 CONVERT(varchar(10), PayDate, 120) AS [Data], OrderNo AS [Užsakymas], BranchCode AS [Filialas], Method AS [Būdas], AmountEur AS [Suma], Employee AS [Darbuotojas] FROM bi.vIncomesPayments WHERE BranchCode IN ($branch) AND Method IN ($method) AND CAST(PayDate AS datetime) BETWEEN $__timeFrom() AND $__timeTo() ORDER BY PayDate DESC, PaymentKey" } ]
+    },
+    { "id": 101, "type": "row", "title": "Parduota", "collapsed": false, "gridPos": { "x": 0, "y": 38, "w": 24, "h": 1 }, "panels": [] },
+    {
+      "id": 10, "type": "stat", "title": "Užsakymų vertė",
+      "description": "Vertė be anuliuotų užsakymų; skaičius apima ir anuliuotus.",
+      "datasource": { "type": "mssql", "uid": "mssql-bi" },
+      "gridPos": { "x": 0, "y": 39, "w": 12, "h": 4 },
+      "fieldConfig": { "defaults": { "unit": "currencyEUR", "decimals": 2, "color": { "mode": "fixed", "fixedColor": "green" } },
+        "overrides": [ { "matcher": { "id": "byName", "options": "Užsakymų skaičius" }, "properties": [ { "id": "unit", "value": "none" }, { "id": "decimals", "value": 0 } ] } ] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "value_and_name" },
+      "targets": [ { "refId": "A", "datasource": { "type": "mssql", "uid": "mssql-bi" }, "editorMode": "code", "format": "table", "rawQuery": true,
+        "rawSql": "SELECT ISNULL(SUM(CASE WHEN Cancelled = 0 THEN ValueEur END), 0) AS [Užsakymų vertė], COUNT(*) AS [Užsakymų skaičius] FROM bi.vIncomesOrders WHERE BranchCode IN ($branch) AND CAST(OrderDate AS datetime) BETWEEN $__timeFrom() AND $__timeTo()" } ]
+    },
+    {
+      "id": 11, "type": "stat", "title": "Anuliuoti kliento prašymu",
+      "datasource": { "type": "mssql", "uid": "mssql-bi" },
+      "gridPos": { "x": 12, "y": 39, "w": 12, "h": 4 },
+      "fieldConfig": { "defaults": { "unit": "currencyEUR", "decimals": 2, "color": { "mode": "fixed", "fixedColor": "red" } },
+        "overrides": [ { "matcher": { "id": "byName", "options": "Anuliuotų skaičius" }, "properties": [ { "id": "unit", "value": "none" }, { "id": "decimals", "value": 0 } ] } ] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "value_and_name" },
+      "targets": [ { "refId": "A", "datasource": { "type": "mssql", "uid": "mssql-bi" }, "editorMode": "code", "format": "table", "rawQuery": true,
+        "rawSql": "SELECT COUNT(*) AS [Anuliuotų skaičius], ISNULL(SUM(ValueEur), 0) AS [Anuliuotų vertė] FROM bi.vIncomesOrders WHERE Cancelled = 1 AND BranchCode IN ($branch) AND CAST(OrderDate AS datetime) BETWEEN $__timeFrom() AND $__timeTo()" } ]
+    },
+    {
+      "id": 12, "type": "timeseries", "title": "Užsakymai pagal dienas ir filialus",
+      "datasource": { "type": "mssql", "uid": "mssql-bi" },
+      "gridPos": { "x": 0, "y": 43, "w": 24, "h": 8 },
+      "fieldConfig": { "defaults": { "unit": "none", "decimals": 0, "custom": { "drawStyle": "bars", "fillOpacity": 90, "lineWidth": 1, "stacking": { "mode": "normal", "group": "A" } } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [ { "refId": "A", "datasource": { "type": "mssql", "uid": "mssql-bi" }, "editorMode": "code", "format": "time_series", "rawQuery": true,
+        "rawSql": "SELECT CAST(OrderDate AS datetime) AS time, BranchCode AS metric, COUNT(*) AS value FROM bi.vIncomesOrders WHERE Cancelled = 0 AND BranchCode IN ($branch) AND CAST(OrderDate AS datetime) BETWEEN $__timeFrom() AND $__timeTo() GROUP BY OrderDate, BranchCode ORDER BY 1" } ]
+    },
+    {
+      "id": 13, "type": "table", "title": "Parduota ir gauta",
+      "description": "Parduota: užsakymų (be anuliuotų) vertė pagal užsakymo datą. Gauta: mokėjimai pagal mokėjimo datą.",
+      "datasource": { "type": "mssql", "uid": "mssql-bi" },
+      "gridPos": { "x": 0, "y": 51, "w": 12, "h": 8 },
+      "fieldConfig": { "defaults": { "unit": "currencyEUR", "decimals": 2 }, "overrides": [] },
+      "options": { "showHeader": true, "footer": { "show": true, "reducer": ["sum"], "fields": ["Parduota", "Gauta", "Skirtumas"] } },
+      "targets": [ { "refId": "A", "datasource": { "type": "mssql", "uid": "mssql-bi" }, "editorMode": "code", "format": "table", "rawQuery": true,
+        "rawSql": "SELECT COALESCE(o.BranchCode, p.BranchCode) AS [Filialas], ISNULL(o.V, 0) AS [Parduota], ISNULL(p.V, 0) AS [Gauta], ISNULL(p.V, 0) - ISNULL(o.V, 0) AS [Skirtumas] FROM (SELECT BranchCode, SUM(ValueEur) AS V FROM bi.vIncomesOrders WHERE Cancelled = 0 AND BranchCode IN ($branch) AND CAST(OrderDate AS datetime) BETWEEN $__timeFrom() AND $__timeTo() GROUP BY BranchCode) o FULL JOIN (SELECT BranchCode, SUM(AmountEur) AS V FROM bi.vIncomesPayments WHERE BranchCode IN ($branch) AND Method IN ($method) AND CAST(PayDate AS datetime) BETWEEN $__timeFrom() AND $__timeTo() GROUP BY BranchCode) p ON o.BranchCode = p.BranchCode ORDER BY 1" } ]
+    },
+    {
+      "id": 14, "type": "table", "title": "Vidutinė nuolaida",
+      "description": "Svertinė pagal užsakymo vertę; tik užsakymai su verte > 0 ir nuolaida >= 0, be anuliuotų.",
+      "datasource": { "type": "mssql", "uid": "mssql-bi" },
+      "gridPos": { "x": 12, "y": 51, "w": 6, "h": 8 },
+      "fieldConfig": { "defaults": {}, "overrides": [ { "matcher": { "id": "byName", "options": "Vidutinė nuolaida" }, "properties": [ { "id": "unit", "value": "percent" }, { "id": "decimals", "value": 2 } ] } ] },
+      "options": { "showHeader": true },
+      "targets": [ { "refId": "A", "datasource": { "type": "mssql", "uid": "mssql-bi" }, "editorMode": "code", "format": "table", "rawQuery": true,
+        "rawSql": "SELECT BranchCode AS [Filialas], CAST(SUM(ValueEur * DiscountPct) / NULLIF(SUM(ValueEur), 0) AS decimal(9, 2)) AS [Vidutinė nuolaida] FROM bi.vIncomesOrders WHERE Cancelled = 0 AND ValueEur > 0 AND DiscountPct >= 0 AND BranchCode IN ($branch) AND CAST(OrderDate AS datetime) BETWEEN $__timeFrom() AND $__timeTo() GROUP BY BranchCode ORDER BY 1" } ]
+    },
+    {
+      "id": 15, "type": "table", "title": "Kainos pataisos",
+      "description": "Užsakymai su neigiama nuolaida (kainos pataisa aukštyn), ne nuolaida.",
+      "datasource": { "type": "mssql", "uid": "mssql-bi" },
+      "gridPos": { "x": 18, "y": 51, "w": 6, "h": 8 },
+      "fieldConfig": { "defaults": {}, "overrides": [ { "matcher": { "id": "byName", "options": "Užsakymų vertė" }, "properties": [ { "id": "unit", "value": "currencyEUR" }, { "id": "decimals", "value": 2 } ] } ] },
+      "options": { "showHeader": true },
+      "targets": [ { "refId": "A", "datasource": { "type": "mssql", "uid": "mssql-bi" }, "editorMode": "code", "format": "table", "rawQuery": true,
+        "rawSql": "SELECT BranchCode AS [Filialas], COUNT(*) AS [Pataisų skaičius], ISNULL(SUM(ValueEur), 0) AS [Užsakymų vertė] FROM bi.vIncomesOrders WHERE Cancelled = 0 AND DiscountPct < 0 AND BranchCode IN ($branch) AND CAST(OrderDate AS datetime) BETWEEN $__timeFrom() AND $__timeTo() GROUP BY BranchCode ORDER BY 1" } ]
+    }
+  ]
+}

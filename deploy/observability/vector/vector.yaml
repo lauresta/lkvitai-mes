@@ -1,0 +1,100 @@
+﻿# One Vector config for all docker hosts. Per-host values come from env vars:
+#   LOG_HOST (host name), LOG_ENV (prod|test|infra), VL_ENDPOINT (VictoriaLogs base URL).
+data_dir: /var/lib/vector
+
+sources:
+  docker_logs:
+    type: docker_logs
+    docker_host: "unix:///var/run/docker.sock"
+    exclude_containers:
+      - vector
+      - single-node-wazuh
+
+transforms:
+  normalize:
+    type: remap
+    inputs: [docker_logs]
+    source: |
+      msg = to_string(.message) ?? ""
+      ts = .timestamp
+      cname = replace(to_string(.container_name) ?? "unknown", r'^/', "")
+      svc = to_string(.label."com.docker.compose.service") ?? ""
+      if svc == "" { svc = cname }
+
+      base = {
+        "host": get_env_var("LOG_HOST") ?? "unknown",
+        "env": get_env_var("LOG_ENV") ?? "infra",
+        "service": svc,
+        "container": cname,
+        "image": to_string(.image) ?? ""
+      }
+
+      obj = {}
+      is_json = false
+      if starts_with(msg, "{") {
+        p, err = parse_json(msg)
+        if err == null && is_object(p) {
+          obj = object(p) ?? {}
+          is_json = true
+        }
+      }
+
+      if is_json {
+        t = obj."@t"
+        m = obj."@m"
+        l = to_string(obj."@l") ?? ""
+        x = obj."@x"
+        del(obj."@t")
+        del(obj."@m")
+        del(obj."@mt")
+        del(obj."@l")
+        del(obj."@x")
+        . = merge(obj, base)
+        ._time = if t == null { ts } else { t }
+        ._msg = if m == null { msg } else { m }
+        .level = if l == "" { "info" } else { downcase(l) }
+        if x != null { .exception = x }
+      } else {
+        . = base
+        ._time = ts
+        ._msg = msg
+
+        lv, lv_err = parse_regex(msg, r'\[(?P<lv>INF|WRN|ERR|DBG|FTL)\]')
+        .level = "info"
+        if lv_err == null {
+          .level = if lv.lv == "WRN" { "warning" } else if lv.lv == "ERR" { "error" } else if lv.lv == "DBG" { "debug" } else if lv.lv == "FTL" { "fatal" } else { "info" }
+        }
+
+        traceparent, tp_err = parse_regex(msg, r'(?P<trace_parent>00-[A-Fa-f0-9]{32}-[A-Fa-f0-9]{16}-[A-Fa-f0-9]{2})')
+        if tp_err == null {
+          .trace_parent = traceparent.trace_parent
+          .trace_id = traceparent.trace_parent
+        } else {
+          tc, tc_err = parse_regex(msg, r'(?:\[TraceId:|TraceId=)(?P<trace_id_compact>[A-Fa-f0-9]{32})')
+          if tc_err == null { .trace_id = tc.trace_id_compact }
+        }
+
+        errid, errid_err = parse_regex(msg, r'Error ID:\s*(?P<error_id>[A-Za-z0-9:\-]+)')
+        if errid_err == null { .error_id = errid.error_id }
+      }
+
+sinks:
+  victorialogs:
+    type: http
+    inputs: [normalize]
+    uri: "${VL_ENDPOINT}/insert/jsonline?_stream_fields=host,env,service&_msg_field=_msg&_time_field=_time"
+    method: post
+    request:
+      headers:
+        Content-Type: "application/stream+json"
+    encoding:
+      codec: json
+    framing:
+      method: newline_delimited
+    batch:
+      max_events: 500
+      timeout_secs: 2
+    buffer:
+      type: disk
+      max_size: 1073741824
+      when_full: block

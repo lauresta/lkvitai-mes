@@ -1,0 +1,14 @@
+services:
+  vector:
+    image: "timberio/vector:0.52.0-alpine"
+    container_name: vector
+    restart: unless-stopped
+    environment:
+      LOG_HOST: "${LOG_HOST:?set in .env}"
+      LOG_ENV: "${LOG_ENV:?set in .env}"
+      VL_ENDPOINT: "${VL_ENDPOINT:?set in .env}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./vector.yaml:/etc/vector/vector.yaml:ro
+      - ./data:/var/lib/vector
+    command: ["--config", "/etc/vector/vector.yaml"]
