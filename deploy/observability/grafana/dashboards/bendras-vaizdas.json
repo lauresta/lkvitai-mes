@@ -1,0 +1,149 @@
+{
+  "uid": "bendras-vaizdas",
+  "title": "Bendras vaizdas",
+  "tags": ["cikada", "logs"],
+  "timezone": "Europe/Vilnius",
+  "schemaVersion": 39,
+  "editable": true,
+  "refresh": "",
+  "time": { "from": "now-24h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "env",
+        "label": "Aplinka",
+        "type": "custom",
+        "query": "prod,test",
+        "current": { "text": "prod", "value": "prod", "selected": true },
+        "options": [
+          { "text": "prod", "value": "prod", "selected": true },
+          { "text": "test", "value": "test", "selected": false }
+        ],
+        "multi": false,
+        "includeAll": false
+      }
+    ]
+  },
+  "panels": [
+    { "id": 1, "type": "row", "title": "Klaidos", "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "panels": [] },
+    {
+      "id": 2, "type": "timeseries", "title": "Klaidos pagal servisą",
+      "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 1 },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "bars", "stacking": { "mode": "normal" }, "fillOpacity": 60 } }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" }, "queryType": "statsRange", "step": "5m", "legendFormat": "{{service}}",
+          "expr": "env:$env level:in(error,fatal) | stats by (service) count() errors" }
+      ]
+    },
+    {
+      "id": 3, "type": "table", "title": "Paskutinės 50 klaidų",
+      "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 9 },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" }, "queryType": "instant",
+          "expr": "env:$env level:in(error,fatal) | sort by (_time desc) | limit 50 | fields _time, service, _msg, exception, TraceId" }
+      ]
+    },
+    { "id": 4, "type": "row", "title": "Žurnalų kiekis", "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 19 }, "panels": [] },
+    {
+      "id": 5, "type": "timeseries", "title": "Žurnalų kiekis pagal servisą",
+      "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" }, "queryType": "statsRange", "step": "15m", "legendFormat": "{{service}}",
+          "expr": "env:$env | stats by (service) count() logs" }
+      ]
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "Žurnalų kiekis pagal lygį",
+      "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" }, "queryType": "statsRange", "step": "15m", "legendFormat": "{{level}}",
+          "expr": "env:$env | stats by (level) count() logs" }
+      ]
+    },
+    { "id": 7, "type": "row", "title": "Cikada naudojimas", "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 28 }, "panels": [] },
+    {
+      "id": 8, "type": "timeseries", "title": "Užklausos pagal modulį",
+      "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 29 },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" }, "queryType": "statsRange", "step": "15m", "legendFormat": "{{Module}}",
+          "expr": "env:$env RequestPath:* | stats by (Module) count() requests" }
+      ]
+    },
+    {
+      "id": 9, "type": "timeseries", "title": "Skirtingi vartotojai per dieną",
+      "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 29 },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "bars", "fillOpacity": 60 } }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" }, "queryType": "statsRange", "step": "1d", "legendFormat": "vartotojai",
+          "expr": "env:$env UserName:* | stats count_uniq(UserName) users" }
+      ]
+    },
+    {
+      "id": 10, "type": "table", "title": "Top 10 vartotojų",
+      "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" },
+      "gridPos": { "h": 9, "w": 8, "x": 0, "y": 37 },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" }, "queryType": "instant",
+          "expr": "env:$env UserName:* | stats by (UserName) count() requests | sort by (requests desc) | limit 10" }
+      ]
+    },
+    {
+      "id": 11, "type": "table", "title": "Lėčiausios užklausos",
+      "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" },
+      "gridPos": { "h": 9, "w": 16, "x": 8, "y": 37 },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" }, "queryType": "instant",
+          "expr": "env:$env RequestPath:* Elapsed:* | sort by (Elapsed desc) | limit 20 | fields _time, Module, RequestPath, Elapsed, StatusCode" }
+      ]
+    },
+    { "id": 12, "type": "row", "title": "Foniniai darbai", "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 46 }, "panels": [] },
+    {
+      "id": 13, "type": "table", "title": "Hangfire: nepavykę darbai",
+      "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 47 },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" }, "queryType": "instant",
+          "expr": "env:$env \"Failed to process the job\" | sort by (_time desc) | limit 100 | fields _time, service, _msg, exception, TraceId" }
+      ]
+    },
+    { "id": 14, "type": "row", "title": "Žurnalų rinkimo būklė", "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 56 }, "panels": [] },
+    {
+      "id": 15, "type": "table", "title": "Paskutinis įrašas pagal hostname (syslog)",
+      "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 57 },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" }, "queryType": "instant",
+          "expr": "hostname:* | stats by (hostname) max(_time) as last_seen | sort by (last_seen)" }
+      ]
+    },
+    {
+      "id": 16, "type": "table", "title": "Paskutinis įrašas pagal host (Vector)",
+      "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 57 },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "victoriametrics-logs-datasource", "uid": "cf82quh3gjy80a" }, "queryType": "instant",
+          "expr": "host:* | stats by (host) max(_time) as last_seen | sort by (last_seen)" }
+      ]
+    },
+    { "id": 17, "type": "row", "title": "Konteineriai", "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 66 }, "panels": [] },
+    {
+      "id": 18, "type": "bargauge", "title": "Veikiantys konteineriai pagal serverį",
+      "datasource": { "type": "prometheus", "uid": "cf7b11i5y3h8ga" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 67 },
+      "options": { "orientation": "horizontal", "displayMode": "gradient" },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "cf7b11i5y3h8ga" }, "instant": true, "legendFormat": "{{instance}}",
+          "expr": "count by (instance) (container_last_seen{name!=\"\"})" }
+      ]
+    }
+  ]
+}
