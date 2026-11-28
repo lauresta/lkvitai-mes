@@ -32,30 +32,14 @@ using Serilog;
 using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
-const string structuredLogTemplate =
-    "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [TraceParent:{TraceParent}] [TraceId:{TraceId}] [CorrelationId:{CorrelationId}] [Req:{RequestMethod} {RequestPath}] {Message:lj}{NewLine}{Exception}";
-
-// Configure Serilog per blueprint
-var loggerConfiguration = new LoggerConfiguration()
-    .ReadFrom.Configuration(builder.Configuration)
-    .MinimumLevel.Information()
-    .Filter.ByExcluding(logEvent => logEvent.Level is LogEventLevel.Debug or LogEventLevel.Verbose)
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-    .MinimumLevel.Override("System", LogEventLevel.Warning)
-    .MinimumLevel.Override("Marten", LogEventLevel.Error)
-    .MinimumLevel.Override("Npgsql", LogEventLevel.Error)
-    .MinimumLevel.Override("MassTransit", LogEventLevel.Error)
-    .MinimumLevel.Override("JasperFx", LogEventLevel.Error)
-    .Enrich.FromLogContext()
-    .WriteTo.Console(outputTemplate: structuredLogTemplate)
-    .WriteTo.File(
-        "logs/warehouse-.log",
-        rollingInterval: RollingInterval.Day,
-        retainedFileCountLimit: 14,
-        outputTemplate: structuredLogTemplate)
-    .WriteToCikadaSentry(builder.Configuration);
-
-Log.Logger = loggerConfiguration.CreateLogger();
+// Shared JSON-console Serilog setup (BuildingBlocks.Observability).
+Log.Logger = new LoggerConfiguration()
+    .ConfigureCikadaSerilog(builder.Configuration, "warehouse-api", builder.Environment.EnvironmentName, logger => logger
+        .MinimumLevel.Override("Marten", LogEventLevel.Error)
+        .MinimumLevel.Override("Npgsql", LogEventLevel.Error)
+        .MinimumLevel.Override("MassTransit", LogEventLevel.Error)
+        .MinimumLevel.Override("JasperFx", LogEventLevel.Error))
+    .CreateLogger();
 
 builder.Host.UseSerilog();
 builder.AddCikadaSentry("warehouse-api");
@@ -433,26 +417,7 @@ if (!app.Environment.IsDevelopment()
     app.UseHttpsRedirection();
 }
 app.UseMiddleware<CorrelationIdMiddleware>();
-app.UseSerilogRequestLogging(options =>
-{
-    options.MessageTemplate =
-        "HTTP request completed. StatusCode={StatusCode}, ElapsedMs={Elapsed:0.0000}";
-    options.GetLevel = (_, elapsed, ex) =>
-    {
-        if (ex is not null)
-        {
-            return LogEventLevel.Error;
-        }
-
-        return elapsed > 5000 ? LogEventLevel.Warning : LogEventLevel.Information;
-    };
-    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
-    {
-        diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
-        diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
-        diagnosticContext.Set("ResponseStatusCode", httpContext.Response.StatusCode);
-    };
-});
+app.UseCikadaRequestLogging();
 app.UseMiddleware<SlaMetricsMiddleware>();
 app.UseMiddleware<ApiRateLimitingMiddleware>();
 app.UseMiddleware<ProblemDetailsExceptionMiddleware>();

@@ -6,38 +6,18 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MudBlazor.Services;
 using Serilog;
-using Serilog.Events;
 
 namespace LKvitai.MES.BuildingBlocks.ModuleStartup;
 
 public static class ScaffoldModuleStartupExtensions
 {
-    private const string StructuredLogTemplate =
-        "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [TraceId:{TraceId}] [Req:{RequestMethod} {RequestPath}] {Message:lj}{NewLine}{Exception}";
-
-    public static WebApplicationBuilder UseScaffoldSerilog(this WebApplicationBuilder builder, string logFilePrefix)
+    public static WebApplicationBuilder UseScaffoldSerilog(this WebApplicationBuilder builder, string module)
     {
         ArgumentNullException.ThrowIfNull(builder);
-        ArgumentException.ThrowIfNullOrWhiteSpace(logFilePrefix);
+        ArgumentException.ThrowIfNullOrWhiteSpace(module);
 
         Log.Logger = new LoggerConfiguration()
-            .ReadFrom.Configuration(builder.Configuration)
-            .MinimumLevel.Information()
-            .Filter.ByExcluding(logEvent => logEvent.Level is LogEventLevel.Debug or LogEventLevel.Verbose)
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-            .MinimumLevel.Override("System", LogEventLevel.Warning)
-            // Surface Kestrel lifecycle messages ("Now listening on:", "Application
-            // started.", "Hosting environment", "Content root path") so module
-            // operators can see at a glance that the host actually came up.
-            .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
-            .Enrich.FromLogContext()
-            .WriteTo.Console(outputTemplate: StructuredLogTemplate)
-            .WriteTo.File(
-                $"logs/{logFilePrefix}-.log",
-                rollingInterval: RollingInterval.Day,
-                retainedFileCountLimit: 14,
-                outputTemplate: StructuredLogTemplate)
-            .WriteToCikadaSentry(builder.Configuration)
+            .ConfigureCikadaSerilog(builder.Configuration, module, builder.Environment.EnvironmentName)
             .CreateLogger();
 
         builder.Host.UseSerilog();
@@ -88,7 +68,7 @@ public static class ScaffoldModuleStartupExtensions
             app.UseHsts();
         }
 
-        app.UseSerilogRequestLogging();
+        app.UseCikadaRequestLogging();
         app.UseRouting();
         app.MapHealthChecks("/health");
         return app;
@@ -106,7 +86,7 @@ public static class ScaffoldModuleStartupExtensions
             app.UseHsts();
         }
 
-        app.UseSerilogRequestLogging();
+        app.UseCikadaRequestLogging();
         app.UseStaticFiles();
         app.UseRouting();
         app.MapGet("/health", () => Results.Ok());
