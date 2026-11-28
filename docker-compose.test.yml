@@ -7,6 +7,8 @@ x-sentry: &sentry
   Sentry__Dsn: "${SENTRY_DSN:-}"
   Sentry__Environment: "test"
   Sentry__Release: "${IMAGE_TAG:-}"
+  # JSON console logs (BuildingBlocks.Observability); GitHub Environment variable LOG_LEVEL overrides the default.
+  Serilog__MinimumLevel__Default: "${LOG_LEVEL:-Debug}"
   Sentry__TracesSampleRate: "${SENTRY_TRACES_SAMPLE_RATE:-0}"
   Sentry__Replay__SessionSampleRate: "${SENTRY_REPLAY_SESSION_SAMPLE_RATE:-0.1}"
   Sentry__Replay__OnErrorSampleRate: "${SENTRY_REPLAY_ON_ERROR_SAMPLE_RATE:-1.0}"
@@ -58,7 +60,6 @@ services:
       Agnum__Warehouses__pardavimai__ApiKey: "${Agnum__Warehouses__pardavimai__ApiKey}"
       Agnum__Api__ReferenceApiKey: "${Agnum__Api__ReferenceApiKey:-${Agnum__Warehouses__sandelys__ApiKey}}"
     volumes:
-      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
       - ${CLIP_MODEL_DIR:-/opt/lkvitai-mes/models}:/models:ro
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys:ro
     networks:
@@ -135,7 +136,6 @@ services:
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
-      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
     networks:
       - lkvitai-mes_default
     depends_on:
@@ -186,7 +186,6 @@ services:
       Sales__OrderEntry__BuildVersion: "${IMAGE_TAG:-working-tree}"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
-      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
     networks:
       - lkvitai-mes_default
     healthcheck:
@@ -215,7 +214,6 @@ services:
       SalesReview__ExpiresAtUtc: "${SALES_REVIEW_EXPIRES_AT_UTC:-}"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
-      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
     networks:
       - lkvitai-mes_default
     depends_on:
@@ -245,8 +243,6 @@ services:
       ASPNETCORE_ENVIRONMENT: Test
       ConnectionStrings__LKvitaiDb: "${LKVITAI_MSACCESS_DB_CONNECTION}"
       Frontline__FabricDataSource: "Sql"
-    volumes:
-      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
     networks:
       - lkvitai-mes_default
     healthcheck:
@@ -282,7 +278,6 @@ services:
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
-      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
     networks:
       - lkvitai-mes_default
     depends_on:
@@ -307,7 +302,6 @@ services:
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
-      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
     networks:
       - lkvitai-mes_default
     healthcheck:
@@ -328,8 +322,6 @@ services:
       ASPNETCORE_ENVIRONMENT: Test
       ScanningApi__BaseUrl: "http://lkvitai-mes-scanning-api:8080"
       PathBase: "/scan"
-    volumes:
-      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
     networks:
       - lkvitai-mes_default
     depends_on:
@@ -364,7 +356,6 @@ services:
       CikadaUsers__BaseUrl: "http://lkvitai-mes-warehouse-api:8080"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
-      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
     networks:
       - lkvitai-mes_default
     healthcheck:
@@ -394,7 +385,6 @@ services:
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
-      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
     networks:
       - lkvitai-mes_default
     depends_on:
@@ -432,7 +422,6 @@ services:
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
-      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
     networks:
       - lkvitai-mes_default
     healthcheck:
@@ -461,7 +450,6 @@ services:
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
-      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
     networks:
       - lkvitai-mes_default
     depends_on:

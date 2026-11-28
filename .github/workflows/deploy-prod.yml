@@ -40,7 +40,6 @@ jobs:
       COMPOSE_FILE: docker-compose.prod.yml
       DOCKER_NETWORK_NAME: ${{ vars.DOCKER_NETWORK_NAME || 'lkvitai-mes_prod' }}
       AUTH_KEYS_DIR: ${{ vars.AUTH_KEYS_DIR || '/opt/lkvitai-mes/auth-keys' }}
-      LOGS_DIR: ${{ vars.LOGS_DIR || '/opt/lkvitai-mes/logs' }}
       CLIP_MODEL_DIR: ${{ vars.CLIP_MODEL_DIR || '/opt/lkvitai-mes/models' }}
       # One PostgreSQL database (lkvitai on lkvitai-db) serves Warehouse, Portal and
       # Shopfloor, as on the test stand. Separate secrets are honoured if they are set.
@@ -63,6 +62,7 @@ jobs:
       # Sentry (project cikada-prod): public DSN, empty = off; the sample rates are optional.
       SENTRY_DSN: ${{ vars.SENTRY_DSN }}
       SENTRY_TRACES_SAMPLE_RATE: ${{ vars.SENTRY_TRACES_SAMPLE_RATE }}
+      LOG_LEVEL: ${{ vars.LOG_LEVEL }}
       SENTRY_REPLAY_SESSION_SAMPLE_RATE: ${{ vars.SENTRY_REPLAY_SESSION_SAMPLE_RATE }}
       SENTRY_REPLAY_ON_ERROR_SAMPLE_RATE: ${{ vars.SENTRY_REPLAY_ON_ERROR_SAMPLE_RATE }}
       # Switches for writes into the legacy database. Unset = off (see docker-compose.prod.yml).
@@ -135,16 +135,14 @@ jobs:
           # Containers run as the .NET `app` user (uid/gid 1654). auth-keys holds the
           # DataProtection key ring shared by every module: if it is not writable,
           # sign-in loops; if it is lost, everybody is signed out.
-          mkdir -p "$AUTH_KEYS_DIR" "$LOGS_DIR" "$CLIP_MODEL_DIR" 2>/dev/null || true
+          mkdir -p "$AUTH_KEYS_DIR" "$CLIP_MODEL_DIR" 2>/dev/null || true
           docker run --rm \
             --user 0:0 \
             -v "$AUTH_KEYS_DIR:/mnt/auth-keys" \
-            -v "$LOGS_DIR:/mnt/logs" \
             alpine:3.20 \
             sh -eu -c '
-              chown -R 1654:1654 /mnt/auth-keys /mnt/logs
+              chown -R 1654:1654 /mnt/auth-keys
               chmod 700 /mnt/auth-keys
-              chmod 755 /mnt/logs
             '
           model="${CLIP_MODEL_DIR}/$(basename "${ITEMIMAGES__MODEL_PATH:-/models/item-image-model.onnx}")"
           if [ ! -f "$model" ]; then

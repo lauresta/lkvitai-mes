@@ -70,7 +70,8 @@ Optional:
 | `SENTRY_REPLAY_SESSION_SAMPLE_RATE` | variable | Share of browser sessions recorded by Session Replay, default `0.1` |
 | `SENTRY_REPLAY_ON_ERROR_SAMPLE_RATE` | variable | Share of sessions with an error whose replay is kept, default `1.0` |
 | `SENTRY_TRACES_SAMPLE_RATE` | variable | Performance tracing (server and browser), default `0` = off |
-| `AUTH_KEYS_DIR`, `LOGS_DIR`, `CLIP_MODEL_DIR` | variable | Host folders, default under `/opt/lkvitai-mes` |
+| `LOG_LEVEL` | variable | Minimum log level of the .NET services (JSON on stdout), default `Information` |
+| `AUTH_KEYS_DIR`, `CLIP_MODEL_DIR` | variable | Host folders, default under `/opt/lkvitai-mes` |
 
 Writing into the legacy database. Production works on the same database as Access,
 in every branch the signed-in user may use there; the test stand is limited to the

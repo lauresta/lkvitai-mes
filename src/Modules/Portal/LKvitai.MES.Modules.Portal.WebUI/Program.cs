@@ -16,30 +16,10 @@ using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Serilog — mirrors src/Modules/Warehouse/.../Warehouse.Api/Program.cs.
-// File sink writes daily-rolled portal-YYYYMMDD.log under /app/logs, which is
-// bind-mounted to a single shared /opt/lkvitai-mes/logs on the test/prod hosts.
-// Warehouse.Api writes warehouse-YYYYMMDD.log into the same host dir; the
-// filename prefix is the only thing distinguishing the two log streams.
-const string structuredLogTemplate =
-    "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [TraceParent:{TraceParent}] [TraceId:{TraceId}] [CorrelationId:{CorrelationId}] [Req:{RequestMethod} {RequestPath}] {Message:lj}{NewLine}{Exception}";
-
-var loggerConfiguration = new LoggerConfiguration()
-    .ReadFrom.Configuration(builder.Configuration)
-    .MinimumLevel.Information()
-    .Filter.ByExcluding(logEvent => logEvent.Level is LogEventLevel.Debug or LogEventLevel.Verbose)
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-    .MinimumLevel.Override("System", LogEventLevel.Warning)
-    .Enrich.FromLogContext()
-    .WriteTo.Console(outputTemplate: structuredLogTemplate)
-    .WriteTo.File(
-        "logs/portal-.log",
-        rollingInterval: RollingInterval.Day,
-        retainedFileCountLimit: 14,
-        outputTemplate: structuredLogTemplate)
-    .WriteToCikadaSentry(builder.Configuration);
-
-Log.Logger = loggerConfiguration.CreateLogger();
+// Shared JSON-console Serilog setup (BuildingBlocks.Observability).
+Log.Logger = new LoggerConfiguration()
+    .ConfigureCikadaSerilog(builder.Configuration, "portal-webui", builder.Environment.EnvironmentName)
+    .CreateLogger();
 
 builder.Host.UseSerilog();
 builder.AddCikadaSentry("portal-webui");
@@ -119,11 +99,7 @@ app.Use(async (context, next) =>
     await next();
 });
 
-app.UseSerilogRequestLogging(options =>
-{
-    options.MessageTemplate =
-        "HTTP request completed. StatusCode={StatusCode}, ElapsedMs={Elapsed:0.0000}";
-});
+app.UseCikadaRequestLogging();
 
 app.UseRouting();
 app.UseAuthentication();

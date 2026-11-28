@@ -32,10 +32,6 @@ public static class OpenTelemetryConfiguration
                         options.Endpoint = new Uri(configuration["Otlp:Endpoint"] ?? "http://localhost:4317");
                     });
                 }
-                else
-                {
-                    builder.AddConsoleExporter();
-                }
             });
         
         return services;
