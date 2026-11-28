@@ -33,7 +33,7 @@ var app = builder.Build();
 app.UsePathBase(ScaffoldModuleStartupExtensions.ResolvePathBase(app.Configuration));
 app.UseCikadaRequestLocalization();
 app.UsePortalSecureHosting(app.Environment);
-app.UseSerilogRequestLogging();
+app.UseCikadaRequestLogging();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
